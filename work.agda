@@ -456,6 +456,33 @@ openOr = openOrMP mp
   ... | no m≠n | yes _ = ex-falso (false≢true αm=t)
   ... | no m≠n | no k≠n = ex-falso (false≢true αm=t)
 
+-- Properties of ι and ∞
+-- ι(n) at position n is true
+ι-at-n : (n : ℕ) → fst (ι n) n ≡ true
+ι-at-n n with discreteℕ n n
+... | yes _ = refl
+... | no n≠n = ex-falso (n≠n refl)
+
+-- ι(n) at position m ≠ n is false
+ι-at-m≠n : (n m : ℕ) → ¬ (m ≡ n) → fst (ι n) m ≡ false
+ι-at-m≠n n m m≠n with discreteℕ m n
+... | yes m=n = ex-falso (m≠n m=n)
+... | no _ = refl
+
+-- ι(n) ≠ ∞ : ι n has a true at position n, but ∞ is all false
+ι≠∞ : (n : ℕ) → ¬ (ι n ≡ ∞)
+ι≠∞ n ι=∞ = false≢true (sym (cong (λ x → fst x n) ι=∞) ∙ ι-at-n n)
+
+-- ι m ≠ ι n when m ≠ n
+ι-injective : (m n : ℕ) → ι m ≡ ι n → m ≡ n
+ι-injective m n ιm=ιn =
+  let ιm-at-m : fst (ι m) m ≡ true
+      ιm-at-m = ι-at-n m
+      -- By ιm = ιn, fst (ι n) m = fst (ι m) m = true
+      ιn-at-m : fst (ι n) m ≡ true
+      ιn-at-m = cong (λ x → fst x m) (sym ιm=ιn) ∙ ιm-at-m
+  in snd (ι n) m n ιn-at-m (ι-at-n n)
+
 -- =============================================================================
 -- Section 12: Markov's Principle from Stone Duality
 -- =============================================================================
