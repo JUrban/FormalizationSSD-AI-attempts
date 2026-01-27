@@ -2507,6 +2507,13 @@ openSubsetTransitive : {T : Type₀}
 openSubsetTransitive V Vopen W Wopen t =
   openSigmaOpen (V t) (Vopen t) (W t) (Wopen t)
 
+-- Remark: Open forms a dominance (tex Remark OpenDominance 1330)
+-- A dominance is a set Σ of propositions that:
+-- 1. Contains ⊤ (trivially: ⊤-isOpen)
+-- 2. Is closed under Σ-types: if P ∈ Σ and Q : P → Σ, then Σ P Q ∈ Σ (openSigmaOpen)
+-- The transitivity property (openSubsetTransitive) follows from the Σ-closure.
+-- We have proven both required properties for Open to form a dominance.
+
 -- Transitivity of closedness (dual of openSubsetTransitive)
 -- If V ⊆ T is closed and W ⊆ V is closed (as a subset of V), then W ⊆ T is closed.
 -- Uses the postulated closedSigmaClosed.
@@ -2517,6 +2524,11 @@ closedSubsetTransitive : {T : Type₀}
                        → isClosedSubset (λ t → (∥ Σ[ v ∈ ⟨ V t ⟩ ] ⟨ W t v ⟩ ∥₁) , squash₁)
 closedSubsetTransitive V Vclosed W Wclosed t =
   closedSigmaClosed (V t) (Vclosed t) (W t) (Wclosed t)
+
+-- Remark: Closed also forms a dominance (tex Remark ClosedDominance 1794)
+-- 1. Contains ⊤ (trivially: ⊤-isClosed)
+-- 2. Is closed under Σ-types (closedSigmaClosed - currently postulated)
+-- Once closedSigmaClosed is proved using Stone infrastructure, Closed forms a dominance.
 
 -- =============================================================================
 -- Section: Surjection from 2^ℕ to Closed (tex line 1753)
@@ -2607,6 +2619,9 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - openSigmaOpen: Σ of open over open is open (tex Cor 1313)
 -- - openSubsetTransitive: transitivity of openness for subsets (tex Cor 1319)
 -- - closedSubsetTransitive: transitivity of closedness (uses postulate closedSigmaClosed)
+-- Dominance structure (tex Remarks OpenDominance 1330, ClosedDominance 1794):
+-- - Open forms a dominance (⊤-isOpen + openSigmaOpen)
+-- - Closed forms a dominance (⊤-isClosed + closedSigmaClosed, pending Stone infrastructure)
 -- - allFalseIsClosed: canonical closed proposition (∀n. αn = false)
 -- - someTrueIsOpen: canonical open proposition (∃n. αn = true) (uses MP)
 -- - openPath, closedPath: path transport preserves open/closed
