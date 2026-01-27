@@ -87,8 +87,8 @@ isSetBinarySequence = isSetΠ (λ _ → isSetBool)
 
 isSetIsOpenProp : (P : hProp ℓ-zero) → isSet (isOpenProp P)
 isSetIsOpenProp P = isSetΣ isSetBinarySequence
-  (λ α → isSet× (isProp→isSet (isPropΠ (λ _ → isSetΣ isSetℕ (λ n → isProp→isSet (isSetBool _ _)))))
-                 (isProp→isSet (isPropΠ (λ _ → snd P))))
+  (λ α → isSet× (isSetΠ (λ _ → isSetΣ isSetℕ (λ n → isProp→isSet (isSetBool _ _))))
+                 (isSetΠ (λ _ → isProp→isSet (snd P))))
 
 isSetIsClosedProp : (P : hProp ℓ-zero) → isSet (isClosedProp P)
 isSetIsClosedProp P = isSetΣ isSetBinarySequence
@@ -201,18 +201,7 @@ allFalseIsClosed α = α , (λ p → p) , (λ p → p)
 
 -- Canonical open proposition: (∃n. α n ≡ true) is open with witness α
 -- This is the defining property of open propositions
--- Note: We use the truncated version ∥ Σ n. α n ≡ true ∥₁ for the hProp
--- The forward direction uses MP to extract a witness from the truncated existential
-someTrueIsOpen : (α : binarySequence) → isOpenProp ((∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁) , squash₁)
-someTrueIsOpen α = α , forward , backward
-  where
-  forward : ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
-  forward trunc = mp α ¬allFalse
-    where
-    ¬allFalse : ¬ ((n : ℕ) → α n ≡ false)
-    ¬allFalse all-false = PT.rec isProp⊥ (λ { (n , αn=t) → true≢false (sym αn=t ∙ all-false n) }) trunc
-  backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁
-  backward = ∣_∣₁
+-- Note: someTrueIsOpen is defined after the mp postulate (requires MP)
 
 -- Equality in Bool is decidable (hence both open and closed)
 Bool-equality-decidable : (a b : Bool) → Dec (a ≡ b)
@@ -376,10 +365,8 @@ negClosedIsOpen mp P (α , P→∀ , ∀→P) = α , forward , backward
 ¬-Open : Open → Closed
 ¬-Open O = ¬hProp (fst O) , negOpenIsClosed (fst O) (snd O)
 
--- Bundled negation: Closed → Open (requires MP, uses the postulate)
--- Note: This uses the Markov principle (mp) postulate
-¬-Closed : Closed → Open
-¬-Closed C = ¬hProp (fst C) , negClosedIsOpen mp (fst C) (snd C)
+-- Bundled negation: Closed → Open (requires MP)
+-- Note: ¬-Closed is defined after the mp postulate
 
 -- ¬¬-stability of closed propositions
 -- If P is closed, then ¬¬P → P
@@ -587,6 +574,25 @@ openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (in
 -- 4. By t∈I→αn, this gives Σn. αn = true
 postulate
   mp : MarkovPrinciple
+
+-- Canonical open proposition: (∃n. α n ≡ true) is open with witness α
+-- This is the defining property of open propositions
+-- Note: We use the truncated version ∥ Σ n. α n ≡ true ∥₁ for the hProp
+-- The forward direction uses MP to extract a witness from the truncated existential
+someTrueIsOpen : (α : binarySequence) → isOpenProp ((∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁) , squash₁)
+someTrueIsOpen α = α , forward , backward
+  where
+  forward : ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
+  forward trunc = mp α ¬allFalse
+    where
+    ¬allFalse : ¬ ((n : ℕ) → α n ≡ false)
+    ¬allFalse all-false = PT.rec isProp⊥ (λ { (n , αn=t) → true≢false (sym αn=t ∙ all-false n) }) trunc
+  backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁
+  backward = ∣_∣₁
+
+-- Bundled negation: Closed → Open (requires MP)
+¬-Closed : Closed → Open
+¬-Closed C = ¬hProp (fst C) , negClosedIsOpen mp (fst C) (snd C)
 
 -- Open propositions are closed under finite disjunction (derived from MP)
 openOr : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
@@ -1411,12 +1417,12 @@ openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , for
 
 -- Bundled version: meet (∧) on Open
 _∧-Open_ : Open → Open → Open
-O₁ ∧-Open O₂ = (⟨ fst O₁ ⟩ × ⟨ fst O₂ ⟩) , isProp× (snd (fst O₁)) (snd (fst O₂)) ,
+O₁ ∧-Open O₂ = ((⟨ fst O₁ ⟩ × ⟨ fst O₂ ⟩) , isProp× (snd (fst O₁)) (snd (fst O₂))) ,
                openAnd (fst O₁) (fst O₂) (snd O₁) (snd O₂)
 
 -- Bundled version: meet (∧) on Closed
 _∧-Closed_ : Closed → Closed → Closed
-C₁ ∧-Closed C₂ = (⟨ fst C₁ ⟩ × ⟨ fst C₂ ⟩) , isProp× (snd (fst C₁)) (snd (fst C₂)) ,
+C₁ ∧-Closed C₂ = ((⟨ fst C₁ ⟩ × ⟨ fst C₂ ⟩) , isProp× (snd (fst C₁)) (snd (fst C₂))) ,
                  closedAnd (fst C₁) (fst C₂) (snd C₁) (snd C₂)
 
 -- =============================================================================
@@ -1722,12 +1728,12 @@ closedOr P Q Pclosed Qclosed = γ , forward , backward
 
 -- Bundled version: join (∨) on Open
 _∨-Open_ : Open → Open → Open
-O₁ ∨-Open O₂ = (∥ ⟨ fst O₁ ⟩ ⊎ ⟨ fst O₂ ⟩ ∥₁) , squash₁ ,
+O₁ ∨-Open O₂ = ((∥ ⟨ fst O₁ ⟩ ⊎ ⟨ fst O₂ ⟩ ∥₁) , squash₁) ,
                openOr (fst O₁) (fst O₂) (snd O₁) (snd O₂)
 
 -- Bundled version: join (∨) on Closed
 _∨-Closed_ : Closed → Closed → Closed
-C₁ ∨-Closed C₂ = (∥ ⟨ fst C₁ ⟩ ⊎ ⟨ fst C₂ ⟩ ∥₁) , squash₁ ,
+C₁ ∨-Closed C₂ = ((∥ ⟨ fst C₁ ⟩ ⊎ ⟨ fst C₂ ⟩ ∥₁) , squash₁) ,
                  closedOr (fst C₁) (fst C₂) (snd C₁) (snd C₂)
 
 -- De Morgan for open propositions: ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁
