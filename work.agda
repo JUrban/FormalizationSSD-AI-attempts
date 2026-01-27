@@ -1075,18 +1075,41 @@ closedDeMorgan P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬�
   -- For now, we extract the result using ¬¬P∧¬Q
   in helper llpo-result
   where
+  -- Key lemma: if all evens of firstTrue(interleave α β) are false,
+  -- and some αk = true, then some earlier βm = true (so Q fails)
+  -- Therefore, by ¬(¬P ∧ ¬Q), P must hold.
+  --
+  -- Actually, simpler approach:
+  -- If all evens of δ are false:
+  --   - Either all αk are false (so P holds by ∀α→P), OR
+  --   - Some αk = true, but was blocked, meaning some odd came first
+  --     In this case, that odd position had interleave α β = βm = true for some m
+  --     Since firstTrue preserves this, δ at that odd position is true
+  --     But then we'd have a true in the sequence...
+  --
+  -- The key insight: we use ¬(¬P ∧ ¬Q) together with closed stability.
+  -- If LLPO tells us all evens are false, we reason:
+  -- - Suppose P doesn't hold (¬P). Then ∃k. αk = true.
+  -- - Since ¬(¬P ∧ ¬Q) and we have ¬P, we must have ¬¬Q.
+  -- - Since Q is closed, Q is ¬¬-stable, so Q holds.
+  -- Similarly for the other case.
+
+  -- The remaining step: extract P ∨ Q from the LLPO case analysis
+  -- Given ¬(¬P ∧ ¬Q) and closed P, Q:
+  -- - If P fails, then ¬P holds, so by ¬(¬P ∧ ¬Q), ¬¬Q holds
+  -- - Since Q is closed, ¬¬Q → Q (closedIsStable), so Q holds
+  -- - Symmetrically if Q fails, P holds
+  -- - We can't constructively decide which, but LLPO gives us the decision
   postulate
-    -- The remaining step: extract P ∨ Q from the LLPO case analysis
-    -- This requires showing that if all evens (or all odds) of firstTrue(interleave α β)
-    -- are false, then P holds (or Q holds, respectively).
     postulatedStep : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
 
   -- From LLPO result, derive P ∨ Q
+  -- The proof uses ¬(¬P ∧ ¬Q) and closed stability
   helper : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
          ⊎ ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
          → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
-  helper (inl allEvens=f) = postulatedStep
-  helper (inr allOdds=f) = postulatedStep
+  helper (inl allEvensF) = postulatedStep
+  helper (inr allOddsF) = postulatedStep
 
 -- Now we can define closedOr
 closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
