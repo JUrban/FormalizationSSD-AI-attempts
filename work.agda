@@ -2110,6 +2110,27 @@ closedEquiv P Q P→Q Q→P (α , P→∀ , ∀→P) =
   α , (λ q → P→∀ (Q→P q)) , (λ w → P→Q (∀→P w))
 
 -- =============================================================================
+-- Section 23: Decidability characterization
+-- =============================================================================
+
+-- Decidable ↔ both open and closed (tex Corollary ClopenDecidable + remark)
+-- Forward: a decidable proposition is both open and closed
+-- Backward: a proposition that is both open and closed is decidable (clopenIsDecidable)
+
+decidable→open×closed : (P : hProp ℓ-zero) → Dec ⟨ P ⟩ → isOpenProp P × isClosedProp P
+decidable→open×closed P dec = decIsOpen P dec , decIsClosed P dec
+
+open×closed→decidable : (P : hProp ℓ-zero) → isOpenProp P × isClosedProp P → Dec ⟨ P ⟩
+open×closed→decidable P (Popen , Pclosed) = clopenIsDecidable P Popen Pclosed
+
+-- The biconditional
+decidable↔open×closed : (P : hProp ℓ-zero) → Dec ⟨ P ⟩ ↔ (isOpenProp P × isClosedProp P)
+decidable↔open×closed P = decidable→open×closed P , open×closed→decidable P
+
+-- Corollary: isProp (isOpenProp P × isClosedProp P) when P has decidable equality
+-- (we don't prove this since isOpenProp isn't necessarily a prop without more work)
+
+-- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
 
