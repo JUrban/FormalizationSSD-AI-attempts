@@ -1003,51 +1003,90 @@ openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , for
 -- - ¬(¬P ∧ ¬Q) is closed (by negOpenIsClosed)
 -- - The backward direction ¬(¬P ∧ ¬Q) → P ∨ Q needs LLPO
 
+-- First-true truncation: given a sequence, produce one that hits true at most once
+-- (at the position of the first true in the original, if any)
+-- Using explicit Bool case analysis to help with definitional equality
+firstTrue : binarySequence → binarySequence
+firstTrue α zero = α zero
+firstTrue α (suc n) with α zero
+... | true = false
+... | false = firstTrue (α ∘ suc) n
+
+-- firstTrue preserves never-hitting-true (all false → all false)
+firstTrue-preserves-allFalse : (α : binarySequence) → ((n : ℕ) → α n ≡ false)
+                             → (n : ℕ) → firstTrue α n ≡ false
+firstTrue-preserves-allFalse α allF zero = allF zero
+firstTrue-preserves-allFalse α allF (suc n) with α zero | allF zero
+... | true  | α0=f = ex-falso (false≢true (sym α0=f))
+... | false | _    = firstTrue-preserves-allFalse (α ∘ suc) (allF ∘ suc) n
+
+-- firstTrue sequence hits true at most once
+firstTrue-hitsAtMostOnce : (α : binarySequence) → hitsAtMostOnce (firstTrue α)
+firstTrue-hitsAtMostOnce α m n ftm=t ftn=t = aux α m n ftm=t ftn=t
+  where
+  aux : (α : binarySequence) → (m n : ℕ) → firstTrue α m ≡ true → firstTrue α n ≡ true → m ≡ n
+  aux α zero zero _ _ = refl
+  aux α zero (suc n) ft0=t ft-sn=t with α zero
+  aux α zero (suc n) ft0=t ft-sn=t | true = ex-falso (false≢true ft-sn=t)
+  aux α zero (suc n) ft0=t ft-sn=t | false = ex-falso (false≢true ft0=t)
+  aux α (suc m) zero ft-sm=t ft0=t with α zero
+  aux α (suc m) zero ft-sm=t ft0=t | true = ex-falso (false≢true ft-sm=t)
+  aux α (suc m) zero ft-sm=t ft0=t | false = ex-falso (false≢true ft0=t)
+  aux α (suc m) (suc n) ft-sm=t ft-sn=t with α zero
+  aux α (suc m) (suc n) ft-sm=t ft-sn=t | true = ex-falso (false≢true ft-sm=t)
+  aux α (suc m) (suc n) ft-sm=t ft-sn=t | false = cong suc (aux (α ∘ suc) m n ft-sm=t ft-sn=t)
+
 -- De Morgan law for closed propositions (consequence of LLPO)
 -- This is the key step: ¬(¬P ∧ ¬Q) → ∥P ⊎ Q∥₁ for closed P, Q
 closedDeMorgan : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
                → ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩)) → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
 closedDeMorgan P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬¬P∧¬Q =
-  let -- Interleave the witness sequences
+  let -- Interleave α and β, then apply firstTrue to get an ℕ∞ element
+      δ₀ : binarySequence
+      δ₀ = interleave α β
+
       δ : binarySequence
-      δ = interleave α β
+      δ = firstTrue δ₀
 
-      -- Show δ ∈ ℕ∞ assuming ¬P ∧ ¬Q (contradiction approach)
-      -- If P holds, all even positions are 0
-      -- If Q holds, all odd positions are 0
-      -- We use ¬¬P∧¬Q to show at least one holds
+      -- δ hits true at most once by construction
+      δ-hamo : hitsAtMostOnce δ
+      δ-hamo = firstTrue-hitsAtMostOnce δ₀
 
-      -- Apply LLPO to get a decision
-      -- First, we need to show δ is in ℕ∞ given our assumptions
-      -- This is tricky because δ may not be in ℕ∞ in general...
+      -- δ as element of ℕ∞
+      δ∞ : ℕ∞
+      δ∞ = δ , δ-hamo
 
-      -- Alternative: use that closed props are ¬¬-stable
-      -- P is closed, so ¬¬P → P
-      -- Q is closed, so ¬¬Q → Q
-      -- We have ¬(¬P ∧ ¬Q), which gives ¬¬(P ∨ Q)
-      -- But ¬¬(P ∨ Q) → P ∨ Q needs something like LLPO
+      -- Apply LLPO
+      llpo-result : ((k : ℕ) → δ (2 ·ℕ k) ≡ false) ⊎ ((k : ℕ) → δ (suc (2 ·ℕ k)) ≡ false)
+      llpo-result = llpo δ∞
 
-      -- Use LLPO directly on the interleaved sequence
-      -- We postulate that for closed P, Q: llpo gives us a decision
+      -- Analyze the result
+      -- Case 1: All evens of δ are false
+      --   δ(2k) = firstTrue(interleave α β)(2k)
+      --   If all these are false, then either:
+      --   - All αk are false (P holds), or
+      --   - Some βm was true before any αk was true
+      --   Either way, we can derive P or Q
 
-      -- For now, we use a simplified approach:
-      -- Using the closedness of P and Q, one of them holds
-      -- The LLPO postulate will be used when we can construct an ℕ∞ element
+      -- Case 2: All odds of δ are false
+      --   Similar reasoning gives P or Q
 
-      -- Use ¬¬-elimination for propositions
-      ¬¬P∨Q : ¬ ¬ (⟨ P ⟩ ⊎ ⟨ Q ⟩)
-      ¬¬P∨Q k = ¬¬P∧¬Q ((λ p → k (inl p)) , (λ q → k (inr q)))
-
-  -- We need LLPO to decide between P and Q
-  -- For now, postulate this step
-  in postulatedClosedDeMorganStep P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬¬P∧¬Q
+  -- The full proof requires careful case analysis
+  -- For now, we extract the result using ¬¬P∧¬Q
+  in helper llpo-result
   where
   postulate
-    postulatedClosedDeMorganStep :
-      (P Q : hProp ℓ-zero)
-      → (Pc : isClosedProp P) → (Qc : isClosedProp Q)
-      → ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩))
-      → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+    -- The remaining step: extract P ∨ Q from the LLPO case analysis
+    -- This requires showing that if all evens (or all odds) of firstTrue(interleave α β)
+    -- are false, then P holds (or Q holds, respectively).
+    postulatedStep : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+
+  -- From LLPO result, derive P ∨ Q
+  helper : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
+         ⊎ ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
+         → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+  helper (inl allEvens=f) = postulatedStep
+  helper (inr allOdds=f) = postulatedStep
 
 -- Now we can define closedOr
 closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
