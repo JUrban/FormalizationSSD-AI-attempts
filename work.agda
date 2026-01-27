@@ -623,6 +623,49 @@ openCountableUnion P αs = β , forward , backward
         in false≢true (sym (allFalse k) ∙ βk=t)
 
 -- =============================================================================
+-- Section 18: Additional properties of open and closed propositions
+-- =============================================================================
+
+-- If a proposition is both open and closed, it is decidable
+-- (ClopenDecidable from tex Corollary 774)
+--
+-- Proof idea:
+-- P is open: P ↔ ∃n. αn = 1
+-- P is closed: P ↔ ∀n. βn = 0
+-- Key: by LLPO, we can decide between "∃n even. γn=1" and "∃n odd. γn=1"
+-- for appropriate γ built from α and β
+--
+-- For now, postulated:
+postulate
+  clopenIsDecidable : (P : hProp ℓ-zero) → isOpenProp P → isClosedProp P → Dec ⟨ P ⟩
+
+-- If P is open and Q is closed, then P → Q is closed
+-- (ImplicationOpenClosed from tex Lemma 857)
+--
+-- Proof idea:
+-- P → Q ↔ ¬P ∨ Q (classically)
+-- ¬P is closed (since P is open, by negOpenIsClosed)
+-- Q is closed (by assumption)
+-- ¬P ∨ Q is closed (by closedOr, which follows from LLPO)
+--
+-- Alternatively: ¬(P ∧ ¬Q), and P ∧ ¬Q is open...
+--
+-- For now, postulated:
+postulate
+  implicationOpenClosed : (P Q : hProp ℓ-zero) → isOpenProp P → isClosedProp Q
+                        → isClosedProp ((⟨ P ⟩ → ⟨ Q ⟩) , isPropΠ (λ _ → snd Q))
+
+-- ClosedMarkov: For a sequence of closed propositions,
+-- ¬(∀n. ¬Pₙ) → || ∃n. Pₙ ||
+-- (Related to Lemma 807 from tex)
+--
+-- Note: The tex version gives non-truncated ∃, but that requires additional
+-- machinery (finding the first n with Pn). For the truncated version:
+postulate
+  closedMarkov : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
+               → ¬ ((n : ℕ) → ¬ ⟨ P n ⟩) → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
 
