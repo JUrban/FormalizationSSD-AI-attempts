@@ -234,6 +234,34 @@ Bool-equality-closed a b = decIsClosed ((a ≡ b) , isSetBool a b) (Bool-equalit
 ℕ-equality-closed : (m n : ℕ) → isClosedProp ((m ≡ n) , isSetℕ m n)
 ℕ-equality-closed m n = decIsClosed ((m ≡ n) , isSetℕ m n) (ℕ-equality-decidable m n)
 
+-- Equality in CantorSpace (= binarySequence = 2^ℕ) is closed
+-- (Special case of: equality in Stone spaces is closed)
+-- Proof: α = β ↔ ∀n. α n = β n (pointwise equality)
+-- Each (α n = β n) is decidable (Bool has decidable equality)
+-- So α = β is a countable conjunction of decidable propositions, hence closed.
+CantorSpace-equality-closed : (α β : CantorSpace)
+                             → isClosedProp ((α ≡ β) , isSetBinarySequence α β)
+CantorSpace-equality-closed α β = γ , forward , backward
+  where
+  -- Witness: γ n = true iff α n ≠ β n
+  γ : binarySequence
+  γ n with α n =B β n
+  ... | yes _ = false
+  ... | no _ = true
+
+  forward : α ≡ β → (n : ℕ) → γ n ≡ false
+  forward α=β n with α n =B β n
+  ... | yes _ = refl
+  ... | no αn≠βn = ex-falso (αn≠βn (cong (λ f → f n) α=β))
+
+  backward : ((n : ℕ) → γ n ≡ false) → α ≡ β
+  backward all-false = funExt pointwise
+    where
+    pointwise : (n : ℕ) → α n ≡ β n
+    pointwise n with α n =B β n | all-false n
+    ... | yes αn=βn | _ = αn=βn
+    ... | no _ | γn=f = ex-falso (true≢false γn=f)
+
 -- Negation of decidable proposition is decidable
 decNeg : {P : Type₀} → isProp P → Dec P → Dec (¬ P)
 decNeg _ (yes p) = no (λ ¬p → ¬p p)
@@ -2545,6 +2573,7 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - ¬-Open : Open → Closed, ¬-Closed : Closed → Open: bundled negation
 -- - ⋀-Closed : (ℕ → Closed) → Closed, ⋁-Open : (ℕ → Open) → Open: countable ops
 -- - Bool-equality-*, ℕ-equality-*: equality in Bool/ℕ is decidable/open/closed
+-- - CantorSpace-equality-closed: equality in 2^ℕ is closed
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
