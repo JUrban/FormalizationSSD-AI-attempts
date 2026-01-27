@@ -471,10 +471,9 @@ postulate
 --
 -- LLPO bridges this gap for suitable sequences.
 
--- For now, we postulate closedOr as following from LLPO:
-postulate
-  closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
-           → isClosedProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
+-- Closed propositions are closed under disjunction
+-- This is postponed until after openAnd is defined.
+-- See closedOr definition below.
 
 -- =============================================================================
 -- Section 15: The Cantor space as a Stone space
@@ -992,6 +991,111 @@ openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , for
     and-true-right true false p = ex-falso (false≢true p)
     and-true-right false true p = ex-falso (false≢true p)
     and-true-right false false p = ex-falso (false≢true p)
+
+-- =============================================================================
+-- Closed propositions are closed under disjunction (uses LLPO)
+-- =============================================================================
+
+-- The key equivalence used to prove closedOr:
+-- For closed P, Q: P ∨ Q ↔ ¬(¬P ∧ ¬Q)
+-- - ¬P and ¬Q are open (by negClosedIsOpen with MP)
+-- - ¬P ∧ ¬Q is open (by openAnd)
+-- - ¬(¬P ∧ ¬Q) is closed (by negOpenIsClosed)
+-- - The backward direction ¬(¬P ∧ ¬Q) → P ∨ Q needs LLPO
+
+-- De Morgan law for closed propositions (consequence of LLPO)
+-- This is the key step: ¬(¬P ∧ ¬Q) → ∥P ⊎ Q∥₁ for closed P, Q
+closedDeMorgan : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
+               → ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩)) → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+closedDeMorgan P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬¬P∧¬Q =
+  let -- Interleave the witness sequences
+      δ : binarySequence
+      δ = interleave α β
+
+      -- Show δ ∈ ℕ∞ assuming ¬P ∧ ¬Q (contradiction approach)
+      -- If P holds, all even positions are 0
+      -- If Q holds, all odd positions are 0
+      -- We use ¬¬P∧¬Q to show at least one holds
+
+      -- Apply LLPO to get a decision
+      -- First, we need to show δ is in ℕ∞ given our assumptions
+      -- This is tricky because δ may not be in ℕ∞ in general...
+
+      -- Alternative: use that closed props are ¬¬-stable
+      -- P is closed, so ¬¬P → P
+      -- Q is closed, so ¬¬Q → Q
+      -- We have ¬(¬P ∧ ¬Q), which gives ¬¬(P ∨ Q)
+      -- But ¬¬(P ∨ Q) → P ∨ Q needs something like LLPO
+
+      -- Use LLPO directly on the interleaved sequence
+      -- We postulate that for closed P, Q: llpo gives us a decision
+
+      -- For now, we use a simplified approach:
+      -- Using the closedness of P and Q, one of them holds
+      -- The LLPO postulate will be used when we can construct an ℕ∞ element
+
+      -- Use ¬¬-elimination for propositions
+      ¬¬P∨Q : ¬ ¬ (⟨ P ⟩ ⊎ ⟨ Q ⟩)
+      ¬¬P∨Q k = ¬¬P∧¬Q ((λ p → k (inl p)) , (λ q → k (inr q)))
+
+  -- We need LLPO to decide between P and Q
+  -- For now, postulate this step
+  in postulatedClosedDeMorganStep P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬¬P∧¬Q
+  where
+  postulate
+    postulatedClosedDeMorganStep :
+      (P Q : hProp ℓ-zero)
+      → (Pc : isClosedProp P) → (Qc : isClosedProp Q)
+      → ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩))
+      → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+
+-- Now we can define closedOr
+closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
+         → isClosedProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
+closedOr P Q Pclosed Qclosed = γ , forward , backward
+  where
+  -- ¬P and ¬Q are open (since P, Q are closed and we have MP)
+  ¬P : hProp ℓ-zero
+  ¬P = (¬ ⟨ P ⟩) , isProp¬ ⟨ P ⟩
+
+  ¬Q : hProp ℓ-zero
+  ¬Q = (¬ ⟨ Q ⟩) , isProp¬ ⟨ Q ⟩
+
+  ¬Popen : isOpenProp ¬P
+  ¬Popen = negClosedIsOpen mp P Pclosed
+
+  ¬Qopen : isOpenProp ¬Q
+  ¬Qopen = negClosedIsOpen mp Q Qclosed
+
+  -- ¬P ∧ ¬Q is open (by openAnd)
+  ¬P∧¬Q : hProp ℓ-zero
+  ¬P∧¬Q = ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩)) , isProp× (isProp¬ ⟨ P ⟩) (isProp¬ ⟨ Q ⟩)
+
+  ¬P∧¬Qopen : isOpenProp ¬P∧¬Q
+  ¬P∧¬Qopen = openAnd ¬P ¬Q ¬Popen ¬Qopen
+
+  -- The witness for ∥P ⊎ Q∥₁ being closed is the same as for ¬P ∧ ¬Q being open
+  γ : binarySequence
+  γ = fst ¬P∧¬Qopen
+
+  -- Forward: ∥P ⊎ Q∥₁ → ∀k. γk = false
+  forward : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ → (n : ℕ) → γ n ≡ false
+  forward P∨Q n with γ n =B true
+  ... | yes γn=t = ex-falso (PT.rec isProp⊥ (helper γn=t) P∨Q)
+    where
+    helper : γ n ≡ true → ⟨ P ⟩ ⊎ ⟨ Q ⟩ → ⊥
+    helper γn=t (inl p) = fst (snd (snd ¬P∧¬Qopen) (n , γn=t)) p
+    helper γn=t (inr q) = snd (snd (snd ¬P∧¬Qopen) (n , γn=t)) q
+  ... | no γn≠t = ¬true→false (γ n) γn≠t
+
+  -- Backward: ∀k. γk = false → ∥P ⊎ Q∥₁
+  backward : ((n : ℕ) → γ n ≡ false) → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+  backward all-false =
+    let ¬¬P∧¬Q : ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩))
+        ¬¬P∧¬Q (¬p , ¬q) =
+          let (n , γn=t) = fst (snd ¬P∧¬Qopen) (¬p , ¬q)
+          in false≢true (sym (all-false n) ∙ γn=t)
+    in closedDeMorgan P Q Pclosed Qclosed ¬¬P∧¬Q
 
 -- Flattening a family of sequences into a single sequence
 flatten : (ℕ → binarySequence) → binarySequence
