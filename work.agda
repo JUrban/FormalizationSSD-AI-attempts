@@ -511,10 +511,11 @@ postulate
 -- For simplicity, we postulate the basic pairing properties
 
 private
-  -- Sum of first k natural numbers: 0 + 1 + ... + (k-1) = k(k-1)/2
+  -- Triangular number: T(n) = 0 + 1 + ... + n = n(n+1)/2
+  -- This is the number of elements before diagonal n
   triangular : ℕ → ℕ
   triangular zero = zero
-  triangular (suc k) = k +ℕ triangular k
+  triangular (suc n) = suc n +ℕ triangular n
 
   -- Cantor pairing: ⟨m, n⟩ = triangular(m + n) + n
   cantorPair : ℕ → ℕ → ℕ
@@ -533,12 +534,166 @@ private
   -- The k-th element overall is on diagonal w where triangular w ≤ k < triangular (w+1)
   -- Within the diagonal, position is k - triangular w
 
-  -- We postulate the unpair function and properties
-  -- (The implementation requires arithmetic lemmas about triangular numbers)
+  -- Boolean less-than for natural numbers
+  _<ᵇ_ : ℕ → ℕ → Bool
+  zero <ᵇ zero = false
+  zero <ᵇ suc n = true
+  suc m <ᵇ zero = false
+  suc m <ᵇ suc n = m <ᵇ n
+
+  -- Helper: find diagonal w given k, using fuel
+  -- Invariant: we're checking if k is on diagonal (acc + fuel - remaining_fuel)
+  findDiagonal : ℕ → ℕ → ℕ → ℕ
+  findDiagonal zero k acc = acc  -- out of fuel, return current
+  findDiagonal (suc fuel) k acc =
+    if k <ᵇ triangular (suc acc)
+    then acc  -- k < triangular(acc+1), so k is on diagonal acc
+    else findDiagonal fuel k (suc acc)  -- k >= triangular(acc+1), try next
+
+  -- Cantor unpairing: find diagonal w, then compute (w - n, n) where n = k - triangular w
+  cantorUnpair : ℕ → ℕ × ℕ
+  cantorUnpair k =
+    let w = findDiagonal (suc k) k 0  -- use k+1 as fuel (sufficient)
+        n = k ∸ triangular w
+        m = w ∸ n
+    in (m , n)
+
+  -- Lemmas about boolean comparison
+  <ᵇ-reflects : (m n : ℕ) → m <ᵇ n ≡ true → m < n
+  <ᵇ-reflects zero (suc n) _ = suc-≤-suc zero-≤
+  <ᵇ-reflects (suc m) (suc n) p = suc-≤-suc (<ᵇ-reflects m n p)
+
+  ¬<ᵇ-reflects : (m n : ℕ) → m <ᵇ n ≡ false → n ≤ m
+  ¬<ᵇ-reflects zero zero _ = ≤-refl
+  ¬<ᵇ-reflects (suc m) zero _ = zero-≤
+  ¬<ᵇ-reflects (suc m) (suc n) p = suc-≤-suc (¬<ᵇ-reflects m n p)
+
+  -- Arithmetic lemmas
+  +-∸-assoc : (a b c : ℕ) → c ≤ b → a +ℕ b ∸ c ≡ a +ℕ (b ∸ c)
+  +-∸-assoc a zero zero _ = refl
+  +-∸-assoc a (suc b) zero _ = refl
+  +-∸-assoc a (suc b) (suc c) (suc-≤-suc c≤b) = +-∸-assoc a b c c≤b
+
+  +∸-cancel : (a b : ℕ) → (a +ℕ b) ∸ b ≡ a
+  +∸-cancel a zero = +-zero a
+  +∸-cancel a (suc b) = +∸-cancel a b
+
+  ∸+-cancel : (a b : ℕ) → b ≤ a → (a ∸ b) +ℕ b ≡ a
+  ∸+-cancel a zero _ = +-zero a
+  ∸+-cancel (suc a) (suc b) (suc-≤-suc b≤a) =
+    (suc a ∸ suc b) +ℕ suc b   ≡⟨ refl ⟩
+    (a ∸ b) +ℕ suc b           ≡⟨ +-suc (a ∸ b) b ⟩
+    suc ((a ∸ b) +ℕ b)         ≡⟨ cong suc (∸+-cancel a b b≤a) ⟩
+    suc a ∎
+
+  -- triangular w ≤ triangular w + n
+  triangular≤cantorPair : (m n : ℕ) → triangular (m +ℕ n) ≤ cantorPair m n
+  triangular≤cantorPair m n = ≤-+k (triangular (m +ℕ n)) n
+    where
+    ≤-+k : (a b : ℕ) → a ≤ a +ℕ b
+    ≤-+k a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
+    ≤-+k a (suc b) = ≤-trans (≤-+k a b) (≤-suc ≤-refl)
+      where
+      ≤-suc : {x y : ℕ} → x ≤ y → x ≤ suc y
+      ≤-suc z = ≤-trans z (n≤1+n _)
+
+  -- cantorPair m n < triangular (suc (m + n))
+  -- triangular (suc w) = (suc w) + triangular w
+  -- cantorPair m n = triangular w + n where w = m + n
+  -- We need: triangular w + n < (suc w) + triangular w
+  -- i.e., n < suc w = suc (m + n)
+  -- This is always true since n ≤ m + n < suc (m + n)
+
+  cantorPair<triangular-suc : (m n : ℕ) → cantorPair m n < triangular (suc (m +ℕ n))
+  cantorPair<triangular-suc m n = suc-≤-suc (≤-+k (triangular (m +ℕ n)) n (m +ℕ n) (n≤m+n m n))
+    where
+    n≤m+n : (a b : ℕ) → b ≤ a +ℕ b
+    n≤m+n zero b = ≤-refl
+    n≤m+n (suc a) b = ≤-trans (n≤m+n a b) (n≤1+n _)
+
+    ≤-+k : (a b c : ℕ) → b ≤ c → a +ℕ b ≤ a +ℕ c
+    ≤-+k zero b c b≤c = b≤c
+    ≤-+k (suc a) b c b≤c = suc-≤-suc (≤-+k a b c b≤c)
+
+  -- Key lemma: if k < triangular (suc acc), then findDiagonal returns acc
+  findDiagonal-found : (fuel k acc : ℕ) → k <ᵇ triangular (suc acc) ≡ true
+                     → findDiagonal (suc fuel) k acc ≡ acc
+  findDiagonal-found fuel k acc p with k <ᵇ triangular (suc acc)
+  ... | true = refl
+
+  -- If k >= triangular (suc acc), findDiagonal continues to next acc
+  findDiagonal-continue : (fuel k acc : ℕ) → k <ᵇ triangular (suc acc) ≡ false
+                        → findDiagonal (suc fuel) k acc ≡ findDiagonal fuel k (suc acc)
+  findDiagonal-continue fuel k acc p with k <ᵇ triangular (suc acc)
+  ... | false = refl
+
+  -- Boolean comparison properties
+  <ᵇ-suc : (n : ℕ) → n <ᵇ suc n ≡ true
+  <ᵇ-suc zero = refl
+  <ᵇ-suc (suc n) = <ᵇ-suc n
+
+  -- Helper to convert between < and <ᵇ
+  <-reflects-<ᵇ : (a b : ℕ) → a < b → a <ᵇ b ≡ true
+  <-reflects-<ᵇ zero (suc b) _ = refl
+  <-reflects-<ᵇ (suc a) (suc b) (suc-≤-suc a<b) = <-reflects-<ᵇ a b a<b
+
+  cantorPair<ᵇ-triangular-suc : (m n : ℕ) → cantorPair m n <ᵇ triangular (suc (m +ℕ n)) ≡ true
+  cantorPair<ᵇ-triangular-suc m n = <-reflects-<ᵇ _ _ (cantorPair<triangular-suc m n)
+
+  -- For the full bijectivity proofs, we need:
+  -- 1. findDiagonal finds the correct diagonal w = m + n for cantorPair m n
+  -- 2. The arithmetic (cantorPair m n) - triangular w = n
+  -- 3. The arithmetic w - n = m
+  --
+  -- Step 2: (triangular w + n) - triangular w = n (by +∸-cancel)
+  cantorPair-triangular-diff : (m n : ℕ) → cantorPair m n ∸ triangular (m +ℕ n) ≡ n
+  cantorPair-triangular-diff m n = +∸-cancel n (triangular (m +ℕ n))
+    where
+    +∸-cancel' : (a b : ℕ) → (b +ℕ a) ∸ b ≡ a
+    +∸-cancel' a zero = refl
+    +∸-cancel' a (suc b) = +∸-cancel' a b
+
+  -- Step 3: (m + n) - n = m (standard arithmetic)
+  m+n∸n≡m : (m n : ℕ) → (m +ℕ n) ∸ n ≡ m
+  m+n∸n≡m m zero = +-zero m
+  m+n∸n≡m m (suc n) =
+    (m +ℕ suc n) ∸ suc n   ≡⟨ cong (_∸ suc n) (+-suc m n) ⟩
+    suc (m +ℕ n) ∸ suc n   ≡⟨ refl ⟩
+    (m +ℕ n) ∸ n           ≡⟨ m+n∸n≡m m n ⟩
+    m ∎
+
+  -- Step 1 is the main lemma: findDiagonal finds the right diagonal
+  -- This requires showing that for k = cantorPair m n with w = m + n:
+  -- - For all acc < w: k ≥ triangular (suc acc), so we continue
+  -- - For acc = w: k < triangular (suc w), so we stop
+
+  -- The proof requires well-founded induction on (w - acc)
+  -- For now, we postulate this key step
   postulate
-    cantorUnpair : ℕ → ℕ × ℕ
+    findDiagonal-correct : (m n : ℕ) →
+      findDiagonal (suc (cantorPair m n)) (cantorPair m n) 0 ≡ m +ℕ n
+
+  -- Now we can prove cantorUnpair-pair
+  cantorUnpair-pair : (m n : ℕ) → cantorUnpair (cantorPair m n) ≡ (m , n)
+  cantorUnpair-pair m n =
+    let k = cantorPair m n
+        w = m +ℕ n
+        findW = findDiagonal-correct m n
+    in
+    cantorUnpair k                                         ≡⟨ refl ⟩
+    (let w' = findDiagonal (suc k) k 0
+         n' = k ∸ triangular w'
+         m' = w' ∸ n'
+     in (m' , n'))                                          ≡⟨ cong (λ w' → ((w' ∸ (k ∸ triangular w')) , (k ∸ triangular w'))) findW ⟩
+    (w ∸ (k ∸ triangular w) , k ∸ triangular w)             ≡⟨ cong (λ x → (w ∸ x , x)) (cantorPair-triangular-diff m n) ⟩
+    (w ∸ n , n)                                              ≡⟨ cong (λ x → (x , n)) (m+n∸n≡m m n) ⟩
+    (m , n) ∎
+
+  -- For cantorPair-unpair, we need the reverse direction
+  -- If cantorUnpair k = (m, n), then cantorPair m n = k
+  -- This follows from the bijectivity of the diagonal enumeration
+  postulate
     cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
-    cantorUnpair-pair : (m n : ℕ) → cantorUnpair (cantorPair m n) ≡ (m , n)
 
 -- Flattening a family of sequences into a single sequence
 flatten : (ℕ → binarySequence) → binarySequence
