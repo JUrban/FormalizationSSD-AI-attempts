@@ -132,6 +132,11 @@ decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (
 ⊤-isClosed : isClosedProp ⊤-hProp
 ⊤-isClosed = decIsClosed ⊤-hProp (yes tt)
 
+-- Canonical closed proposition: (∀n. α n ≡ false) is closed with witness α
+-- This is the defining property of closed propositions
+allFalseIsClosed : (α : binarySequence) → isClosedProp (((n : ℕ) → α n ≡ false) , isPropΠ (λ n → isSetBool (α n) false))
+allFalseIsClosed α = α , (λ p → p) , (λ p → p)
+
 -- Negation of decidable proposition is decidable
 decNeg : {P : Type₀} → isProp P → Dec P → Dec (¬ P)
 decNeg _ (yes p) = no (λ ¬p → ¬p p)
@@ -2202,6 +2207,14 @@ closedEquiv : (P Q : hProp ℓ-zero) → (⟨ P ⟩ → ⟨ Q ⟩) → (⟨ Q �
             → isClosedProp P → isClosedProp Q
 closedEquiv P Q P→Q Q→P (α , P→∀ , ∀→P) =
   α , (λ q → P→∀ (Q→P q)) , (λ w → P→Q (∀→P w))
+
+-- Path transport for open/closed (uses equivalence via paths between hProps)
+-- If P ≡ Q as hProps, then isOpenProp P → isOpenProp Q
+openPath : {P Q : hProp ℓ-zero} → P ≡ Q → isOpenProp P → isOpenProp Q
+openPath {P} {Q} P≡Q Popen = openEquiv P Q (transport (cong fst P≡Q)) (transport (cong fst (sym P≡Q))) Popen
+
+closedPath : {P Q : hProp ℓ-zero} → P ≡ Q → isClosedProp P → isClosedProp Q
+closedPath {P} {Q} P≡Q Pclosed = closedEquiv P Q (transport (cong fst P≡Q)) (transport (cong fst (sym P≡Q))) Pclosed
 
 -- =============================================================================
 -- Section 23: Decidability characterization
