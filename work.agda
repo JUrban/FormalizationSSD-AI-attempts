@@ -34,8 +34,11 @@ open import Cubical.Algebra.CommRing
 open import Cubical.Algebra.BooleanRing
 open import Cubical.Algebra.BooleanRing.Instances.Bool
 
--- Note: Axioms.StoneDuality import removed due to library issues
--- The key definitions are provided locally below
+-- Stone Duality infrastructure (library fixes enabled this import)
+open import Axioms.StoneDuality using (StoneDualityAxiom; Sp; Booleω; SpEmbedding)
+
+-- Markov principle infrastructure from OmnisciencePrinciples
+import OmnisciencePrinciples.Markov as MarkovLib
 
 -- =============================================================================
 -- Section 1: Preliminaries and Basic Definitions
@@ -576,12 +579,23 @@ openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (in
   let (k , βk=t) = Q→∃β q
   in suc (2 ·ℕ k) , (interleave-2k+1 α β k ∙ βk=t)
 
--- Markov's Principle follows from Stone Duality (proven in the library)
--- Proof sketch:
--- 1. If ¬(∀n. αn = false), then Sp(2/α) is empty (emptySp from Markov.agda)
+-- Markov's Principle follows from Stone Duality
+-- The proof infrastructure is now available in:
+--   - MarkovLib.emptySp : shows Sp(2/α) is empty when α ≠ 0
+--   - MarkovLib.extract' : converts ∃[n] α n ≡ true → Σ[n] α n ≡ true
+--   - StoneDualityAxiom from Axioms.StoneDuality
+--   - SpEmbedding : StoneDualityAxiom → isEmbedding Sp
+--
+-- Full proof sketch:
+-- 1. If ¬(∀n. αn = false), then Sp(2/α) is empty (MarkovLib.emptySp)
 -- 2. By Stone Duality (Sp is an embedding), Sp(2/α) = ∅ = Sp(trivial) ⟹ 2/α = trivial
--- 3. Hence 0 = 1 in 2/α, so true ∈ αI (trivialQuotient→1∈I)
--- 4. By t∈I→αn, this gives Σn. αn = true
+-- 3. Hence 0 = 1 in 2/α, so true ∈ αI (CommRingQuotients.TrivialIdeal.trivialQuotient→1∈I)
+-- 4. By MarkovLib.t∈I→αn and MarkovLib.extract', this gives Σn. αn = true
+--
+-- The missing piece to complete the proof is:
+--   spectrumEmptyImpliesTrivial : (B : Booleω) → (Sp B → ⊥) → 0 ≡ 1 in B
+-- which requires showing that the trivial Boolean ring is in Booleω and using SpEmbedding.
+-- For now, MP is postulated as a consequence of the Stone Duality axiom.
 postulate
   mp : MarkovPrinciple
 
