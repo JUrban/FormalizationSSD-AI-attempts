@@ -112,6 +112,26 @@ decIsClosed : (P : hProp ℓ-zero) → Dec ⟨ P ⟩ → isClosedProp P
 decIsClosed P (yes p) = (λ _ → false) , (λ _ _ → refl) , (λ _ → p)
 decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (λ f → ex-falso (true≢false (f 0)))
 
+-- ⊥ (false) is both open and closed
+⊥-hProp : hProp ℓ-zero
+⊥-hProp = ⊥ , isProp⊥
+
+⊥-isOpen : isOpenProp ⊥-hProp
+⊥-isOpen = decIsOpen ⊥-hProp (no (λ x → x))
+
+⊥-isClosed : isClosedProp ⊥-hProp
+⊥-isClosed = decIsClosed ⊥-hProp (no (λ x → x))
+
+-- ⊤ (true/Unit) is both open and closed
+⊤-hProp : hProp ℓ-zero
+⊤-hProp = Unit , (λ _ _ → refl)
+
+⊤-isOpen : isOpenProp ⊤-hProp
+⊤-isOpen = decIsOpen ⊤-hProp (yes tt)
+
+⊤-isClosed : isClosedProp ⊤-hProp
+⊤-isClosed = decIsClosed ⊤-hProp (yes tt)
+
 -- =============================================================================
 -- Section 4: Stone Spaces and Stone Duality Axiom
 -- =============================================================================
@@ -217,6 +237,19 @@ openIsStable mp P (α , P→∃ , ∃→P) ¬¬p = ∃→P (mp α ¬all-false)
   where
   ¬all-false : ¬ ((n : ℕ) → α n ≡ false)
   ¬all-false all-false = ¬¬p (λ p → false≢true (sym (all-false (fst (P→∃ p))) ∙ snd (P→∃ p)))
+
+-- Double negation of open proposition is open (requires MP)
+-- P open → ¬P closed → ¬¬P open
+¬¬hProp : hProp ℓ-zero → hProp ℓ-zero
+¬¬hProp P = (¬ ¬ ⟨ P ⟩) , isProp¬ (¬ ⟨ P ⟩)
+
+doubleNegOpenIsOpen : MarkovPrinciple → (P : hProp ℓ-zero) → isOpenProp P → isOpenProp (¬¬hProp P)
+doubleNegOpenIsOpen mp P Popen = negClosedIsOpen mp (¬hProp P) (negOpenIsClosed P Popen)
+
+-- Double negation of closed proposition is closed
+-- P closed → ¬P open → ¬¬P closed
+doubleNegClosedIsClosed : MarkovPrinciple → (P : hProp ℓ-zero) → isClosedProp P → isClosedProp (¬¬hProp P)
+doubleNegClosedIsClosed mp P Pclosed = negOpenIsClosed (¬hProp P) (negClosedIsOpen mp P Pclosed)
 
 -- =============================================================================
 -- Section 10: Closure properties
