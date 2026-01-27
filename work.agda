@@ -2714,5 +2714,28 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 --   Requires Stone space infrastructure to prove properly
 
 -- =============================================================================
+-- FUTURE WORK (not yet formalized)
+-- =============================================================================
+--
+-- The following items from the tex require additional infrastructure:
+--
+-- Stone space infrastructure (tex Section 1):
+-- - Boolean algebra Boole and spectrum Sp(B)
+-- - Stone Duality axiom (evaluation B → 2^{Sp(B)} is iso)
+-- - Surjections are formal surjections axiom
+-- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
+-- - closedSigmaClosed: Σ of closed over closed is closed (tex 1785)
+--
+-- Overtly discrete types (tex Section 2):
+-- - ODisc: sequential colimits of finite sets
+-- - PropOpenIffOdisc: P open ↔ P overtly discrete (tex 1302)
+-- - ODiscEqualityOpen: equality in ODisc is open (tex 1335)
+--
+-- Compact Hausdorff spaces (tex Section 3):
+-- - CHaus: types with closed equality and Stone cover
+-- - CompactHausdorffClosed: closed subsets of CHaus (tex 1906)
+-- - Interval I: Cauchy reals as CHaus (tex 2272)
+--
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
