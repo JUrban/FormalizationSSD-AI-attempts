@@ -324,6 +324,15 @@ negClosedIsOpen mp P (α , P→∀ , ∀→P) = α , forward , backward
   backward : Σ[ n ∈ ℕ ] α n ≡ true → ¬ ⟨ P ⟩
   backward (n , αn=t) p = true≢false (sym αn=t ∙ P→∀ p n)
 
+-- Bundled negation: Open → Closed (negation of open is closed)
+¬-Open : Open → Closed
+¬-Open O = ¬hProp (fst O) , negOpenIsClosed (fst O) (snd O)
+
+-- Bundled negation: Closed → Open (requires MP, uses the postulate)
+-- Note: This uses the Markov principle (mp) postulate
+¬-Closed : Closed → Open
+¬-Closed C = ¬hProp (fst C) , negClosedIsOpen mp (fst C) (snd C)
+
 -- ¬¬-stability of closed propositions
 -- If P is closed, then ¬¬P → P
 closedIsStable : (P : hProp ℓ-zero) → isClosedProp P → ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
@@ -2503,6 +2512,7 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - openProp, closedProp, openType, closedType, open→hProp, closed→hProp: projections
 -- - ⊥-Open, ⊥-Closed, ⊤-Open, ⊤-Closed: bundled ⊥/⊤
 -- - _∧-Open_, _∧-Closed_, _∨-Open_, _∨-Closed_: bundled meet/join
+-- - ¬-Open : Open → Closed, ¬-Closed : Closed → Open: bundled negation
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
