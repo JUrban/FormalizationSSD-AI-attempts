@@ -1982,6 +1982,89 @@ openAndFixed P isPropP p Q Qopen =
   let (α , Q→∃ , ∃→Q) = Qopen
   in α , (λ pq → Q→∃ (snd pq)) , (λ x → p , ∃→Q x)
 
+-- Closed propositions are stable under conjunction with a fixed true proposition
+-- If P holds and Q is closed, then P × Q is closed (equivalent to Q via P)
+closedAndFixed : (P : Type₀) → (isPropP : isProp P) → P
+                → (Q : hProp ℓ-zero) → isClosedProp Q
+                → isClosedProp ((P × ⟨ Q ⟩) , isProp× isPropP (snd Q))
+closedAndFixed P isPropP p Q Qclosed =
+  let (α , Q→∀ , ∀→Q) = Qclosed
+  in α , (λ pq → Q→∀ (snd pq)) , (λ x → p , ∀→Q x)
+
+-- =============================================================================
+-- Section 21: Dependent sums of open/closed propositions
+-- =============================================================================
+
+-- Open propositions over a decidable base
+-- If D is decidable and Q : D → Open, then Σ D Q is open
+-- Proof: by case split on D
+--   - If D holds (d), then Σ D Q ↔ Q d (which is open)
+--   - If ¬D, then Σ D Q ↔ ⊥ (which is open)
+-- For decidable D with witness d, the truncated sigma is equivalent to Q d
+-- So we can use the same openness witness, adjusting the conversions appropriately
+-- The key is using MP to extract a witness from double negation
+openSigmaDecidable : (D : hProp ℓ-zero) → Dec ⟨ D ⟩
+                   → (Q : ⟨ D ⟩ → hProp ℓ-zero) → ((d : ⟨ D ⟩) → isOpenProp (Q d))
+                   → isOpenProp (∥ Σ[ d ∈ ⟨ D ⟩ ] ⟨ Q d ⟩ ∥₁ , squash₁)
+openSigmaDecidable D (yes d) Q Qopen = α , forward , backward
+  where
+  -- Use the witness for Q d
+  α = Qopen d .fst
+  Qd→∃ = fst (snd (Qopen d))
+  ∃→Qd = snd (snd (Qopen d))
+
+  -- Forward: use MP to extract witness from double negation
+  forward : ∥ Σ[ d' ∈ ⟨ D ⟩ ] ⟨ Q d' ⟩ ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
+  forward truncExists = mp α ¬allFalse
+    where
+    ¬allFalse : ¬ ((n : ℕ) → α n ≡ false)
+    ¬allFalse allFalse = PT.rec isProp⊥ helper truncExists
+      where
+      helper : Σ[ d' ∈ ⟨ D ⟩ ] ⟨ Q d' ⟩ → ⊥
+      helper (d' , q) =
+        let q' = subst (λ x → ⟨ Q x ⟩) (snd D d' d) q
+            (n , αn=t) = Qd→∃ q'
+        in false≢true (sym (allFalse n) ∙ αn=t)
+
+  -- Backward: Σ n, α n = true → ∥ Σ D Q ∥₁
+  backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ d' ∈ ⟨ D ⟩ ] ⟨ Q d' ⟩ ∥₁
+  backward w = ∣ d , ∃→Qd w ∣₁
+
+openSigmaDecidable D (no ¬d) Q Qopen = α , forward , backward
+  where
+  -- When ¬D, ∥ Σ D Q ∥₁ ↔ ⊥ (which is open with constant false witness)
+  α = ⊥-isOpen .fst
+
+  forward : ∥ Σ[ d ∈ ⟨ D ⟩ ] ⟨ Q d ⟩ ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
+  forward x = ex-falso (PT.rec isProp⊥ (λ { (d , _) → ¬d d }) x)
+
+  -- α n = false for all n, so Σ n, α n = true is empty
+  backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ d ∈ ⟨ D ⟩ ] ⟨ Q d ⟩ ∥₁
+  backward (n , αn=t) = ex-falso (true≢false (sym αn=t))
+
+-- Closed propositions over a decidable base
+-- If D is decidable and Q : D → Closed, then Σ D Q is closed
+closedSigmaDecidable : (D : hProp ℓ-zero) → Dec ⟨ D ⟩
+                     → (Q : ⟨ D ⟩ → hProp ℓ-zero) → ((d : ⟨ D ⟩) → isClosedProp (Q d))
+                     → isClosedProp (∥ Σ[ d ∈ ⟨ D ⟩ ] ⟨ Q d ⟩ ∥₁ , squash₁)
+closedSigmaDecidable D (yes d) Q Qclosed =
+  let (α , Qd→∀ , ∀→Qd) = Qclosed d
+      forward : ∥ Σ[ d' ∈ ⟨ D ⟩ ] ⟨ Q d' ⟩ ∥₁ → (n : ℕ) → α n ≡ false
+      forward = PT.rec (isPropΠ (λ _ → isSetBool _ _))
+                       (λ { (d' , q) → Qd→∀ (subst (λ x → ⟨ Q x ⟩) (snd D d' d) q) })
+      backward : ((n : ℕ) → α n ≡ false) → ∥ Σ[ d' ∈ ⟨ D ⟩ ] ⟨ Q d' ⟩ ∥₁
+      backward w = ∣ d , ∀→Qd w ∣₁
+  in α , forward , backward
+closedSigmaDecidable D (no ¬d) Q Qclosed =
+  -- When ¬D, ∥ Σ D Q ∥₁ ↔ ⊥ (which is closed with constant true witness)
+  -- α = λ _ → true, so (∀n. α n = false) implies true = false, contradiction
+  let α = ⊥-isClosed .fst  -- α n = true for all n
+      backward : ((n : ℕ) → α n ≡ false) → ∥ Σ[ d ∈ ⟨ D ⟩ ] ⟨ Q d ⟩ ∥₁
+      backward f = ex-falso (true≢false (f 0))
+  in α ,
+     (λ x → PT.rec (isPropΠ (λ _ → isSetBool _ _)) (λ { (d , _) → ex-falso (¬d d) }) x) ,
+     backward
+
 -- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
