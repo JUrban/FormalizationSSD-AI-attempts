@@ -1,0 +1,34 @@
+CHANGES0013 - Fixing compilation errors, adding openAnd infrastructure
+
+Summary:
+- Fixed many compilation errors for cubical Agda 2.8 compatibility
+- Major changes to arithmetic lemmas and Cantor pairing proofs
+
+Key fixes applied:
+1. Renamed _<ᵇ_ to _<ᵇ'_ to avoid clash with cubical library
+2. Used pred-≤-pred instead of pattern matching on suc-≤-suc (cubical ≤ is Sigma type)
+3. Fixed ≤-+k-local, ≤-sucℕ uses (no underscore argument needed)
+4. Replaced Trichotomy pattern matches: yes/no -> lt/eq/gt
+5. Added missing coverage cases throughout (zero cases)
+6. Fixed subst direction issues in several proofs
+7. Fixed findDiagonal-aux fuel mismatch issues
+
+Current state:
+- Still has compilation error in findDiagonal-Tw≤k-aux helper
+- The Cantor pairing bijectivity proofs are partially complete
+- openAnd is defined but relies on these proofs
+
+Status: work.agda (1246 lines, up from 1104)
+Previous backup: bck0012 (1104 lines)
+Difference: +142 lines (arithmetic infrastructure, still needs fixing)
+
+Remaining issues:
+- findDiagonal-Tw≤k-aux false case needs fix for recursive call type
+- May need to simplify or postulate some Cantor pairing results
+
+Postulates remaining (5 total):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. closedOr (from LLPO) - target for current work
+4. implicationOpenClosed
+5. closedMarkov

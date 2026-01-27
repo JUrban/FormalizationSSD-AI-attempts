@@ -1,0 +1,41 @@
+CHANGES0007 - Stone space documentation and summary
+
+Summary:
+- Added documentation about Stone spaces from the library
+- Added formalization status summary
+
+New content:
+
+1. Section 19: Stone Spaces
+   - Documented hasStoneStr, Stone definitions from Axioms.StoneDuality
+   - Noted that spectrum Sp B = BoolHom B Bool
+   - Key properties: profinite, closed propositions, finite limits closure
+   - Examples: Cantor space 2^ℕ, ℕ_∞
+
+2. Summary of formalization status
+   - Organized all proved theorems vs postulates
+   - Distinguished Stone Duality consequences vs technical postulates
+
+Complete list of postulates in work.agda:
+1. cantorUnpair, cantorPair-unpair, cantorUnpair-pair (Cantor pairing bijectivity)
+2. mp : MarkovPrinciple (from Stone Duality)
+3. llpo : LLPO (from Stone Duality)
+4. closedOr : closed under disjunction (from LLPO)
+5. clopenIsDecidable : clopen implies decidable
+6. implicationOpenClosed : (P → Q) closed when P open, Q closed
+7. closedMarkov : ¬∀n.¬Pₙ → ∥∃n.Pₙ∥ for closed (Pₙ)
+
+Complete list of proved theorems:
+1. negOpenIsClosed : ¬P closed when P open
+2. decIsOpen, decIsClosed : decidable props are open and closed
+3. closedIsStable : ¬¬P → P for closed P
+4. openIsStable : ¬¬P → P for open P (given MP)
+5. negClosedIsOpen : ¬P open when P closed (given MP)
+6. closedAnd : P ∧ Q closed when P, Q closed
+7. openOrMP, openOr : P ∨ Q open when P, Q open
+8. closedCountableIntersection : ∀n.Pₙ closed when each Pₙ closed
+9. openCountableUnion : ∃n.Pₙ open when each Pₙ open
+
+Status: work.agda compiles successfully (710 lines, up from 672)
+Previous backup: bck0006 (672 lines)
+Difference: +38 lines (documentation)

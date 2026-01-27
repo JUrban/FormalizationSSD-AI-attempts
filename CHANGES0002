@@ -1,0 +1,28 @@
+CHANGES0002 - Added ¬¬-stability and more structure
+
+Summary:
+- Added more theorems about open and closed propositions
+- Added ℕ_∞ elements (∞ and embedding ι : ℕ → ℕ_∞)
+
+New Proven Theorems:
+1. negClosedIsOpen: negation of a closed proposition is open (requires MP)
+2. closedIsStable: closed propositions are ¬¬-stable
+3. openIsStable: open propositions are ¬¬-stable (requires MP)
+4. ∞ : ℕ∞ - the element that is false everywhere
+5. ι : ℕ → ℕ∞ - embedding of ℕ into ℕ_∞ (element that is 1 at exactly one position)
+
+Postulated (to be proved later):
+- closedAnd: closed propositions closed under conjunction
+- openOr: open propositions closed under disjunction
+
+Helper definitions added:
+- half : ℕ → ℕ (half of a natural number)
+- isEvenB : ℕ → Bool (parity test)
+- 2·suc, isEvenB-2k, isEvenB-2k+1, half-2k, half-2k+1 (lemmas for interleaving)
+
+Imports added:
+- Cubical.Data.Nat.Properties (for discreteℕ)
+
+Status: work.agda compiles successfully (296 lines, up from 187)
+Previous backup: 187 lines
+Difference: +109 lines (all new content, no deletions)

@@ -1,0 +1,53 @@
+CHANGES0004 - Closure properties fully proved with interleaving
+
+Summary:
+- Proved closedAnd (closed propositions closed under conjunction)
+- Proved openOrMP (open propositions closed under disjunction, given MP)
+- Derived openOr from openOrMP using postulated Markov's Principle
+
+New definitions and proofs:
+
+1. interleave : binarySequence -> binarySequence -> binarySequence
+   Interleaves two sequences: gamma(2k) = alpha(k), gamma(2k+1) = beta(k)
+
+2. interleave-2k, interleave-2k+1 : Correctness lemmas for interleaving
+   Show that interleave correctly extracts even/odd indexed values
+
+3. closedAnd : (P Q : hProp) -> isClosedProp P -> isClosedProp Q
+             -> isClosedProp (P x Q)
+   FULLY PROVED using interleaving:
+   - Given alpha witnessing P closed, beta witnessing Q closed
+   - Construct gamma = interleave alpha beta
+   - Forward: if P /\ Q, then both alpha and beta are all-false, so gamma is all-false
+   - Backward: if gamma is all-false, extract alpha-zero from even indices,
+     beta-zero from odd indices
+
+4. openOrMP : MarkovPrinciple -> (P Q : hProp) -> isOpenProp P -> isOpenProp Q
+            -> isOpenProp (|| P + Q ||)
+   PROVED given Markov:
+   - Given alpha witnessing P open, beta witnessing Q open
+   - Construct gamma = interleave alpha beta
+   - Backward: if gamma(n) = true, check if n is even (P holds) or odd (Q holds)
+   - Forward: from || P + Q ||, get ¬(all gamma_n = false), apply Markov
+
+5. mp : MarkovPrinciple (postulate)
+   Markov's Principle follows from Stone Duality (proof sketch documented)
+
+6. openOr : derived from openOrMP using mp
+   Open propositions are closed under finite disjunction
+
+7. openOrNonTrunc : helper for non-truncated disjunctions
+   When we have P + Q (not truncated), can directly construct witness
+
+Postulates remaining:
+- mp : MarkovPrinciple (follows from Stone Duality)
+- llpo : LLPO (follows from Stone Duality)
+- closedOr : closed propositions closed under disjunction (follows from LLPO)
+
+Library imports working:
+- Axioms.StoneDuality imported successfully
+- OmnisciencePrinciples.Markov imported (for extract', exists_alpha_n)
+
+Status: work.agda compiles successfully (507 lines, up from 418)
+Previous backup: bck0003 (418 lines)
+Difference: +89 lines (new proofs and lemmas)

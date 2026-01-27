@@ -1,0 +1,28 @@
+CHANGES0012 - Proved clopenIsDecidable
+
+Summary:
+- PROVED clopenIsDecidable (was postulate)
+- Added isPropDec helper
+
+Proof of clopenIsDecidable:
+Following the tex file (Corollary 774):
+1. If P is open and closed, then ¬P is open (by negClosedIsOpen using MP)
+2. P ∨ ¬P is open (finite disjunction of opens via openOr)
+3. Open propositions are ¬¬-stable (by openIsStable)
+4. ¬¬(P ∨ ¬P) is constructively provable
+5. Therefore P ∨ ¬P holds, i.e., P is decidable
+
+New definitions:
+- isPropDec : (P : hProp) → isProp (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩)
+- clopenIsDecidable : FULLY PROVED (was postulate)
+
+Postulates remaining (5 total, down from 6):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. closedOr (from LLPO)
+4. implicationOpenClosed
+5. closedMarkov
+
+Status: work.agda (1104 lines, up from 1069)
+Previous backup: bck0011 (1069 lines)
+Difference: +35 lines (clopenIsDecidable proof)

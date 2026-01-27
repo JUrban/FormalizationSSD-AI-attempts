@@ -1,0 +1,24 @@
+CHANGES0001 - Initial setup of work.agda
+
+Summary:
+- Created initial structure for formalizing "A Foundation for Synthetic Stone Duality"
+- Set up basic imports from Cubical Agda library
+- Defined binary sequences (binarySequence = ℕ → Bool)
+- Defined Cantor space as binarySequence
+- Defined biconditional (↔) for logical equivalence
+
+Open and Closed Propositions:
+- Defined isOpenProp: A proposition P is open if ∃ α : 2^ℕ such that P ↔ ∃n, α n = true
+- Defined isClosedProp: A proposition P is closed if ∃ α : 2^ℕ such that P ↔ ∀n, α n = false
+- Defined Open and Closed as Σ-types bundling hProps with their openness/closedness witnesses
+- Proved negOpenIsClosed: negation of an open proposition is closed
+- Proved decIsOpen: every decidable proposition is open
+- Proved decIsClosed: every decidable proposition is closed
+
+Types defined (not proved):
+- MarkovPrinciple: ∀ α, ¬(∀n, α n = false) → Σn, α n = true
+- WLPO: ∀ α, Dec(∀n, α n = false)
+- ℕ∞: sequences hitting true at most once
+- LLPO: for all α : ℕ∞, even/odd splitting property
+
+Status: work.agda compiles successfully (187 lines)

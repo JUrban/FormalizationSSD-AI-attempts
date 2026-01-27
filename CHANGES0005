@@ -1,0 +1,50 @@
+CHANGES0005 - Countable closure properties for open/closed propositions
+
+Summary:
+- Added Cantor pairing function infrastructure
+- Proved closedCountableIntersection (countable intersection of closed props is closed)
+- Proved openCountableUnion (countable union of open props is open, using MP)
+
+New definitions and proofs:
+
+1. Cantor pairing infrastructure:
+   - triangular : N -> N (triangular numbers: 0, 0+1, 0+1+2, ...)
+   - cantorPair : N -> N -> N (Cantor pairing function)
+   - cantorUnpair : N -> N x N (inverse, postulated)
+   - cantorPair-unpair, cantorUnpair-pair (round-trip properties, postulated)
+
+2. flatten : (N -> binarySequence) -> binarySequence
+   Flattens a family of sequences into a single sequence via Cantor pairing:
+   flatten alphas k = alphas (fst (cantorUnpair k)) (snd (cantorUnpair k))
+
+3. closedCountableIntersection :
+   (P : N -> hProp) -> ((n : N) -> isClosedProp (P n))
+   -> isClosedProp ((n : N) -> P n)
+   FULLY PROVED:
+   - Forward: if all P_n hold, all witness sequences are all-false,
+     so the flattened sequence is all-false
+   - Backward: if flattened sequence is all-false, for each n,
+     the n-th witness sequence is all-false (via Cantor pairing),
+     so P_n holds
+
+4. openCountableUnion :
+   (P : N -> hProp) -> ((n : N) -> isOpenProp (P n))
+   -> isOpenProp (|| Sigma n. P n ||)
+   FULLY PROVED using Markov:
+   - Backward: if beta(k) = true, extract n,m from Cantor unpair,
+     witness shows P_n holds
+   - Forward: use Markov - from || Sigma n. P n ||, get ¬(all beta = false),
+     then MP gives concrete witness
+
+Postulates added:
+- cantorUnpair : N -> N x N
+- cantorPair-unpair, cantorUnpair-pair (Cantor pairing bijectivity)
+
+Postulates remaining (from previous):
+- mp : MarkovPrinciple
+- llpo : LLPO
+- closedOr : closed propositions closed under finite disjunction
+
+Status: work.agda compiles successfully (629 lines, up from 507)
+Previous backup: bck0004 (507 lines)
+Difference: +122 lines (countable closure properties)

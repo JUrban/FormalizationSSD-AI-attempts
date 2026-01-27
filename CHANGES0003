@@ -1,0 +1,50 @@
+CHANGES0003 - Full closure properties and LLPO/closedOr postulates
+
+Summary:
+- Removed postulates for closedAnd and openOr - both now fully proven
+- Added LLPO and closedOr as postulates (following from Stone Duality)
+- Added extensive documentation about the Stone Duality proof of LLPO
+- Fixed library files for Agda 2.8 compatibility (copattern syntax changes)
+
+Fully Proven Theorems:
+1. closedAnd: Closed propositions are closed under finite conjunction
+   - Uses interleave α β to combine witnesses
+   - Forward: if P ∧ Q, both α and β are all-false, hence γ is all-false
+   - Backward: if γ is all-false, extract α and β proofs from even/odd indices
+
+2. openOr: Open propositions are closed under finite disjunction (requires MP)
+   - Uses interleave α β for the witness sequence
+   - Forward direction uses Markov's principle to extract a concrete witness
+   - Backward: given witness n, determine if even (P holds) or odd (Q holds)
+
+3. openOrNonTruncated: Helper for non-truncated disjunctions
+   - When we have definite knowledge (P ⊎ Q rather than ∥ P ⊎ Q ∥₁)
+   - Can directly construct the witness without needing Markov
+
+Postulated (as consequences of Stone Duality):
+1. llpo : LLPO - the lesser limited principle of omniscience
+   - For α : ℕ∞, either (∀k. α(2k) = 0) or (∀k. α(2k+1) = 0)
+   - Proof sketch documented in comments
+
+2. closedOr : Closed propositions closed under finite disjunction
+   - Follows from LLPO (Prop 1.4.1 of Diener's constructive reverse math)
+
+Helper definitions added:
+- interleave : binarySequence → binarySequence → binarySequence
+- interleave-2k, interleave-2k+1: correctness proofs for interleaving
+
+Library files fixed:
+- FreeBool.agda: freeBA-universal-property copattern syntax
+- QuotientBool.agda: evalInduce proof
+- WLPO.agda: implicit argument inference for ≤-max lemmas
+- Shouldhave.agda: QBEvalInduce reference
+- PresentedBoole.agda: Iso field names (sec/ret vs rightInv/leftInv)
+- QuickFixes.agda: Multiple Iso copattern definitions
+
+Status: work.agda compiles successfully (418 lines, up from 296)
+Previous backup: bck0002 (296 lines)
+Difference: +122 lines
+
+Note: Local library imports are currently commented out in work.agda
+due to additional copattern compatibility issues in CategoryTheory
+files. The key theorems are stated with postulates.

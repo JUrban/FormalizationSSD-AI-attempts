@@ -1,0 +1,3128 @@
+% latexmk -pdf -pvc main-fancy.tex
+\documentclass[a4paper,UKenglish,cleveref, autoref, thm-restate, numberwithinsect]{lipics-v2021}
+\RequirePackage{amsmath,amssymb,mathtools,amsxtra,stmaryrd}
+\RequirePackage{tikz}
+\RequirePackage{cleveref}
+\usetikzlibrary{arrows, cd, babel}
+\include{zariski.sty}
+\newtheorem{axiom}{Axiom}
+
+%This is a template for producing LIPIcs articles. 
+%See lipics-v2021-authors-guidelines.pdf for further information.
+%for A4 paper format use option "a4paper", for US-letter use option "letterpaper"
+%for british hyphenation rules use option "UKenglish", for american hyphenation rules use option "USenglish"
+%for section-numbered lemmas etc., use "numberwithinsect"
+%for enabling cleveref support, use "cleveref"
+%for enabling autoref support, use "autoref"
+%for anonymousing the authors (e.g. for double-blind review), add "anonymous"
+%for enabling thm-restate support, use "thm-restate"
+%for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
+%for producing a PDF according the PDF/A standard, add "pdfa"
+
+%\pdfoutput=1 %uncomment to ensure pdflatex processing (mandatatory e.g. to submit to arXiv)
+%\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
+
+%\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\bibliographystyle{plainurl}% the mandatory bibstyle
+
+\title{A Foundation for Synthetic Stone Duality}
+
+%\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
+%,  and 
+\author{Felix {Cherubini}}{University of Gothenburg and Chalmers University of Technology, Sweden \and \url{felix-cherubini.de}}{felix.cherubini@posteo.de}{https://orcid.org/0000-0002-6589-1874}{}
+\author{Thierry {Coquand}}{University of Gothenburg and Chalmers University of Technology, Sweden \and \url{https://www.cse.chalmers.se/~coquand/}}{Thierry.Coquand@cse.gu.se}{https://orcid.org/0000-0002-5429-5153}{}
+\author{Freek {Geerligs}}{University of Gothenburg and Chalmers University of Technology, Sweden \and \url{https://www.gu.se/en/about/find-staff/freekgeerligs}}{geerligs@chalmers.se}{https://orcid.org/0009-0003-6938-4807}{}
+\author{Hugo {Moeneclaey}}{University of Gothenburg and Chalmers University of Technology, Sweden \and \url{https://www.hugomoeneclaey.com/}}{hugomo@chalmers.se}{}{}
+
+\authorrunning{F.\ Cherubini, T.\ Coquand, F.\ Geerligs and H.\ Moeneclaey}
+
+\Copyright{Felix Cherubini, Thierry Coquand, Freek Geerligs and Hugo Moeneclaey}
+
+\begin{CCSXML}
+  <ccs2012>
+  <concept>
+  <concept_id>10003752.10003790.10011740</concept_id>
+  <concept_desc>Theory of computation~Type theory</concept_desc>
+  <concept_significance>500</concept_significance>
+  </concept>
+  </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[100]{Theory of computation~Type theory}
+
+\keywords{Homotopy Type Theory, Synthetic Topology, Cohomology}
+
+\category{} %optional, e.g. invited paper
+
+\relatedversion{} %optional, e.g. full version hosted on arXiv, HAL, or other respository/website
+%\relatedversiondetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93]{Classification (e.g. Full Version, Extended Version, Previous Version}{URL to related version} %linktext and cite are optional
+
+%\supplement{}%optional, e.g. related research data, source code, ... hosted on a repository like zenodo, figshare, GitHub, ...
+%\supplementdetails[linktext={opt. text shown instead of the URL}, cite=DBLP:books/mk/GrayR93, subcategory={Description, Subcategory}, swhid={Software Heritage Identifier}]{General Classification (e.g. Software, Dataset, Model, ...)}{URL to related version} %linktext, cite, and subcategory are optional
+
+%\funding{(Optional) general funding statement \dots}%optional, to capture a funding statement, which applies to all authors. Please enter author specific funding statements as fifth argument of the \author macro.
+
+% ===== BEGIN acknowledgements.tex =====
+% ===== END acknowledgements.tex =====
+
+%\nolinenumbers %uncomment to disable line numbering
+
+
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{John Q. Open and Joan R. Access}
+\EventNoEds{2}
+\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+\EventShortTitle{CVIT 2016}
+\EventAcronym{CVIT}
+\EventYear{2016}
+\EventDate{December 24--27, 2016}
+\EventLocation{Little Whinging, United Kingdom}
+\EventLogo{}
+\SeriesVolume{42}
+\ArticleNo{23}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+%TODO mandatory: add short abstract of the document
+\begin{abstract}
+% ===== BEGIN PaperAbstract =====
+The language of homotopy type theory has proved to be an appropriate internal language for various higher toposes, 
+for example for the Zariski topos in Synthetic Algebraic Geometry. This paper aims to do the same for the higher topos of light condensed anima of Dustin Clausen and Peter Scholze. This seems to be an appropriate setting for synthetic topology in the style of Martín Escardó.
+
+We use homotopy type theory extended with 4 axioms. We prove Markov's principle, LLPO and the negation of WLPO. Then we define a type of open propositions, inducing a topology on any type such that any map is continuous. We give a synthetic definition of second countable Stone and compact Hausdorff spaces, and show that their induced topologies are as expected. This means that any map from e.g. the unit interval $\mathbb{I}$ to itself is continuous in the usual epsilon-delta sense.
+
+With the usual definition of cohomology in homotopy type theory, we show that $H^1(S,\Z)=0$ for $S$ Stone and that $H^1(X,\Z)$ for $X$ compact Hausdorff can be computed using \v{C}ech cohomology. We use this to prove $H^1(\mathbb{I}^1,\Z) = 0$ and $H^1(\mathbb{S}^1,\Z) = \Z$ where $\mathbb{S}^1$ is the set $\mathbb{R}/\Z$. As an application, we give a synthetic proof of Brouwer's fixed-point theorem.
+% ===== END PaperAbstract =====
+\end{abstract}
+
+\section*{Introduction}
+% ===== BEGIN intro =====
+The language of homotopy type theory consists of dependent type theory enriched with the univalence axiom and higher inductive types. It has proven exceptionnally well-suited to
+a synthetic development of homotopy theory \cite{hott}. It also provides
+a framework precise enough to analyze categorical models of type theory \cite{vanderweide2024}.
+Moreover, arguments in this language can be represented in proof assistants rather directly. In this article we use homotopy type theory to give a synthetic development of topology, analogous to the synthetic development of algebraic geometry in \cite{draft}. 
+
+We introduce four axioms inspired by the light condensed sets introduced in \cite{Scholze}.
+Interestingly, our axioms have strong connections with constructive mathematics \cite{Bishop},
+in particular constructive reverse mathematics \cite{ReverseMathsBishop,HannesDiener}. Indeed they imply several of Brouwer's principles (e.g. any real function on the unit interval is continuous, the celebrated fan theorem), as well as not intuitionistically valid principles (Markov's Principle, the so-called Lesser Limited Principle of Omniscience).
+
+Our axioms also closely align with the program of Synthetic Topology \cite{SyntheticTopologyEscardo,SyntheticTopologyLesnik,abstractstone,faissole2017synthetic,vickers2007locales}.
+Indeed we have a dominance of open propositions, so that any type comes with an induced topology. Using this induced topology, we manage to capture synthetically the notion of second-countable compact Hausdorff spaces. While working on our axioms, we learnt about \cite{bc24}, which provides a similar axiomatisation in extensional type theory. We show that some of their axioms are consequences of ours. For example\footnote{We can actually prove all of their axioms, from which their \emph{directed univalence} follows. This will be presented in a following paper.}, we can define in our setting the notion of overtly discrete types, which is dual to the notion of compact Hausdorff spaces.
+
+A central theme of homotopy type theory is that the notion of {\em type} is more general than the notion of {\em set}. We illustrate this theme in this work. Indeed we can form the types of Stone spaces and of compact Hausdorff spaces, which are not sets but rather a groupoids. Moreover these spaces are closed under $\Sigma$-type types, which would be impossible to formulate in the traditional setting.
+Additionally, we can leverage higher types by using the elegant definition of cohomology groups in homotopy type theory \cite{hott}. We then prove a special case of a theorem of Dyckhoff \cite{dyckhoff76} describing
+the cohomology of compact Hausdorff spaces. As an application, we give a synthetic proof of Brouwer's fixed point theorem, similar to the proof of an approximated form in \cite{shulman-Brouwer-fixed-point}.
+
+We expect our axioms to be validated by the interpretation of homotopy type theory into the higher topos of light condensed anima \cite{shulman2019all}, although checking this rigorously is still work in progress. We even expect this to be valid in a constructive metatheory, using \cite{CRS21}. It is important to stress that our axioms only capture the properties of light condensed anima that are {\em internally} valid. Since David W\"arn \cite{warn2024} has proved that an important property of condensed abelian groups is {\em not} valid internally, this means that we cannot prove it in our setting. We also conjecture that the present axiom system is {\em complete} for the properties that are internally valid.
+% ===== END intro =====
+
+\section{Stone duality}
+% ===== BEGIN Preliminaries =====
+\subsection{Preliminaries}
+%
+%In this section, we introduce the type of countably presented Boolean algebras $\Boole$ and of Stone spaces $\Stone$. 
+%Both of these types carry a natural category structure. 
+%In later sections, we will axiomatize an anti-equivalence between these categories, 
+%which is classically valid and called Stone duality. 
+\begin{remark}
+%  For $X$ a type, a subtype $U$ of $X$ is 
+%  a map $U:X\to\Prop$ 
+%  into the type of propositions. %a subtype of $X$. 
+  For $X$ any type, a subtype $U$ of $X$ is a family of propositions over $X$. 
+  We write $U\subseteq X$.
+  If $X$ is a set, we call $U$ a subset. Given $x:X$ we sometimes write $x\in U$ instead of $U(x)$. % for emphasis.
+  For subtypes $A,B\subseteq X$, we write $A\subseteq B$ for pointwise implication.
+  We will freely switch between a subtype $U\subseteq X$ %$U:X\to\Prop$ 
+  and the corresponding embedding
+  $
+    \sum_{x:X}U(x) \hookrightarrow  X.
+  $
+In particular, if we write $x: U$ we mean $x:X$ such that $U(x)$.
+\end{remark}
+
+\begin{definition}
+  A type is countable if and only if it is 
+  %By countable in the previous definition we mean sets that are 
+  merely equal to some decidable subset of $\N$. 
+\end{definition}
+
+\begin{definition}
+  For $I$ a set we write $2[I]$ for the free Boolean algebra on $I$.
+  A Boolean algebra $B$ is countably presented if there exist countable sets $I,J$ with generators $g:I\to B$ and relations $f:J\to 2[I]$ 
+  such that $g$ induces an equivalence between $2[I]/(f_j)_{j:J}$ and $B$.
+\end{definition} 
+
+\begin{remark}\label{BooleAsCQuotient}
+Any countably presented algebra is merely of the form 
+$2[\N]/ (r_n)_{n:\N}$.
+%, if we add dummy variables that we equate to $0$, and dummy relations that equate $0$ to itself.
+% 0 is not special here right? 
+\end{remark}
+
+
+%We will call the family $(f_j)_{j\in J}$ as above a set of relations. 
+%If $I,J$ are finite, we call $B$ a finitely presented Boolean algebra. 
+%Once we have postulated the axiom of dependent choice, 
+%in \Cref{secBooleAsColimits}
+%we will be able to show that every countably presented algebra 
+%is actually a colimit of a sequence of finitely presented Boolean algebras.
+%They are therefore dual to pro-finite objects, which are used 
+%in the theory of light condensed sets \cite{Scholze,Dagur,TODO}.
+
+\begin{remark}
+  We denote the type of countably presented Boolean algebras by $\Boole$. 
+  This type does not depend on a choice of universe. 
+  Moreover $\Boole$ has a natural category structure. 
+\end{remark}
+
+\begin{example}
+  If both the set of generators and relations are empty, we get the Boolean algebra $2$.
+  Its underlying set is $\{0,1\}$ with $0\neq 1$. We have that $2$ is initial in $\Boole$. 
+\end{example}
+%\begin{remark}
+%Note that any Boolean algebra must contain the elements $0,1$. 
+%Therefore, $2$ is initial in $\Boole$. 
+%\end{remark} 
+%We can therefore use it to define points of objects in the category dual to that of countably presented Boolean algebras. 
+%
+%\subsection{Stone spaces}
+\begin{definition}
+  For $B$ a countably presented Boolean algebra, 
+  we define the spectrum $\Sp(B)$ as the set $\Hom(B,2)$ of Boolean morphisms from $B$ to $2$.
+  Any type which is merely equivalent to some spectrum is called a Stone space.
+\end{definition}
+%\begin{definition}
+%  We define the predicate on types $\isSt$ by 
+%  \begin{equation}
+%    \isSt(X) := ||\sum\limits_{B : Boole} X = \Sp(B)||
+%  \end{equation} 
+%  Given some universe $\mathcal U$, we denote 
+%  $\Stone = \Sigma_{S:\mathcal U} \isSt(S)$. 
+%%  A type $X$ is called \textit{Stone} if $\isSt(X)$ is inhabited.
+%\end{definition}
+
+%\subsection{Examples}
+\begin{example}
+  \label{boolean-algebra-examples}
+  \item 
+  \begin{enumerate}[(i)]
+  \item There is only one Boolean morphism from $2$ to $2$, thus $\Sp(2)$ is the singleton type $\top$. 
+  \item   
+    The trivial Boolean algebra is presented as $2/(1)$. 
+    We have $0=1$ in the trivial Boolean algebra, so  
+    there cannot be a map from it into $2$ preserving both $0$ and $1$.
+    Therefore the corresponding Stone space is the empty type $\bot$.
+  \item\label{ExampleBAunderCantor}   
+    The type $\Sp(2[\N])$ is called the Cantor space. It is equivalent to the set of binary sequences $2^\N$. 
+    Given $\alpha:\Sp(2[\N])$ and $n:\N$, we write $\alpha_n$ for 
+    $\alpha(g_n)$, the $n$-th bit of the corresponding binary sequence. 
+%    %given by $\N$ as a set of generators and no relations. We write $p_n$ for the generator corresponding to $n$.
+%    A morphism $C\to 2$ corresponds to a function $\mathbb N\to 2$, 
+%    which is a binary sequence. 
+%    So $\Sp(C) = 2^\N$, 
+%%    The Stone space $\Sp(C)$ of these binary sequences is denoted 
+%    $2^{\N}$ and called \notion{Cantor space}.
+  \item\label{ExampleBAunderNinfty}
+    We denote by $B_\infty$ the Boolean algebra generated by 
+    $(g_n)_{n:\N}$ quotiented by the relations $g_m \wedge g_n = 0$ for ${n\neq m}$.
+%    $C/(g_m\wedge g_n)_{m\neq n}$.
+    A morphism $B_\infty\to 2$ corresponds to a function 
+    $\N \to 2$ that hits $1$ at most once. 
+    We denote $\Sp(B_\infty)$ by $\Noo$. 
+    For $\alpha:\Noo$ and $n:\N$ we write $\alpha_n$ for $\alpha(g_n)$. For $n:\N$, we define $n:\Noo$ as the unique $\alpha:\Noo$ such that $\alpha_n=1$. We define $\infty:\Noo$ as the unique $\alpha:\N_\infty$ such that $\alpha_n=0$ for all $n:\N$.
+  
+  By conjunctive normal form, 
+  any element of $B_\infty$ can be written uniquely as 
+  $\bigvee_{i:I} g_n$ or as $\bigwedge_{i:I} \neg g_n$ for some finite $I\subseteq \N$. 
+  %If $I=\emptyset$, then $\vee_{i\in I} g_i = 0, \bigwedge_{i\in I} \neg g_i = 1$. 
+  \end{enumerate}
+\end{example}
+%  In \Cref{N-co-fin-cp}, we will show 
+%  It can be shown that $B_\infty$ is equivalent to the Boolean algebra on 
+%  subsets of $\N$ which are finite or co-finite. 
+%  Under this equivalence, the generator $g_n$ is sent to the singleton $\{n\}$. 
+%  Because of this, we have that any $b:B_\infty$ can be written 
+
+\begin{lemma}\label{ClosedPropAsSpectrum}
+  Given $\alpha:2^\N$, we have an equivalence of propositions: 
+ \[ 
+    (\forall_{n:\N}\ \alpha_n = 0 )\leftrightarrow \Sp(2/(\alpha_n)_{n:\N}).
+  \] 
+\end{lemma}
+\begin{proof}
+  There is only one Boolean morphism $x:2\to 2$, and it satisfies 
+  $x(\alpha_n) = 0$ for all $n:\N$ if and only if
+  $\alpha_n = 0$ for all $n:\N$. 
+  %As $2$ has underlying set $\{0,1\}$, 
+ %we have $\alpha(n) =_2 0 $ for all $n:\N$. 
+  %we have $(\alpha(n) \neq_2 1) \to (\alpha(n) =_2 0)$. 
+\end{proof}
+
+
+%\begin{remark}
+%  As Boolean algebras are rings, any relation of the form $f=g$ with both $f,g$ Boolean expressions 
+%  can be written as $h=0$ with $h=f-g$ a Boolean expression. 
+%\end{remark} 
+
+
+
+% ===== END Preliminaries =====
+% ===== BEGIN axioms =====
+%In this section, we will introduce the basic rules we'll use in this paper. 
+%We will first state our axioms, and then draw out some first consequences.
+%Most notably, 
+%we will see that Markov's principle (\Cref{MarkovPrinciple}) and the 
+%lesser limited principle of omniscience (\Cref{LLPO}) can be shown. 
+%%There are equivalent axiom systems we could have stated instead, which we discuss in \Cref{NotesOnAxioms}.
+\subsection{Axioms}\label{Axioms}
+%In this section, we will state our axioms. 
+%In \Cref{NotesOnAxioms}, we will discuss alternative versions of our axiom system. 
+\begin{axiom}[Stone duality]\label{AxStoneDuality}
+  For all $B:\Boole$, 
+  the evaluation map $B\rightarrow  2^{\Sp(B)}$ is an isomorphism.
+\end{axiom} 
+
+%\begin{axiom}[Propositional completeness]
+%  For $S:\Stone$, we have that $\neg \neg S \leftrightarrow || S ||$
+%\end{axiom}
+
+\begin{axiom}[Surjections are formal surjections]\label{SurjectionsAreFormalSurjections}
+  For all morphism $g:B\to C$ in $\Boole$, we have that $g$ is injective if and only if
+  $(-)\circ g: \Sp(C) \to \Sp(B)$ is surjective. 
+%  A map $f:\Sp(B')\to \Sp(B)$ is surjective iff the corresponding map $B \to B'$ is injective.
+\end{axiom} 
+%
+%\begin{lemma}\label{LemSurjectionsFormalToCompleteness}
+% For $S:\Stone$, we have that $\neg \neg S \to || S ||$
+%\end{lemma}
+%\begin{proof}
+%  First, assume that surjections are formal surjections. 
+%  Let $B:\Boole$ and suppose $\neg \neg \Sp(B)$. 
+%  %Note that if $0=1$ in $B$, then $\Sp(B) =\emptyset$, meaning $\neg \Sp(B)$. 
+%  %Therefore, we have $0\neq 1$ in $B$. 
+%  We will show that the map $f:2\to B$ is injective. 
+%  Let $f:2 \to B$, note that if $f(0) = f(1)$ then $0=1$ in $B$, 
+%  If $0=1$ in $B$, there are no maps $B\to 2$ preserving $0$ and $1$, thus $\neg \Sp(B)$. 
+%  This is a contradiction with $\neg \neg \Sp(B)$. Thus we may conclude that $f(0)\neq f(1)$. 
+%  Hence by case distinction on $2$ we can show $f$ we have that $f x = f y$ implies $ x= y$. Thus 
+%  $f$ is injective thus the map $\Sp(B) \to \Sp(2) = 1$ is surjective, thus $\Sp(B)$ is merely inhabited. 
+%\end{proof} 
+%Actually, we will see in \Cref{CorDoubleNegToAx2} that the converse is also true. 
+
+%\begin{axiom}[Local choice]
+%  Whenever $S$ Stone and $E\twoheadrightarrow S$ surjective, then there is some $T$ Stone,
+%    a surjection $T \twoheadrightarrow S$ and a map $T\to E$ 
+%    such that the following diagram commutes:
+%    \begin{equation}\begin{tikzcd}
+%      E \arrow[d,""',two heads]\\
+%      S & \arrow[l, "", two heads, dashed] T\arrow[lu, ""',dashed ]
+%    \end{tikzcd}\end{equation}  
+%\end{axiom} 
+%\begin{axiom}[Local choice]\label{AxLocalChoice}
+%  Whenever we have $S:\Stone$, $E,F$ arbitrary types, a map $f:S \to F$ and a 
+%  surjection $e:E \twoheadrightarrow F$, 
+%  there exists a Stone space $T$, a surjective map 
+%  $T\twoheadrightarrow S$ and an arrow $T\to E$ making the following diagram commute:
+%    \begin{equation}\begin{tikzcd}
+%      T \arrow[d,dashed, two heads ] \arrow[r,dashed]&  E \arrow[d,""',two heads, "e"]\\
+%      S  \arrow[r, "f"] & F
+%    \end{tikzcd}\end{equation}  
+%\end{axiom}
+
+%\begin{axiom}[Local choice]\label{AxLocalChoice}
+%  Whenever we have $S:\Stone$, $X$ an arbitrary type and a predicate $P:S \times X \to \Prop$, 
+%  such that $\forall_{s:S} \exists_{x:X} P(s,x)$, then there merely exists some $T:\Stone$ with surjection 
+%  $q:T\twoheadrightarrow S$ and a function $\Pi_{t:T} \Sigma_{x:X} P(q(t), x)$. 
+%\end{axiom}
+%\begin{axiom}[Local choice]\label{AxLocalChoice}
+%  Whenever we have $S:\Stone$, and some type family $P:S\to\Type$ such that 
+%  $\Pi_{s:S} ||P s||$, then there 
+%  merely exists some $T:\Stone$ and surjection $q:T\to S$ with 
+%$  \Pi_{t:T} P(q(t))$.
+%\end{axiom}
+\begin{axiom}[Local choice]\label{AxLocalChoice}
+  For all $B:\Boole$ and type family $P$ over $\Sp(B)$ such that 
+  $\Pi_{s:\Sp(B)} \propTrunc{P(s)}$, there 
+  merely exists some $C:\Boole$ and surjection $q:\Sp(C)\to \Sp(B)$ such that 
+ $\Pi_{t:\Sp(C)} P(q(t))$.
+\end{axiom}
+
+\begin{axiom}[Dependent choice]\label{axDependentChoice}
+For all types $(E_n)_{n:\N}$ with surjections $E_{n+1}\twoheadrightarrow E_n$ for all $n:\N$, the projection from the sequential limit $\lim_kE_k$ to $E_0$ is surjective.
+\end{axiom}
+%\begin{remark}
+%  Local choice can also be formulated as follows:
+%  whenever we have $S:\Stone$, $E,F$ arbitrary types, a map $f:S \to F$ and a 
+%  surjection $e:E \twoheadrightarrow F$, 
+%  there exists a Stone space $T$, a surjective map 
+%  $T\twoheadrightarrow S$ and an arrow $T\to E$ making the following diagram commute:
+%    \begin{equation}\begin{tikzcd}
+%      T \arrow[d,dashed, two heads ] \arrow[r,dashed]&  E \arrow[d,""',two heads, "e"]\\
+%      S  \arrow[r, "f"] & F
+%    \end{tikzcd}\end{equation}  
+%\end{remark}
+% ===== END axioms =====
+% ===== BEGIN EquivalenceOfCategories =====
+\subsection{Anti-equivalence of $\Boole$ and $\Stone$}
+By \Cref{AxStoneDuality}, the map $\Sp$ is an embedding of $\Boole$ into any universe of types. 
+We denote its image by $\Stone$. 
+
+\begin{remark}\label{SpIsAntiEquivalence}
+Stone spaces will take over the role of the affine schemes from \cite{draft}, 
+so let us repeat some results here. 
+Analogously to Lemma 3.1.2 of \cite{draft}, 
+for $X:\Stone$, \Cref{AxStoneDuality} tells us that $X = \Sp(2^X)$.
+%
+Proposition 2.2.1 of \cite{draft} now says that 
+$\Sp$ gives a natural equivalence 
+\[
+   \Hom(A, B) = (\Sp(B) \to \Sp(A))
+\]
+%Therefore $Sp$ is an embedding from $\Boole$ to any universe of types, and $\isSt$ is a proposition.
+%
+%Its image, 
+By the above and Lemma 9.4.5 of \cite{hott}, 
+the map $\Sp$ defines a dual equivalence of categories between $\Boole$ and $\Stone$.
+In particular the spectrum of any colimit in $\Boole$ is the limit of 
+the spectrum of the opposite diagram. 
+\end{remark}
+\begin{remark}\label{LocalChoiceSurjectionForm}
+  \Cref{AxLocalChoice} can also be formulated as follows:
+  Given $S:\Stone$ with $E,F$ arbitrary types, a map $f:S \to F$ and a 
+  surjection $e:E \twoheadrightarrow F$, 
+  there exists a Stone space $T$, a surjective map 
+  $T\twoheadrightarrow S$ and an arrow $T\to E$ making the following diagram commute:
+    \[\begin{tikzcd}
+      T \arrow[d,dashed, two heads ] \arrow[r,dashed]&  E \arrow[d,""',two heads, "e"]\\
+      S  \arrow[r, swap,"f"] & F
+    \end{tikzcd}\]  
+\end{remark}
+
+\begin{lemma}\label{SpectrumEmptyIff01Equal}
+  For $B:\Boole$, we have $0=_B1$ if and only if $\neg \Sp(B)$.
+\end{lemma}
+\begin{proof}
+  If $0=_B1$, there is no map in $B\to 2$ preserving both $0$ and $1$, thus $\neg \Sp(B)$. 
+  Conversely, if $\neg \Sp(B)$ then 
+  $\Sp(B)=\bot$. Since $\bot$ is the spectrum of the trivial Boolean algebra and $\Sp$ is an embedding, we conclude that $B$ is the trivial Boolean algebra, hence $0=_B1$. 
+\end{proof}
+
+\begin{corollary}\label{LemSurjectionsFormalToCompleteness}
+ For $S:\Stone$, we have that $\neg \neg S \to  \propTrunc{S}$
+\end{corollary}
+\begin{proof}
+  Let $B:\Boole$ and suppose $\neg \neg \Sp(B)$. By \Cref{SpectrumEmptyIff01Equal} we have that $0\not=_B1$, therefore the morphism $2\to B$ is injective. By \Cref{SurjectionsAreFormalSurjections} the map $\Sp(B) \to \Sp(2)$ is surjective, thus $\Sp(B)$ is merely inhabited. 
+\end{proof} 
+
+%\begin{corollary}\label{MoreConcreteCompleteness}
+%  By the above and propositional completeness, we have that $||\Sp(B)||$ iff $0\neq_B1$. 
+%\end{corollary}
+
+
+
+%SurjectionsFormalSurjections%We conclude this section on the anti-equivalence of Stone and $\Boole$ by a relating surjections to injections. 
+%SurjectionsFormalSurjections%This theorem is actually equivalent to completeness of propositional logic, which we'll discuss in 
+%SurjectionsFormalSurjections%\Cref{NotesOnAxioms}. 
+%SurjectionsFormalSurjections%
+%SurjectionsFormalSurjections%\begin{theorem}\label{FormalSurjectionsAreSurjections}
+%SurjectionsFormalSurjections%  Let $f:A\to B$ be a map of countably presented Boolean algebras. 
+%SurjectionsFormalSurjections%  If $f$ is injective, then the corresponding map $(\cdot) \circ f : \Sp(B) \to \Sp(A)$ is surjective. 
+%SurjectionsFormalSurjections%\end{theorem}
+%SurjectionsFormalSurjections%
+%SurjectionsFormalSurjections%\begin{proof}
+%SurjectionsFormalSurjections%  Assume $f$ injective and let $x:\Sp(A)$.
+%SurjectionsFormalSurjections%  By \Cref{FiberConstruction}, we have that $\left(\sum\limits_{y:\Sp(B)} y\circ f = x \right) = \Sp(B/R) $
+%SurjectionsFormalSurjections%  for $R=f(G)$ for some countable $G\subseteq A$ with $x(g) = 0$ for all $g\in G$. 
+%SurjectionsFormalSurjections%  By propositional completeness and \Cref{SpectrumEmptyIff01Equal}, 
+%SurjectionsFormalSurjections%  it's sufficient to show that $0\neq_{B/R}1$. 
+%SurjectionsFormalSurjections%  Note that $0=_{B/R} 1$ iff 
+%SurjectionsFormalSurjections%  $1 =_B \bigvee R_0$ for some $R_0\subseteq R$ finite. 
+%SurjectionsFormalSurjections%  But then $$1 = \bigvee f(G_0) = f(\bigvee  G_0)$$ for some $G_0\subseteq G$ finite. 
+%SurjectionsFormalSurjections%  And as $f$ is injective, $\bigvee G_0 = 1$. 
+%SurjectionsFormalSurjections%  However, 
+%SurjectionsFormalSurjections%  $$
+%SurjectionsFormalSurjections%  x(\bigvee G_0) = 
+%SurjectionsFormalSurjections%  x(\bigvee_{g\in G_0} g ) = \bigvee_{g \in G_0} x(g) = \bigvee_{g\in G_0} 0 = 0$$
+%SurjectionsFormalSurjections%  And as $x(1) = 1$, we get a contradiction. Therefore $0\neq_{B/R} 1$ as required. 
+%SurjectionsFormalSurjections%\end{proof}  
+%SurjectionsFormalSurjections%The converse to the above theorem is true as well, regardless of propositional completeness:
+%SurjectionsFormalSurjections%\begin{lemma}\label{SurjectionsAreFormalSurjections}
+%SurjectionsFormalSurjections%If $f:A\to B$ is a map in $\Boole$ and $(\cdot) \circ f :\Sp(B) \to \Sp(A)$ is surjective, 
+%SurjectionsFormalSurjections%$f$ is injective. 
+%SurjectionsFormalSurjections%\end{lemma}
+%SurjectionsFormalSurjections%\begin{proof}
+%SurjectionsFormalSurjections%  Suppose precomposition with $f$ is surjective. 
+%SurjectionsFormalSurjections%  Let $a:A$ be such that $f(a)= 0$. 
+%SurjectionsFormalSurjections%  By assumption, for every $x:A\to 2$, there is a $y:B\to 2$ with $y\circ f = x$. 
+%SurjectionsFormalSurjections%  Consequentely $x(a) = y(f(a)) = y(0) = 0$. 
+%SurjectionsFormalSurjections%  So $x(a) = 0$ for every $x:\Sp(A)$. 
+%SurjectionsFormalSurjections%  Thus $\Sp(A) = \Sp(A/\{a\})$, and as $Sp$ is an embedding, 
+%SurjectionsFormalSurjections%  $A \simeq A/\{a\}$, and $a = 0$ in $A$. 
+%SurjectionsFormalSurjections%  So whenever $f(a) = 0$, we have $a=0$. Thus $f$ is injective. 
+%SurjectionsFormalSurjections%\end{proof}
+% ===== END EquivalenceOfCategories =====
+% ===== BEGIN OmnisciencePrinciples =====
+\subsection{Principles of omniscience}
+The so-called principles of omniscience are all weaker than the law of excluded middle (LEM), and help measure how close a logical system is to satisfying LEM \cite{HannesDiener, ReverseMathsBishop}.
+In this section, we will show that two such principles hold (MP and LLPO), 
+and that another one fails (WLPO).
+
+\begin{theorem}[The negation of the weak lesser principle of omniscience ($\neg$WLPO)]\label{NotWLPO}
+  \[
+    \neg \forall_{\alpha:2^\N} 
+    ((\forall_{n:\N}\, \alpha_n = 0 ) \vee \neg (\forall_{n:\N}\, \alpha_n = 0))
+  \]
+%  We cannot decide for general $\alpha:2^\N$, whether $\forall_{n:\mathbb N} \alpha(n) = 0$.
+%  It is not the case that the statement %There is no method which given $\alpha:2^\mathbb N$ decides whether 
+%  $\forall_{n:\mathbb N} \alpha(n) = 0$ is decidable for general $\alpha:2^\mathbb N$. 
+\end{theorem}
+\begin{proof}
+%  Such a decision method is a function 
+  We will prove that any decidable property of binary sequences is determined by a finite prefix of fixed length, contradicting $\forall_{n:\N}\, \alpha_n=0$ being decidable for all $\alpha$. 
+  Indeed assume $f:2^\mathbb N \to 2$ such that 
+  $f(\alpha) = 0$ if and only if $\forall_{n:\mathbb N}\ \alpha_n= 0$. 
+  By \Cref{AxStoneDuality}, there is some $c:2[\N]$ with 
+  $f(\alpha) = 0$ if and only if $\alpha(c) = 0$. 
+  There exists $k:\N$ such that $c$ is expressed in terms of the generators $(g_n)_{n\leq k}$. 
+  Now consider $\beta,\gamma:2^\N$ given by 
+  $\beta(g_n) = 0$ for all $n:\mathbb N$ and
+  $\gamma(g_n) = 0$ if and only if $n\leq k$. 
+  As $\beta$ and $\gamma$ are equal on $(g_n)_{n\leq k}$, we have $\beta(c) = \gamma(c)$. 
+  However, $f(\beta) = 0$ and $f(\gamma) = 1$, giving a contradiction. 
+%  We thus have a contradiction, thus a decision method as required doesn't exist. 
+\end{proof}
+
+\begin{theorem}
+  For all $\alpha:\Noo$, we have that 
+  \[
+    (\neg (\forall_{n:\mathbb N}\, \alpha_n= 0)) \to \Sigma_{n:\mathbb N}\, \alpha_n= 1
+  \]
+\end{theorem}
+\begin{proof}
+  By \Cref{ClosedPropAsSpectrum}, we have that $\neg(\forall_{n:\N}\, \alpha_n = 0)$ implies that 
+  $\Sp(2/(\alpha_n)_{n:\N})$ is empty. 
+%  We will show that the spectrum of $2/(\alpha(n))_{n:\N}$ is empty. 
+%  Suppose $x:2\to 2$, if  $x(\alpha(n)) = 0$, we get $\alpha(n) \neq 1$. 
+%  Thus if $\neg (\forall_{n:\N} \alpha(n) = 0$, we have $\neg \Sp(2/(\alpha(n))_{n:\N})$.
+  Hence $2/(\alpha_n)_{n:\N}$ is trivial by \Cref{SpectrumEmptyIff01Equal}. 
+  Then there exists $k:\N$ such that $\bigvee_{i\leq k} \alpha_i = 1$. 
+  As $\alpha_i = 1$ for at most one $i:\N$, 
+  there exists a unique $n:\mathbb N$ with $\alpha_n = 1$. 
+%  Assume $\neg (\forall_{n:\mathbb N} \alpha (n)= 0)$.
+%  It is sufficient to show that $2/\{\alpha(n)|n\in\N\}$ is the trivial Boolean algebra. 
+%  It will then follow that there is a finite subset $N_0\subseteq \N$ 
+%  with $\bigvee_{i:N_0} \alpha(i) = 1$.
+%  As $\alpha(i) \in \{0,1\}$ and $\alpha(i) = 1$ for at most one $i$, it then follows that 
+%  there exists an unique $n\in\mathbb N$ with $\alpha(n) = 1$. 
+%%
+%  To show that $2/\{\alpha(n)|n\in\N\}$ is trivial, we will show it has an empty spectrum. 
+%  Suppose $x: 2 \to 2$ is such that $x(\alpha(n)) = 0$ for every $n:\N$. 
+%  As $x(1) = 1$, we must have for every $n:\N$ that $\alpha(n) \neq 1$. 
+%  But then $\alpha(n) = 0$, contradicting our assumption. 
+%  We get a contradicition and there thus there are no points in the spectrum of $2/\{\alpha(n)|n\in\N\}$ as required. 
+\end{proof}
+
+\begin{corollary}[Markov's principle (MP)]\label{MarkovPrinciple}
+  For all $\alpha:2^\mathbb N$, we have that 
+  \[
+    (\neg (\forall_{n:\mathbb N}\, \alpha_n= 0)) \to \Sigma_{n:\mathbb N}\, \alpha_n= 1
+  \]
+\end{corollary}
+\begin{proof}
+  Given $\alpha:2^\mathbb N$, consider the sequence $\alpha':\Noo$ satisfying $\alpha'_n = 1$ if and only if
+  $n$ is minimal with $\alpha_n = 1$. Then apply the above theorem.
+\end{proof}
+
+\begin{theorem}[The lesser limited principle of omniscience (LLPO)]\label{LLPO}
+  For all $\alpha:\N_\infty$, 
+  we have that
+  \[\label{eqnLLPO}
+    (\forall_{k:\N}\, \alpha_{2k} = 0)  \vee (\forall_{k:\N}\, \alpha_{2k+1} = 0)
+  \]
+\end{theorem}
+\begin{proof}
+%
+%  We first will define a map $f:B_\infty \to B_\infty \times B_\infty$. 
+%  Because of \Cref{rmkMorphismsOutOfQuotient}, it is sufficient to define $f$ on $(p_n)_{n:\N}$ with 
+%  $f(p_n) \wedge f(p_m) = (0,0)$ for $n\neq m$. 
+%  To define $f(p_n)$, we use a case distinction on whether $n$ is odd or even. 
+  Define $f:B_\infty \to B_\infty \times B_\infty$ on generators as follows
+  \[\label{eqnLLPOProofMap}
+    f(g_n) =\begin{cases}
+      (g_k,0) \text{ if } n = 2k\\
+      (0,g_k) \text{ if } n = 2k+1\\
+    \end{cases}
+  \]
+  Note that $f$ is a well-defined morphism in $\Boole$ as 
+  $f(g_n) \wedge f(g_m) = 0$ whenever $m\neq n$. 
+ % , can make a case distinction on parity. 
+%  By making a case distinction on $n,m$ being odd or even, 
+%  we can see that 
+%  $f(p_n) \wedge f(p_m) = (0,0)$ when $n\neq m$, thus $f$ is well-defined. 
+  We claim that $f$ is injective. 
+  If $I\subseteq \N$, write 
+  $ I_0 =\{k\ |\ 2k \in I\}, 
+    I_1 =\{k\ |\ 2k+1 \in I\}
+  $.
+  Recall that any $x:B_\infty$ is of the form 
+  $\bigvee_{i\in I} g_i$ or $\bigwedge_{i\in I} \neg g_i$ for some finite set $I$. 
+  \begin{itemize}
+    \item If $x = \bigvee_{i\in I} g_i$, then 
+      $f(x) = (\bigvee_{i\in I_0}g_{i}, \bigvee_{i\in I_1}g_i)$. 
+      So if $f(x) = 0$, then $I_0=I_1 = I = \emptyset$ and $x = 0$. 
+    \item Suppose 
+      $x = \bigwedge_{i\in I} \neg g_i$.
+      Then $f(x) = (\bigwedge_{i\in I_0} \neg g_i, \bigwedge_{i\in I_1} \neg g_i)$, 
+      so $f(x) \neq 0$. 
+  \end{itemize}
+%  In both cases, we conclude $x=0$, thus $f$ is injective. 
+  By \Cref{SurjectionsAreFormalSurjections},
+%  \Cref{FormalSurjectionsAreSurjections}, 
+  we have that $f$ corresponds to a surjection 
+  $s:\Noo + \Noo \to \Noo$.
+  Thus for $\alpha : \Noo$, 
+  there exists some $x:\Noo + \Noo$ such that $s(x) = \alpha$. 
+  If $x = \mathrm{inl}(\beta)$, 
+  then for any $k:\N$ we have that 
+\[\alpha_{2k+1} = s(x)_{2k+1} = x(f(g_{2k+1})) = \mathrm{inl}(\beta) (0,g_k)  = \beta(0) = 0.\]
+  Similarly, if $x = \mathrm{inr}(\beta)$, we have that $\alpha_{2k} = 0$ for all $k:\N$. 
+  %Thus \Cref{eqnLLPO} holds for $\alpha$.% as required. 
+\end{proof}
+%As the following shows, our use of \Cref{SurjectionsAreFormalSurjections} was non-trivial: 
+%The use of \Cref{FormalSurjectionsAreSurjections}, and hence of propositional completeness, 
+%was helpful in the above proof, as the following shows:
+The surjection $s:\Noo + \Noo \to \Noo$ above does not have a section. Indeed:
+\begin{lemma}
+  The function $f$ defined above does not have a retraction. 
+\end{lemma}
+\begin{proof}
+  Suppose $r:B_\infty \times B_\infty \to B_\infty$ is a retraction of $f$. 
+  Then $r(0,g_k) = g_{2k+1}$ and $r(g_k,0) = g_{2k}$. 
+  %Note that $r(0,1):B_\infty$ is expressible using only finitely many generators $(g_n)_{n\leq N}$.
+  Note that $r(0,1) \geq r(0,g_k) = g_{2k+1}$ for all $k:\N$. 
+  As a consequence, $r(0,1)$ is of the form $\bigwedge_{i\in I} \neg g_i$ for some finite set $I$.
+  %, and by \Cref{BinftyTermsWriting}, 
+  %$r(0,1)$ corresponds to a cofinite subset of $\N$. % = \bigwedge_{i:I_0} \neg p_i$, where $i\leq N$ for $i\in I_0$. 
+  By similar reasoning so is $r(1,0)$. % corresponds to a cofinite subset of $\N$. 
+%  But the intersection of cofinite subsets is cofinite, while 
+  But then %this contradicts
+  \[r(0,1) \wedge r(1,0) = r( (1,0) \wedge (0,1)) = r(0,0) = 0.\]
+  This is a contradiction.
+\end{proof}
+
+
+%We finish with an equivalent formulation of LLPO:
+%
+%
+%\begin{lemma}\label{corAlternativeLLPO}
+%  Let $(\phi_n)_{n:\N}, (\psi_m)_{m:\N}$ be families of decidable propositions indexed over $\N$.
+%  We then have 
+%  \begin{equation}
+%    (\forall_{n:\N} \forall_{m:\N} (\phi_n \vee \psi_m) )
+%    \leftrightarrow
+%    ((\forall_{n:\N} \phi_n) \vee (\forall_{m:\N} \psi_m) )
+%  \end{equation}
+%\end{lemma}
+%\begin{proof}
+%  See \cite{HannesDiener, ReverseMathsBishop}
+%\end{proof}
+%\begin{proof}
+%  Note that the implication from right to left in the above equation always holds.
+%  Assume that for all $m,n:\mathbb N$ we have $\phi_n\vee \psi_m$ 
+%  Consider the sequence $\alpha:2^\mathbb N$ where $\alpha(2n) = 0$ iff $\phi_n$ and 
+%  $\alpha(2m+1) = 0$ iff $\psi_m$. 
+%  Let $\beta:\Noo$ be such that $\beta(i) = 1$ iff $i$ is minimal with $\alpha(i) = 1$
+%  By LLPO, we have that 
+%  $\beta$ is $0$ on all odd entries or on all even entries. 
+%  Suppose that $\beta$ hits $0$ on all odd entries. 
+%  We will show $\psi_m$ for all $m:\N$. 
+%  As $\beta(2m+1) = 0$, there are two options:
+%  \begin{itemize}
+%    	\item If $\alpha(l)=0$ for all $l\leq 2m+1$. Then in particular $\alpha(2m+1)=0$ and $\psi_m$ holds.
+%	\item Otherwise there is some $l<2m+1$ with $\beta(l) = 1$. 
+%  As $\beta$ hits $0$ on odd entries, $l$ is even. 
+%  So $\alpha(2n) = 1$ for $n = \frac{l}2$, meaning that $\neg \phi_n$. 
+%  By assumption, $\phi_n \vee \psi_m$ holds, hence $\psi_m$ must hold. 
+%  Thus for all $m:\N$, we have $\psi_m$ if $\beta$ hits $0$ on all odd entries. 
+%  By a symmetric argument, if $\beta$ hits $0$ on all even entries, we have $\phi_n$ for all $n:\N$. 
+%  We conclude that 
+%  $((\forall_{n:\N} \phi_n) \vee (\forall_{m:\N} \psi_m) )$ 
+%  as required. 
+%  \end{itemize}
+%\end{proof}
+%
+%\begin{remark}
+%Note that the above statement implies LLPO as $\alpha(2n) =0 \vee \alpha(2m+1) =0$ for all $n,m:\mathbb N$ if $\alpha:\Noo$. 
+%\end{remark}
+% ===== END OmnisciencePrinciples =====
+% ===== BEGIN PropositionalTopology =====
+%In this section, we will define the types of open and closed propositions. 
+%These will allow us to define a (synthetic) topology  \cite{SyntheticTopologyLesnik} on any type.
+%We will study this topology on Stone types in particular.
+%
+\subsection{Open and closed propositions}
+Open (resp. closed) propositions are defined as countable disjunctions (resp. conjunctions) of decidable propositions.
+In this section we will study their logical properties.
+
+\begin{definition}
+A proposition $P$ is open (resp. closed) if there exists some $\alpha:2^\N$ such that $P \leftrightarrow \exists_{n:\mathbb N} \alpha_n = 0$ (resp. $P \leftrightarrow \forall_{n:\mathbb N} \alpha_n = 0$). We denote by $\Open$ and $\Closed$ the types of open and closed propositions.
+\end{definition}
+
+\begin{remark}\label{rmkOpenClosedNegation}
+  The negation of an open proposition is closed, 
+  and by MP (\Cref{MarkovPrinciple}), the negation of a closed proposition is open. %. 
+%  Also by MP, we have 
+  Moreover both open and closed propositions are $\neg\neg$-stable. 
+%  and $\neg \neg P \to P$ whenever $P$ is open or closed. 
+%  By the negation of WLPO (\Cref{NotWLPO}), 
+  By $\neg$WLPO (\Cref{NotWLPO}), 
+  not every closed proposition is decidable. 
+  Therefore, not every open proposition is decidable. 
+  % Both therefore and similarly can be used here, by a similar proof we can show it, or we can use that 
+  % if $P$ is closed and $\neg P$ is decidable, so is $\neg \neg P = P$. 
+  Every decidable proposition is both open and closed.
+%  and in \Cref{ClopenDecidable} we shall see the converse. 
+\end{remark}
+\begin{lemma}
+  We have the following:
+  \begin{itemize}
+%    \item Closed propositions are closed under finite disjunctions. 
+    \item Closed propositions are stable under countable conjunctions and finite disjunctions. 
+    \item Open propositions are stable under countable disjunctions and finite conjunctions. 
+  \end{itemize}
+\end{lemma}
+\begin{proof}
+%  By Proposition 1.4.1 of \cite{HannesDiener}, LLPO (\Cref{LLPO}) is equivalent to the statement that 
+%  the disjunction of two closed propositions are closed. 
+  All statements but the one about finite disjunctions have similar proofs, so we only present the proof that closed propositions are stable under countable conjunctions. 
+  Let $(P_n)_{n:\N}$ be a countable family of closed propositions. 
+  By countable choice, for each 
+  $n:\N$ we have an $\alpha_n:2^\N$ 
+  such that $P_n \leftrightarrow \forall_{m:\N}\, \alpha_{n,m} =0$. 
+  Consider a surjection $s:\N \twoheadrightarrow \N \times \N$, and let 
+%  Let 
+%  $$\beta_k = \alpha_{s(k)}.$$
+  $\beta_k = \alpha_{s(k)}.$
+  Note that $\forall_{k:\N}\, \beta_k = 0$ if and only if 
+%  $\forall_{m,n:\N}\alpha_{m,n} = 0$, which happens if and only if 
+  $\forall_{n:\N} P_n$. 
+%  Hence the countable conjunction of closed propositions is closed. 
+
+To prove that closed propositions are closed under finite disjunctions, we use the known fact that LLPO (\Cref{LLPO}) is equivalent to the statement that for $P$ and $Q$ open, we have that $(\neg P \vee \neg Q) \leftrightarrow \neg (P\wedge Q)$. We conclude using that closed propositions are negations of open propositions, and that the conjunction of two open propositions is open.
+\end{proof}
+
+From now on we will use the above properties silently. 
+%OneBigLemma#
+%OneBigLemma#\rednote{Phrase the following lemmas as one big lemma, 
+%OneBigLemma#and use them silently without reference, also we should just state $\neg\neg$-stability instead of referring to the above all the time. }
+%OneBigLemma#
+%OneBigLemma#\begin{lemma}\label{ClosedCountableConjunction}
+%OneBigLemma#  Closed propositions are closed under countable conjunctions.
+%OneBigLemma#\end{lemma}
+%OneBigLemma#\begin{proof}
+%OneBigLemma#  Let $(P_n)_{n:\N}$ be a countable family of closed propositions. 
+%OneBigLemma#  By countable choice, for each 
+%OneBigLemma#  $n:\N$ we have an $\alpha_n:2^\N $ 
+%OneBigLemma#  such that $P_n \leftrightarrow \forall_{m:\N} \alpha_{n,m} =0$. 
+%OneBigLemma#  Consider a surjection $s:\N \twoheadrightarrow \N \times \N$, and let 
+%OneBigLemma#%  Let 
+%OneBigLemma#%  $$\beta_k = \alpha_{s(k)}.$$
+%OneBigLemma#  $\beta_k = \alpha_{s(k)}.$
+%OneBigLemma#  Note that $\forall_{k:\N} \beta_k = 0$ if and only if 
+%OneBigLemma#%  $\forall_{m,n:\N}\alpha_{m,n} = 0$, which happens if and only if 
+%OneBigLemma#  $\forall_{n:\N} P_n$. 
+%OneBigLemma#  Hence the countable conjunction of closed propositions is closed. 
+%OneBigLemma#\end{proof} 
+%OneBigLemma#Using similar arguments, we can show the following two lemmas:
+%OneBigLemma#\begin{lemma}\label{OpenCountableDisjunction}
+%OneBigLemma#  Open propositions are closed under countable disjunctions. 
+%OneBigLemma#\end{lemma}
+%OneBigLemma#\begin{lemma}\label{OpenFiniteConjunction}
+%OneBigLemma#Open propositions are closed under finite conjunctions. 
+%OneBigLemma#\end{lemma}
+%OneBigLemma#%\begin{proof}
+%OneBigLemma#%We use \Cref{ClosedFiniteDisjunction} and the fact that $\neg(P\lor Q) \leftrightarrow \neg P \land \neg Q$.
+%OneBigLemma#%\end{proof}
+%OneBigLemma#%\begin{proof}
+%OneBigLemma#%  Similar to the previous lemma. 
+%OneBigLemma#%\end{proof}
+%OneBigLemma#\begin{lemma}\label{ClosedFiniteDisjunction} 
+%OneBigLemma#  Closed propositions are closed under finite disjunctions. 
+%OneBigLemma#\end{lemma}
+%OneBigLemma#\begin{proof}
+%OneBigLemma#  This statement is equivalent to LLPO (\Cref{LLPO}) by  
+%OneBigLemma#  Proposition 1.4.1 of \cite{HannesDiener}. 
+%OneBigLemma#%  , LLPO is equivalent to the statement that 
+%OneBigLemma#%  for $(\phi_n)_{n:\N}, (\psi_m)_{m:\N}$ families of decidable propositions indexed over $\N$, we have
+%OneBigLemma#%  \begin{equation}
+%OneBigLemma#%    (\forall_{n:\N} \forall_{m:\N} (\phi_n \vee \psi_m) )
+%OneBigLemma#%    \leftrightarrow
+%OneBigLemma#%    ((\forall_{n:\N} \phi_n) \vee (\forall_{m:\N} \psi_m) )
+%OneBigLemma#%  \end{equation}
+%OneBigLemma#%%  $(\forall_{n:\N} \alpha(n) = 0 )\vee (\forall_{n:\N} \beta(n) = 0 )$ is closed for any $\alpha,\beta:2^\N$.
+%OneBigLemma#%%  By \Cref{corAlternativeLLPO}, the statement is equivalent to 
+%OneBigLemma#%%  $ \forall_{n:\N}  \forall_{m:\N}  (\alpha(n) = 0 \vee \beta(m) = 0)$, 
+%OneBigLemma#%  The latter which is a countable conjunction of decidable propositions, 
+%OneBigLemma#%  hence closed by \Cref{ClosedCountableConjunction}.
+%OneBigLemma#\end{proof}
+%OneBigLemma#
+\begin{corollary}\label{ClopenDecidable}
+  If a proposition is both open and closed, then it is decidable. 
+\end{corollary}
+\begin{proof}
+  If $P$ is open and closed, then 
+  $P\vee \neg P$ is open. So it is $\neg\neg$-stable and we conclude from $\neg\neg(P\vee\neg P)$. 
+%  and we conclude by $\neg\neg$-stability of open propositions. 
+%  but open propositions are $\neg\neg$-stable by \Cref{rmkOpenClosedNegation} so we can conclude.
+%  hence 
+ % equivalent to $\neg \neg (P \vee \neg P)$ by \Cref{rmkOpenClosedNegation}.
+ % As the latter proposition is provable, we may conclude $P$ is decidable. 
+%  
+%  If $P$ is open and closed, $P\vee \neg P$ is open, hence
+%  equivalent to $\neg \neg (P \vee \neg P)$, which is provable. 
+\end{proof}
+
+
+%\begin{lemma}\label{OpenFiniteConjunction}
+%  Open propositions are closed under finite conjunctions. 
+%\end{lemma}
+%\begin{proof}
+%  We need to show that for any $\alpha,\beta:2^\N$, the following proposition is open:
+%  \begin{equation}\label{eqnConjunctionOpen}
+%    (\exists_{n:\N} \alpha(n) = 0 )\wedge(\exists_{n:\N} \beta(n) = 0 )
+%  \end{equation}
+%  Consider $\gamma:2^\N$ given by 
+%  $\gamma(l) = 1$ iff there exist some $k,k'\leq l$ with 
+%  $\alpha(k) = \beta(k') = 0$. 
+%  As we only need to check finitely many combinations 
+%  of $k,k'$, this is a decidable property for each $l:\N$ and $\gamma$ is well-defined. 
+%  Then $\exists_{k:\N}\gamma(k)=0$ if and only if \Cref{eqnConjunctionOpen} holds.
+%\end{proof}
+
+\begin{lemma}\label{ClosedMarkov}
+  For $(P_n)_{n:\N}$ a sequence of closed propositions, we have 
+  $\neg \forall_{n:\N} P_n \leftrightarrow  \exists_{n:\N} \neg P_n$. 
+\end{lemma}
+\begin{proof}
+  Both $\neg \forall_{n:\N} P_n$ and $\exists_{n:\N} \neg P_n$ are open, hence $\neg\neg$-stable.
+  The equivalence follows. 
+%  and the equivalence follows. 
+%  from which the equivalence follows. 
+%  We have that $\forall_{n:\N}P_n$ is closed and $\exists_{n:\N} \neg P_n$ is open by \Cref{OpenCountableDisjunction}, therefore both are $\neg\neg$-stable by \Cref{rmkOpenClosedNegation} and we can conclude.
+%It is always the case that $\exists_{n:\N}\neg P_n \to \neg \forall_{n:\N} P_n$. 
+  %For the converse direction,
+  %note that $\neg \exists_{n:\N} \neg P_n(x) \to \forall_{n:\N} \neg \neg P_n(x).$
+  %By \Cref{rmkOpenClosedNegation}, $\neg \neg  P_n(x)\leftrightarrow P_n(x)$ for all $n:\N$. 
+  %It follows that 
+  %$\neg \forall_{n:\N} P_n(x)\to 
+  %\neg \neg \exists_{n:\N} \neg P_n(x).$
+  %As $\exists_{n:\N}\neg P_n(x)$ is a countable disjunction of open propositions, 
+  %it is open by \Cref{OpenCountableDisjunction} and thus equivalent to 
+  %$\neg\neg\exists_{n:\N} \neg P_n(x)$ by \Cref{rmkOpenClosedNegation}.
+  %We conclude that $\neg \forall_{n:\N} P_n \to \exists_{n:\N} \neg P_n$ as required. 
+\end{proof} 
+
+%\begin{lemma}\label{OpenDependentSums}
+%  Open propositions are closed under dependent sums.
+%\end{lemma}
+%\begin{proof}
+%  \rednote{If we show that Open propositions are exactly the overtly discrete ones, this is implied by $\Sigma$-closure}
+%  First note that for $D$ a decidable proposition, and $X:D \to \Open$,
+%  by case splitting on $D$, we can see 
+%  $\Sigma_{d:D} X(d)$ is open.
+%%
+%  Then note that for $P$ an open proposition, 
+%  there exists a sequence of decidable propositions $A_n$ with 
+%  $P = \exists_{n:\N} A_n $.
+%%
+%  So for $Y : P \to Open $, the dependent sum $\Sigma_P Y$ is given by 
+%  $\exists_{n:\N} (\Sigma_{a:A_n} Y(n,a))$,
+%  which is a countable disjunction of open propositions, 
+%  hence open by \Cref{OpenCountableDisjunction}.
+%\end{proof}
+%
+%We will see the same holds for closed propositions in \Cref{ClosedDependentSums}.
+%
+%\begin{remark}\label{ImplicationOpenClosed}
+%  If $P$ is open, $P \to \bot$ is only open if $P$ is decidable, which is not in general the case. 
+%  Thus $\Open$ is not closed under dependent products. Neither is $\Closed$. 
+%  However, as $(P\to Q)  \to \neg \neg (\neg P \vee Q)$,
+%  we have that if $P$ is open and $Q$ is closed, then $P\to Q$ is closed, and similarly $Q\to P$ is open.
+%\end{remark}
+\begin{lemma}\label{ImplicationOpenClosed}
+  If $P$ is open and $Q$ is closed then $P\to Q$ is closed.
+  If $P$ is closed and $Q$ open, then $P\to Q$ is open. 
+\end{lemma}
+\begin{proof}
+  Note that $\neg P \vee Q$ is closed. Using $\neg\neg$-stability
+  we conclude that $(P\to Q) \leftrightarrow (\neg P \vee Q)$. 
+  The other proof is similar. 
+%  and we conclude by 
+%  Assume $P$ open and $Q$ closed, the other proof is similar. 
+%  Note that $(\neg P \vee Q) \to (P \to Q)$ and 
+%  $(P\to Q)\to \neg\neg(\neg P \vee Q)$. 
+%  By \Cref{rmkOpenClosedNegation} it follows that 
+%  $(\neg P \vee Q)\leftrightarrow (P \to Q)$, and using \Cref{ClosedFiniteDisjunction}, 
+%  we can conclude that $P\to Q$ is closed. 
+\end{proof}
+%
+%The following question was asked by Bas Spitters at TYPES 2024:
+
+% ===== END PropositionalTopology =====
+% ===== BEGIN SyntheticTopology =====
+\subsection{Types as spaces}
+The subset $\Open$ of the set of propositions induces a topology on every type. 
+This is the viewpoint taken in synthetic topology, from which we borrow terminology \cite{SyntheticTopologyEscardo, SyntheticTopologyLesnik}. 
+%other references include \cite{SyntheticTopologyEscardo}%, TODOSortOutTaylorsReferences}.
+%Defining a topology in this way has some benefits, which we summarize in this section. 
+
+\begin{definition}
+  Let $T$ be a type, and let $A\subseteq T$ be a subtype. 
+  We call $A\subseteq T$ open (resp. closed) if $A(t)$ is open (resp. closed) for all $t:T$.
+\end{definition}
+
+\begin{remark}
+  It follows immediately that the pre-image of an open by any map is open, so that any map is continuous. 
+%  This is only relevant for a space if the topology we defined above matches the topology one would expect. 
+  In \Cref{StoneClosedSubsets}, we will see that the resulting topology is as expected for Stone spaces.
+  In \Cref{IntervalTopologyStandard}, we will see that the same holds for the unit interval. 
+\end{remark}
+
+
+
+%\begin{remark}
+%  Phao's principle is a special case of directed univalence. 
+%\end{remark}
+%\begin{proof}
+%  \rednote{TODO}
+%\end{proof}
+% ===== END SyntheticTopology =====
+
+\section{Overtly discrete spaces}
+% ===== BEGIN Odisc =====
+%\input{OvertlyDiscrete/ColimitRepresentation.tex}
+%\rednote{
+%  Change the $\iota$ notation to have the domain on top, 
+%and $\pi$ have codomain at bottom So $\pi_n^m \circ \pi_m = \pi_n, 
+%\iota_m^n \circ \iota_n = \iota_m$ $\iota_m^n : B_n \to B_m$. } 
+%\rednote{Discussion on what the colimit is exactly, refer to definition in\cite{SequentialColimitHoTT}}
+%
+
+
+\begin{definition}
+  We call a type overtly discrete if
+  it is a sequential colimit of finite sets. 
+%  it can be described as 
+%  the colimit of an $(\N,\leq)$-indexed sequence of finite sets. 
+\end{definition} 
+\begin{remark}
+  It follows from Corollary 7.7 of \cite{SequentialColimitHoTT} that 
+  overtly discrete types are sets, and that the sequential colimit can be defined as in set theory. 
+  We write $\ODisc$ for the type of overtly discrete types. 
+\end{remark}
+  Using dependent choice, we have the following results: 
+%  \rednote{TODO add citation}
+%  \begin{lemma}\label{colimitCompact}
+%    Sequential colimits commute with exponentitation by finite sets.
+%  \end{lemma}
+  \begin{lemma}\label{lemDecompositionOfColimitMorphisms}
+      A map between overtly discrete sets is a sequential colimit of maps between finite sets. 
+  \end{lemma}
+%  \begin{proof}
+%    By countable dependent choice, the proof in \rednote{TODO} works. 
+%  \end{proof}
+  \begin{lemma}\label{lemDecompositionOfEpiMonoFactorization}
+    For 
+    $f:A\to B$ a sequential colimit of maps of finite sets $f_n:A_n \to B_n$, we have 
+      that the factorisation $A \twoheadrightarrow Im(f) \hookrightarrow B$ is the 
+      sequential colimit of the factorisations 
+      $A_n \twoheadrightarrow Im(f_n) \hookrightarrow B_n$. 
+    \end{lemma}
+    
+%
+%%  If $B:\ODisc$, we will denote $B_n$ for the objects of the underlying sequence and 
+%%  $\iota^n_m: B_n \to B_m, \iota_n:B_n \to B$ for the obvious maps. 
+%  $\iota_n^m:B_n \to B_m$ for the maps and objects in the underlying sequence and 
+%  $\iota_n:B_n \to B$ for the colimit inclusion map. 
+%  If $B$ is overtly disc
+%  If we denote an overtly discrete type by $B$, we will denote the objects of the underlying sequence as 
+%  $B_n,~n:\N$, and for $n\leq m$, we denote the maps $B_n \to B_m$ with 
+%  Greek letters with lower index $n$ and upper index $m$. 
+%  So for example $\iota_n^m:B_n \to B_m$. 
+%  The maps $B_n \to B$ will in this case be denoted $\iota_n$. 
+%  If convenient, given a sequence $B_n$, we will denote $B_\infty$ for the colimit $B$.
+%\begin{definition}
+%A type $X$ is countable if there merely exists a decidable subset of $\N$ equal to $X$.
+%\end{definition}
+%
+
+
+%\subsection{Maps of overtly discrete types}
+%\begin{lemma}[Compactness of finite sets] \label{colimitCompact}
+%%  For any finite set $A$ and $(\N,\leq)$-indexed sequence of finite sets $B_n$ with colimit $B$, 
+%%  the colimit of $B_n^A$ is $B^A$. 
+%  Exponentiation by a finite sets commute with sequential colimit. 
+%\end{lemma}  
+%\begin{proof}
+%  \rednote{Reference to standard proof working here as well.}
+%%reference%
+%%reference%  \rednote{Should there be a reference here?}
+%%reference%%  First note that $B^A$ forms a cocone on $(B_n^A)_{n:\N}$ 
+%%reference%  Any map $A \to B_n$ induces a map $A \to B$, hence $B^A$ is a cocone on $(B_n^A)_{n:\N}$.
+%%reference%  Let $C$ form a cocone on $(B_n^A)_{n:\N}$. %with maps $F_n:B_n^A \to C$.
+%%reference%  For any $f:A \to B$, the finite image $f(A)$ must already occur in some $B_n$, 
+%%reference%  thus there is some $f':A\to B_n$ with $\iota_n\circ f' = f$.% occurs as some map $A\to B_n$, 
+%%reference%  As $C$ is a cocone, $f'$ corresponds to some $c$ in $C$, and this term does not depend on $n$. 
+%%reference%  Also any map $B^A \to C$ respecting the cocone conditions must send $f$ to $c$, 
+%%reference%  hence $B^A$ is indeed the colimit. 
+%%reference%%%  We shall show there is an unique morphism of cocones $B^A \to C$. 
+%%reference%%%  Denote $\iota_n:B_n \to B, F_n:B_n^A\to C$ for the cocone maps. 
+%%reference%%  \begin{itemize}
+%%reference%%    \item 
+%%reference%%      If $f:A\to B$, we have that $f(A)$ is a finite subset of $B$, and thus occurs already in some $B_n$. 
+%%reference%%      This induces a map $f'_n:A\to B_n$ with $\iota_n\circ f'_n = f$. 
+%%reference%%      As $C$ is a cocone, we have that $F_n(f'_n)$ does not depend on $n:\N$. 
+%%reference%%%      Thus $(F_n)_{n:\N}$ induces a map 
+%%reference%%      Thus we get a map $B^A\to C$. 
+%%reference%%    \item 
+%%reference%%      For uniqueness, by function extensionality maps $B^A \to C$ are uniquely determined by their values on 
+%%reference%%      $f:B^A$. By the above, the value of $f$ is uniquely determined by it's value on $B_n$ for 
+%%reference%%      any $n$ with the image of $f$ in $B_n$. Thus there is at most one morphism of cocones $B^A \to C$. 
+%%reference%%  \end{itemize}
+%\end{proof}
+%\begin{remark}\label{rmkEqualityColimit}
+%  In the above proof, we used that any element $b\in B$ already occurs in some $B_n$. 
+%  However, it does not necessarily occur uniquely in $B_n$.
+%  In general, $B$ is overtly discrete 
+%  and there exist some $B_n$ with two elements corresponding to the same element in $B$, 
+%  Theorem 7.4 from \cite{SequentialColimitHoTT} says that there merely exists some $m\geq n$
+%  such that these elements become equal in $B_m$. 
+%\end{remark}
+%\begin{lemma}\label{lemDecompositionOfColimitMorphisms}
+%  \rednote{
+%  Any map between overtly discrete sets is a sequential colimit of maps between finite sets.
+%  }
+%
+%
+%  Let $B,C$ be overtly discrete, 
+%  and let $f:B\to C$.
+%  There exists $(\N,\leq)$-indexed sequences of finite sets 
+%  $(B_n)_{n:\N}, (C_n)_{n:\N}$ with colimits $B,C$ respectively
+%  and compatible maps $f_n:B_n \to C_n$, 
+%  such that $f$ is the induced morphism $B\to C$.
+%\end{lemma}
+%\begin{proof}
+%  Let $(B_n)_{n:\N}, (C_n)_{n:\N}$ be 
+%  sequences of finite sets with colimits $B$ and $C$. 
+%  Using \Cref{axDependentChoice}, we will construct an increasing sequence of natural numbers $n_i$ 
+%  with a family of maps $f_i:B_i \to C_{n_i}$ such that the following diagram commutes for all $i>0$. :
+%%  We will construct a subsequence of $(C_n)_{n:\N}$, using \Cref{axDependentChoice}.
+%%choiceintro%%
+%%choiceintro%  For $k:\N$, let $E_k$ consist of 
+%%choiceintro%  strictly increasing sequences $(n_i)_{i<k}$ of natural numbers together with a finite family of maps 
+%%choiceintro%  $(f_i: B_{i} \to C_{n_i})_{i<k}$ such that
+%%choiceintro%  for all $0<i<k$ the following diagram commutes:
+%  \begin{equation}\label{eqnDecompositionOfColimitMorphisms}
+%    \begin{tikzcd}
+%      B_{i-1} \arrow[r,"\iota_{i-1}^i"] \arrow[d, "f_{i-1}"]& B_{{i}} \arrow[r, "\iota_i"] 
+%      \arrow[d,"f_{i}"]& B \arrow[d,"f"] \\
+%      C_{n_{i-1}} \arrow[r,"\kappa_{i-1}^i"] & C_{n_{i}} \arrow[r,"\kappa_i"] & C 
+%    \end{tikzcd}
+%  \end{equation}
+%%choiceintro%  For $e:E_k, e':E_{k+1}$, we let 
+%%choiceintro%  $R_k(e,e')$ denote  whether the underlying sequences of $e'$ extends that of $e$. 
+%%choiceintro%  The empty sequence inhabits $E_0$. We will show that if $e:E_k$, there exists some $e':E_{k+1}$ with 
+%%choiceintro%  $R_k(e,e')$. Then \Cref{axDependentChoice} will give the required sequence $(f_i:B_i\to C_{n_i})$.
+%%choiceintro%
+%%  Suppose we have $(f_i: B_{i} \to C_{n_i})_{i<k}$ for some $k\geq 0$ 
+%%  such that for all $0<i<k$ the diagram of \Cref{eqnDecompositionOfColimitMorphisms} commutes.
+%  Suppose we have an initial segment $(n_i)_{i<k}$ of such a sequence with maps $(f_i)_{i<k}$ making 
+%  \Cref{eqnDecompositionOfColimitMorphisms} commute for $i<k$. 
+%  We shall show that in this case there exist $n_{k}:\N, f_{k}:B_k \to C_{n_k}$ extending it. 
+%%  making the same diagram commute for $i = k$. 
+%  Consider the map $f\circ \iota_k: B_{k}\to C$. 
+%  As $B_k$ is finite, \Cref{colimitCompact} gives some $n_k':\N $ such that %, f_k':B_k \to C_{n_k'}$ such that 
+%  it factors over some $C_{n_k'}$.
+%%  \begin{equation}
+%%    \begin{tikzcd}
+%%    B_{k} \arrow[r,"\iota_k"]  \arrow[d,"f'_{k}"]& B \arrow[d,"f"]\\
+%%    C_{n'_{k}} \arrow[r, "\kappa_{n'_k}"'] & C
+%%    \end{tikzcd}
+%%  \end{equation}
+%%ExtraExplanationWhichReadercanNote%  We may assume $n'_{k+1} > n_k$.
+%%ExtraExplanationWhichReadercanNote%  Note that it is not necessarily the case that 
+%%ExtraExplanationWhichReadercanNote%  $f'_{k} \circ \iota_{k-1}^k = \kappa_{n_{k-1}}^{n'_k}\circ f_{k-1}$. 
+%%  $f'_{k+1}$ is compatible with $f_k$, meaning the left square in the following diagram needn't commute:
+%%  \begin{equation}
+%%    \begin{tikzcd}
+%%      B_{k-1} \arrow[r] \arrow[d, "f_{k-1}"]& B_{{k}}  \arrow[r] \arrow[d,"f'_{k}"] & B \arrow[d,"f"] \\
+%%      C_{n_{k-1}} \arrow[r] & C_{n'_{k}} \arrow[r]  & C 
+%%    \end{tikzcd}
+%%  \end{equation}
+%%ExtraExplanationWhichReadercanNote%  However, 
+%  Both $f'_{k}, f_{k-1}$ induce the same map $B_{k-1} \to C$. 
+%%  Recall by \Cref{rmkMorphismsOutOfQuotient} this map is induced by it's value on finitely many elements. 
+%  As $B_{k-1}$ is finite, from \Cref{rmkEqualityColimit} there is some $n_{k} \geq {n'_{k}}$ 
+%  such that they become equal in $C_{n_k}$, and we have $f_k:B_k \to C_{n_k}$ such that the following does commute;
+%  by \Cref{axDependentChoice} we then get compatible maps as required. 
+%%choiceintro% and we're done:
+%
+%%  such that for $f_{k}$ the composition of $f'_{k+1}:B_{k+1} \to C_{n'_{k+1}}$ and 
+%%  the map $C_{n'_{k+1}} \to C_{n_{k+1}}$, the following diagram does commute:
+%  \begin{equation}
+%    \begin{tikzcd}
+%      B_{k-1} \arrow[d,"f_{k-1}"]\arrow[r] & B_{{k}} \arrow[rd, "f_{k}"] \arrow[rr,"\iota_k"] & & B \arrow[d,"f"] \\
+%      C_{n_{k-1}} \arrow[r] & C_{n'_{k}} \arrow[r] & C_{n_{k}} \arrow[r] & C 
+%    \end{tikzcd}
+%  \end{equation}
+%%  Now by dependent choice for the above $x_0, R_n, E_n$, we get a sequence $(f_i:B_i \to C_{n_i})$  for some 
+%%  strictly increasing sequence $n_i$ of natural numbers. 
+%%  Note that for such a sequence $(n_i)_{i:\N}$, 
+%%  $(C_{n_i})_{i:\N}$ converges to $C$. Also $(B_i)_{i:\N}$ still converges to $B$. 
+%%  Furthermore, by construction the map that sequence $f_i$ induces from $B \to C$ shares all values with $f$
+%%  and thus is equal to $f$. 
+%%  Thus our sequence $f_i$ is as required. 
+%\end{proof}
+
+%\begin{lemma}\label{lemDecompositionOfEpiMonoFactorization}
+%  \rednote{Denote $\Im(f)$ instead of $f(A)$.} 
+%  \rednote{Can this be a shorter remark?}
+%  Let $f:A_\infty\to B_\infty$ be a map between overtly discrete types, and suppose we have $f_n:A_n\to B_n$ such that 
+%  the following diagram commutes:
+%  \begin{equation}
+%    \begin{tikzcd}
+%      A_n \arrow[d,"f_n"]\arrow[r, "\iota_n^m"]  & A_m \arrow[d,"f_m"] \arrow[r,"\iota_m^\infty"]  & A_\infty \arrow[d,"f"] 
+%      \\
+%      B_n \arrow[r, "\kappa_n^m"'] & B_m \arrow[r,"\kappa_m^\infty"'] & B_\infty
+%    \end{tikzcd}
+%  \end{equation}
+%  Then $f(A)$ is the colimit of $f_n(A_n)$, 
+%  and the maps $A\twoheadrightarrow f(A)$ and $f(A) \hookrightarrow B$ 
+%  are induced by the maps $A_n\twoheadrightarrow f_n(A_n)$ and $f_n(A_n) \hookrightarrow B_n$ respectively. 
+%\end{lemma}
+%\begin{proof}
+%  For $n\leq m$, we have that $\kappa_n^m(f_n(A_n)) = f_m(\iota_n^m(A_n))\subseteq f_m(A_m)$, 
+%  hence we can take the corestriction of the map $f_n(A_n) \to B_m$ to $f_m(A_m)$ to get 
+%  maps $\lambda_n^m :f_n(A_n) \to f_m(A_m)$ making the following diagram commute:
+%  % https://q.uiver.app/#q=WzAsOSxbMSwwLCJBX20iXSxbMiwwLCJBX1xcaW5mdHkiXSxbMSwyLCJCX20iXSxbMiwyLCJCX1xcaW5mdHkiXSxbMiwxLCJmKEEpIl0sWzEsMSwiZl9tKEFfbSkiXSxbMCwwLCJBX24iXSxbMCwyLCJCX24iXSxbMCwxLCJmX24oQV9uKSJdLFswLDFdLFsyLDNdLFsxLDQsIiIsMCx7InN0eWxlIjp7ImhlYWQiOnsibmFtZSI6ImVwaSJ9fX1dLFs0LDMsIiIsMSx7InN0eWxlIjp7InRhaWwiOnsibmFtZSI6Imhvb2siLCJzaWRlIjoidG9wIn19fV0sWzAsNSwiIiwyLHsic3R5bGUiOnsiaGVhZCI6eyJuYW1lIjoiZXBpIn19fV0sWzUsMiwiIiwxLHsic3R5bGUiOnsidGFpbCI6eyJuYW1lIjoiaG9vayIsInNpZGUiOiJ0b3AifX19XSxbNywyLCJcXGthcHBhX25ebSIsMl0sWzYsMCwiXFxpb3RhX25ebSJdLFs2LDgsIiIsMix7InN0eWxlIjp7ImhlYWQiOnsibmFtZSI6ImVwaSJ9fX1dLFs4LDcsIiIsMSx7InN0eWxlIjp7InRhaWwiOnsibmFtZSI6Imhvb2siLCJzaWRlIjoidG9wIn19fV0sWzgsNSwiIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiZGFzaGVkIn19fV0sWzUsNCwiIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiZG90dGVkIn19fV1d
+%  \begin{equation}\label{eqnEpiMonoFactorizationDecomposition}
+%    \begin{tikzcd}
+%    {A_n} & {A_m} & {A_\infty} \\
+%    {f_n(A_n)} & {f_m(A_m)} & {f(A_\infty)} \\
+%    {B_n} & {B_m} & {B_\infty}
+%    \arrow["{\iota_n^m}", from=1-1, to=1-2]
+%    \arrow[two heads, from=1-1, to=2-1,"e_n"]
+%    \arrow[from=1-2, to=1-3,"\iota_m^\infty"]
+%    \arrow[two heads, from=1-2, to=2-2,"e_m"]
+%    \arrow[two heads, from=1-3, to=2-3,"e_\infty"]
+%    \arrow[dashed, from=2-1, to=2-2, "\lambda_n^m"]
+%    \arrow[hook, from=2-1, to=3-1, "i_n"]
+%    \arrow[dashed, from=2-2, to=2-3, "\lambda_m^\infty"]
+%    \arrow[hook, from=2-2, to=3-2,"i_m"]
+%    \arrow[hook, from=2-3, to=3-3,"i_\infty"]
+%    \arrow["{\kappa_n^m}"', from=3-1, to=3-2]
+%    \arrow[from=3-2, to=3-3,"\kappa_m^\infty"']
+%  \end{tikzcd}
+%\end{equation}
+%  Also it is clear that any $b:f(A_\infty)$ already occurs in some $f_n(A_n)$, hence $f(A_\infty)$ is colimiting. 
+%\end{proof}
+\begin{corollary}\label{decompositionInjectionSurjectionOfOdisc}
+  %In \Cref{lemDecompositionOfColimitMorphisms}, 
+  An injective (resp. surjective) map between overtly discrete types 
+  is a sequential colimit of injective (resp. surjective) maps between finite sets. 
+\end{corollary}
+
+%  when $f$ is injective or surjective, 
+%  we can choose presentations such that each $f_n$ is also injective or surjective respectively. 
+%\begin{proof}
+%  Using \Cref{lemDecompositionOfColimitMorphisms} and \Cref{lemDecompositionOfEpiMonoFactorization}, 
+%  we get a factorization as in \Cref{eqnEpiMonoFactorizationDecomposition}. 
+%  If $f$ is injective, then $e$ is an isomorphism. 
+%  Hence $A$ is the colimit of $f_n(A_n)$, and we can take $f_n' = i_n$.
+%  Similarly, if $f$ is surjective $i$ is an isomorphism and we consider $B$ as colimit of $f_n(A_n)$ and 
+%  take $f_n' = e_n$.
+%\end{proof}
+\subsection{Closure properties of $\ODisc$}
+
+%\begin{remark}\label{ODiscFiniteColim}
+%  As sequential colimits commute with finite colimits, 
+%  and finite sets are closed under finite colimits,
+%  $\ODisc$ is closed under finite colimits as well.
+%\end{remark}
+
+We can get the following result using \Cref{lemDecompositionOfColimitMorphisms} and dependent choice.
+
+\begin{lemma}\label{ODiscClosedUnderSequentialColimits}
+  Overtly discrete types are stable under sequential colimits. 
+\end{lemma}
+%\begin{proof}
+%  By dependent choice and \Cref{lemDecompositionOfColimitMorphisms}.
+%\end{proof}
+%\begin{proof}
+%  By applying \Cref{axDependentChoice} to \Cref{lemDecompositionOfColimitMorphisms}, 
+%  given a colimit of the sequence $A_i$, we can find a quarterplane of the form 
+%  \begin{equation}
+%    \begin{tikzcd}
+%    A_{0,0}\ar[d]\ar[r] & A_{0,1}\ar[d]\ar[r] & \cdots \\
+%    A_{1,0}\ar[d]\ar[r] & A_{1,1}\ar[d]\ar[r] & \cdots \\
+%    \vdots & \vdots & \ddots\\
+%    \end{tikzcd}
+%  \end{equation}
+%  where all the $A_{i,j}$ are finite sets, and $A_i$ is the colimit in $j$ of $A_{i,j}$ and 
+%  the maps $A_i \to A_k$ are induced by maps $A_{i,j}\to A_{k,j}$. 
+%  The colimit of the above quarter-plane is also the colimit of the induced $(\N,\leq)$-indexed sequence $A_{j,j}$, 
+%  which is overtly discrete by definition. 
+%\end{proof}
+
+We have that $\Sigma$-types, identity types and propositional truncation commute with sequential colimits (Theorem 5.1, Theorem 7.4 and Corollary 7.7 in \cite{SequentialColimitHoTT}). Then by closure of finite sets under these constructors, we can get the following: 
+
+\begin{lemma}\label{OdiscSigma}
+  Overtly discrete types are stable under $\Sigma$-types, identity types and propositional truncations.
+\end{lemma}
+
+%\begin{proof}
+%  Let $B$ be overtly discrete and $X:B \to \mathcal U$ be a 
+%  $B$-indexed family of overtly discrete types. 
+%  For any $i:\N$, we have a finite coproduct of overtly discrete types 
+%  $\Sigma_{b:B_i} (X\circ \iota_i(b))$.  
+%  As colimits commute with finite coproducts, this is overtly discrete. 
+%  By Theorem 5.1 of \cite{SequentialColimitHoTT}, 
+%  taking the colimit in $i$, we get $\Sigma_{b:B} X(b)$. 
+%  By the \Cref{ODiscClosedUnderSequentialColimits}, this is overtly discrete. 
+%\end{proof}
+
+%\begin{remark}
+%  Note that the sequential colimit commutes with the propositional truncation, thus for $B:\ODisc$, we have 
+%  $||B||:\ODisc$. 
+%\end{remark}
+
+
+
+%\begin{theorem}
+%We have the following:
+%\begin{enumerate}[(i)]
+%\item Overtly dicrete types are stable under identity types and and sigma types.
+%\item Overly discrete types are stable under quotients by equivalence relation with value in overtly discrete types.
+%\item Overtly discrete type are stable under sequential colimits.
+%\item Overtly discrete types have local choice.
+%\end{enumerate}
+%\end{theorem}
+%
+%\begin{proof}
+%\begin{enumerate}[(i)]
+%\item For stability under identity types, we use that sequential colimits commutes with identity types. 
+%
+%For stability under sigma types, sequential colimits commutes with sigma so that by (iii) it is enough to show that overtly discrete types are stable under finite coproduct. But sequential colimits commute with finite coproducts.
+%
+%\item Clear from the alternative description in \cref{overtly-discrete-colimit-finite}.
+%
+%\item Assume given a tower of sequential colimits of finite types. By using dependent choice with \cref{presentation-maps-overtly-discrete} repeatedly, we get a quarter plane of finite types:
+%\begin{center}
+%\begin{tikzcd}
+%F_{0,0}\ar[d]\ar[r] & F_{0,1}\ar[d]\ar[r] & \cdots \\
+%F_{1,0}\ar[d]\ar[r] & F_{1,1}\ar[d]\ar[r] & \cdots \\
+%\vdots & \vdots & \ddots\\
+%\end{tikzcd}
+%\end{center}
+%which colimit is the colimit of the assumed tower. Then we just use \cref{colimit-quarter-diagonal} to conclude that this colimit is overtly discrete.
+%
+%\item By \cref{overtly-discrete-colimit-finite}, we have a cover of any overtly discrete type by a countable type, which is an overtly discrete type that has choice.
+%\end{enumerate}
+%\end{proof}
+%
+%\begin{remark}
+%(ii) implies that the propositional truncation of an overtly discrete type is open.
+%
+%(iii) implies that overtly discrete types are closed under countable coproducts.
+%\end{remark}
+%
+%\begin{lemma}\label{equivalence-induced-by-open-is-open}
+%Let $I$ be overtly discrete, and let $R$ be an open relation on $I$. Then the equivalence relation induced by $R$ is open.
+%\end{lemma}
+%
+%\begin{proof}
+%The equivalence relation $L(x,y)$ induced by $R$ is:
+%\[\exists(k:\N). \exists(i_0,\cdots,i_k:I). i_0=x\land i_k=y \land (\forall l<k.\ R(i_l,i_{l+1})) \]
+%which is open.
+%\end{proof}
+%
+%\begin{lemma}
+%Assume given a pushout square:
+%\begin{center}
+%\begin{tikzcd}
+%I\ar[d]\ar[r] & K\ar[d] \\
+%J\ar[r] & L  \\
+%\end{tikzcd}
+%\end{center}
+%such that $I\to J$ is an embedding and $I,J,K$ are overtly discrete. Then $L$ is overtly discrete.
+%\end{lemma}
+%
+%\begin{proof}
+%The situation means we have an open $I\subset J$ and a map $f:I\to K$. Then $L$ is equivalent to the quotient of $J+K$ by the  equivalence relation generated by:
+%\[i_0(x) \sim i_1(y)\ \mathrm{if\ we\ have\ that}\ (x\in I)\land f(x) = y\]
+%It is overtly discrete by \cref{equivalence-induced-by-open-is-open}.
+%\end{proof}
+%
+%
+%
+
+
+%DecompositionStone%
+%DecompositionStone%\begin{proof}
+%DecompositionStone%  By \Cref{FormalSurjectionsAreSurjections}, 
+%DecompositionStone%  $g$ corresponds to an injective map $f:2^T \to 2^S$ of Boolean algebras, 
+%DecompositionStone%  which by \Cref{decompositionInjectionSurjectionOfOdisc}
+%DecompositionStone%  can be decomposed into maps $f_n:(2^T)_n \to (2^S)_n$ which are all injective, 
+%DecompositionStone%  and by the duality described in \Cref{StoneDualToOdisc}, correspond to maps of finite Stone types
+%DecompositionStone%  $g_n : T_n \to S_n$ with $T_n,S_n$ $(\N,\geq)$-indexed sequences with limits $T,S$, and $g_N$ inducing $g:T\to S$.
+%DecompositionStone%  As all $f_n$ were injective, by \Cref{FormalSurjectionsAreSurjections}, all $g_n$ are surjective as required. 
+%DecompositionStone%\end{proof}
+% ===== END Odisc =====
+% ===== BEGIN OpenAreOdisc =====
+
+\subsection{$\Open$ and $\ODisc$} %Open propositions are Overtly discrete and Stone propositions.}
+%\begin{lemma}
+%  Whenever $P$ is a proposition and overtly discrete, $P$ is open. 
+%\end{lemma}
+%\begin{proof}
+%\end{proof}
+%\begin{lemma}
+%  Whenever $P$ is a an open proposition, it is overtly discrete.
+%\end{lemma}
+%\begin{proof}
+%  Suppose $P\leftrightarrow \exists_{n:\N} \alpha_n = 1$. 
+%  Let $P_n = \exists_{k\leq n} (\alpha_k = 1)$, which is a decidable proposition, hence a finite set. 
+%  Then the colimit of $P_n$ is $P$. 
+%\end{proof} 
+\begin{lemma}\label{PropOpenIffOdisc}
+  A proposition is open if and only if it is overtly discrete.
+\end{lemma}
+\begin{proof}
+  If $P$ is overtly discrete, then $P\leftrightarrow \exists_{n:\N} \propTrunc{F_n}$ with $F_n$ finite sets. 
+  But a finite set being inhabited is decidable, hence $P$ is a countable disjunction of decidable propositions, so it is open.
+  Suppose $P\leftrightarrow \exists_{n:\N} \alpha_n = 1$. 
+  Let $P_n = \exists_{n\leq k} (\alpha_n = 1)$, which is a decidable proposition, hence a finite set. 
+  Then the colimit of $P_n$ is $P$. 
+\end{proof}
+
+\begin{corollary}\label{OpenDependentSums}
+  Open propositions are stable under $\Sigma$-types. 
+\end{corollary}
+%\begin{proof}
+%  Immediate from \Cref{OdiscSigma} and \Cref{PropOpenIffOdisc}.
+%\end{proof}
+\begin{corollary}[transitivity of openness]\label{OpenTransitive}
+  Let $T$ be a type, let $V\subseteq T$ open and let $W\subseteq V$ open. 
+  Then $W\subseteq T$ is open as well. 
+\end{corollary}
+%\begin{proof}
+%  Denote $W'\subseteq T$ for the composite. 
+%  Note that $W'(t) = \Sigma_{v:V(t)} W(t,v)$. 
+%  As open propositions are closed under dependent sums (\Cref{OpenDependentSums}), 
+%  $W'(t)$ is an open proposition, as required. 
+%\end{proof}
+
+\begin{remark}\label{OpenDominance}
+  It follows from  Proposition 2.25 of \cite{SyntheticTopologyLesnik} that 
+  $\Open$ is a dominance in the setting of Synthetic Topology. 
+\end{remark}
+
+\begin{lemma}\label{OdiscQuotientCountableByOpen}\label{ODiscEqualityOpen}
+  A type $B$ is overtly discrete if and only if it is the quotient of a countable set by an open equivalence relation. 
+\end{lemma}
+\begin{proof}
+  If $B:\ODisc$ is the sequential colimit of finite sets $B_n$, 
+  then $B$ is an open quotient of $ (\Sigma_{n:\N} B_n)$.
+  %/\sim_B$ where $\sim_B$ is the reflexive closure of  
+%  $(n,b)\sim(m,\iota^n_m b)$ for $n\leq m$. 
+%
+  Conversely, assume $B= D/R$ with $D\subseteq \N$ decidable and $R$ open. 
+  By dependent choice we get $\alpha:D \to D \to 2^\N$ such that 
+  $R(x,y)\leftrightarrow \exists_{k:\N}\alpha_{x,y}(k) = 1$. 
+  Define $D_n = (D \cap \N_{\leq n})$, and define $R_n : D_n \to D_n \to 2$ as the equivalence relation generated by the relation 
+  $\exists_{k\leq n}\, \alpha_{x,y}(k) =1$. 
+  Then the $B_n = D_n/R_n$ are finite sets, and their colimit is $B$. 
+\end{proof}
+%\rednote{Not sure whether we need all of these:}
+%\begin{lemma}\label{OpenInNAreDecidableInN}
+%For any open $U\subseteq \N$, there merely exists a decidable set $D$ in $\N$ such that 
+%$\Sigma_{n:\N} D(n) \simeq \Sigma_{n:\N} U(n)$.
+%\end{lemma}
+%\begin{proof}
+%  Using countable choice, we get a map $\alpha_{(\cdot)}: \N \to \Noo$ such that 
+%  $U(n) \leftrightarrow \Sigma_{k:\N} \alpha_n(k) = 1$. Hence 
+%  $\Sigma_{n:\N}U(n) \simeq \Sigma_{n,k:\N}(\alpha_n(k)=0)$
+%  using $\N=\N\times\N$, we can conclude. 
+%\end{proof}
+%Needed?\begin{corollary}
+%Needed?  Any open subset of a countable set is countable. 
+%Needed?\end{corollary}
+%Needed?\begin{proof}
+%Needed?  An open subset of a decidable subset of $\N$ is an open subset of $\N$, 
+%Needed?  which by the above is isomorphic to a decidable subset of $\N$. 
+%Needed?\end{proof}
+%\begin{corollary}
+%  Open propositions are closed under countable disjunctions. 
+%\end{corollary}
+%\begin{proof}
+%  Clearly $\N:\ODisc$, and for $P:\N \to \Open$, and by the above 
+%  $||\Sigma_{n:\N} P_n||:\ODisc$. 
+%\end{proof} 
+
+%\begin{corollary}\label{OpenFiniteConjunction}
+%  Open propositions are closed under finite conjunctions. 
+%\end{corollary}
+%\begin{proof}
+%  A conjunction of propositions is a product, which is a dependent sum. 
+%\end{proof}
+%FollowsAlsoFromNextLemma%\begin{lemma}\label{ODiscEqualityOpen}
+%FollowsAlsoFromNextLemma%  Whenever $B$ is overtly discrete and $a,b:B$, the proposition $a=_B b$ is open. 
+%FollowsAlsoFromNextLemma%\end{lemma}
+%FollowsAlsoFromNextLemma%\begin{proof}
+%FollowsAlsoFromNextLemma%  For $a,b:B$ there is some $n:\N$ with $a',b':B_n$ and $\iota_n(a') = a,\iota_n(b') = b$.
+%FollowsAlsoFromNextLemma%  By \Cref{rmkEqualityColimit}, we have that $a=_B b$ iff 
+%FollowsAlsoFromNextLemma%  there is some $m\geq n$ with $\iota_n^m (a') = \iota_n^m(b')$. 
+%FollowsAlsoFromNextLemma%  As equality in finite sets is decidable, this is a countable disjunction of decidable propositions, hence open. 
+%FollowsAlsoFromNextLemma%%  \rednote{That reference can also be a direct cite}.
+%FollowsAlsoFromNextLemma%\end{proof}
+% ===== END OpenAreOdisc =====
+% ===== BEGIN BooleAsODisc =====
+\subsection{Relating $\ODisc$ and $\Boole$}
+\begin{lemma}\label{BooleIsODisc}
+  Every countably presented Boolean algebra is a sequential colimit of finite Boolean algebras. 
+\end{lemma}
+\begin{proof}
+  Consider a countably presented Boolean algebra of the form $B = 2[\N]/(r_n)_{n:\N}$. 
+%  We will show there exists a diagram of shape $\N$ taking values in Boolean algebras 
+%  with $B$ as colimit.
+%  \paragraph{The diagram}
+  For each $n:\N$, let $G_n$ be the union of $\{g_i\ |\ {i\leq n}\}$ and 
+  the finite set of generators occurring in $r_i$ for some $i\leq n$. 
+  Denote $B_n = 2[G_n]/(r_i)_{i\leq n}$. 
+  Each $B_n$ is a finite Boolean algebra, and there are canonical maps $B_n \to B_{n+1}$.
+%  The inclusion $G_n \hookrightarrow G_{n+1}$ induces maps $B_n \to B_{n+1}$.
+%  Hence $B_n,~n:\N$ is an $(\N,\leq)$-indexed sequence of finite sets. 
+  Then $B$ is the colimit of this sequence. 
+%
+%  \paragraph{The colimit}
+%  As $G_n\subseteq G$ and $R_n \subseteq R$, 
+%  \Cref{rmkMorphismsOutOfQuotient} also gives us a map $B_n\to \langle G \rangle \langle R \rangle$. 
+%  We claim the resulting cocone is a colimit. 
+%
+%  Suppose we have a cocone $C$ on the diagram $(B_n)_{n\in\N}$. 
+%  We need to show that there exists a map $\langle G \rangle / R\to C$ and
+%  we need to show this map is unique as map between cocones. 
+%  \begin{itemize}
+%    \item To show there exists a map $\langle G \rangle / R \to C$, 
+%      we use remark \Cref{rmkMorphismsOutOfQuotient} again. 
+%      Let $g\in G$ be the $n$'th element of $G$, 
+%      note that $g\in G_n$, and consider the image of $g$ under the map $B_n \to C$. 
+%      This procedure defines a function from $G$ to the underlying set of $C$. 
+%      Let $\phi \in R$ be the $n$'th element of $R$, 
+%      note that $\phi \in R_n$, and the map $B_n \to C$ must send $\phi$ to $0$. 
+%      Thus the function from $G$ to the underlying set of $C$ also sends $\phi$ to $0$. 
+%      This thus defines a map $\langle G \rangle / R \to C$. 
+%    \item To show uniqueness, consider that any map of cocones $\langle G \rangle / \langle R \rangle \to C$ 
+%      must take the same values on all $g\in G_n$ for all $n\in\N$. 
+%      Now all $g\in G$ occur in some $G_n$, so any map of cocones $\langle G \rangle /  \langle R \rangle \to C$ 
+%      takes the same values for all $g\in G$. 
+%      \Cref{rmkMorphismsOutOfQuotient} now tell us that these values uniquely determine the map. 
+%  \end{itemize}
+\end{proof}
+
+
+
+
+\begin{corollary}\label{ODiscBAareBoole}
+  A Boolean algebra $B$ is overtly discrete if and only if it is countably presented. 
+\end{corollary}
+\begin{proof}
+  Assume $B:\ODisc$. 
+  By \Cref{OdiscQuotientCountableByOpen}, we get a surjection $\N\twoheadrightarrow B$ and that $B$ has open equality. 
+  Consider the induced surjective morphism $f:2[\N]\twoheadrightarrow B$.
+  By countable choice, we get for each $b:2[\N]$
+  a sequence $\alpha_{b}:2^\N$ such that 
+  $(f(b) = 0)\leftrightarrow \exists_{k:\N} (\alpha_{b,k}=1)$. 
+  Consider 
+  $r:2[\N] \to \N \to 2[\N]$ 
+  given by 
+  \[r(b,k) =\begin{cases}
+    b &\text{ if } \alpha_{b}(k) = 1\\
+    0   &\text{ if } \alpha_{b}(k) = 0
+  \end{cases}
+  \] 
+  Then $B= 2[\N]/(r(b,k))_{b:2[\N],k:\N}$.
+  %By countable choice, we get for each $a,b:2[\N]$
+  %a sequence $\alpha_{a,b}:2^\N$ such that 
+  %$(f(a) = f(b))\leftrightarrow \exists_{k:\N} (\alpha_{a,b}(k) =1)$. 
+  %Consider 
+  %$r:2[\N] \times 2[\N] \times \N \to 2[\N]$ 
+  %given by 
+  %$$r(a,b,k) =\begin{cases}
+  %  a-b &\text{ if } \alpha_{(a,b)}(k) = 1\\
+  %  0   &\text{ if } \alpha_{(a,b)}(k) = 0
+  %\end{cases}
+  %$$
+  %Then $B= 2[\N]/(r(a,b,k))_{(a,b,n): F \times F \times \N}$. 
+  The converse comes from \Cref{BooleIsODisc}.
+\end{proof}
+
+\begin{remark}\label{BooleEpiMono}
+%  In particular equality in overtly discrete types is open. 
+  By \Cref{OdiscSigma} and \Cref{ODiscBAareBoole}, 
+  it follows that any 
+  $g:B\to C$ in $\Boole$ has an overtly discrete kernel.
+  As a consequence, the kernel is enumerable and $B/Ker(g)$ is in $\Boole$. 
+  By uniqueness of epi-mono factorizations and \Cref{SurjectionsAreFormalSurjections}, 
+  the factorization 
+  $B\twoheadrightarrow B/Ker(g) \hookrightarrow C$ corresponds to 
+  $\Sp(C) \twoheadrightarrow \Sp(B/Ker(g)) \hookrightarrow \Sp(B)$. 
+\end{remark}
+\begin{remark}\label{decompositionBooleMaps}
+  Similarly to \Cref{lemDecompositionOfColimitMorphisms} and 
+  \Cref{lemDecompositionOfEpiMonoFactorization}, a (resp. surjective, injective) morphism
+  in $\Boole$ is a sequential colimit of (resp. surjective, injective) morphisms between 
+  finite Boolean algebras.
+\end{remark}
+% ===== END BooleAsODisc =====
+% ===== BEGIN OvertlyDiscrete/BooleMaps =====
+% ===== END OvertlyDiscrete/BooleMaps =====
+% ===== BEGIN OvertlyDiscrete/KernelFactorization =====
+% ===== END OvertlyDiscrete/KernelFactorization =====
+%\section{Topology}
+\section{Stone spaces}
+% ===== BEGIN StoneProFinite =====
+
+\subsection{Stone spaces as profinite sets}
+%\begin{remark}\label{StoneClosedUnderPullback}
+%  Note that Boolean algebras are closed under finite colimits. 
+%  By \Cref{ODiscBAareBoole} and \Cref{ODiscFiniteColim}, $\Boole$ is closed under finite colimits.
+%  By \Cref {SpIsAntiEquivalence}  it follows that the category of Stone spaces is closed under finite limits. 
+%\end{remark}
+Here we present Stone spaces as sequential limits of finite sets. 
+This is the perspective taken in Condensed Mathematics \cite{Condensed,Dagur,Scholze}.
+Some of the results in this section are versions of the axioms used in 
+\cite{bc24}. A full proof of all these axioms is part of future work. 
+
+\begin{lemma}
+  Any $S:\Stone$ is a sequential limit of finite sets. 
+\end{lemma}
+\begin{proof}
+  Assume $B:\Boole$. By \Cref{SpIsAntiEquivalence} and \Cref{BooleIsODisc}, %and \Cref{ODiscClosedUnderSequentialColimits}, 
+ we have that $\Sp(B)$ is a sequential limit of spectra of finite Boolean algebras, which are finite sets. 
+\end{proof}
+
+\begin{lemma}\label{StoneAreProfinite} 
+  A sequential limit of finite sets is a Stone space. 
+\end{lemma}
+\begin{proof}
+  %For finite sets, we have that $\Sp(2^{S_n}) = S_n$, hence each $S_n$ is Stone. 
+  By \Cref{SpIsAntiEquivalence} and %\Cref{BooleIsODisc}
+  \Cref{ODiscClosedUnderSequentialColimits}, 
+  we have that $\Stone$ is closed under sequential limits, and finite sets are Stone.
+%  As $\Boole$ is closed under sequential colimits, \Cref{SpIsAntiEquivalence} gives that the 
+%  sequential limit of Stone space is Stone, hence $S$ is Stone. 
+\end{proof}
+
+%\begin{remark}
+ % For all $S:\Stone$, we shall denote by $S_n$ any sequence of finite sets which limit is $S$. 
+ % Whenever $n\leq m$, we denote $\pi_m^n$ for the maps $S_m \to S_n$, 
+ % and $\pi_n:S\to S_n$. 
+%\end{remark}
+\begin{corollary}
+Stone spaces are stable under finite limits.
+\end{corollary}
+\begin{remark}\label{StoneClosedUnderPullback}\label{ProFiniteMapsFactorization}
+  %Dually to \Cref{ODiscFiniteColim} and \Cref{ODiscClosedUnderSequentialColimits}, 
+  %Stone spaces are closed under $\Sigma$-types and sequential limits.
+%  Dually to \Cref{lemDecompositionOfColimitMorphisms} 
+%  maps of Stone spaces are sequential limits of maps of finite sets. 
+  By \Cref{decompositionBooleMaps} and 
+  \Cref{SurjectionsAreFormalSurjections}, maps (resp. surjections, injections) of Stone spaces
+  are sequential limits of maps (resp. surjections, injections) of finite sets. 
+%
+%
+%
+%
+%  when we have a map of Stone spaces $f:S\to T$, 
+%  we have $(\N,\geq)$-indexed sequences of finite sets $S_n,T_n$ with limits $S$ and $T$ respectively
+%  and maps $f_n:S_n\to T_n$ inducing $f$. Moreover if $f$ is surjective or injective, we 
+%  can choose all $f_n$ to be surjective or injective respectively as well. 
+\end{remark}
+
+\begin{lemma}\label{ScottFiniteCodomain}
+  For $(S_n)_{n:\N}$ a sequence of finite types with $S=\lim_nS_n$ and $k:\N$, we have that $\Fin(k)^{S}$ is the sequential colimit of $\Fin(k)^{S_n}$.
+\end{lemma}
+\begin{proof}
+  By \Cref{SpIsAntiEquivalence} we have $\Fin(k)^S = \Hom(2^{k},2^S)$.
+  Since $2^{k}$ is finite, we have that $\Hom(2^k,\_)$ commutes with sequential colimits, therefore $\Hom(2^{k},2^S)$ is the sequential colimit of $\Hom(2^{k},2^{S_n})$. 
+  By applying \Cref{SpIsAntiEquivalence} again, %these types are 
+  the latter type is $\Fin(k)^{S_n}$.% as required. 
+\end{proof}
+
+\begin{lemma}\label{MapsStoneToNareBounded}
+  For $S:\Stone$ and $f:S \to \N$, there exists some $k:\N$ such that $f$ factors through $\Fin(k)$. 
+\end{lemma}
+\begin{proof}
+  For each $n:\N$, the fiber of $f$ over $n$ is a decidable subset $f_n:S \to 2$. 
+  We must have that $\Sp(2^S/(f_n)_{n:\N}) = \bot$, hence there exists some $k:\N$ with 
+  $\bigvee_{n\leq k} f_n =_{2^S} 1 $. 
+  It follows that $f(s)\leq k$ for all $s:S$ as required. 
+\end{proof}
+
+%\begin{lemma}\label{scott-continuity}
+%  Let $E:\ODisc$ and $S:\Stone$, then 
+%  Then $E^S$ is the colimit of the $(\N,\leq)$-indexed sequence $E^{S_n}$.
+%%  $\mathrm{colim}_k(Z^{S_k}) \to \Z^S$
+%%  is an equivalence.
+%\end{lemma}
+%\begin{proof}
+%  Let $f:S \to E$. By \Cref{OdiscQuotientCountableByOpen}, 
+%  we have an enumeration $\N\twoheadrightarrow 1 + E$. 
+%  By \Cref{MapsStoneToNareBounded} and \Cref{AxLocalChoice}, there is some $N:\N$ such that 
+%  $f(S)\subseteq e(\N_{\leq N})$. 
+%\end{proof} 
+\begin{corollary}\label{scott-continuity}
+  For $(S_n)_{n:\N}$ a sequence of finite types with $S=\lim_nS_n$, we have that $\N^S$ is the sequential colimit of $\N^{S_n}$. 
+\end{corollary}
+\begin{proof}
+  By \Cref{MapsStoneToNareBounded} we have that $\N^S$ is the sequential colimit of $\Fin(k)^S$. 
+  By \Cref{ScottFiniteCodomain}, $\Fin(k)^S$ is the sequential colimit of the $\Fin(k)^{S_n}$ and we can swap the sequential colimits to conclude.
+  \end{proof} 
+
+
+
+\subsection{$\Closed$ and $\Stone$}
+%\begin{lemma}\label{BooleEqualityOpen}
+%  Whenever $B:\Boole$, $a,b:B$ the proposition $a=_Bb$ is open. 
+%\end{lemma}
+%\begin{proof}
+%  Let $G,R$ be the generators and relations of $B$. 
+%  Let $a,b$ be represented by $x,y$ in the free Boolean algebra on $G$. 
+%  Now let $R_n$ denote the first $n$ elements of $R$. 
+%  Note that $a=b$ iff there exists some $n:\N$ with $x-y \leq \bigvee_{r\in R_n} r$. 
+%  Furthermore, inequality is decidable in the free Boolean algebra, hence
+%  $a=b$ is a countable disjunction of decidable propositions, hence open. 
+%\end{proof}
+
+\begin{corollary}\label{TruncationStoneClosed}
+  For all $S:\Stone$, the proposition $\propTrunc{S}$ is closed. 
+\end{corollary}
+\begin{proof}
+  By \Cref{SpectrumEmptyIff01Equal}, $\neg S$ is equivalent to $0=_{2^S} 1$, which is open by \Cref{BooleIsODisc} and \Cref{OdiscQuotientCountableByOpen}. 
+  Hence $\neg \neg S$ is a closed proposition, and by \Cref{LemSurjectionsFormalToCompleteness}, so is $\propTrunc{S}$. 
+\end{proof}
+%\begin{remark}\label{ExplicitTruncationStoneClosed}
+%  \rednote{New check later}
+%  The above lemma and corollary actually show that if we have an explicit 
+%  presentation of a Stone space as $S = \Sp(2[G] / R)$, 
+%  we can construct an explicit sequence $\alpha:2^\N$ such that $||S|| \leftrightarrow \forall_{n:\N} \alpha(n) = 0$. 
+%\end{remark}
+
+
+\begin{corollary}\label{PropositionsClosedIffStone}
+  A proposition $P$ is closed if and only if it is a Stone space. 
+\end{corollary}
+\begin{proof}
+  By the above, if $S$ is both a Stone space and a proposition, it is closed. 
+  By \Cref{ClosedPropAsSpectrum}, any closed proposition is Stone. 
+\end{proof}
+
+\begin{lemma}\label{StoneEqualityClosed}
+For all $S:\Stone$ and $s,t:S$, the proposition $s=t$ is closed. 
+\end{lemma}
+\begin{proof}
+  Suppose $S= \Sp(B)$ and let $G$ be a countable set of generators for $B$. 
+  Then $s=t$ if and only if $s(g) = t(g)$ for all $g:G$. 
+  So $s=t$ is a countable conjunction of decidable propositions, hence 
+  closed.
+\end{proof}
+% ===== END StoneProFinite =====
+% ===== BEGIN StoneClosed =====
+\subsection{The topology on Stone spaces}
+\begin{theorem}\label{StoneClosedSubsets}
+  Let $A\subseteq S$ be a subset of a Stone space. The following are equivalent:
+  \begin{enumerate}[(i)]
+    \item There exists a map $\alpha:S \to 2^\N$ such that 
+      $A (x) \leftrightarrow \forall_{n:\N}\, \alpha_{x,n} = 0$ for any $x:S$. 
+    \item There exists a family 
+      $(D_n)_{n:\N}$ 
+      of decidable subsets of $S$ such that $A = \bigcap_{n:\N} D_n$. 
+    \item There exists a Stone space $T$ and some embedding $T\to S$ whose image is $A$.
+    \item There exists a Stone space $T$ and some map $T\to S$ whose image is $A$. 
+    \item $A$ is closed.
+  \end{enumerate}
+\end{theorem}
+\begin{proof}
+\item 
+  \begin{itemize}
+  \item 
+    $(i)\leftrightarrow (ii)$. $D_n$ and $\alpha$ can be defined from each other by 
+     $D_n(x) \leftrightarrow (\alpha_{x,n} = 0)$. Then observe that
+     \[
+     x\in \bigcap_{n:\N} D_n \leftrightarrow 
+      \forall_{n:\mathbb N} (\alpha_{x,n} = 0). 
+     \]
+     
+   \item $(ii) \to (iii)$. Let $S=\Sp(B)$. 
+%      By Stone duality, we have $d_n,~n:\N$ terms of $B$ such that $D_n = \{x:S| x(d_n) = 1\}$. 
+%      Let $C = B/(\neg d_n)_{n:\N}$.
+%      Then the map $\Sp(C) \to S$ is as desired because
+%      $$\Sp(C) = \{x:S| \forall_{n:\N} x(\neg d_n) =0\}  = \bigcap_{n:\N} D_n.$$
+      By \Cref{AxStoneDuality}, we have $(d_n)_{n:\N}$ in $B$ such that $D_n = \{x:S\ |\ x(d_n) = 0\}$. 
+      Let $C = B/(d_n)_{n:\N}$.
+      Then $\Sp(C) \to S$ is as desired because:
+      \[\Sp(C) = \{x:S\ |\ \forall_{n:\N}\, x(d_n) =0\}  = \bigcap_{n:\N} D_n.\]
+%      By \Cref{SurjectionsAreFormalSurjections}, t
+%      The quotient map $B \twoheadrightarrow C$
+%      corresponds to a map $\iota:\Sp(C) \hookrightarrow  S$. 
+%      For $s:S$, $s$ lies in the image of this map iff 
+%      for all $n:\N$ we have  $s(\neg d_n) = 0$, 
+%      \begin{equation}
+%        x\in \iota(\Sp(C)) \leftrightarrow x(\neg d_n) = 0 \leftrightarrow x(d_n) = 1 \leftrightarrow x\in D_n
+%      \end{equation}
+%      Thus the image of $\iota$ is given by $\bigcap_{n:\N} D_n$. 
+   \item $(iii) \to (iv)$. Immediate.
+   \item $(iv) \to (ii)$. Assume $f:T\to S$ corresponds to $g:B\to C$ in $\Boole$. 
+     By \Cref{BooleEpiMono}, $f(T) = \Sp(B/Ker(g))$ and 
+%     by \Cref{OdiscQuotientCountableByOpen}
+     there exists a surjection $d:\N\to Ker(g)$. For $n:\N$, we denote by $D_n$ the decidable subset of $S$ corresponding to $d_n$. Then we have that $\Sp(B/Ker(g)) = \bigcap_{n:\N} D_n$. 
+%     Note that the factorization 
+%     $B\twoheadrightarrow B/Ker(g) \hookrightarrow C$ 
+%     corresponds to the factorization 
+%     $S\twotheadleftarrow f(T) \hookleftarrow T$
+%%     We have a surjection $B\twoheadrightarrow B/Ker(g)$ in $\Boole$, 
+%%     which corresponds to the inclusion $f(T) = \Sp(B/Ker(g)) \subseteq S$. 
+%     Ans $f(T) = \Sp(B/Ker(g))$
+%
+%     Therefore $B/Ker(g):\Boole$, 
+%     and the quotient map $B\twoheadrightarrow B/Ker(g)$ induces an inclusion 
+%     $\Sp(B/Ker(g)) \hookrightarrow \Sp(B)$ with 
+%     $f\in \Sp(B/Ker(g))\leftrightarrow \forall_{n:\N}f(d_n) = 0 $. 
+%     
+%
+%
+%
+%
+%
+%oldProof%     \rednote{TODO 
+%oldProof%       The order of untracating is important in this proof, 
+%oldProof%     and I struggle a bit with stressing this in a way this is clear (and concise). 
+%oldProof%    Check with fresh eyes later. }
+%oldProof%      Let $f:T\to S$ be a map between Stone spaces. 
+%oldProof%      Assume $S = \Sp(A), T = Sp (B)$. 
+%oldProof%%      For this proof, we work with explicit presentations for $A,B$. 
+%oldProof%%
+%oldProof%      Let $G$ be a countable set of generators of $A$. 
+%oldProof%      Assume also we have countable sets of generators and relations for $B$. 
+%oldProof%%
+%oldProof%      Following \Cref{FiberConstruction}, using $G$, for each $x:S$, we can construct 
+%oldProof%      a countable set $I_x\subseteq B$ such that $$\Sp(B/I_x) = (\Sigma_{y:T} f(y) = x) .$$
+%oldProof%      By \Cref{ExplicitTruncationStoneClosed}, we can construct a sequence 
+%oldProof%      $\alpha_x$ such that this type is inhabited iff $\forall_{n:\N} \alpha_x(n) = 0$,
+%oldProof%      as required. 
+%
+%      Recall that the propositional truncation of a Stone is closed, as it is the negation of $0=1$ in the underlying 
+%      Boolean algebra, which is open as it f
+%
+%
+%      the core idea of the proof was that the closed proposition corresponds to checking equality in the underlying BA, 
+%      which was closed as 
+%
+%
+%
+%
+%      Note that $x$ in the image of $f$ iff $0\neq_{B/I_x} 1$. 
+%      At this point, we have generators and relations of $B/I_x$ as data.
+%      Hence using the proof of \Cref{BooleEqualityOpen}, we can construct a sequence 
+%      $\alpha_x:2^\N$ such that $0 =_{B/I_x}1\leftrightarrow \exists_{n:\N} \alpha_x(n) = 0$. 
+%      And for $\beta_x(n) = 1-\alpha_x(n)$, we conclude that 
+%      \begin{equation}
+%        x\in f(T) \leftrightarrow \forall_{n:\N} \beta_x(n) = 0
+%      \end{equation}
+%      Note that we did not use any choice axioms in the proof of this implication,
+%      as we untruncated our assumptions before we specified $x$. 
+   \item $(i) \to (v)$. By definition.
+   \item $(v) \to (iv)$.
+     %As $A$ is closed, it corresponds to a map $a:S\to \Closed$. 
+     We have a surjection $2^\N\twoheadrightarrow\Closed$ defined by $\alpha \mapsto \forall_{n:\mathbb N}\, \alpha_n = 0.$
+     \Cref{LocalChoiceSurjectionForm} 
+     gives us that there merely exists $T, e, \beta_\cdot$ as follows:
+     \[
+       \begin{tikzcd}
+         T \arrow[r,"\beta"] \arrow[d, two heads,swap,"e"] & 2^\mathbb N 
+         \arrow[d,two heads] \\
+         S \arrow[r,swap,"A"] & \Closed
+       \end{tikzcd} 
+     \] 
+     Define $B(x) \leftrightarrow \forall_{n:\mathbb N}\, \beta_{x,n} = 0$. 
+     As $(i) \to (iii)$ by the above, $B$ is the image of some Stone space. 
+     Note that $A$ is the image of $B$, 
+     thus $A$ is the image of some Stone space. 
+     \end{itemize} 
+     \end{proof} 
+
+\begin{corollary}\label{ClosedInStoneIsStone}
+%Using condition $(iii)$, 
+%The previous result implies that c
+Closed subtypes of Stone spaces are Stone.
+\end{corollary}
+
+\begin{corollary}\label{InhabitedClosedSubSpaceClosed}
+  For $S:\Stone$ and $A\subseteq S$ closed, we have that 
+  $\exists_{x:S} A(x)$ is closed. 
+\end{corollary}
+\begin{proof}
+  By \Cref{ClosedInStoneIsStone}, we have that $\Sigma_{x:S}A(x)$ is Stone, 
+  so its truncation is closed by \Cref{TruncationStoneClosed}.
+\end{proof}
+
+\begin{corollary}\label{ClosedDependentSums}
+  Closed propositions are closed under sigma types. 
+\end{corollary}
+\begin{proof}
+  Let $P:\Closed$ and $Q:P \to \Closed$. 
+  Then $\Sigma_{p:P} Q(p) \leftrightarrow \exists_{p:P} Q(p)$.
+  As $P$ is Stone by \Cref{PropositionsClosedIffStone}, 
+  \Cref{InhabitedClosedSubSpaceClosed} gives that $\Sigma_{p:P} Q(p)$ is closed. 
+\end{proof}
+\begin{remark}\label{ClosedDominance}\label{ClosedTransitive}
+  Analogously to \Cref{OpenTransitive} and \Cref{OpenDominance}, it follows that 
+  closedness is transitive and $\Closed$ forms a dominance. 
+\end{remark}
+
+%We can get a dual to completeness.
+
+
+%ImpliedByBooleEpiMono%\begin{lemma}\label{DualCompleteness}
+%ImpliedByBooleEpiMono%Let $A$ and $B$ be c.p. boolean algebra with a map:
+%ImpliedByBooleEpiMono%\[i:\Sp(A)\to \Sp(B)\] 
+%ImpliedByBooleEpiMono%The following are equivalent:
+%ImpliedByBooleEpiMono%\begin{enumerate}[(i)]
+%ImpliedByBooleEpiMono%\item The induced map $B\to A$ is surjective.
+%ImpliedByBooleEpiMono%\item The map $i$ is an embedding.
+%ImpliedByBooleEpiMono%\item The map $i$ is a closed embedding.
+%ImpliedByBooleEpiMono%\end{enumerate}
+%ImpliedByBooleEpiMono%\end{lemma}
+%ImpliedByBooleEpiMono%
+%ImpliedByBooleEpiMono%\begin{proof}
+%ImpliedByBooleEpiMono%  \item
+%ImpliedByBooleEpiMono%\begin{itemize}
+%ImpliedByBooleEpiMono%\item[$(i)\to (ii)$] Immediate.
+%ImpliedByBooleEpiMono%\item[$(ii)\to (iii)$] By \Cref{StoneEqualityClosed} the fibers of $i$ are closed in $\Sp(A)$, so by \Cref{ClosedInStoneIsStone} they are Stone, so they are closed by \Cref{PropositionsClosedIffStone}.
+%ImpliedByBooleEpiMono%\item[$(iii)\to (i)$] By we have that $\Sp(A) = \cap_{n:\N}D_n$ for $D_n$ decidable in $\Sp(B)$. Assuming $D_n$ correponds to $b_n:B$ though duality, we then have that $A=B/ (b_n)_{n:\N}$ and the induced map is the quotient map:
+%ImpliedByBooleEpiMono%$$B\to B/(b_n)_{n:\N}$$
+%ImpliedByBooleEpiMono%which is surjective.
+%ImpliedByBooleEpiMono%\end{itemize}
+%ImpliedByBooleEpiMono%\end{proof}
+
+\begin{lemma}\label{StoneSeperated}
+  Assume $S:\Stone $ with $F,G:S \to \Closed$ such that $F\cap G = \emptyset$. 
+  Then there exists a decidable subset $D:S \to 2$ such $F\subseteq D, G \subseteq \neg D$. 
+\end{lemma}
+\begin{proof}
+%  \rednote{Too shorten this (and some other proofs), I've removed some negations and pretended  $D:S\to 2$ is given by $\{x:S|x(d) = 0\}$ instead of $\{x:S|x(d) = 1\}$ }
+  Assume $S = \Sp(B)$. 
+  By \Cref{StoneClosedSubsets}, for all $n:\N$ there is $f_n,g_n:B$ such that 
+  $x\in F$ if and only if $\forall_{n:\N}\, x(f_n) = 0$ and 
+  $y\in G$ if and only if $\forall_{n:\N}\, y(g_n) = 0$.
+%  $x\in F$ iff $x(f_n) = 1$ for all $n:\N$ and 
+%  $y\in G$ iff $y(g_m) = 1$ for all $m:\N$. 
+%
+%  Denote $R\subseteq B$ for $\{\neg f_n|n:\N\} \cup\{\neg g_n|n:\N\}$. 
+  Denote by $h$ the sequence defined by $h_{2k}=f_k$ and $h_{2k+1}=g_k$.
+Then $\Sp(B/(h_k)_{k:\N}) = F \cap G=\emptyset$, so by \Cref{SpectrumEmptyIff01Equal}
+%  Note that any $x:\Sp(B/R)$ is such %gives a map $x:B\to 2$ such that
+%  $x(g_n)= x(f_n) = 1$ for all $n:\N$, hence $x\in F \cap G$. 
+%  As $F\cap G = \emptyset $, it follows that $\Sp(B/R)$ is empty.
+%
+  there exists finite sets $I,J\subseteq \N $ such that 
+%  $$1 =_B \left(\left(\bigvee_{i\in I} \neg f_i\right) \vee \left(\bigvee_{j\in J} \neg g_j\right)\right).$$
+%  $$1 =_B \left(\left(\bigvee_{i\in I}  f_i\right) \vee \left(\bigvee_{j\in J}  g_j\right)\right).$$
+  $1 =_B ((\bigvee_{i:I}  f_i) \vee (\bigvee_{j:J}  g_j)).$
+%
+  If $y\in F$, then $y(f_i) = 0$ for all $i:I$, hence
+%  $$1 =_2 y(1) = y\left(\bigvee_{j\in J} g_j\right).$$
+  $y(\bigvee_{j:J} g_j) = 1 $
+ If $x\in G$, we have 
+%  $x\left(\bigvee_{j\in J} g_j\right) = 0$. 
+  $x(\bigvee_{j:J} g_j) = 0$. 
+  Thus we can define the required $D$ by 
+  $D(x) \leftrightarrow x(\bigvee_{j:J} g_j) = 1$.
+  %$$D = \{x:S | x\left(\bigvee_{j\in J} g_j \right) = 0\}$$.
+  %, we have $F\subseteq D, G\subseteq \neg D$. 
+%  Let $y\in G$. Then $y(\neg g_j) = 0$ for all $j \in J$. 
+%  Let $y\in G$. Then $y(g_j) = 0$ for all $j \in J$. 
+%  Hence 
+%  $$
+%  1 
+%%  = y(1) 
+%  =_2
+%%  y(\bigvee_{i\in I} \neg f_i) = y (\neg (\bigwedge_{i\in I} f_i))
+%  y\left(\left(\bigvee_{i\in I}  f_i\right) \vee \left(\bigvee_{j\in J}  g_j\right)\right)
+%  = 
+%%  \left(y\left(\bigvee_{i\in I}  f_i\right)\right) \vee \left(\bigvee_{j\in J} y(g_j)\right)
+%%  = 
+%  y\left(\bigvee_{i\in I}  f_i\right)
+%  $$
+%%  Thus $y(\bigwedge_{i\in I} f_i) = 0$. 
+%%  Note that if $x\in F$, we have $x(f_i) = 1$ for all $i\in I$, hence 
+%%  $x(\bigwedge_{i\in I} f_i) = 1$. 
+%%  Thus for $D$ corresponding to $\bigwedge_{i\in I} f_i$, we have that 
+%%  $F\subseteq D, G\subseteq \neg D$ as required. 
+\end{proof} 
+
+%RedundantByOpenInCHaus%\begin{corollary}\label{StoneOpenSubsets}
+%RedundantByOpenInCHaus%  Let $A\subseteq S$ be a subset of a Stone space, then 
+%RedundantByOpenInCHaus%  $A$ is open iff there exists some countable family $D_n,~n:\N$ of decidable subsets of $S$ with 
+%RedundantByOpenInCHaus%  $A = \bigcup_{n:\N} D_n$. 
+%RedundantByOpenInCHaus%\end{corollary}
+%RedundantByOpenInCHaus%\begin{proof}
+%RedundantByOpenInCHaus%  By \Cref{rmkOpenClosedNegation}, $A$ is open iff $\neg A$ is closed and $A = \neg \neg A$. 
+%RedundantByOpenInCHaus%  By \Cref{StoneClosedSubsets}, $\neg A$ is closed iff 
+%RedundantByOpenInCHaus%  $\neg A = \bigcap_{n\in \N} E_n$ for some countably family of decidable subsets $E_n,~n:\N$. 
+%RedundantByOpenInCHaus%  Thus $\neg \neg A = \neg (\bigcap_{n\in \N} E_n)$. 
+%RedundantByOpenInCHaus%  By MP (\Cref{MarkovPrinciple}), we have that 
+%RedundantByOpenInCHaus%  $\neg (\bigcap_{n\in \N} E_n)= \bigcup_{n\in \N} \neg E_n$. 
+%RedundantByOpenInCHaus%  Thus $D_n := \neg E_n$ is as required. 
+%RedundantByOpenInCHaus%\end{proof}
+% ===== END StoneClosed =====
+
+\section{Compact Hausdorff spaces}
+% ===== BEGIN CompactHausdorff =====
+\begin{definition}
+  A type $X$ is called a compact Hausdorff space if its identity types are closed propositions and there exists some $S:\Stone$ with a surjection $S\twoheadrightarrow X$. We write $\CHaus$ for the type of compact Hausdorff spaces.
+\end{definition}
+
+%This means that compact Hausdorff spaces are precisely quotients of Stone spaces by closed equivalence relations.
+
+\subsection{Topology on compact Hausdorff spaces}
+
+\begin{lemma}\label{CompactHausdorffClosed}
+  Let $X:\CHaus$, $S:\Stone$ and $q:S\twoheadrightarrow X$ surjective.
+  Then $A\subseteq X$ is closed if and only if it is the image of a closed subset of $S$ by $q$. 
+\end{lemma}
+\begin{proof}
+%  If $A$ is closed, then it's pre-image under any map is also closed. 
+%  In particular for $q:S\to X$ the quotient map, $q^{-1}(A)$ is closed. 
+  As $q$ is surjective, we have $q(q^{-1}(A)) = A$.
+  If $A$ is closed, so is $q^{-1}(A)$ and 
+  hence $A$ is the image of a closed subset of $S$. 
+  Conversely, let $B\subseteq S$ be closed. Then $x\in q(B)$ if and only if
+   \[\exists_{s:S} (B(s) \wedge q(s) = x).\]
+   Hence by \Cref{InhabitedClosedSubSpaceClosed}, $q(B)$ is closed. 
+  % Define $A'\subseteq S$ by 
+  %\[A'(s) = \exists_{t:S} (B(t) \wedge q(s) = q(t)).\]
+  %Note that $B(t)$ and $q(s) = q(t)$ are closed. 
+  %Hence by \Cref{InhabitedClosedSubSpaceClosed}, $A'$ is closed. 
+  %Also $A'$ factors through $q$ as a map $A: X\to \Closed$.
+  %Furthermore, $A'(s) \leftrightarrow (q(s)\in q(B))$. 
+  %Hence $A=q(B)$. 
+\end{proof}
+
+The next two corollaries mean that compact Hausdorff spaces are compact in the sense of Synthetic Topology.
+
+\begin{corollary}\label{InhabitedClosedSubSpaceClosedCHaus}
+Assume given $X:\Chaus$ with $A\subseteq X$ closed. Then $\exists_{x:X} A(x)$ is closed, and equivalent to $A \neq \emptyset$. 
+\end{corollary}
+
+\begin{proof}
+From \Cref{CompactHausdorffClosed} and \Cref{StoneClosedSubsets}, it follows that $A\subseteq X$ is closed if and only if it is the image of a map $T\to X$ for some $T:\Stone$. Then $\exists_{x:X} A(x)$ if and only $\propTrunc{T}$, which is closed by \Cref{TruncationStoneClosed}. Therefore $\exists_{x:X} A(x)$ is $\neg\neg$-stable and equivalent to $A \neq \emptyset$. 
+  %If $A$ is closed, it follows from \Cref{InhabitedClosedSubSpaceClosed} that $\exists_{x:X} A(x)$ is closed as well, 
+ % hence $\neg\neg$-stable, and equivalent to $A \neq \emptyset$. 
+\end{proof}
+
+%\begin{remark}\label{InhabitedClosedSubSpaceClosedCHaus}
+%  Let $X:\Chaus$.
+%  From \Cref{StoneClosedSubsets}, it follows that $A\subseteq X$ is closed if and only if it is the image of a map 
+%  $T\to X$ for some $T:\Stone$. 
+%  If $A$ is closed, it follows from \Cref{InhabitedClosedSubSpaceClosed} that $\exists_{x:X} A(x)$ is closed as well, 
+%  hence $\neg\neg$-stable, and equivalent to $A \neq \emptyset$. 
+%\end{remark}
+%\begin{corollary}
+%  For $X:\CHaus$ a subtype $A\subseteq X$ is closed iff it is the image of 
+%  a map $T\to X$ for some $T:\Stone$. 
+%\end{corollary}
+%\begin{proof}
+%  Directly from the above and \Cref{StoneClosedSubsets}.
+%\end{proof}
+%WhyDidWeNeedThis%\begin{remark}
+%WhyDidWeNeedThis%  It is not the case that every closed subset of a compact Hausdorff space can be written 
+%WhyDidWeNeedThis%  as countable intersection of decidable subsets. 
+%WhyDidWeNeedThis%  In \Cref{UnitInterval}, we shall introduce the unit interval $[0,1]$ as a compact Hausdorff space with many closed 
+%WhyDidWeNeedThis%  subsets, but only two decidable subsets. 
+%WhyDidWeNeedThis%  In \Cref{ConnectedComponent}, we shall actually see that whenever every singleton of a compact Hausdorff space $X$
+%WhyDidWeNeedThis%  can be written as countable intersection of decidable subsets, $X$ is Stone. 
+%WhyDidWeNeedThis%  \rednote{Actually, we'll see that $\Sp(2^X)$ and $X$ are bijective sets, 
+%WhyDidWeNeedThis%    which only implies that $X$ is Stone if $2^X:\Boole$, but this depends on our definition of countable, 
+%WhyDidWeNeedThis%see \Cref{CountabilityDiscussion}}
+%WhyDidWeNeedThis%\end{remark}
+
+
+\begin{corollary}\label{AllOpenSubspaceOpen}
+  Assume given $X:\Chaus$ with $U\subseteq X$ open. Then $\forall_{x:X} U(x)$ is open. 
+\end{corollary}
+%\begin{proof}
+%  As $U$ is open, $\neg U$ is closed. 
+%  So $\exists_{x:X} \neg U(x)$ is closed by \Cref{InhabitedClosedSubSpaceClosedCHaus}. 
+%  Using \Cref{rmkOpenClosedNegation}, it follows that 
+%  $\neg (\exists_{x:X} \neg U(x))$ is open. 
+%  Furthermore, it is equivalent to $\forall_{x:X} \neg \neg U(x)$, 
+%  which is equivalent to $\forall_{x:X} U(x)$ by \Cref{rmkOpenClosedNegation}.
+%\end{proof}
+
+The next lemma means that compact Hausdorff spaces are not too far from being compact in the classical sense.
+
+\begin{lemma}\label{CHausFiniteIntersectionProperty}
+  Given $X:\Chaus$ and $C_n:X\to \Closed$ closed subsets such that $\bigcap_{n:\N} C_n =\emptyset$, there is some $k:\N$ 
+  with $\bigcap_{n\leq k} C_n  = \emptyset$. 
+\end{lemma}
+\begin{proof}
+  By \Cref{CompactHausdorffClosed} it is enough to prove the result when $X$ is Stone, and by \Cref{StoneClosedSubsets} we can assume $C_n$ decidable.
+  So assume 
+  $X=\Sp(B)$ and $c_n:B$ such that
+  \[C_n = \{x:B\to 2\ |\ x(c_n) = 0\}.\]
+  Then we have that
+  \[\Sp(B/(c_n)_{n:\N})%\ |\ n:\N\}) 
+  \simeq \bigcap_{n:\N} C_n = \emptyset .\]
+  Hence 
+%  $0=_{B/(\neg c_n)_{n:\N}}1$ 
+  $0=1$ in $B/(c_n)_{n:\N}$ %\ |\ n:\N\}$, 
+  and there is some $k:\N$ with 
+  $\bigvee_{n\leq k} c_n = 1$, which means that
+  \[\emptyset = \Sp(B/(c_n)_{n\leq k}) %\ |\ n\leq k\})  
+  \simeq \bigcap_{n\leq k} C_n \]
+  as required.
+\end{proof}
+
+\begin{corollary}\label{ChausMapsPreserveIntersectionOfClosed}
+  Let $X,Y:\CHaus$ and $f:X \to Y$. 
+  Suppose $(G_n)_{n:\N}$ is a decreasing sequence of closed subsets of $X$. 
+  Then $f(\bigcap_{n:\N} G_n) = \bigcap_{n:\N}f(G_n)$. 
+\end{corollary}
+\begin{proof}
+  It is always the case that $f(\bigcap_{n:\N} G_n) \subseteq \bigcap_{n:\N} f(G_n)$. 
+  For the converse direction, suppose that $y \in f(G_n)$ for all $n:\N$. 
+  We define $F\subseteq X$ closed by $F=f^{-1}(y)$. 
+  Then for all $n:\N$ we have that $F\cap G_n$ is %merely inhabited and therefore 
+  non-empty. 
+  By \Cref{CHausFiniteIntersectionProperty} this implies that $\bigcap_{n:\N}(F\cap G_n) \neq \emptyset$. 
+  By \Cref{InhabitedClosedSubSpaceClosedCHaus},  we have that %and \Cref{rmkOpenClosedNegation}, 
+  $\bigcap_{n:\N} (F\cap G_n)$ is merely inhabited. Thus $y\in f(\bigcap_{n:\N} G_n)$ as required. 
+\end{proof}
+
+\begin{corollary}\label{CompactHausdorffTopology}
+Let $A\subseteq X$ be a subset of a compact Hausdorff space and $p:S\twoheadrightarrow X$ be a surjective map with $S:\Stone$. Then $A$ is closed (resp. open) if and only if there exists a sequence $(D_n)_{n:\N}$ of decidable subsets of $S$ such that $A = \bigcap_{n:\N} p(D_n)$ (resp. $A = \bigcup_{n:\N} \neg p(D_n)$).
+%\begin{itemize}
+%  \item $A$ is closed iff %if and only if 
+%    it can be written as $\bigcap_{n:\N} p(D_n)$
+%for some $D_n\subseteq S$ decidable. 
+%  \item $A$ is open iff %if and only if 
+%    it can be written as $\bigcup_{n:\N} \neg p(D_n)$
+%for some $D_n\subseteq S$ decidable.
+%\end{itemize}  
+\end{corollary}
+\begin{proof}
+  The characterization of closed subsets follows from characterization (ii) in \Cref{StoneClosedSubsets}, 
+  \Cref{CompactHausdorffClosed} 
+  and \Cref{ChausMapsPreserveIntersectionOfClosed}. 
+%  The characterization of open sets 
+  To deduce the characterization of open subsets we use \Cref{rmkOpenClosedNegation} and
+  \Cref{ClosedMarkov}.
+\end{proof}
+%
+\begin{remark}
+  For $S:\Stone$, there is a surjection $\N\twoheadrightarrow 2^S$. 
+  It follows that for any $X:\CHaus$ there is a surjection from $\N$ to a basis of $X$. 
+  Classically this means that $X$ is second countable. 
+\end{remark}
+%It follows that compact Hausdorff spaces are second countable:
+%\begin{corollary}
+%  Any $X:\Chaus$ is has a topological basis which is countable.
+%\end{corollary}
+%\begin{proof}
+%  By \Cref{CompactHausdorffTopology}, 
+%  a basis is given by the images of the decidable subsets of some $S:\Stone$. 
+%  By \cref{ODiscBAareBoole}, $2^S$ is 
+%  overtly discrete so we have a surjection $\N\to 2^S$.
+%  \end{proof}
+%
+
+The next lemma means that compact Hausdorff spaces are normal.
+
+\begin{lemma}\label{CHausSeperationOfClosedByOpens}
+ Assume $X:\CHaus$ and $A,B\subseteq X$ closed such that $A\cap B=\emptyset$. 
+  Then there exist $U,V\subseteq X$ open such that $A\subseteq U$, $B\subseteq V$ and $U\cap V=\emptyset$. 
+\end{lemma}
+\begin{proof}
+  Let $q:S\twoheadrightarrow X$ be a surjective map with $S:\Stone$.
+  As $q^{-1}(A)$ and $q^{-1}(B)$ are closed, 
+  by \Cref{StoneSeperated}, there is some $D:S \to 2$ such that
+  $q^{-1}(A) \subseteq D$ and $q^{-1}(B) \subseteq \neg D$. 
+  Note that $q(D)$ and $q(\neg D)$ are closed by \Cref{CompactHausdorffClosed}. 
+%  We define $U = \neg q(\neg D) $%\cap \neg B$ 
+%  and $V=\neg  q(D) $.%\cap \neg A$. 
+  As $q^{-1}(A) \cap \neg D  =\emptyset$, we have that 
+  $A\subseteq \neg q(\neg D):=U$. 
+%  As $A\cap B = \emptyset$, we have that $A\subseteq \neg B$ so $A\subseteq U$.
+%  Similarly $B\subseteq V$. 
+  Similarly $B\subseteq \neg q(D):=V$. 
+  Then $U$ and $V$ are disjoint because $\neg q(D)\cap \neg q(\neg D) = \neg (q(D)\cup q(\neg D)) = \neg X = \emptyset$.
+\end{proof}
+
+% ===== END CompactHausdorff =====
+% ===== BEGIN CompactHausdorffSigma =====
+\subsection{Compact Hausdorff spaces are stable under sigma types}
+
+\begin{lemma}\label{StoneAsClosedSubsetOfCantor}
+A type $X$ is Stone if and only if it is merely a closed subset of $2^\N$.
+\end{lemma}
+\begin{proof}
+  By \Cref{BooleAsCQuotient}, any $B:\Boole$ can be written as $2[\N]/(r_n)_{n:\N}$. %\ |\ n:\N\}$.
+  By \Cref{BooleEpiMono}, the quotient map induces an embedding $\Sp(B)\hookrightarrow \Sp(2[\N])= 2^\N$, 
+  which is closed by \Cref{StoneClosedSubsets}.
+\end{proof}
+
+%\begin{proof}
+%Any countably presented boolean algebra $B$ is enumerable, which gives a surjective morphism:
+%$$ 2[\N]\to B$$
+%so that by \Cref{DualCompleteness} we merely have a closed embedding:
+%$$ \Sp(B)\to 2^\N$$
+%\end{proof}
+
+\begin{lemma}\label{SigmaCompactHausdorff}
+Compact Hausdorff spaces are stable under $\Sigma$-types.
+%Assume $X:\CHaus$ and $Y:X\to \CHaus$. Then $\Sigma_{x:X}Y(x)$ is compact Hausdorff.
+\end{lemma}
+
+\begin{proof}
+Assume $X:\CHaus$ and $Y:X\to \CHaus$. By \Cref{ClosedDependentSums} we have that identity types in $\Sigma_{x:X}Y(x)$ are closed. By \Cref{StoneAsClosedSubsetOfCantor} we know that for any $x:X$ there merely exists a closed $C\subseteq 2^\N$ with a surjection $\Sigma_{\alpha:2^\N}C(\alpha) \twoheadrightarrow Y(x)$. By local choice we merely get $S:\Stone$ with a surjection $p:S\twoheadrightarrow  X$ such that for all $s:S$ we have $C_s\subseteq 2^\N$ closed and a surjection $\Sigma_{2^\N}C_s\twoheadrightarrow Y(p(s))$. This gives a surjection $\Sigma_{s:S,\alpha:2^\N}C_s(\alpha)\twoheadrightarrow\Sigma_{x:X}Y_x$ and the source is Stone by \Cref{StoneClosedUnderPullback} and \Cref{ClosedInStoneIsStone}.
+\end{proof}
+% ===== END CompactHausdorffSigma =====
+% ===== BEGIN StoneSigma =====
+\subsection{Stone spaces are stable under sigma types}
+We will show that Stone spaces are precisely totally disconnected compact Hausdorff spaces. 
+We will use this to prove that a sigma type of Stone spaces is Stone.
+
+\begin{lemma}\label{AlgebraCompactHausdorffCountablyPresented}
+Assume $X:\Chaus$, then $2^X$ is countably presented.
+\end{lemma}
+
+\begin{proof}
+  There is some surjection $q:S\twoheadrightarrow X$ with $S:\Stone$. 
+%First we choose $S\to X$ surjective with $S$ Stone and prove that $2^X$ is an open subalgebra of $2^S$.
+%
+  This induces an injection of Boolean algebras $2^X \hookrightarrow 2^S$.
+  Note that $a:S\to 2$ lies in $2^X$ if and only if: %for all $s,t:S$, 
+  \[\forall_{s,t:S}\ q(s) =_X q(t) \to a(s)=a(t).\]
+  As equality in $X$ is closed and equality in $2$ is decidable, the implication is open for every $s,t:S$. 
+  By \Cref{AllOpenSubspaceOpen}, we conclude that
+%  $\forall_{s:S} \forall_{t:S} ((q(s) =_X q(t)) \to (a(s) =_2 a(t)))$ is open. 
+%  Hence 
+  $2^X$ is an open subalgebra of $2^S$. 
+  Therefore, it is in $\ODisc$ by
+  \Cref{PropOpenIffOdisc} and \Cref{OdiscSigma} 
+  and in $\Boole$ by \Cref{ODiscBAareBoole}.
+%
+%
+%  \rednote{It might be nice to show that Boolean algebras are countably presented iff they are overtly discrete}
+%Now we prove that open subalgebras of countably presented agebras are countably presented. Assume $U\subset 2[\N] / F$ such a subalgebra. We have that $U$ is equivalent to the algebra generated by the $s:2[\N]$ such that $[s]\in U$ quotiented by the relation $s=t$ for all $s,t:2[\N]$ such that $[s],[t]\in U$ and $[s]=[t]$.
+%
+%Using that $2[\N]$ is countable and that $[s]=[t]$ is open by \Cref{BooleEqualityOpen}, we see that $U$ is generated by variables and relations each indexed by an open in $\N$. But by \Cref{OpenInNAreDecidableInN} any open in $\N$ is countable, so $U$ is countably presented.
+\end{proof}
+\begin{definition}
+For all $X:\Chaus$ and $x:X$,
+  we define $Q_x$ the connected component of $x$
+  as the intersection of all $D\subseteq X$ decidable such that $x\in D$. 
+\end{definition}
+
+\begin{lemma}\label{ConnectedComponentClosedInCompactHausdorff}
+For all $X:\CHaus$ with $x:X$, we have that $Q_x$ is a countable intersection of decidable subsets of $X$.
+\end{lemma}
+\begin{proof}
+%  By \Cref{AlgebraCompactHausdorffCountablyPresented} we have that $2^X$ is countably presented, 
+%  therefore we can enumerate the elements of $2^X$, say as $(D_n)_{n:\N}$. 
+  By \Cref{AlgebraCompactHausdorffCountablyPresented},
+  we can enumerate the elements of $2^X$, say as $(D_n)_{n:\N}$. 
+  For $n:\N$ we define $E_n$ as $D_n$ if $x\in D_n$ and $X$ otherwise. 
+  Then $\cap_{n:\N}E_n = Q_x$.
+\end{proof}
+
+\begin{lemma}\label{ConnectedComponentSubOpenHasDecidableInbetween}
+  Assume $X:\Chaus$ with $x:X$ and suppose $U\subseteq X$ open with $Q_x\subseteq U$. 
+  Then we have some decidable $E\subseteq X$ with $x\in E$ and $E\subseteq U$. 
+\end{lemma}
+\begin{proof}
+  By \Cref{ConnectedComponentClosedInCompactHausdorff}, 
+  we have $Q_x = \bigcap_{n:\N}D_n$ with $D_n\subseteq X$ decidable. 
+  If $Q_x \subseteq U$, then
+  \[Q_x\cap \neg U = \bigcap_{n:\N} (D_n \cap \neg U) = \emptyset.\]
+  By \Cref{CHausFiniteIntersectionProperty} there is some $k:\N$ with 
+  \[(\bigcap_{n\leq k} D_n )\cap \neg U  = \bigcap_{n\leq k} (D_n \cap \neg U) = \emptyset.\]
+  Therefore $\bigcap_{n\leq k} D_n \subseteq \neg\neg U$.
+  As $U$ is open, $\neg \neg U = U$ and 
+  $E:= \bigcap_{n\leq k} D_n$ is as desired. 
+  %, which equals $U$ by \Cref{rmkOpenClosedNegation}. So $\bigcap_{n\leq k} D_n$ gives us the desired decidable subset.
+\end{proof}
+
+\begin{lemma}\label{ConnectedComponentConnected}
+Assume $X:\Chaus$ with $x:X$. Then any map in $Q_x\to 2$ is constant.
+\end{lemma}
+\begin{proof}
+Assume $Q_x = A\cup B$ with $A,B$ decidable and disjoint subsets of $Q_x$. Assume $x\in A$. 
+By \Cref{ConnectedComponentClosedInCompactHausdorff}, $Q_x\subseteq X$ is closed. 
+Using \Cref{ClosedTransitive}, it follows that $A,B\subseteq X$ are closed and disjoint.
+By \Cref{CHausSeperationOfClosedByOpens} there exist $U,V$ disjoint open such that $A\subseteq U$ and $B\subseteq V$. 
+By \Cref{ConnectedComponentSubOpenHasDecidableInbetween} we have a decidable $D$ such that $Q_x\subseteq D\subseteq U\cup V$. 
+Note that $E := D\cap U = D \cap (\neg V)$ is clopen, hence decidable by \Cref{ClopenDecidable}.
+But $x\in E$, hence $B\subseteq Q_x \subseteq E$ but $B \cap E = \emptyset$, hence $B=\emptyset$. 
+\end{proof}
+
+\begin{lemma}\label{StoneCompactHausdorffTotallyDisconnected}
+Let $X:\CHaus$, then $X$ is Stone if and only $\forall_{x:X}\, Q_x=\{x\}$.
+\end{lemma}
+
+\begin{proof}
+  By \Cref{AxStoneDuality}, it is clear that for all $x:S$ with $S:\Stone$ we have that $Q_x=\{x\}$.
+%
+  Conversely, assume $X:\CHaus$ such that $\forall_{x:X}\, Q_x = \{x\}$.
+  We claim that the evaluation map $e:X \to \Sp(2^X)$ is both injective and surjective, hence an equivalence. 
+%  \item 
+    Let $x,y:X$ be such that $e(x)=e(y)$, i.e. such that $f(x) = f(y)$ for all $f:2^X$. Then $y \in Q_x$, hence $x=y$ by assumption. Thus $e$ is injective. 
+%  \item 
+    Let $q:S\twoheadrightarrow X$ be a surjective map. 
+    It induces an injection $2^X \hookrightarrow 2^S$, which by \Cref{SurjectionsAreFormalSurjections}
+    induces a surjection $p:\Sp(2^S) \twoheadrightarrow \Sp(2^X)$. 
+    Note that $e\circ q$ is equal to $p$ so $e$ is surjective. 
+%
+%For the converse, we show that the map:
+%\[X\to \Sp(2^X)\]
+%is an equivalence and conclude by \Cref{AlgebraCompactHausdorffCountablyPresented}. 
+%
+%Surjectivity always hold, indeed considering $q:S\to X$ surjective with $S$ Stone, we have that $2^X\subset 2^S$ as so that the by \Cref{FormalSurjectionsAreSurjections} the map:
+%$$S = \Sp(2^S)\to \Sp(2^X)$$
+%is surjective and it factors though $X$.
+%
+%Now let us prove injectivity. Assume $x,y:X$ having the same image in $\Sp(2^X)$. This means that any map in $X\to 2$ has the same value on $x$ and $y$, so $x\in Q_y$ and by hypothesis $x=y$.
+\end{proof}
+
+\begin{theorem}
+  \label{stone-sigma-closed}
+Assume $S:\Stone$ and $T:S\to\Stone$. Then $\Sigma_{x:S}T(x)$ is Stone.
+\end{theorem}
+
+\begin{proof}
+By \Cref{SigmaCompactHausdorff} we have that $\Sigma_{x:S}T(x)$ is a compact Hausdorff space. 
+By \Cref{StoneCompactHausdorffTotallyDisconnected} 
+it is enough to show that for all $x:S$ and $y:T(x)$ 
+we have that $Q_{(x,y)}$ is a singleton.
+%
+Assume $(x',y')\in Q_{(x,y)}$, then for any map $f:S\to 2$ we have that:
+\[ f(x) = f\circ \pi_1(x,y) = f\circ \pi_1(x',y') = f(x')\]
+so that $x'\in Q_x$ and since $S$ is Stone, by \Cref{StoneCompactHausdorffTotallyDisconnected} we have that $x=x'$.
+%
+Therefore we have $Q_{(x,y)}\subseteq \{x\}\times T(x)$. 
+Assume $z,z':Q_{(x,y)}$, then for any map $g:T(x)\to 2$ we have that $g(z)=g(z')$ by 
+\Cref{ConnectedComponentConnected}. Since $T(x)$ is Stone, 
+we conclude $z=z'$ by \Cref{StoneCompactHausdorffTotallyDisconnected}.
+\end{proof}
+
+
+% ===== END StoneSigma =====
+
+%\section{The Unit interval}
+\subsection{The unit interval as a compact Hausdorff space}
+% ===== BEGIN ShorterInterval =====
+Since we have dependent choice, the unit interval $\mathbb I = [0,1]$ can be defined using 
+Cauchy reals or Dedekind reals. 
+We can freely use results from constructive analysis \cite{Bishop}. 
+As we have $\neg$WLPO, MP and LLPO, we can use the results from 
+constructive reverse mathematics that follow from these principles \cite{ReverseMathsBishop, HannesDiener}. 
+%\begin{definition}
+%  We define $cs:2^\N \to \I$ as 
+%  $cs(\alpha) = \sum_{n:\N} \frac{\alpha(i)}{2^{i+1}}$. 
+%\end{definition}
+\begin{definition}
+  \label{def-cs-Interval}
+  We define for each $n:\N$ the Stone space $2^n$ of binary sequences of length $n$.
+  % = \Sp(2[\Fin(n)])$.
+  And we define $cs_n:2^n \to \mathbb Q$ by 
+  $cs_n(\alpha) = \sum_{i < n } \frac{\alpha(i)}{2^{i+1}}.$
+  Finally we write $\sim_n$ for the binary relation on $2^n$ given by 
+  $\alpha\sim_n \beta 
+  \leftrightarrow \left|cs_n(\alpha) - cs_n(\beta)\right|\leq\frac{1}{2^n}$.
+\end{definition}
+\begin{remark}
+  The inclusion $\Fin(n) \hookrightarrow \N$ induces a restriction 
+  $\_|_n : 2^\N \to 2^n$ for each $n:\N$. 
+\end{remark}
+\begin{definition}
+  We define $cs:2^\N \to \I$ as 
+  $cs(\alpha) = 
+  \sum_{i=0}^\infty \frac{\alpha(i)}{2^{i+1}}.
+  $
+%  \lim_{n\to\infty} cs_n(\alpha|_n)$. 
+\end{definition}
+
+\begin{theorem}\label{IntervalIsCHaus}
+ The type $\I$ is a compact Hausdorff space.
+\end{theorem}
+\begin{proof}
+  By LLPO, we have that $cs$ is surjective.   
+  Note that $cs(\alpha) = cs(\beta)$ if and only if 
+  for all $n:\N$ we have $\alpha|_n \sim_n \beta|_n$. 
+  %$\left|cs_n(\alpha)-cs_n(\beta)\right|\leq \frac{1}{2^n}$
+%  $$|\sum_{n=0}^{n-1} \frac{\alpha(i)}{2^{i+1}}-
+%  \sum_{n=0}^{n-1} \frac{\beta(i)}{2^{i+1}}|\leq \frac{1}{2^n}$$
+%  for all $n:\N$, 
+  This is a countable conjunction of decidable propositions, so that equality in $\I$ is closed.
+%  as inequality in $\mathbb Q$ is decidable. 
+\end{proof}
+
+% ===== END ShorterInterval =====
+% ===== BEGIN BinaryRep =====
+% ===== END BinaryRep =====
+% ===== BEGIN TopologyOnI =====
+%\subsection{Order on the interval}
+%\begin{definition}
+%  For $n:\N$ we define 
+%  $cs_n:2^n \to \mathbb Q$ by 
+%  \begin{equation}
+%    cs_n(a) = \sum\limits_{i=0}^{n-1} \frac{a(i)} {2^{i+1}}
+%  \end{equation}
+%  And for $\alpha:2^\N$, we define the sequence $cs(\alpha) : \N \to \mathbb Q$ by 
+%  \begin{equation}
+%    cs(\alpha)_n = cs_n(\alpha|_n)
+%  \end{equation}
+%\end{definition}
+%\begin{remark}\label{rmkPropertiesCSn}
+%  $cs_n$ gives a bijection between $2^n$ and it's image 
+%  $\{\frac{k}{2^n}|0\leq k \leq 2^{n}-1\}\subseteq \mathbb Q$.
+%%  of rational numbers of the form  
+%%  $\frac{k}{2^n}$ for $0\leq k \leq 2^n-1$. 
+%  This observation has some corollaries: 
+%  \begin{itemize}
+%    \item In particular, each $cs_n$ is injective. 
+%    \item Furthermore, whenever $a\neq b:2^n$, we must have that 
+%      \begin{equation} 
+%        |cs_n(a)-cs_n(b)|\geq \frac{1}{2^n}.
+%      \end{equation}
+%    \item It is known that $\bigcup_{n:\N} \{\frac{k}{2^n}|0\leq k \leq 2^{n}-1\}$ 
+%      lies dense in the interval of Cauchy reals $[0,1]$. 
+%      It follows that $cs$ induces a surjection from Cantor space to $[0,1]$. %the interval of Cauchy reals. 
+%      We claim without proof it in fact induces an equivalence between $\I$ and $[0,1]$.
+%%      between $I$ and the interval of Cauchy reals. 
+%  \end{itemize}
+%  Finally, let us repeat a well-known identity for all $m<n$ on such sums, which we'll make some use of 
+%  \begin{equation}
+%   \sum\limits_{i = m}^{n-1} \frac{1}{2^{i+1}} = \frac{1}{2^{m}} - \frac{1}{2^n}
+%  \end{equation}
+%\end{remark}
+%\begin{lemma}\label{CauchyApproxLemma}
+%  Let $n:\N$ and  $s,t:2^n$. Assume there is some $ m \leq n$ with $cs_m(s|_m) = cs_m(t|_m) + \frac{1}{2^m}$, and 
+%  at the same time $cs_n(s) -cs_n(t)\leq \frac{1}{2^n}$. 
+%  Then there is some $k< m$ and some $u:2^k$ such that 
+%  \begin{equation}
+%    (s = u \cdot 1 \cdot \overline 0|_n)
+%    \wedge 
+%    (t = u \cdot 0 \cdot \overline 1|_n)
+%  \end{equation}
+%\end{lemma}
+%\begin{proof}
+%%  By injectivity of $cs_m$, 
+%  By assumption, we have that $s|_m \neq t|_m$. 
+%  Then there must be some smallest number $k<m$ such that 
+%  $s(k) \neq t(k)$. As $k$ is minimal, we have $s|_k = t|_k = : u$. 
+%%  WLOG, we assume that $s(m) = 1, t(m) = 0$. 
+%  It follows for all $l\leq n$ that 
+%%  We thus have for all $k<l\leq n$ that 
+%%  \begin{align}
+%%    cs_l(s|_l) &= 
+%%    cs_k(u|_k) + \sum\limits_{i = k}^{l-1} \frac{s(i)}{2^{i+1}}\\
+%%    cs_l(t|_l) &= 
+%%    cs_k(u|_k) + \sum\limits_{i = k}^{l-1} \frac{t(i)}{2^{i+1}}
+%%  \end{align}
+%%  And thus 
+%  \begin{align}
+%    cs_l(s|_l)-cs_l(t|_l) 
+%    = \sum\limits_{i = k}^{l-1} \frac{s(i)-t(i)}{2^{i+1}}
+%%    =\frac{s(k)-t(k)}{2^{k+1}} + \sum\limits_{i = k+1}^{l-1} \frac{s(i)-t(i)}{2^{i+1}}
+%  \end{align}
+%  Note that as $s(i),t(i) \in \{0,1\}$, we must have %that $s(i) -t(i) \in \{-1,0,1\}$. 
+%  $|s(i)-t(i)| \leq 1$. 
+%  Hence for any $k'<l$, we have 
+%  \begin{equation}
+%    \left|\sum\limits_{i = k'}^{l-1} \frac{s(i)-t(i)}{2^{i+1}}\right|
+%    \leq 
+%    \sum\limits_{i = k'}^{l-1} \frac{1}{2^{i+1}}
+%    = 
+%    \frac{1}{2^{k'}} - \frac{1}{2^{l}}
+%  \end{equation}
+%  Note that using the two equations above for $l=m$ and $k'=k+1$ we have:
+%  \begin{align}
+%    cs_m(s|_m) -cs_m(t|_m) 
+%    =&
+%    \frac{s(k)-t(k)}{2^{k+1}} + \sum\limits_{i = k+1}^{m-1} \frac{s(i)-t(i)}{2^{i+1}} \\
+%    \leq& 
+%    \frac{s(k)-t(k)}{2^{k+1}} + \left(\frac{1}{2^{k+1}} - \frac{1}{2^{m}}\right)
+%  \end{align}
+%  As the left hand side should equal $\frac{1}{2^m}$,
+%  we must have that $s(k)-t(k) \neq -1$. 
+%  As $s(k) \neq t(k)$ it follows that $s(k) = 1, t(k) = 0$.
+%  But now 
+%  \begin{equation}
+%    cs_n(s) -cs_n(t) 
+%    =
+%    \frac{1}{2^{k+1}} + \sum\limits_{i = k+1}^{n-1} \frac{s(i)-t(i)}{2^{i+1}}
+%    \geq 
+%    \frac{1}{2^{k+1}} - \left(\frac{1}{2^{k+1}} - \frac{1}{2^n} \right)
+%    =
+%    \frac{1}{2^{n}}
+%  \end{equation}
+%  And as $cs_n(s)-cs_n(t) \leq \frac{1}{2^n}$ as well, we get that 
+%  $cs_n(s)-cs_n(t) = \frac{1}{2^n}$. 
+%  Note that this lower bound is only reached if $s(i)-t(i) = -1$ for all $k<i<n$. 
+%  Hence for those $i$, we have $s(i) = 0, t(i) = 1$. 
+%  Thus 
+%  \begin{equation}
+%    s = (u \cdot 1\cdot \overline 0) |_n \wedge 
+%    t = (u \cdot 0\cdot \overline 1) |_n.
+%  \end{equation}
+%\end{proof}
+%
+% 
+%\begin{corollary}\label{alternativeSimByCauchyDistance}
+%  Let $n:\N$ and let $s,t:2^n$. Then 
+%  \begin{equation}
+%    s\sim_n t \leftrightarrow |cs_n(s) - cs_n(t)| \leq \frac{1}{2^{n}}.
+%  \end{equation} 
+%\end{corollary}
+%
+%\begin{proof}
+%  \item  
+%    Assume $ s \sim_n t$. If $s=t$, we have $cs_n(s) - cs_n(t) = 0$, 
+%    otherwise, we may without loss of generality assume there is some $m<n$ and some $u:2^m$ such that 
+%  \begin{equation}
+%    (s = u \cdot 0 \cdot \overline 1|_n) \wedge ( t = u \cdot 1 \cdot \overline 0 |_n) . 
+%  \end{equation}
+%  Then 
+%  \begin{align}
+%    cs_n(s) &= 
+%    cs_m(u) + 0 + \sum\limits_{i = m+1}^{n-1} \frac{1}{2^{i+1}}\\
+%    cs_n(t) &= 
+%    cs_m(u) + \frac{1}{2^{m+1}} + 0  
+%  \end{align}
+%  And hence 
+%  \begin{equation}
+%    cs_n(t) - cs_n(s) = \frac{1}{2^{m+1}} - \sum\limits_{i = m+1}^{n-1} \frac{1}{2^{i+1}} = \frac{1}{2^n}
+%  \end{equation}
+%  Thus in all cases, from $s\sim_n t$, we can conclude that 
+%  \begin{equation}
+%    |cs_n(s) -cs_n(t) |\leq \frac{1}{2^n}
+%  \end{equation}
+%  \item 
+%  Conversely, assume that $|cs_n(s) - cs_n(t)| \leq \frac{1}{2^n}$. 
+%  If $s = t$, it is clear that $s \sim_n t$.
+%  If $s\neq t$, there must be some smallest number $m<n$ such that 
+%  $s(m) \neq t(m)$. As $m$ is minimal, we have $s|_m = t|_m = : u$. 
+%  WLOG, we assume that $s(m) = 1, t(m) = 0$. 
+%  Then $cs_m(s|_{m+1})  = cs_{m+1}(t|_{m+1}) + \frac{1}{2^{m+1}}$
+%  and by \Cref{CauchyApproxLemma} it follows that 
+%  \begin{equation}
+%    s = (u \cdot 1\cdot \overline 0) |_n \wedge 
+%    t = (u \cdot 0\cdot \overline 1) |_n.
+%  \end{equation}
+%  and thus we can conclude $s\sim_n t$ as required. 
+%\end{proof}
+%
+
+%Inspired by Definitions 2.7 and 2.10 \cite{Bishop}, 
+%we define inequality on $\I$ as follows:
+%\begin{definition}
+%  Let $\alpha,\beta:2^\N$. 
+%  We define $\alpha\leq_\I \beta$ and $\alpha<_\I\beta$ as follows:
+%  \begin{align}
+%  \alpha\leq_\I\beta : = \forall_{n:\N} \left( cs(\alpha)_n \leq cs(\beta)_n + \frac {1} {2^n}\right)\\ 
+%    \alpha   <_\I \beta : = \exists_{n:\N} \left( cs(\alpha)_n < cs(\beta)_n - \frac {1} {2^n}\right)
+%%    \\\rednote{Can become n\pm1, \leq ,<, +\frac1{2^n+2} }
+%\end{align}
+%\end{definition}
+%\begin{lemma}
+%  $\leq_\I$ respects $\sim_\I$. 
+%\end{lemma}
+%\begin{proof}
+%  We will show that whenever $\alpha\leq_\I \gamma$ and $\alpha\sim_\I\beta$, we have $\beta\leq_\I\gamma$. 
+%  The other proof obligation goes similarly. 
+%%  The proof is similar to $\alpha'\leq_\I\gamma'$ and $\gamma'\sim_\I\beta'$, we have $\alpha'\leq_\I\beta'$.
+%
+%
+%  As $\beta\leq_\I\gamma$ is closed, by \Cref{rmkOpenClosedNegation} it is double negation stable. 
+%  By \Cref{MarkovPrinciple}, the negation is that there is some 
+%  $N:\N$ with 
+%  $cs(\beta)_N > cs(\gamma)_N + \frac{1}{2^N}.$
+%  As $\alpha\leq_\I\gamma$, we have 
+%  $cs(\gamma)_N + \frac{1}{2^N}\geq cs(\alpha)_N $. 
+%  Thus $cs(\beta)_N > cs(\alpha)_N$ and therefore $cs(\beta)_N = cs(\alpha)_N+\frac{1}{2^N}$ using  $\alpha\sim_\I\beta$.
+%%  Yet as $\alpha\sim_\I\beta$, from \Cref{alternativeSimByCauchyDistance}
+%%  we have $cs(\beta)_n \leq cs(\alpha)_n + \frac{1}{2^n}$ for all $n:\N$. 
+%%  Therefore, by \Cref{CauchyApproxLemma}, for $n\geq N$, we may conclude that 
+%  It follows that 
+%  $$
+%  cs(\alpha)_N+\frac{1}{2^N} > cs(\gamma)_N + \frac{1}{2^N} \geq cs(\alpha)_N
+%  $$
+%  From \Cref{rmkPropertiesCSn}, we must have
+%  $cs(\gamma)_N  + \frac{1}{2^N} = cs(\alpha)_N$, otherwise the distance 
+%  between $cs(\gamma)_N$ and $cs(\alpha)_N$ 
+%  would be smaller than $\frac{1}{2^N}$.
+%%  Using again $\alpha\sim_\I\beta$ and \Cref{CauchyApproxLemma}, 
+%%  for $n\geq N$ we get 
+%%  $cs(\beta)_n = cs(\alpha)_n + \frac{1}{2^n}$.
+%  As $cs(\alpha)_n \leq cs(\gamma)_n + \frac{1}{2^n}$ for all $n\geq N$, 
+%  \Cref{CauchyApproxLemma} gives that 
+%  $\alpha\sim_\I\gamma$. But also $\beta\sim_\I\gamma$. 
+%  But now $\alpha,\beta,\gamma$ are all distinct yet related by $\sim_\I$, contradicting 
+%  \Cref{IntervalFiberSizeAtMost2}. 
+%\end{proof}
+%
+%\begin{remark}\label{NegationOfGeq}
+%  By \Cref{MarkovPrinciple}, we have that $\neg (\alpha \leq \beta) \leftrightarrow (\beta <_\I \alpha)$. 
+%  It follows immediately that $<_\I$ also respects $\I$. 
+%  Therefore, $\leq_\I, <_\I$ induce relations $\leq,<$ on $\I$.
+%  As the order in $\mathbb Q$ is decidable, $\leq, <$ are closed and open respectively. 
+%\end{remark} 
+%
+%\begin{lemma}\label{IntervalOrderLeqOrGeq}
+%  For any $x,y:\I$, we have $x\leq y \vee y \leq x$. 
+%\end{lemma}
+%\begin{proof}
+%  Note that $x\leq y \vee y \leq x$ is the disjunction of two closed propositions, hence by 
+%  \Cref{ClosedFiniteDisjunction} and \Cref{rmkOpenClosedNegation} we can show it's double negation instead. 
+%  By the above remark, the negation implies that $x>y$ and $y<x$. We will show this is a contradiction. 
+%  Let $\alpha,\beta:2^\N$ correspond to $x,y$ and assume $n,m:\N$ with 
+%  $cs(\alpha)_n < cs(\beta)_n-\frac{1}{2^n}$ and 
+%  $cs(\beta)_m < cs(\alpha)_m-\frac{1}{2^m}$. 
+%  WLOG assume $n<m$. In this case for $\gamma$ any of $\alpha,\beta$, we have
+%  $$0\leq cs(\gamma)_m - cs(\gamma)_n = \sum_{i = n}^{m-1} \frac{\gamma(i)}{2^{i+1}}\leq \frac{1}{2^n}-\frac{1}{2^m}$$
+%  While at the same time, we have 
+%  \begin{align}
+%    cs(\beta)_m - cs(\beta)_n &\leq cs(\alpha)_m -\frac{1}{2^m} - cs (\beta)_n \\
+%                              & = (cs(\alpha)_m-cs(\alpha)_n)  +      (cs(\alpha)_n -cs(\beta)_n) - \frac{1}{2^m}\\
+%                              & \leq (\frac{1}{2^n} - \frac{1}{2^m}) -\frac{1}{2^n}               - \frac{1}{2^m}\\
+%                              &<0
+%  \end{align}
+%  giving a contradiction as required. 
+%\end{proof}
+%
+%\begin{remark}\label{rmkMapOutOfLeqGeq}
+%  From \Cref{alternativeSimByCauchyDistance} we have $((x\leq y) \wedge (y \leq x )) \leftrightarrow (x = y)$. 
+%  So in order to define a map $(x \leq y) \vee (y \leq x) \to P$, we need to define a map 
+%  $f:x\leq y \to P$ and a map $g:y \leq x \to P$ such that $f|_{x = y} = g|_{x=y}$. 
+%\end{remark}
+%\rednote{These properties are nice but not necessary and paused WIP:}
+%\rednote{It is no used for Bouwer's fixed point theorem}
+%\begin{corollary}\label{inequality-lesser-greater-than}
+%    For $x,y:\I$ we have $(x\leq y \wedge x \neq y) \leftrightarrow (x < y)$. 
+%    Also $(x\neq y) \leftrightarrow (x < y + x > y)$. 
+%\end{corollary} 
+%\begin{proof}
+%    By $(x<y)\leftrightarrow \neg (y\leq x)$
+%    It's also immediate from the definitions that $x<y$ implies $x\neq y$. 
+%    As $((x\leq y) \wedge (y \leq x )) \leftrightarrow (x = y)$, 
+%    if $x\leq y \wedge x \neq y$, we have $\neg (y \leq x)$, hence $x<y$. 
+%\end{proof}
+%
+%%    \item $(\exists_{y:I}(x\leq y \wedge y \leq z ))\leftrightarrow (x \leq z)$. 
+%%    \item $(\exists_{y:I}(x<y \wedge y < z ))\leftrightarrow (x < z)$. 
+%
+%\begin{lemma}
+%  Whenever $x,y:\I$ satisfy $x<y$, there is some $z:\I$ with  $x<z \wedge z< y$. 
+%\end{lemma} 
+%
+%%
+%%\rednote{TODO}
+%%For any $x,y:I$ we have 
+%%\begin{itemize}
+%%  \item TODO $x\leq y \wedge x \neq y \to x < y$. 
+%%\end{itemize}
+%
+%
+%
+%\subsection{The topology of the interval}
+%
+%
+%\begin{definition}
+%  Let $a,b:\I$. 
+%  Following standard notation, we denote
+%  \begin{equation}
+%    [a,b]:= \Sigma_{x:\I} (a\leq x \wedge x \leq b),
+%  \end{equation}
+%  we call subsets of $\I$ of this form closed intervals. 
+%%
+%  We also denote 
+%  \begin{align}
+%    (-\infty,a) &:= \Sigma_{x:\I} (x < a)   \\
+%    (a,\infty) &:= \Sigma_{x:\I} (a < x)  \\
+%    (-\infty,\infty) &:= \I  \\
+%    (a,b) &:= \Sigma_{x:\I} (a < x \wedge x < b),
+%  \end{align}
+%  We call subsets of $\I$ of these forms open intervals. 
+%\end{definition}
+%\begin{remark}
+%  Note that closed intervals and open intervals are closed and open respectively. 
+%\end{remark}
+%
+%
+%%\begin{lemma}\label{IntervalQuotientMapIntersectionCommute}
+%%  Let $D_n:2^\N \to 2$ be a sequence of decidable subsets with $D_{n+1}\subseteq D_n$.
+%%  For $p$ the quotient map $2^\N \to I$, we have that 
+%%  $p(\bigcap_{n:\N} D_n) = p(\bigcap_{n:\N} D_n)$
+%%\end{lemma}
+%%\begin{proof}
+%%  It is always the case that $$p(\bigcap_{n:\N} D_n) \subseteq \bigcap_{n:\N} p(D_n).$$
+%%  For the converse direction, let $(\bigcap_{n:\N} p(D_n))(x)$. 
+%%  We will show that $ \neg \neg (p(\bigcap D_n)) (x)$, which is sufficient by \Cref{rmkOpenClosedNegation}. 
+%%%
+%%  As $(\bigcap_{n:\N} p(D_n))(x)$, there exists some $y\in D_0$ with $p(y) = x$. 
+%%%
+%%  If $x\notin p(\bigcap_{n:\N} D_n)$, we cannot have for all $n:\N$ that $y_0 \in  D_n$. 
+%%  By Markov, there must exist some $k:\N$ with $\neg D_k(y_0)$. 
+%%  As $D_{n+1}\subseteq D_n$ for all $n:\N$, it follows that $y_0\notin D_n$ for all $n\geq k$. 
+%%%
+%%  As $x\in \bigcap_{n:\N}p(D_n)$, there is however some $y_k\in D_k$ with $p(y_k) = x$. 
+%%  By a similar argument, we have some $l>k$ with $y_k\notin D_l$, and some $y_l$ with $p(y_l) = x, y_l \in D_l$. 
+%%  But now we have that $y_0, y_k, y_l:2^\N$ are all distinct, but $p(y_0) = p(y_k) = p(y_l) = x$. 
+%%  This contradicts \Cref{IntervalFiberSizeAtMost2}, and we're done. 
+%%\end{proof}
+%
+
+The following is also given by Definitions 2.7 and 2.10 of \cite{Bishop}.
+
+\begin{definition}
+  Assume given $x,y:\I$ and $\alpha,\beta:2^\N$ such that $x=cs(\alpha), y=cs(\beta)$.
+  Then $x<y$ is the proposition $\exists_{n:\N}\, cs_n(\alpha)+\frac{1}{2^{n}}<_{\mathbb Q}cs_n(\beta)$, which is independent of the choice of $\alpha,\beta$.
+\end{definition}
+
+\begin{remark}\label{LesserOpenPropAndApartness}
+  For all $x,y:\I$, we have that $x<y$ is an open proposition and that $x\neq y$ is equivalent to $(x<y) \vee (y<x)$.
+\end{remark}
+%
+\begin{lemma}\label{ImageDecidableClosedInterval}
+  For all $D\subseteq 2^\N$ decidable, we have that $cs(D)$ is a finite union of closed intervals. 
+\end{lemma}
+\begin{proof}
+  If $D$ is contains precisely the $\alpha:2^\N$ with a fixed initial segment, $cs(D)$ is a closed interval. 
+  Any decidable subset of $2^\N$ is a finite union of such subsets. 
+\end{proof}
+%\begin{proof}
+%  We will show the above if there exists some $n:\N, u:2^n$ such that 
+%  $D(\alpha) \leftrightarrow \alpha|_n = u$.
+%  This is sufficient, as any decidable subset of $2^\N$ can be written as finite union of such decidable subsets. 
+%  We claim that $p(D) = [p(u\cdot \overline 0) , p(u \cdot \overline 1)]$. 
+%\item 
+%  We will first show that $p(D) \subseteq [p(u\cdot \overline 0) , p(u \cdot \overline 1)]$. 
+%  Suppose $D(\alpha)$. Then 
+%  Then $\alpha|_n = u$ and hence 
+%%  for $m\leq n$ we have 
+%%  \begin{equation}
+%%    cs(\alpha)_m = cs_m(u|_m) = cs(u\cdot \overline 0)_m= cs(u\cdot \overline 1)_m
+%%  \end{equation}
+%%  For $m>n$, we have that 
+%%  \begin{align}
+%%    cs(u\cdot \overline 1)_m =
+%%    cs_n(u) +\sum_{i = n} ^{m-1} \frac{1}{2^{i+1}}
+%%    \\
+%%    cs(\alpha)_m =
+%%    cs_n(u) +\sum_{i = n} ^{m-1} \frac{\alpha(i)}{2^{i+1}}
+%%    \\
+%%    cs(u\cdot \overline 0)_m = 
+%%    cs_n(u) +\sum_{i = n} ^{m-1} \frac{0}{2^{i+1}}
+%%  \end{align} 
+%%  Hence for all $m:\N$, we have 
+%  \begin{equation}
+%    cs(u\cdot \overline 1)_m \geq 
+%    cs(\alpha)_m \geq 
+%    cs(u\cdot\overline 0)_m
+%  \end{equation}
+% which implies that $p(u\cdot \overline 1) \geq_\I p(\alpha) \geq_\I p(u\cdot\overline 0)$, as required. 
+%\item 
+%  To show that $[p(u\cdot \overline 0) , p(u \cdot \overline 1)]\subseteq p(D)$, 
+%  Suppose
+%  $(u\cdot \overline 0) \leq_\I \alpha \leq_\I (u \cdot \overline 1)$. 
+%  It is sufficient to show that 
+%  $$(\alpha|_n = u )\vee (\alpha \sim_\I u \cdot \overline 0 )\vee (\alpha \sim_\I u \cdot \overline 1).$$
+%  As this is a disjunction of closed propositions, by \Cref{ClosedFiniteDisjunction} it's closed, and by 
+%  \Cref{rmkOpenClosedNegation}, we can instead show the double negation. 
+%  So suppose that none of the disjoints hold. 
+%  As $\alpha|_n \neq u$, there is some minimal $m$ with $\alpha(m) \neq u(m)$. 
+%  We assume that $\alpha(m) = 1, u(m) = 0$, the other case goes similarly. 
+%  Then for all $k:\N$, we have 
+%  $cs(\alpha)_k \geq cs(u \cdot \overline 1)|_k$. 
+%  As also 
+%  $(u\cdot \overline 1)\geq_\I \alpha$, we have 
+%  $$cs(u \cdot \overline 1)|_k + \frac{1}{2^k} \geq cs(\alpha)_k \geq cs(u\cdot \overline 1)_k,$$
+%  From which it follows that $|cs(u\cdot\overline 1)_k - cs(\alpha)_k|\leq \frac{1}{2^k}$. 
+%  Hence $(u\cdot \overline 1)|_k \sim_k \alpha|_k$ by \Cref{alternativeSimByCauchyDistance}. 
+%  Hence $x\sim_\I (a\cdot\overline 1)$, contradicting our assumption as required. 
+%\end{proof}
+%
+\begin{lemma}\label{complementClosedIntervalOpenIntervals}
+  The complement of a finite union of closed intervals is 
+  a finite union of open intervals. 
+\end{lemma}
+%\begin{proof}
+%  We'll use induction on the amount of closed intervals. 
+%  The empty union of closed intervals is empty, and hence it's complement is $\I$, which is an open interval.  
+%  Let $(C_i)_{i<k}$ be a finite set of closed intervals with $\neg (\bigcup_{i<k}C_i)$ 
+%  a finite union of open intervals $\bigcup_{j<l} O_i$. 
+%  Suppose $C_{k}$ is closed. We need to show that 
+%  $\neg (\bigcup_{i\leq k} C_i)$ is also a finite union of open intervals. 
+%  First note that in general, 
+%  $(\neg (A \vee B ))\leftrightarrow (\neg A \wedge \neg B)$
+%  hence 
+%  $$
+%  \neg (\bigcup_{i\leq k} C_i)
+%  = 
+%  \neg ((\bigcup_{i<k} C_i) \cup C_k) 
+%  =
+%  (\neg (\bigcup_{i<k} C_i) )\cap (\neg C_k) 
+%  $$
+%  And by the induction hypothesis and distributivity, this equals 
+%  $$
+%  (\bigcup_{j<l} O_i) ) \cap (\neg C_k) 
+%  =
+%  \bigcup_{j<l} (O_i \cap (\neg C_k) )
+%  $$
+%  So we need to show that the intersection of an open interval and the negation of a closed interval is a 
+%  finite union of open intervals. We assume or open intervals are of the form $(a,b)$ for $a,b:\I$. 
+%  The other cases are very similar. 
+%  So let $a,b,c,d:\I$ and consider 
+%  $U = (a,b) \cap (\neg [c,d])$. 
+%  Then 
+%  \begin{align} 
+%    U(x) &= \Sigma_{x:\I}  
+%  (a < x \wedge x < b) \wedge ( x < c \vee d < x)\\
+%  &= \Sigma_{x:\I}
+%  (a < x \wedge x < b \wedge x < c ) \vee ( d < x \vee a<x \wedge x < b)\\
+%  &= 
+%  \Sigma_{x:\I}
+%  (a < x \wedge x < b \wedge x < c ) 
+%  \cup 
+%  \Sigma_{x:\I}
+%  ( d < x \vee a<x \wedge x < b)
+%  \end{align} 
+%  We will show that 
+%  $U' = \Sigma_{x:\I}(a < x \wedge x < b \wedge x < c ) $ is an open interval. 
+%  By a similar argument, the other part will be as well, meaning that $U$ is the union of two open intervals. 
+%  Consider that $b\leq c \vee c \leq b$. 
+%  If $b \leq c$, $(x<b \wedge x< c) \leftrightarrow x<b$ and $U' = (a,b)$
+%  If $c \leq b$, $(x<b \wedge x< c) \leftrightarrow x<c$ and $U' = (a,c)$
+%  If $b=c$, these open intervals agree, hence from \Cref{rmkMapOutOfLeqGeq} we can conclude that $U'$ is an open interval. 
+%  We conclude that $U$ is the union of two open intervals as required. 
+%\end{proof}
+%%
+By \Cref{CompactHausdorffTopology} we can thus conclude:
+\begin{lemma}\label{IntervalTopologyStandard}
+  Every open $U\subseteq \I$ can be written as a countable union of open intervals.
+\end{lemma} 
+%\begin{proof}
+%%  Let $U\subseteq I$ open, then $\neg U$ is closed and $U = \neg \neg U$ by \Cref{rmkOpenClosedNegation}. 
+%%  By \Cref{StoneClosedSubsets}, \Cref{CompactHausdorffClosed} and \Cref{ChausMapsPreserveIntersectionOfClosed}
+%  %\Cref{IntervalQuotientMapIntersectionCommute}, 
+%  By \Cref{CompactHausdorffTopology}
+%  there is some sequence of decidable subsets $D_n\subseteq 2^\N$ 
+%%  with $\neg U = \bigcap_{n:\N} p(D_n)$. 
+%%  Thus $U = \neg \bigcap_{n:\N} p(D_n)$. 
+%%  By \Cref{ClosedMarkov}, it follows that 
+%  with $U = \bigcup_{n:\N} \neg p(D_n)$. 
+%  By \Cref{ImageDecidableClosedInterval}, each $p(D_n)$ is a finite union of closed intervals, 
+%  and by \Cref{complementClosedIntervalOpenIntervals} it follows that each $\neg p(D_n)$ is a finite union of open intervals. 
+%  We conclude that $U$ is a countable union of open intervals as required. 
+%\end{proof}
+%%
+%%%  $\neg U$ is a countable intersection of finite unions of closed intervals. 
+%%%  Thus $\neg\neg U$ is a countable union of finite intersections of complements of closed intervals. 
+%%%  As complements of closed intervals are finite unions of open intervals (TODO), 
+%%%  and finite intersections of such things are still finite unions of open intervals, 
+%%%  it follows that $\neg\neg U$ is a countable union of open intervals. 
+%%%  By \Cref{rmkOpenClosedNegation}, $\neg \neg U = U$ and we're done. 
+%%%  \rednote{Lotta handwaving here, definitely not finished} 
+%%\end{proof}
+%%
+%
+%\begin{remark}\label{IntervalTopologyStandard}
+  It follows that the topology of $\I$ is generated by open intervals, 
+  which corresponds to the standard topology on $\I$. 
+  Hence our notion of continuity agrees with the 
+  $\epsilon,\delta$-definition of continuity one would expect and we get the following:
+\begin{theorem}
+  Every function $f:\I\to \I$ is continuous in the $\epsilon,\delta$-sense. 
+\end{theorem}
+%\end{remark}
+% ===== END TopologyOnI =====
+ 
+
+\section{Cohomology}
+% ===== BEGIN cohomology =====
+In this section we compute $H^1(S,\Z) = 0$ for all $S$ Stone, and show that $H^1(X,\Z)$ for $X$ compact Hausdorff can be computed using \v{C}ech cohomology. We use this to compute $H^1(\I,\Z)=0$. 
+
+\begin{remark}
+We only work with the first cohomology group with coefficients in $\Z$ as it is sufficient for the proof of Brouwer's fixed-point theorem, but the results could be extended to $H^n(X,A)$ for $A$ any family of countably presented abelian groups indexed by $X$.
+\end{remark}
+
+\begin{remark}
+We write $\mathrm{Ab}$ for the type of abelian groups and if $G:\mathrm{Ab}$ we write $\B G$ for the delooping of $G$ \cite{hott,davidw23}. This means that $H^1(X,G)$ is the set truncation of $X \to \B G$. 
+\end{remark}
+
+\subsection{\v{C}ech cohomology}
+
+\begin{definition}
+Given a type $S$, types $T_x$ for $x:S$ and $A:S\to\mathrm{Ab}$, we define $\check{C}(S,T,A)$ as the chain complex
+\[
+\begin{tikzcd}
+     \prod_{x:S}A_x^{T_x} \ar[r,"d_0"] & \prod_{x:S}A_x^{T_x^2}\ar[r,"d_1"] &  \prod_{x:S}A_x^{T_x^3}
+\end{tikzcd}
+\]
+where the boundary maps are defined as
+\begin{align*}
+d_0(\alpha)_x(u,v) =&\ \alpha_x(v)-\alpha_x(u)\\
+d_1(\beta)_x(u,v,w) =&\ \beta_x(v,w) - \beta_x(u,w) + \beta_x(u,v)
+\end{align*}
+\end{definition}
+
+\begin{definition}
+Given a type $S$, types $T_x$ for $x:S$ and $A:S\to\mathrm{Ab}$, we define its \v{C}ech cohomology groups by
+\[
+  \check{H}^0(S,T,A) = \mathrm{ker}(d_0)\quad \quad \quad \check{H}^1(S,T,A) = \mathrm{ker}(d_1)/\mathrm{im}(d_0)
+\]
+We call elements of $\mathrm{ker}(d_1)$ cocycles and elements of $\mathrm{im}(d_0)$ coboundaries.
+\end{definition}
+
+This means that $\check{H}^1(S,T,A) = 0$ if and only if $\check{C}(S,T,A)$ is exact at the middle term. Now we give three general lemmas about \v{C}ech complexes.
+
+\begin{lemma}\label{section-exact-cech-complex}
+Assume a type $S$, types $T_x$ for $x:S$ and $A:S\to\mathrm{Ab}$ with $t:\prod_{x:S}T_x$. Then $\check{H}^1(S,T,A)=0$.
+\end{lemma}
+
+\begin{proof}
+Assume given a cocycle, i.e. $\beta:\prod_{x:S}A_x^{T_x^2}$ such that for all $x:S$ and $u,v,w:T_x$ we have that $\beta_x(u,v)+\beta_x(v,w) = \beta_x(u,w)$. We define $\alpha:\prod_{x:S}A_x^{T_x}$ by $\alpha_x(u) = \beta_x(t_x,u)$. Then for all $x:S$ and $u,v:T_x$ we have that $d_0(\alpha)_x(u,v) =  \beta_x(t_x,v) - \beta_x(t_x,u) = \beta_x(u,v)$ so that $\beta$ is a coboundary.
+\end{proof}
+
+\begin{lemma}\label{canonical-exact-cech-complex}
+Given a type $S$, types $T_x$ for $x:S$ and $A:S\to\mathrm{Ab}$, we have that $\check{H}^1(S,T,\lambda x.A_x^{T_x})=0$.
+\end{lemma}
+
+\begin{proof}
+Assume given a cocycle, i.e. $\beta:\prod_{x:S}A_x^{T_x^3}$ such that for all $x:S$ and $u,v,w,t:T_x$ we have that $\beta_x(u,v,t)+\beta_x(v,w,t) = \beta_x(u,w,t)$. We define $\alpha:\prod_{x:S}A_x^{T_x^2}$ by $\alpha_x(u,t) = \beta_x(t,u,t)$. Then for all $x:S$ and $u,v,t:T_x$ we have that $d_0(\alpha)_x(u,v,t) = \beta_x(t,v,t) - \beta_x(t,u,t) = \beta_x(u,v,t)$ so that $\beta$ is a coboundary.
+\end{proof}
+
+\begin{lemma}\label{exact-cech-complex-vanishing-cohomology}
+Assume a type $S$ and types $T_x$ for $x:S$ such that $\prod_{x:S}\propTrunc{T_x}$ and $A:S\to\mathrm{Ab}$ such that $\check{H}^1(S,T,A) = 0$.
+Then given $\alpha:\prod_{x:S}\B A_x$ with $\beta:\prod_{x:S} (\alpha(x) = *)^{T_x}$, we can conclude $\alpha = *$.
+\end{lemma}
+
+\begin{proof}
+We define $g : \prod_{x:S} A_x^{T_x^2}$ by $g_x(u,v) = \beta_x(v) - \beta_x(u)$.
+It is a cocycle in the \v{C}ech complex, so that by exactness there is $f:\prod_{x:S}A_x^{T_x}$ such that for all $x:S$ and $u,v:T_x$ we have that $g_x(u,v)= f_x(v) - f_x(u)$.
+Then we define $\beta' : \prod_{x:S}(\alpha(x)=*)^{T_x}$ by $\beta'_x(u) = \beta_x(u) - f_x(u)$
+so that for all $x:S$ and $u,v:T_x$ we have that $\beta'_x(u) = \beta'_x(v)$ is equivalent to $f_x(v) - f_x(u) = \beta_x(v) - \beta_x(u)$, which holds by definition. So $\beta'$ is constant on each $T_x$ and therefore gives $\prod_{x:S} (\alpha(x)=*)^{\propTrunc{T_x}}$. By $\prod_{x:S}\propTrunc{T_x}$ we conclude $\alpha = *$.
+\end{proof}
+
+
+\subsection{Cohomology of Stone spaces}
+
+%
+%%\subsection{Needed results}
+%
+%%\rednote{Should probably be moved elsewhere}
+%
+\begin{lemma}\label{finite-approximation-surjection-stone}
+Assume given $S:\Stone$ and $T:S\to\Stone$ such that $\prod_{x:S}\propTrunc{T(x)}$.
+Then there exists a sequence of finite types $(S_k)_{k:\N}$ with limit $S$ 
+%\rednote{Should the maps in the sequence be mentioned? (Maps $p_k$ are mentioned below)}
+%\begin{equation}
+%\begin{tikzcd}
+%S_0 & S_1 \ar[l,"p_0"]& S_2\ar[l,"p_1"] & \cdots\ar[l]\\
+%\end{tikzcd}
+%\end{equation}
+%such that: 
+%\[\mathrm{lim}_kS_k = S\]
+and a compatible sequence of families of finite types $T_k$ over $S_k$
+with $\prod_{x:S_k}\propTrunc{T_k(x)}$ and 
+$\mathrm{lim}_k\left(\sum_{x:S_k}T_k(x)\right) = \sum_{x:S}T(x)$. 
+%
+%Given $S:\Stone$ and $T:S\to\Stone$ such that $\prod_{x:S}\propTrunc{T(x)}$, there exists a sequence of finite types $(S_k)_{k:\N}$
+%\rednote{Should the maps in the sequence be mentioned? (Maps $p_k$ are mentioned below)}
+%%\begin{equation}
+%%\begin{tikzcd}
+%%S_0 & S_1 \ar[l,"p_0"]& S_2\ar[l,"p_1"] & \cdots\ar[l]\\
+%%\end{tikzcd}
+%%\end{equation}
+%such that: 
+%\[\mathrm{lim}_kS_k = S\]
+%and for each $k:\N$ we have a family of finite types $T_k(x)$ for $x:S_k$ such that $\prod_{x:S_k}\propTrunc{T_k(x)}$ with maps $T_{k+1}(x) \to T_k(p_k(x))$ such that:
+%\[\mathrm{lim}_k\left(\sum_{x:S_k}T_k(x)\right) = \sum_{x:S}T(x)\]
+\end{lemma}
+
+\begin{proof}
+By \Cref{stone-sigma-closed} and the usual correspondence between surjections and families of inhabited types, a family of inhabited Stone spaces over $S$ correspond to a Stone space $T$ with a surjection $T\to S$. Then we conclude using \Cref{ProFiniteMapsFactorization}.
+%\rednote{ \@ Hugo This follows from \Cref{ProFiniteMapsFactorization} and \Cref{stone-sigma-closed} 
+%  and considering the surjection $(\Sigma_{x:S} T(x)) \to S$, but we discussed whether it might be easier to 
+%  refactor the proof where you use the above or make a remark after \Cref{stone-sigma-closed}}
+\end{proof}
+
+\begin{lemma}\label{cech-complex-vanishing-stone}
+Assume given $S:\Stone$ with $T:S\to\Stone$ such that $\prod_{x:S}\propTrunc{T_x}$. Then we have that $\check{H}^1(S,T,\Z) = 0$.
+\end{lemma}
+
+
+\begin{proof}
+We apply \cref{finite-approximation-surjection-stone} to get $S_k$ and $T_k$ finite. Then by \cref{scott-continuity} we have that $\check{C}(S,T,\Z)$ is the sequential colimit of the $\check{C}(S_k,T_k,\Z)$. By \cref{section-exact-cech-complex} we have that each of the $\check{C}(S_k,T_k,\Z)$ is exact, and a sequential colimit of exact sequences is exact.
+\end{proof}
+
+\begin{lemma}\label{eilenberg-stone-vanish}
+Given $S:\Stone$, we have that $H^1(S,\Z) = 0$. 
+\end{lemma}
+
+\begin{proof}
+Assume given a map $\alpha:S\to \B\Z$. We use local choice to get $T:S\to\Stone$ such that $\prod_{x:S}\propTrunc{T_x}$ with $\beta:\prod_{x:S}(\alpha(x)=*)^{T_x}$. Then we conclude by \cref{cech-complex-vanishing-stone} and \cref{exact-cech-complex-vanishing-cohomology}.
+\end{proof}
+
+\begin{corollary}\label{stone-commute-delooping}
+For any $S:\Stone$ the canonical map $\B(\Z^S) \to (\B\Z)^S$ is an equivalence.
+\end{corollary}
+
+\begin{proof}
+This map is always an embedding. To show it is surjective it is enough to prove that $(\B\Z)^S$ is connected, which is precisely \Cref{eilenberg-stone-vanish}.
+\end{proof}
+
+
+\subsection{\v{C}ech cohomology of compact Hausdorff spaces}
+
+\begin{definition}
+A \v{C}ech cover consists of $X:\CHaus$ and $S:X\to\Stone$ such that $\prod_{x:X}\propTrunc{S_x}$ and $\sum_{x:X}S_x:\Stone$.
+\end{definition}
+
+By definition any compact Hausdorff space $X$ is part of a \v{C}ech cover $(X,S)$.
+
+\begin{lemma}\label{cech-eilenberg-0-agree}
+Given a \v{C}ech cover $(X,S)$ and $A:X\to\mathrm{Ab}$, we have an isomorphism $H^0(X,A) = \check{H}^0(X,S,A)$ natural in $A$.
+\end{lemma}
+
+\begin{proof}
+By definition an element in $\check{H}^0(X,S,A)$ is a map $f:\prod_{x:X}A_x^{S_x}$
+such that for all $u,v:S_x$ we have $f(u)=f(v)$. Since $A_x$ is a set and the $S_x$ are merely inhabited, this is equivalent to $\prod_{x:X}A_x$. Naturality in $A$ is immediate.
+\end{proof}
+
+\begin{lemma}\label{eilenberg-exact}
+Given a \v{C}ech cover $(X,S)$ we have an exact sequence
+\[H^0(X,\lambda x.\Z^{S_x}) \to H^0(X,\lambda x.\Z^{S_x}/\Z) \to H^1(X,\Z)\to 0\]
+\end{lemma}
+
+\begin{proof}
+We use the long exact cohomology sequence associated to
+\[0 \to \Z \to \Z^{S_x} \to \Z^{S_x}/\Z\to 0\]
+We just need $H^1(X,\lambda x.\Z^{S_x}) = 0$ to conclude. But by \cref{stone-commute-delooping} we have that $H^1(X,\lambda x.\Z^{S_x}) = H^1\left(\sum_{x:X}S_x,\Z\right)$ which vanishes by \cref{eilenberg-stone-vanish}.
+\end{proof}
+
+\begin{lemma}\label{cech-exact}
+Given a \v{C}ech cover $(X,S)$ we have an exact sequence
+\[\check{H}^0(X,S,\lambda x.\Z^{S_x}) \to \check{H}^0(X,S,\lambda x.\Z^{S_x}/\Z) \to \check{H}^1(X,S,\Z)\to 0\]
+\end{lemma}
+
+\begin{proof}
+For $n=1,2,3$, we have that $\Sigma_{x:X}S_x^n$ is Stone so that  $H^1(\Sigma_{x:X}S_x^n, \Z) = 0$ by \cref{eilenberg-stone-vanish}, giving short exact sequences
+\[0\to \Pi_{x:X}\Z^{S_x^n} \to \Pi_{x:X}(\Z^{S_x})^{S_x^n}\to \Pi_{x:X}(\Z^{S_x}/\Z)^{S_x^n}\to 0\]
+They fit together in a short exact sequence of complexes
+\[0 \to \check{C}(X,S,\Z) \to \check{C}(X,S,\lambda x.\Z^{S_x}) \to \check{C}(X,S,\lambda x.\Z^{S_x}/\Z)\to 0\]
+But since $\check{H}^1(X,\lambda x.\Z^{S_x}) = 0$ by \cref{canonical-exact-cech-complex}, we conclude using the associated long exact sequence.
+\end{proof}
+
+\begin{theorem}\label{cech-eilenberg-1-agree}
+Given a \v{C}ech cover $(X,S)$, we have that $H^1(X,\Z) = \check{H}^1(X,S,\Z)$
+\end{theorem}
+
+\begin{proof}
+By applying \cref{cech-eilenberg-0-agree}, \cref{eilenberg-exact} and \cref{cech-exact} we get that $H^1(X,\Z)$ and $\check{H}^1(X,S,\Z)$ are cokernels of isomorphic maps, so they are isomorphic.
+\end{proof}
+
+This means that \v{C}ech cohomology does not depend on $S$.
+
+\subsection{Cohomology of the interval}
+%
+%Recall that we denote $C_n=2^n$ with a binary relation $\sim_n$ on $C_n$ such that for all $x,y:2^\N$ we have that:
+%\[\left(\forall(n:\N).\ x|_n\sim_n y|_n\right) \leftrightarrow x=_\I y\]
+%
+%\begin{lemma}\label{description-Cn-simn}
+%We have that $(C_n,\sim_n)$ is equivalent to $(\Fin(2^n),\lambda x,y.\ |x-y|\leq 1)$.
+%\end{lemma}
+\begin{remark}\label{description-Cn-simn}
+  Recall from \Cref{def-cs-Interval} that 
+  there is a binary relation $\sim_n$ on $2^n=:\I_n$ such that 
+  $(2^n,\sim_n)$ is equivalent to  $(\Fin(2^n),\lambda x,y.\ |x-y|\leq 1)$
+  and for $\alpha,\beta:2^\N$ we have $(cs(\alpha) = cs(\beta)) \leftrightarrow 
+  \left(\forall_{n:\N}\alpha|_n \sim_n \beta|_n\right)$. 
+\end{remark}
+
+We define $\I_n^{\sim2} = \Sigma_{x,y:\I_n}x\sim_n y$ and $\I_n^{\sim3} = \Sigma_{x,y,z:\I_n}x\sim_n y \land y\sim_n z\land x\sim_n z$.
+
+\begin{lemma}\label{Cn-exact-sequence}
+For any $n:\N$ we have an exact sequence
+\[0\to \Z\overset{d_0}{\longrightarrow} \Z^{\I_n} \overset{d_1}{\longrightarrow} \Z^{\I_n^{\sim2}} \overset{d_2}{\longrightarrow} \Z^{\I_n^{\sim3}}\]
+where $d_0(k) = (\_\mapsto k)$ and
+\begin{eqnarray}
+ d_1(\alpha)(u,v) &=& \alpha(v)-\alpha(u)\nonumber\\
+ d_2(\beta)(u,v,w) &=& \beta(v,w)-\beta(u,w)+\beta(u,v).\nonumber
+\end{eqnarray}
+\end{lemma}
+
+\begin{proof}
+It is clear that the map $\Z\to \Z^{\I_n}$ is injective as $\I_n$ is inhabited, so the sequence is exact at $\Z$. Assume a cocycle $\alpha:\Z^{\I_n}$, meaning that for all $u,v:\I_n$, if $u\sim_nv$ then $\alpha(u)=\alpha(v)$. Then by \cref{description-Cn-simn} we see that $\alpha$ is constant, so the sequence is exact at $\Z^{\I_n}$.
+
+Assume a cocycle $\beta:\Z^{\I_n^{\sim2}}$, meaning that for all $u,v,w:\I_n$ such that $u\sim_nv$, $v\sim_nw$ and $u\sim_nw$ we have that $\beta(u,v)+\beta(v,w) = \beta(u,w)$. %This is equivalent to asking $\beta(u,u)=0$ and $\beta(u,v) = -\beta(v,u)$.
+Using \cref{description-Cn-simn} to pass along the equivalence between $2^n$ and $\Fin(2^n)$, we define $\alpha(k) = \beta(0,1)+\cdots+\beta(k-1,k)$.
+We can check that $\beta(k,l) = \alpha(l)-\alpha(k)$, so that $\beta$ is indeed a coboundary and the sequence is exact at $\Z^{\I_n^{\sim2}}$.
+\end{proof}
+
+\begin{proposition}\label{cohomology-I}
+We have that $H^0(\I,\Z) = \Z$ and $H^1(\I,\Z) = 0$.
+\end{proposition}
+
+\begin{proof}
+Consider $cs:2^\N\to\I$ and the associated \v{C}ech cover $T$ of $\I$ defined by: 
+\[T_x = \Sigma_{y:2^\N} (x=_\I cs(y))\]
+Then for $l=2,3$ we have that $\mathrm{lim}_n\I_n^{\sim l} = \sum_{x:\I} T_x^l$. By \cref{Cn-exact-sequence} and stability of exactness under sequential colimit, we have an exact sequence
+\[ 0\to \Z\to \mathrm{colim}_n \Z^{\I_n} \to \mathrm{colim}_n \Z^{\I_n^{\sim2}}\to \mathrm{colim}_n \Z^{\I_n^{\sim3}}\]
+By \cref{scott-continuity} this sequence is equivalent to
+\[ 0\to \Z\to \Pi_{x:\I}\Z^{T_x} \to  \Pi_{x:\mathbb{I}}\Z^{T_x^2} \to  \Pi_{x:\mathbb{I}}\Z^{T_x^3}\]
+So it being exact implies that $\check{H}^0(\I,T,\Z) = \Z$ and $\check{H}^1(\I,T,\Z) = 0$.
+We conclude by \cref{cech-eilenberg-0-agree} and \cref{cech-eilenberg-1-agree}.
+\end{proof}
+
+\begin{remark}
+We could carry a similar computation for $\mathbb{S}^1$, by approximating it with $2^n$ with $0^n\sim_n1^n$ added. We would find $H^1(\mathbb{S}^1,\Z)=\Z$. We will give an alternative, more conceptual proof in the next section.
+\end{remark}
+
+
+\subsection{Brouwer's fixed-point theorem}
+
+Here we consider the modality defined by localising at $\I$ as explained in \cite{modalities}. It is denoted by $L_\I$. We say that $X$ is $\I$-local if $L_\I(X) = X$ and that it is $\I$-contractible if $L_\I(X)=1$.
+
+\begin{lemma}\label{Z-I-local}
+$\Z$ and $2$ are $\I$-local.
+\end{lemma}
+
+\begin{proof}
+By \cref{cohomology-I}, from $H^0(\I,\Z)=\Z$ we get that the map $\Z\to \Z^\I$ is an equivalence, so $\Z$ is $\I$-local. We see that $2$ is $\I$-local as it is a retract of $\Z$.
+\end{proof}
+
+\begin{remark}
+Since $2$ is $\I$-local, we have that any Stone space is $\I$-local.
+\end{remark}
+
+\begin{lemma}\label{BZ-I-local}
+$\B\Z$ is $\I$-local.
+\end{lemma}
+
+\begin{proof}
+Any identity type in $\B\Z$ is a $\Z$-torsor, so it is $\I$-local by \cref{Z-I-local}. So the map $\B\Z\to \B\Z^{\I}$ is an embedding. From $H^1(\I,\Z)=0$ we get that it is surjective, hence an equivalence.
+\end{proof}
+
+\begin{lemma}\label{continuously-path-connected-contractible}
+Assume $X$ a type with $x:X$ such that for all $y:X$ we have $f:\I\to X$ such that $f(0)=x$ and $f(1)=y$. Then $X$ is $\I$-contractible.
+\end{lemma}
+
+\begin{proof}
+%First we prove that the map:
+%\[\eta_X:X\to L_\I(X)\] 
+%is surjective. Indeed its fiber are $\I$-contractible, but for any type $F$ we have a map:
+%\[L_\I(F) \to L_\mathbb{F}(\propTrunc{F}) = \propTrunc{F}\] 
+For all $y:X$ we get a map $g:\I\to L_\I(X)$ such that $g(0) = [x]$ and $g(1)=[y]$. Since $L_\I(X)$ is $\I$-local this means that $\prod_{y:X}[x]=[y]$. We conclude $\prod_{y:L_\I(X)}[x]=y$ by applying the elimination principle for the modality.
+\end{proof}
+
+\begin{corollary}\label{R-I-contractible}
+We have that $\R$ and $\mathbb{D}^2=\{(x,y):\mathbb R^2\ \vert\ x^2+y^2\leq 1\}$ are $\I$-contractible.
+\end{corollary}
+
+\begin{proposition}\label{shape-S1-is-BZ}
+$L_\I(\R/\Z) = \B\Z$.
+\end{proposition}
+
+\begin{proof}
+As for any group quotient, the fibers of the map $\R\to\R/\Z$ are $\Z$-torsors, so we have an induced pullback square
+\[
+\begin{tikzcd}
+\R\ar[r]\ar[d] & 1\ar[d] \\
+\R/\Z\ar[r] & \B\Z
+\end{tikzcd}
+\]
+Now we check that the bottom map is an $\I$-localisation. Since $\B\Z$ is $\I$-local by \cref{BZ-I-local}, it is enough to check that its fibers are $\I$-contractible. Since $\B\Z$ is connected it is enough to check that $\R$ is $\I$-contractible. This is \cref{R-I-contractible}.
+\end{proof}
+
+\begin{remark}
+By \cref{BZ-I-local}, for any $X$ we have that $H^1(X,\Z) = H^1(L_{\I}(X),\Z)$, so that by \cref{shape-S1-is-BZ} we have that $H^1(\R/\Z,\Z) = H^1(\B\Z,\Z) = \Z$.
+\end{remark}
+
+We omit the proof that $\mathbb{S}^1=\{(x,y):\R^2\ \vert\ x^2+y^2=1\}$ is equivalent to $\R/\Z$.
+The equivalence can be constructed using trigonometric functions, which exist by Proposition 4.12 in \cite{Bishop}.
+
+\begin{proposition}
+\label{no-retraction}
+The map $\mathbb{S}^1\to \mathbb{D}^2$ has no retraction.
+\end{proposition}
+
+\begin{proof}
+By \cref{R-I-contractible} and \cref{shape-S1-is-BZ} we would get a retraction of $\B\Z\to 1$, so $\B\Z$ would be contractible.
+\end{proof}
+
+\begin{theorem}[Intermediate value theorem]
+  \label{ivt}
+  For any $f: \I\to \I$ and $y:\I$ such that $f(0)\leq y$ and $y\leq f(1)$,
+  there exists $x:\I$ such that $f(x)=y$.
+\end{theorem}
+
+\begin{proof}
+  By \Cref{InhabitedClosedSubSpaceClosedCHaus}, the proposition $\exists_{x:\I}\, f(x)=y$ is closed and therefore $\neg\neg$-stable, so we can proceed with a proof by contradiction.
+  If there is no such $x:\I$, we have $f(x)\neq y$ for all $x:\I$.
+  By \cref{LesserOpenPropAndApartness} we have that $a<b$ or $b<a$ for all distinct numbers $a,b:\I$. So the following two sets cover $\I$
+  \[
+    U_0:= \{x:\I\mid f(x)<y\} \quad\quad
+    U_1:= \{x:\I\mid y<f(x)\}
+    \]
+  Since $U_0$ and $U_1$ are disjoint, we have $\I=U_0+U_1$ which allows us to define a non-constant function $\I\to 2$, which contradicts \Cref{Z-I-local}.
+\end{proof}
+
+\begin{theorem}[Brouwer's fixed-point theorem]
+  For all $f:\mathbb{D}^2\to \mathbb{D}^2$ there exists $x:\mathbb{D}^2$ such that $f(x)=x$.
+\end{theorem}
+
+\begin{proof}
+  As above, by \Cref{InhabitedClosedSubSpaceClosedCHaus}, we can proceed with a proof by contradiction,
+  so we assume $f(x)\neq x$ for all $x:\mathbb{D}^2$.
+  For any $x:\mathbb{D}^2$ we set $d_x= x-f(x)$, so we have that one of the coordinates of $d_x$ is invertible.
+  Let $H_x(t) = f(x) + t\cdot d_x $ be the line through $x$ and $f(x)$.
+  The intersections of $H_x$ and $\partial\mathbb{D}^2=\mathbb{S}^1$ are given by the solutions of an equation quadratic in $t$. By invertibility of one of the coordinates of $d_x$, there is exactly one solution with $t> 0$.
+  We denote this intersection by $r(x)$ and the resulting map $r:\mathbb D^2\to\mathbb S^1$ has the property that it preserves $\mathbb{S}^1$.
+  Then $r$ is a retraction from $\mathbb{D}^2$ onto its boundary $\mathbb{S}^1$, which is a contradiction by \Cref{no-retraction}.
+\end{proof}
+
+\begin{remark}
+In constructive reverse mathematics \cite{HannesDiener}, it is known that both the intermediate value theorem and Brouwer's fixed-point theorem are equivalent to LLPO. But LLPO does not hold in real cohesive homotopy type theory, so \cite{shulman-Brouwer-fixed-point} prove a variant of the statement involving a double negation.
+\end{remark}
+% ===== END cohomology =====
+
+%%
+%% Bibliography
+%%
+
+%% Please use bibtex, 
+
+\bibliography{literature.bib}
+
+\appendix
+
+\end{document}

@@ -1,0 +1,45 @@
+CHANGES0009 - Cantor pairing implementation and partial bijectivity proofs
+
+Summary:
+- Fixed triangular function to give correct triangular numbers
+- Implemented cantorUnpair using findDiagonal helper
+- Proved cantorUnpair-pair from findDiagonal-correct postulate
+- Added arithmetic helper lemmas
+
+Key changes:
+
+1. Fixed triangular function:
+   - Old: triangular (suc k) = k + triangular k (gave 0,0,1,3,6 - shifted)
+   - New: triangular (suc n) = suc n + triangular n (gives 0,1,3,6,10 - standard)
+
+2. Implemented cantorUnpair:
+   - Added _<ᵇ_ boolean comparison
+   - Added findDiagonal helper with fuel parameter
+   - cantorUnpair k finds diagonal w, computes n = k - triangular w, m = w - n
+
+3. Proved arithmetic lemmas:
+   - +-∸-assoc, +∸-cancel, ∸+-cancel
+   - triangular≤cantorPair
+   - cantorPair<triangular-suc
+   - cantorPair-triangular-diff: (cantorPair m n) - triangular(m+n) = n
+   - m+n∸n≡m: (m + n) - n = m
+
+4. Proved cantorUnpair-pair (ELIMINATED postulate):
+   - Uses findDiagonal-correct (still postulated)
+   - Uses arithmetic lemmas to show unpair(pair(m,n)) = (m,n)
+
+Postulates remaining (before: 3 for Cantor, now: 2):
+- findDiagonal-correct (key lemma for findDiagonal finding right diagonal)
+- cantorPair-unpair (reverse direction, can derive from findDiagonal properties)
+
+Other postulates (unchanged):
+- mp : MarkovPrinciple
+- llpo : LLPO
+- closedOr
+- clopenIsDecidable
+- implicationOpenClosed
+- closedMarkov
+
+Status: work.agda has holes/postulates but structure is correct (879 lines, up from 724)
+Previous backup: bck0008 (724 lines)
+Difference: +155 lines (implementation and proofs)

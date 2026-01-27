@@ -1,0 +1,47 @@
+CHANGES0006 - Additional closure properties (postulated)
+
+Summary:
+- Added postulates for additional open/closed proposition properties
+- Cleaned up incomplete proof attempts
+- Added documentation for proof ideas
+
+New postulates:
+
+1. clopenIsDecidable : (P : hProp) -> isOpenProp P -> isClosedProp P -> Dec P
+   If a proposition is both open and closed, it is decidable.
+   (ClopenDecidable from tex Corollary 774)
+   Proof idea: Uses LLPO on appropriately constructed sequence
+
+2. implicationOpenClosed : (P Q : hProp) -> isOpenProp P -> isClosedProp Q
+                         -> isClosedProp (P -> Q)
+   If P is open and Q is closed, then P -> Q is closed.
+   (ImplicationOpenClosed from tex Lemma 857)
+   Proof idea: P -> Q <-> not P \/ Q, and not P is closed (by negOpenIsClosed),
+   so by closedOr the result is closed
+
+3. closedMarkov : (P : N -> hProp) -> ((n : N) -> isClosedProp (P n))
+                -> not ((n : N) -> not P n) -> || Sigma n. P n ||
+   For a sequence of closed propositions, double negation elimination
+   for the truncated existential.
+   (Related to Lemma 807 from tex)
+
+Summary of all postulates in work.agda:
+- cantorUnpair, cantorPair-unpair, cantorUnpair-pair (Cantor pairing bijectivity)
+- mp : MarkovPrinciple (follows from Stone Duality)
+- llpo : LLPO (follows from Stone Duality)
+- closedOr (follows from LLPO)
+- clopenIsDecidable, implicationOpenClosed, closedMarkov (this session)
+
+Proven theorems (non-postulated):
+- negOpenIsClosed
+- decIsOpen, decIsClosed
+- closedIsStable, openIsStable (the latter given MP)
+- negClosedIsOpen (given MP)
+- closedAnd (finite conjunction of closed is closed)
+- openOrMP, openOr (finite disjunction of open is open, using MP)
+- closedCountableIntersection (countable intersection of closed is closed)
+- openCountableUnion (countable union of open is open, using MP)
+
+Status: work.agda compiles successfully (672 lines, up from 629)
+Previous backup: bck0005 (629 lines)
+Difference: +43 lines (additional postulates and documentation)

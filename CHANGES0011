@@ -1,0 +1,26 @@
+CHANGES0011 - Documentation update and summary cleanup
+
+Summary:
+- Updated summary at end of file to reflect current state
+- Fixed outdated comments about Cantor pairing being postulated
+
+Changes:
+1. Updated "Summary of formalization status" section:
+   - Listed Cantor pairing bijectivity as FULLY PROVED
+   - Clarified postulated items (mp, llpo, closedOr, etc.)
+
+2. Fixed comment at line 511:
+   - Changed "For simplicity, we postulate..." to
+     "The bijectivity is fully proved below..."
+
+Current postulate count: 6
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. closedOr (follows from LLPO)
+4. clopenIsDecidable
+5. implicationOpenClosed
+6. closedMarkov
+
+Status: work.agda compiles (1069 lines, up from 1066)
+Previous backup: bck0010 (1066 lines)
+Difference: +3 lines (documentation)

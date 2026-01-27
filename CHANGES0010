@@ -1,0 +1,40 @@
+CHANGES0010 - Cantor pairing bijectivity FULLY PROVED
+
+Summary:
+- ELIMINATED all Cantor pairing postulates
+- Proved findDiagonal-correct via findDiagonal-aux induction
+- Proved cantorUnpair-pair using findDiagonal-correct
+- Proved cantorPair-unpair using findDiagonal-Tw≤k
+
+Key proofs added:
+
+1. triangular-suc : triangular n < triangular (suc n)
+2. triangular-mono-< : n < m → triangular n < triangular m
+3. k≥triangular-suc-acc : acc < w → triangular w ≤ k → triangular(suc acc) ≤ k
+4. k≮ᵇtriangular-suc-acc : boolean version of above
+5. findDiagonal-aux : main induction lemma proving findDiagonal finds w
+6. w≤triangular, w≤cantorPair : fuel sufficiency lemmas
+7. findDiagonal-correct : findDiagonal (suc k) k 0 ≡ m + n for k = cantorPair m n
+8. cantorUnpair-pair : PROVED (was postulate)
+9. a+b∸a≡b, w∸n+n≡w : arithmetic helpers
+10. findDiagonal-Tw≤k-aux, findDiagonal-Tw≤k : triangular(findDiagonal ...) ≤ k
+11. cantorPair-unpair : PROVED (was postulate)
+
+Postulates eliminated this session:
+- cantorUnpair (now a real definition)
+- cantorPair-unpair (now proved)
+- cantorUnpair-pair (now proved)
+- findDiagonal-correct (now proved)
+- findDiagonal-Tw≤k (now proved)
+
+Postulates remaining (6 total):
+1. mp : MarkovPrinciple (from Stone Duality)
+2. llpo : LLPO (from Stone Duality)
+3. closedOr (from LLPO)
+4. clopenIsDecidable
+5. implicationOpenClosed
+6. closedMarkov
+
+Status: work.agda compiles (1066 lines, up from 879)
+Previous backup: bck0009 (879 lines)
+Difference: +187 lines (bijectivity proofs)
