@@ -2192,6 +2192,32 @@ closedSubsetUnion : {T : Type₀} (A B : T → hProp ℓ-zero)
                   → isClosedSubset (λ t → (∥ ⟨ A t ⟩ ⊎ ⟨ B t ⟩ ∥₁) , squash₁)
 closedSubsetUnion A B Aclosed Bclosed t = closedOr (A t) (B t) (Aclosed t) (Bclosed t)
 
+-- Countable intersection of closed subsets is closed
+closedSubsetCountableIntersection : {T : Type₀} (A : ℕ → T → hProp ℓ-zero)
+                                  → ((n : ℕ) → isClosedSubset (A n))
+                                  → isClosedSubset (λ t → ((n : ℕ) → ⟨ A n t ⟩) , isPropΠ (λ n → snd (A n t)))
+closedSubsetCountableIntersection A Aclosed t =
+  closedCountableIntersection (λ n → A n t) (λ n → Aclosed n t)
+
+-- Countable union of open subsets is open (requires MP via openCountableUnion)
+openSubsetCountableUnion : {T : Type₀} (A : ℕ → T → hProp ℓ-zero)
+                         → ((n : ℕ) → isOpenSubset (A n))
+                         → isOpenSubset (λ t → (∥ Σ[ n ∈ ℕ ] ⟨ A n t ⟩ ∥₁) , squash₁)
+openSubsetCountableUnion A Aopen t =
+  openCountableUnion (λ n → A n t) (λ n → Aopen n t)
+
+-- Complement of open subset is closed
+complementOpenIsClosed : {T : Type₀} (A : T → hProp ℓ-zero)
+                       → isOpenSubset A
+                       → isClosedSubset (λ t → ¬hProp (A t))
+complementOpenIsClosed A Aopen t = negOpenIsClosed (A t) (Aopen t)
+
+-- Complement of closed subset is open (requires MP)
+complementClosedIsOpen : {T : Type₀} (A : T → hProp ℓ-zero)
+                       → isClosedSubset A
+                       → isOpenSubset (λ t → ¬hProp (A t))
+complementClosedIsOpen A Aclosed t = negClosedIsOpen mp (A t) (Aclosed t)
+
 -- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
