@@ -2324,6 +2324,17 @@ openSubsetTransitive : {T : Type₀}
 openSubsetTransitive V Vopen W Wopen t =
   openSigmaOpen (V t) (Vopen t) (W t) (Wopen t)
 
+-- Transitivity of closedness (dual of openSubsetTransitive)
+-- If V ⊆ T is closed and W ⊆ V is closed (as a subset of V), then W ⊆ T is closed.
+-- Uses the postulated closedSigmaClosed.
+closedSubsetTransitive : {T : Type₀}
+                       → (V : T → hProp ℓ-zero) → isClosedSubset V
+                       → (W : (t : T) → ⟨ V t ⟩ → hProp ℓ-zero)
+                       → ((t : T) (v : ⟨ V t ⟩) → isClosedProp (W t v))
+                       → isClosedSubset (λ t → (∥ Σ[ v ∈ ⟨ V t ⟩ ] ⟨ W t v ⟩ ∥₁) , squash₁)
+closedSubsetTransitive V Vclosed W Wclosed t =
+  closedSigmaClosed (V t) (Vclosed t) (W t) (Wclosed t)
+
 -- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
@@ -2356,6 +2367,7 @@ openSubsetTransitive V Vopen W Wopen t =
 -- - openSigmaDecidable, closedSigmaDecidable: Σ over decidable base preserves open/closed
 -- - openSigmaOpen: Σ of open over open is open (tex Cor 1313)
 -- - openSubsetTransitive: transitivity of openness for subsets (tex Cor 1319)
+-- - closedSubsetTransitive: transitivity of closedness (uses postulate closedSigmaClosed)
 -- Synthetic Topology (subsets):
 -- - isOpenSubset, isClosedSubset definitions
 -- - preimageOpenIsOpen, preimageClosedIsClosed: continuity
