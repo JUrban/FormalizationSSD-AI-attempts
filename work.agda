@@ -641,10 +641,27 @@ module SpectrumEmptyImpliesTrivial (SD : StoneDualityAxiom) (B : Booleω) (spEmp
 -- The full proof requires composing these pieces, which is left as future work.
 
 -- The quotient 2/α = BoolBR /Im α is in Booleω
--- This follows from: BoolBR is in Booleω (is-cp-2), and quotients of Booleω by ℕ-indexed
--- relations stay in Booleω (since ℕ ⊎ ℕ ≅ ℕ)
+-- Proof sketch (documented in detail):
+-- 1. BoolBR has presentation: BoolBR ≅ freeBA ℕ / f for some f (by is-cp-2)
+-- 2. (BoolBR /Im α) ≅ (freeBA ℕ / f) /Im (π ∘ liftedα)
+--    where π : freeBA ℕ → freeBA ℕ / f is quotient map
+--    and liftedα lifts α : ℕ → Bool to ℕ → ⟨ freeBA ℕ / f ⟩
+-- 3. By BoolQuotientEquiv: (A / f) / g ≅ A / (f ⊎ g)
+--    So this is ≅ freeBA ℕ / (f ⊎ liftedα')
+-- 4. Since ℕ ⊎ ℕ ≅ ℕ (via encode/decode), reparametrize to get
+--    freeBA ℕ / h for some h : ℕ → freeBA ℕ
+-- 5. This gives has-Boole-ω' (BoolBR /Im α)
+
+-- The technical composition of equivalences is complex but straightforward.
+-- Key infrastructure used:
+-- - is-cp-2 : has-Boole-ω' BoolBR
+-- - BoolQuotientEquiv : (A / f) / g ≅ A / (f ⊎ g)
+-- - encode/decode : ℕ ⊎ ℕ ≅ ℕ
+
+-- For now, postulate this and mark for completion
 postulate
   quotientPreservesBooleω : (α : binarySequence) → ∥ has-Boole-ω' (BoolBR QB./Im α) ∥₁
+-- Proof: see above sketch; requires composing is-cp-2 with BoolQuotientEquiv and reparametrization
 
 -- 2/α as a Booleω element
 2/α-Booleω : (α : binarySequence) → Booleω
