@@ -1633,6 +1633,51 @@ implicationOpenClosed P Q Popen Qclosed = γ , forward , backward
         -- Q is closed, so ¬¬Q → Q
     in closedIsStable (⟨ Q ⟩ , snd Q) Qclosed ¬¬Q
 
+-- Dual of implicationOpenClosed (from tex Lemma 857):
+-- If P is closed and Q is open, then P → Q is open
+-- Proof: P → Q ↔ ¬P ∨ Q. ¬P is open (since P closed), Q is open, so ¬P ∨ Q is open.
+-- The equivalence uses ¬¬-stability of both sides.
+implicationClosedOpen : (P Q : hProp ℓ-zero) → isClosedProp P → isOpenProp Q
+                      → isOpenProp ((⟨ P ⟩ → ⟨ Q ⟩) , isPropΠ (λ _ → snd Q))
+implicationClosedOpen P Q Pclosed Qopen = α , forward , backward
+  where
+  -- ¬P is open (since P is closed)
+  ¬P : hProp ℓ-zero
+  ¬P = (¬ ⟨ P ⟩) , isProp¬ ⟨ P ⟩
+
+  ¬Popen : isOpenProp ¬P
+  ¬Popen = negClosedIsOpen mp P Pclosed
+
+  -- ∥¬P ∨ Q∥₁ is open (using openOr)
+  ¬P∨Q-prop : hProp ℓ-zero
+  ¬P∨Q-prop = (∥ ⟨ ¬P ⟩ ⊎ ⟨ Q ⟩ ∥₁) , squash₁
+
+  ¬P∨Q-open : isOpenProp ¬P∨Q-prop
+  ¬P∨Q-open = openOr ¬P Q ¬Popen Qopen
+
+  -- The witness for P → Q being open is the same as for ∥¬P ∨ Q∥₁
+  α : binarySequence
+  α = fst ¬P∨Q-open
+
+  -- Helper: get ∥¬P ∨ Q∥₁ from P → Q using ¬¬-stability
+  get¬P∨Q : (⟨ P ⟩ → ⟨ Q ⟩) → ∥ (¬ ⟨ P ⟩) ⊎ ⟨ Q ⟩ ∥₁
+  get¬P∨Q p→q = openIsStable mp ¬P∨Q-prop ¬P∨Q-open ¬¬disj
+    where
+    ¬¬disj : ¬ ¬ ∥ (¬ ⟨ P ⟩) ⊎ ⟨ Q ⟩ ∥₁
+    ¬¬disj k = k ∣ inr (p→q (closedIsStable P Pclosed (λ ¬p → k ∣ inl ¬p ∣₁))) ∣₁
+
+  -- Forward: (P → Q) → ∃k. αk = true
+  forward : (⟨ P ⟩ → ⟨ Q ⟩) → Σ[ k ∈ ℕ ] α k ≡ true
+  forward p→q = fst (snd ¬P∨Q-open) (get¬P∨Q p→q)
+
+  -- Backward: ∃k. αk = true → (P → Q)
+  backward : Σ[ k ∈ ℕ ] α k ≡ true → ⟨ P ⟩ → ⟨ Q ⟩
+  backward (k , αk=t) p = PT.rec (snd Q) extractQ (snd (snd ¬P∨Q-open) (k , αk=t))
+    where
+    extractQ : (¬ ⟨ P ⟩) ⊎ ⟨ Q ⟩ → ⟨ Q ⟩
+    extractQ (inl ¬p) = ex-falso (¬p p)
+    extractQ (inr q) = q
+
 -- ClosedMarkov (from tex, Lemma 807):
 -- For (Pₙ)_{n:ℕ} closed propositions: ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ
 --
@@ -1751,6 +1796,7 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - firstTrue: truncation to hit true at most once
 -- - clopenIsDecidable : if P is both open and closed, then P is decidable
 -- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
+-- - implicationClosedOpen : (P closed, Q open) → (P → Q) open
 -- - closedOr : closed props closed under disjunction (using LLPO)
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
