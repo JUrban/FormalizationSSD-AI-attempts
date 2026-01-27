@@ -150,11 +150,17 @@ module _ {ℓ : Level} (A : Type ℓ) (B : BooleanRing ℓ) (f : A → ⟨ B ⟩
     evalBAInduce : fst (inducedBAHom A B f) ∘ generator ≡ f
     evalBAInduce = TV.evalInduce _ _ f
 
-freeBA-universal-property : {ℓ : Level} → (A : Type ℓ) → (B : BooleanRing ℓ) → 
+freeBA-universal-property : {ℓ : Level} → (A : Type ℓ) → (B : BooleanRing ℓ) →
                             Iso (A → ⟨ B ⟩)
                             (BoolHom (freeBA A) B)
-Iso.fun      (freeBA-universal-property A B)   = inducedBAHom A B
-Iso.inv      (freeBA-universal-property A B) f = fst f ∘ generator
-Iso.rightInv (freeBA-universal-property A B) f = inducedBAHomUnique A B (fst f ∘ generator) f refl 
-Iso.leftInv  (freeBA-universal-property A B)   = evalBAInduce _ _ 
+freeBA-universal-property A B = iso fun' inv' rightInv' leftInv'
+  where
+  fun' : (A → ⟨ B ⟩) → BoolHom (freeBA A) B
+  fun' = inducedBAHom A B
+  inv' : BoolHom (freeBA A) B → (A → ⟨ B ⟩)
+  inv' f = fst f ∘ generator
+  rightInv' : (f : BoolHom (freeBA A) B) → fun' (inv' f) ≡ f
+  rightInv' f = inducedBAHomUnique A B (fst f ∘ generator) f refl
+  leftInv' : (f : A → ⟨ B ⟩) → inv' (fun' f) ≡ f
+  leftInv' = evalBAInduce _ _ 
 

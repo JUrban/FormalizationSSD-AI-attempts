@@ -80,12 +80,12 @@ opaque
   ignoreSmallTerms n (Tvar m)   p = ignoreAtoms n m p
   ignoreSmallTerms _ (Tconst x) _ = refl
   ignoreSmallTerms n (a +T b)   p = cong₂ _⊕_
-      (ignoreSmallTerms n a (>maxUsedIndex a ≤⟨ left-≤-max  ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎)) 
-      (ignoreSmallTerms n b (>maxUsedIndex b ≤⟨ right-≤-max ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
+      (ignoreSmallTerms n a (>maxUsedIndex a ≤⟨ left-≤-max {>maxUsedIndex a} {>maxUsedIndex b} ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
+      (ignoreSmallTerms n b (>maxUsedIndex b ≤⟨ right-≤-max {>maxUsedIndex b} {>maxUsedIndex a} ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
   ignoreSmallTerms n (-T a)     p = ignoreSmallTerms n a p
   ignoreSmallTerms n (a ·T b)   p = cong₂ _and_
-      (ignoreSmallTerms n a (>maxUsedIndex a ≤⟨ left-≤-max  ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎)) 
-      (ignoreSmallTerms n b (>maxUsedIndex b ≤⟨ right-≤-max ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
+      (ignoreSmallTerms n a (>maxUsedIndex a ≤⟨ left-≤-max {>maxUsedIndex a} {>maxUsedIndex b} ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
+      (ignoreSmallTerms n b (>maxUsedIndex b ≤⟨ right-≤-max {>maxUsedIndex b} {>maxUsedIndex a} ⟩ max (>maxUsedIndex a) (>maxUsedIndex b) ≤≡⟨ p ⟩ n ∎))
   
   missMisses : (a : freeBATerms ℕ) → (miss a) ignores a
   missMisses a = ignoreSmallTerms (>maxUsedIndex a) a (0 , refl) 

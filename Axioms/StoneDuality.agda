@@ -308,28 +308,30 @@ module adjunctionFact
       ηconjugationInv g = inv (ηIsoOnHImage x) ⋆⟨ C ⟩ g ⋆⟨ C ⟩ η ⟦ H ⟅ y ⟆ ⟧
 
       ηconjugationIso : Iso (C [ (G ∘F F ∘F H) ⟅ x ⟆ , (G ∘F F ∘F H) ⟅ y ⟆ ]) (C [ H ⟅ x ⟆  , H ⟅ y ⟆ ])
-      ηconjugationIso .Iso.fun      = ηconjugation
-      ηconjugationIso .Iso.inv      = ηconjugationInv
-      ηconjugationIso .Iso.rightInv g = 
-        ηconjugation (ηconjugationInv g) 
-          ≡⟨ solveCat! C ⟩ 
-        (η ⟦ H ⟅ x ⟆ ⟧ ⋆⟨ C ⟩ inv (ηIsoOnHImage x)) ⋆⟨ C ⟩ 
-        g ⋆⟨ C ⟩ 
-        (η ⟦ H ⟅ y ⟆ ⟧ ⋆⟨ C ⟩ inv (ηIsoOnHImage y))
-          ≡⟨ cong₂ (λ r s → r ⋆⟨ C ⟩ g ⋆⟨ C ⟩ s) (ret (ηIsoOnHImage x)) (ret (ηIsoOnHImage y)) ⟩ 
-        C .id ⋆⟨ C ⟩ g ⋆⟨ C ⟩ C .id
-          ≡⟨ C .⋆IdR _ ∙ C .⋆IdL _ ⟩ 
-        g ∎
-      ηconjugationIso .Iso.leftInv  g = 
-        ηconjugationInv (ηconjugation g) 
-          ≡⟨ solveCat! C ⟩ 
-        (inv (ηIsoOnHImage x) ⋆⟨ C ⟩ η ⟦ H ⟅ x ⟆ ⟧) ⋆⟨ C ⟩ 
-        g ⋆⟨ C ⟩ 
-        (inv (ηIsoOnHImage y) ⋆⟨ C ⟩ η ⟦ H ⟅ y ⟆ ⟧)
-          ≡⟨ cong₂ (λ r s → r ⋆⟨ C ⟩ g ⋆⟨ C ⟩ s) (sec (ηIsoOnHImage x)) (sec (ηIsoOnHImage y)) ⟩ 
-        C .id ⋆⟨ C ⟩ g ⋆⟨ C ⟩ C .id 
-          ≡⟨ C .⋆IdR _ ∙ C .⋆IdL _ ⟩
-        g ∎
+      ηconjugationIso = iso ηconjugation ηconjugationInv sec' ret'
+        where
+        sec' : (g : C [ H ⟅ x ⟆ , H ⟅ y ⟆ ]) → ηconjugation (ηconjugationInv g) ≡ g
+        sec' g =
+          ηconjugation (ηconjugationInv g)
+            ≡⟨ solveCat! C ⟩
+          (η ⟦ H ⟅ x ⟆ ⟧ ⋆⟨ C ⟩ inv (ηIsoOnHImage x)) ⋆⟨ C ⟩
+          g ⋆⟨ C ⟩
+          (η ⟦ H ⟅ y ⟆ ⟧ ⋆⟨ C ⟩ inv (ηIsoOnHImage y))
+            ≡⟨ cong₂ (λ r s → r ⋆⟨ C ⟩ g ⋆⟨ C ⟩ s) (ret (ηIsoOnHImage x)) (ret (ηIsoOnHImage y)) ⟩
+          C .id ⋆⟨ C ⟩ g ⋆⟨ C ⟩ C .id
+            ≡⟨ C .⋆IdR _ ∙ C .⋆IdL _ ⟩
+          g ∎
+        ret' : (g : C [ (G ∘F F ∘F H) ⟅ x ⟆ , (G ∘F F ∘F H) ⟅ y ⟆ ]) → ηconjugationInv (ηconjugation g) ≡ g
+        ret' g =
+          ηconjugationInv (ηconjugation g)
+            ≡⟨ solveCat! C ⟩
+          (inv (ηIsoOnHImage x) ⋆⟨ C ⟩ η ⟦ H ⟅ x ⟆ ⟧) ⋆⟨ C ⟩
+          g ⋆⟨ C ⟩
+          (inv (ηIsoOnHImage y) ⋆⟨ C ⟩ η ⟦ H ⟅ y ⟆ ⟧)
+            ≡⟨ cong₂ (λ r s → r ⋆⟨ C ⟩ g ⋆⟨ C ⟩ s) (sec (ηIsoOnHImage x)) (sec (ηIsoOnHImage y)) ⟩
+          C .id ⋆⟨ C ⟩ g ⋆⟨ C ⟩ C .id
+            ≡⟨ C .⋆IdR _ ∙ C .⋆IdL _ ⟩
+          g ∎
 
         -- this should be an inverse of (G ∘F F) .F-hom 
       --
@@ -454,17 +456,23 @@ module _ (B C : BooleanRing ℓ-zero)  where
   -- so is any full subcategory of C. 
 
   BAIso≅BAEquiv : Iso (CatIso BACat B C) (BooleanRingEquiv B C)
-  BAIso≅BAEquiv .Iso.fun ((f , fHom) , fIso) .fst = isoToEquiv $ 
-    iso f (fst $ inv fIso) (funExt⁻ $ cong fst $ sec fIso) (funExt⁻ $ cong fst $ ret fIso)
-  BAIso≅BAEquiv .Iso.fun ((f , fHom) , fIso) .snd = fHom
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .fst .fst = f 
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .fst .snd = fHom
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .snd .inv .fst = fst $ invEquiv (f , fEqu)
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .snd .inv .snd = invIsHom B C (f , fHom) (IsoToIsIso (equivToIso (f , fEqu)))
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .snd .sec = CommRingHom≡ $ cong fst (invEquiv-is-linv (f , fEqu))
-  BAIso≅BAEquiv .Iso.inv ((f , fEqu) , fHom) .snd .ret = CommRingHom≡ $ cong fst (invEquiv-is-rinv (f , fEqu))
-  BAIso≅BAEquiv .Iso.rightInv e = BooleanRingEquiv≡ B C _ e refl
-  BAIso≅BAEquiv .Iso.leftInv  e = CatIso≡ _ e refl 
+  BAIso≅BAEquiv = iso fun' inv' sec' ret'
+    where
+    fun' : CatIso BACat B C → BooleanRingEquiv B C
+    fun' ((f , fHom) , fIso) .fst = isoToEquiv $
+      iso f (fst $ inv fIso) (funExt⁻ $ cong fst $ sec fIso) (funExt⁻ $ cong fst $ ret fIso)
+    fun' ((f , fHom) , fIso) .snd = fHom
+    inv' : BooleanRingEquiv B C → CatIso BACat B C
+    inv' ((f , fEqu) , fHom) .fst .fst = f
+    inv' ((f , fEqu) , fHom) .fst .snd = fHom
+    inv' ((f , fEqu) , fHom) .snd .inv .fst = fst $ invEquiv (f , fEqu)
+    inv' ((f , fEqu) , fHom) .snd .inv .snd = invIsHom B C (f , fHom) (IsoToIsIso (equivToIso (f , fEqu)))
+    inv' ((f , fEqu) , fHom) .snd .sec = CommRingHom≡ $ cong fst (invEquiv-is-linv (f , fEqu))
+    inv' ((f , fEqu) , fHom) .snd .ret = CommRingHom≡ $ cong fst (invEquiv-is-rinv (f , fEqu))
+    sec' : (e : BooleanRingEquiv B C) → fun' (inv' e) ≡ e
+    sec' e = BooleanRingEquiv≡ B C _ e refl
+    ret' : (e : CatIso BACat B C) → inv' (fun' e) ≡ e
+    ret' e = CatIso≡ _ e refl 
   
   pathToIsoDecomp : (B ≡ C) ≃ (CatIso BACat B C)
   pathToIsoDecomp = compEquiv (invEquiv $ BoolRingPath B C) (isoToEquiv (invIso BAIso≅BAEquiv)) 

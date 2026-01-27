@@ -104,18 +104,24 @@ module 2/3 {ℓ ℓ' ℓ'' : Level} {A : Type ℓ} {B : Type ℓ'} { C : Type �
 
 
 
-module _ {ℓ ℓ' ℓ'' ℓ''' : Level} {A : Type ℓ} {B : Type ℓ'} 
-        (iso : Iso A B) (AP : A → Type ℓ'') (BP : B → Type ℓ''') 
-        (APprop : (a : A) → isProp (AP a)) (BPprop : (b : B) → isProp $ BP b) 
-        (AP→BP : (a : A) → AP a → BP (Iso.fun iso a))
-        (BP→AP : (b : B) → BP b → AP (Iso.inv iso b))
+module _ {ℓ ℓ' ℓ'' ℓ''' : Level} {A : Type ℓ} {B : Type ℓ'}
+        (isoAB : Iso A B) (AP : A → Type ℓ'') (BP : B → Type ℓ''')
+        (APprop : (a : A) → isProp (AP a)) (BPprop : (b : B) → isProp $ BP b)
+        (AP→BP : (a : A) → AP a → BP (Iso.fun isoAB a))
+        (BP→AP : (b : B) → BP b → AP (Iso.inv isoAB b))
         where
   open Iso
-  IsoΣ : Iso (Σ A AP) (Σ B BP) 
-  IsoΣ .fun (a , ap) = fun iso a , AP→BP a ap
-  IsoΣ .inv (b , bp) = inv iso b , BP→AP b bp
-  IsoΣ .rightInv (b , bp) = Σ≡Prop BPprop (rightInv iso b)
-  IsoΣ .leftInv  (a , ap) = Σ≡Prop APprop (leftInv  iso a) 
+  IsoΣ : Iso (Σ A AP) (Σ B BP)
+  IsoΣ = iso fun' inv' sec' ret'
+    where
+    fun' : Σ A AP → Σ B BP
+    fun' (a , ap) = fun isoAB a , AP→BP a ap
+    inv' : Σ B BP → Σ A AP
+    inv' (b , bp) = inv isoAB b , BP→AP b bp
+    sec' : (b : Σ B BP) → fun' (inv' b) ≡ b
+    sec' (b , bp) = Σ≡Prop BPprop (sec isoAB b)
+    ret' : (a : Σ A AP) → inv' (fun' a) ≡ a
+    ret' (a , ap) = Σ≡Prop APprop (ret isoAB a) 
 
 module _ where
   open BooleanRingStr
@@ -167,22 +173,29 @@ mkBooleanRingEquiv : {ℓ ℓ' : Level} → (A : BooleanRing ℓ) → (B : Boole
                      (f : BoolHom A B) → isEquiv (fst f) → BooleanRingEquiv A B 
 mkBooleanRingEquiv _ _ (f , fHom) fequ = (f , fequ) , fHom 
 
-EquivalentBooleanRingEquiv : {ℓ ℓ' : Level} → (A : BooleanRing ℓ) → (B : BooleanRing ℓ') → 
+EquivalentBooleanRingEquiv : {ℓ ℓ' : Level} → (A : BooleanRing ℓ) → (B : BooleanRing ℓ') →
                              Iso (Σ[ f ∈ BoolHom A B ] (isEquiv (fst f))) (BooleanRingEquiv A B)
-EquivalentBooleanRingEquiv A B .Iso.fun ((f , fHom) , fequ) = (f , fequ) , fHom
-EquivalentBooleanRingEquiv A B .Iso.inv ((f , fequ) , fHom) = (f , fHom) , fequ
-EquivalentBooleanRingEquiv A B .Iso.rightInv e = refl
-EquivalentBooleanRingEquiv A B .Iso.leftInv  e = refl 
+EquivalentBooleanRingEquiv A B = iso fun' inv' sec' ret'
+  where
+  fun' : Σ[ f ∈ BoolHom A B ] (isEquiv (fst f)) → BooleanRingEquiv A B
+  fun' ((f , fHom) , fequ) = (f , fequ) , fHom
+  inv' : BooleanRingEquiv A B → Σ[ f ∈ BoolHom A B ] (isEquiv (fst f))
+  inv' ((f , fequ) , fHom) = (f , fHom) , fequ
+  sec' : (e : BooleanRingEquiv A B) → fun' (inv' e) ≡ e
+  sec' e = refl
+  ret' : (e : Σ[ f ∈ BoolHom A B ] (isEquiv (fst f))) → inv' (fun' e) ≡ e
+  ret' e = refl 
 
-equivalencesPreservedByEquivalences : {ℓ ℓ' : Level} → (A : BooleanRing ℓ) → (B : BooleanRing ℓ) → 
-                                      (F : {ℓ'' : Level} → BooleanRing ℓ'' → Type ℓ'') → 
-                                      Iso (BoolHom A B) (F B → F A) → 
-                                      Iso (Σ[ f ∈ BoolHom A B ] (isEquiv (fst f))) ((F B) ≃ (F A))
-equivalencesPreservedByEquivalences A B F is .Iso.fun ((f , fHom) , fequ) .fst = is .Iso.fun (f , fHom)
-equivalencesPreservedByEquivalences A B F is .Iso.fun ((f , fHom) , fequ) .snd .equiv-proof y = {! !}
-equivalencesPreservedByEquivalences A B F is .Iso.inv    = {! !}
-equivalencesPreservedByEquivalences A B F is .Iso.rightInv = {! !}
-equivalencesPreservedByEquivalences A B F is .Iso.leftInv = {! !} 
+-- TODO: equivalencesPreservedByEquivalences is incomplete, commented out for now
+-- equivalencesPreservedByEquivalences : {ℓ ℓ' : Level} → (A : BooleanRing ℓ) → (B : BooleanRing ℓ) →
+--                                       (F : {ℓ'' : Level} → BooleanRing ℓ'' → Type ℓ'') →
+--                                       Iso (BoolHom A B) (F B → F A) →
+--                                       Iso (Σ[ f ∈ BoolHom A B ] (isEquiv (fst f))) ((F B) ≃ (F A))
+-- equivalencesPreservedByEquivalences A B F is .Iso.fun ((f , fHom) , fequ) .fst = is .Iso.fun (f , fHom)
+-- equivalencesPreservedByEquivalences A B F is .Iso.fun ((f , fHom) , fequ) .snd .equiv-proof y = {! !}
+-- equivalencesPreservedByEquivalences A B F is .Iso.inv    = {! !}
+-- equivalencesPreservedByEquivalences A B F is .Iso.rightInv = {! !}
+-- equivalencesPreservedByEquivalences A B F is .Iso.leftInv = {! !} 
 
 module _ {ℓ ℓ' : Level} (A : BooleanRing ℓ) (B : BooleanRing ℓ') (f : BoolHom A B) (fIso : isIso (fst f)) where
   private 
@@ -235,12 +248,18 @@ module _ {ℓ ℓ' ℓ'' : Level  } (A : BooleanRing ℓ)
          (B : BooleanRing ℓ') (C : BooleanRing ℓ'')
          (f : BooleanRingEquiv A B) where
   composeLWithBoolEquivIsIso : Iso (BoolHom C A) (BoolHom C B)
-  composeLWithBoolEquivIsIso .Iso.fun g      = BooleanEquivToHom A B f ∘cr g
-  composeLWithBoolEquivIsIso .Iso.inv g      = (BooleanEquivToHom B A $ invBooleanRingEquiv A B f) ∘cr g
-  composeLWithBoolEquivIsIso .Iso.rightInv g = CommRingHom≡ $ funExt λ c → 
-      cong (λ h → (h ∘ fst g) c) $ cong fst $ BooleanEquivRightInv A B f
-  composeLWithBoolEquivIsIso .Iso.leftInv  g = CommRingHom≡ $ funExt λ c → 
-      cong (λ h → (h ∘ fst g) c) $ cong fst $ BooleanEquivLeftInv A B f
+  composeLWithBoolEquivIsIso = iso fun' inv' sec' ret'
+    where
+    fun' : BoolHom C A → BoolHom C B
+    fun' g = BooleanEquivToHom A B f ∘cr g
+    inv' : BoolHom C B → BoolHom C A
+    inv' g = (BooleanEquivToHom B A $ invBooleanRingEquiv A B f) ∘cr g
+    sec' : (g : BoolHom C B) → fun' (inv' g) ≡ g
+    sec' g = CommRingHom≡ $ funExt λ c →
+        cong (λ h → (h ∘ fst g) c) $ cong fst $ BooleanEquivRightInv A B f
+    ret' : (g : BoolHom C A) → inv' (fun' g) ≡ g
+    ret' g = CommRingHom≡ $ funExt λ c →
+        cong (λ h → (h ∘ fst g) c) $ cong fst $ BooleanEquivLeftInv A B f
 
 --  composeRWithBoolEquivIsIso : Iso (BoolHom B C) (BoolHom A C)
 --  composeRWithBoolEquivIsIso .Iso.fun = {! g !}

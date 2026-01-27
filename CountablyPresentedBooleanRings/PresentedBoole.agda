@@ -109,12 +109,12 @@ module _ {ℓ ℓ' : Level} (A : BooleanRing ℓ) (B : BooleanRing ℓ') (f : Bo
   BooleanEquivToHomInv = fst (fst invBooleanRingEquiv) , snd invBooleanRingEquiv 
 
   BooleanEquivLeftInv : BooleanEquivToHomInv ∘cr BooleanEquivToHom ≡ idBoolHom A
-  BooleanEquivLeftInv = idFunGivesIdBoolHom A (BooleanEquivToHomInv ∘cr BooleanEquivToHom) 
-     (funExt $ equivToIso (fst f) .Iso.leftInv) 
-  
+  BooleanEquivLeftInv = idFunGivesIdBoolHom A (BooleanEquivToHomInv ∘cr BooleanEquivToHom)
+     (funExt $ Iso.ret (equivToIso (fst f)))
+
   BooleanEquivRightInv : BooleanEquivToHom ∘cr BooleanEquivToHomInv ≡ idBoolHom B
-  BooleanEquivRightInv = idFunGivesIdBoolHom B (BooleanEquivToHom ∘cr BooleanEquivToHomInv) 
-     (funExt $ equivToIso (fst f) .Iso.rightInv) 
+  BooleanEquivRightInv = idFunGivesIdBoolHom B (BooleanEquivToHom ∘cr BooleanEquivToHomInv)
+     (funExt $ Iso.sec (equivToIso (fst f))) 
 
 _is-presented-by_/_ : {ℓ : Level} → (B : BooleanRing ℓ) → 
   (A : Type ℓ) → {X : Type ℓ} → (f : X → ⟨ freeBA A ⟩) → Type ℓ 
@@ -125,10 +125,16 @@ has-Countability-structure A = Σ[ α ∈ binarySequence ] Iso A (Σ[ n ∈ ℕ 
 
 countℕ : has-Countability-structure ℕ
 countℕ .fst _ = true
-countℕ .snd .Iso.fun n       = n , refl
-countℕ .snd .Iso.inv (n , _) = n
-countℕ .snd .Iso.rightInv b  = Σ≡Prop (λ _ → isSetBool _ _) refl
-countℕ .snd .Iso.leftInv  n  = refl 
+countℕ .snd = iso fun' inv' sec' ret'
+  where
+  fun' : ℕ → Σ[ n ∈ ℕ ] true ≡ true
+  fun' n = n , refl
+  inv' : Σ[ n ∈ ℕ ] true ≡ true → ℕ
+  inv' (n , _) = n
+  sec' : (b : Σ[ n ∈ ℕ ] true ≡ true) → fun' (inv' b) ≡ b
+  sec' b = Σ≡Prop (λ _ → isSetBool _ _) refl
+  ret' : (n : ℕ) → inv' (fun' n) ≡ n
+  ret' n = refl 
 
 has-Boole-ω : (B : BooleanRing ℓ-zero) → Type (ℓ-suc ℓ-zero) 
 has-Boole-ω B = Σ[ A ∈ Type ] ( (has-Countability-structure A) × 

@@ -64,45 +64,57 @@ module isoUniqueness
             f ∎
 
 module _ {ℓ ℓ' : Level} (C : Category ℓ ℓ') {x y : C .ob} (e : C [ x , y ]) (eIso : isIso C e) {z : C .ob} where
-  open isIso 
+  open isIso
   composeWithIsoLIso : Iso (C [ y , z ]) (C [ x , z ])
-  composeWithIsoLIso .Iso.fun f = e        ⋆⟨ C ⟩ f 
-  composeWithIsoLIso .Iso.inv g = inv eIso ⋆⟨ C ⟩ g
-  composeWithIsoLIso .Iso.rightInv g = 
-    e ⋆⟨ C ⟩ (inv eIso ⋆⟨ C ⟩ g) 
-       ≡⟨ (sym $ C .⋆Assoc _ _ _) ⟩ 
-    (e ⋆⟨ C ⟩ inv eIso) ⋆⟨ C ⟩ g
-       ≡⟨ cong (λ h → h ⋆⟨ C ⟩ g) (ret eIso) ⟩ 
-    C .id ⋆⟨ C ⟩ g
-       ≡⟨ C .⋆IdL g ⟩ 
-    g  ∎
-  composeWithIsoLIso .Iso.leftInv  f = 
-    inv eIso ⋆⟨ C ⟩ (e ⋆⟨ C ⟩ f) 
-       ≡⟨ (sym $ C .⋆Assoc _ _ _) ⟩ 
-    (inv eIso ⋆⟨ C ⟩ e) ⋆⟨ C ⟩ f
-       ≡⟨ cong (λ h → h ⋆⟨ C ⟩ f) (sec eIso) ⟩ 
-    C .id ⋆⟨ C ⟩ f
-       ≡⟨ C .⋆IdL f ⟩ 
-    f  ∎
+  composeWithIsoLIso = iso fun' inv' sec' ret'
+    where
+    fun' : C [ y , z ] → C [ x , z ]
+    fun' f = e ⋆⟨ C ⟩ f
+    inv' : C [ x , z ] → C [ y , z ]
+    inv' g = inv eIso ⋆⟨ C ⟩ g
+    sec' : (g : C [ x , z ]) → fun' (inv' g) ≡ g
+    sec' g =
+      e ⋆⟨ C ⟩ (inv eIso ⋆⟨ C ⟩ g)
+         ≡⟨ (sym $ C .⋆Assoc _ _ _) ⟩
+      (e ⋆⟨ C ⟩ inv eIso) ⋆⟨ C ⟩ g
+         ≡⟨ cong (λ h → h ⋆⟨ C ⟩ g) (ret eIso) ⟩
+      C .id ⋆⟨ C ⟩ g
+         ≡⟨ C .⋆IdL g ⟩
+      g  ∎
+    ret' : (f : C [ y , z ]) → inv' (fun' f) ≡ f
+    ret' f =
+      inv eIso ⋆⟨ C ⟩ (e ⋆⟨ C ⟩ f)
+         ≡⟨ (sym $ C .⋆Assoc _ _ _) ⟩
+      (inv eIso ⋆⟨ C ⟩ e) ⋆⟨ C ⟩ f
+         ≡⟨ cong (λ h → h ⋆⟨ C ⟩ f) (sec eIso) ⟩
+      C .id ⋆⟨ C ⟩ f
+         ≡⟨ C .⋆IdL f ⟩
+      f  ∎
   composeWithIsoRIso : Iso (C [ z , x ]) (C [ z , y ])
-  composeWithIsoRIso .Iso.fun f = f ⋆⟨ C ⟩ e
-  composeWithIsoRIso .Iso.inv g = g ⋆⟨ C ⟩ inv eIso
-  composeWithIsoRIso .Iso.rightInv g = 
-    g ⋆⟨ C ⟩ inv eIso ⋆⟨ C ⟩ e 
-      ≡⟨ C .⋆Assoc _ _ _ ⟩ 
-    g ⋆⟨ C ⟩ (inv eIso ⋆⟨ C ⟩ e)
-      ≡⟨ cong (λ h → g ⋆⟨ C ⟩ h) (sec eIso) ⟩ 
-    g ⋆⟨ C ⟩ C .id
-      ≡⟨ C .⋆IdR g ⟩ 
-    g ∎ 
-  composeWithIsoRIso .Iso.leftInv f =
-    f ⋆⟨ C ⟩ e ⋆⟨ C ⟩ inv eIso
-      ≡⟨ C .⋆Assoc _ _ _ ⟩ 
-    f ⋆⟨ C ⟩ (e ⋆⟨ C ⟩ inv eIso)
-      ≡⟨ cong (λ h → f ⋆⟨ C ⟩ h) (ret eIso) ⟩ 
-    f ⋆⟨ C ⟩ C .id
-      ≡⟨ C .⋆IdR f ⟩ 
-    f ∎ 
+  composeWithIsoRIso = iso fun' inv' sec' ret'
+    where
+    fun' : C [ z , x ] → C [ z , y ]
+    fun' f = f ⋆⟨ C ⟩ e
+    inv' : C [ z , y ] → C [ z , x ]
+    inv' g = g ⋆⟨ C ⟩ inv eIso
+    sec' : (g : C [ z , y ]) → fun' (inv' g) ≡ g
+    sec' g =
+      g ⋆⟨ C ⟩ inv eIso ⋆⟨ C ⟩ e
+        ≡⟨ C .⋆Assoc _ _ _ ⟩
+      g ⋆⟨ C ⟩ (inv eIso ⋆⟨ C ⟩ e)
+        ≡⟨ cong (λ h → g ⋆⟨ C ⟩ h) (sec eIso) ⟩
+      g ⋆⟨ C ⟩ C .id
+        ≡⟨ C .⋆IdR g ⟩
+      g ∎
+    ret' : (f : C [ z , x ]) → inv' (fun' f) ≡ f
+    ret' f =
+      f ⋆⟨ C ⟩ e ⋆⟨ C ⟩ inv eIso
+        ≡⟨ C .⋆Assoc _ _ _ ⟩
+      f ⋆⟨ C ⟩ (e ⋆⟨ C ⟩ inv eIso)
+        ≡⟨ cong (λ h → f ⋆⟨ C ⟩ h) (ret eIso) ⟩
+      f ⋆⟨ C ⟩ C .id
+        ≡⟨ C .⋆IdR f ⟩
+      f ∎ 
 
   composeWithIsoLisIso : isRealIso (λ (f : C [ y , z ] ) → e ⋆⟨ C ⟩ f) 
   composeWithIsoLisIso = IsoToIsIso composeWithIsoLIso 
