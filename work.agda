@@ -1569,6 +1569,12 @@ clopenIsDecidable P Popen Pclosed =
   ⊎-rec f g (inl a) = f a
   ⊎-rec f g (inr b) = g b
 
+-- Corollary: P is decidable ↔ P is both open and closed
+-- Forward: decIsOpen and decIsClosed (defined earlier)
+-- Backward: clopenIsDecidable (above)
+-- This matches tex's statement: "Every decidable proposition is both open and closed"
+-- and ClopenDecidable (Corollary 774)
+
 -- If P is open and Q is closed, then P → Q is closed
 -- (ImplicationOpenClosed from tex Lemma 857)
 --
