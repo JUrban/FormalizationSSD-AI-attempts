@@ -2066,7 +2066,101 @@ closedSigmaDecidable D (no ¬d) Q Qclosed =
      backward
 
 -- =============================================================================
--- Section 22: Additional closure properties
+-- Section 22: Open/Closed under Σ-types (general case)
+-- =============================================================================
+
+-- Open propositions are closed under Σ-types (tex Corollary OpenDependentSums 1313)
+-- If P is open and Q : P → hProp with each Q(p) open, then Σ P Q is open.
+--
+-- Proof idea: P open means P ↔ ∃n. (αn = true)
+-- Each (αn = true) is decidable, so we can use openSigmaDecidable
+-- Then ∥Σ P Q∥₁ ↔ ∥Σn. Σ_{αn=true} Q(witness)∥₁, which is a countable union of opens.
+
+openSigmaOpen : (P : hProp ℓ-zero) → isOpenProp P
+              → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isOpenProp (Q p))
+              → isOpenProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
+openSigmaOpen P (α , P→∃ , ∃→P) Q Qopen = result
+  where
+  -- For each n, the proposition (α n = true) is decidable
+  Dn : ℕ → hProp ℓ-zero
+  Dn n = (α n ≡ true) , isSetBool _ _
+
+  Dn-dec : (n : ℕ) → Dec (α n ≡ true)
+  Dn-dec n = α n =B true
+
+  -- For each n with αn = true, we have a canonical witness of P
+  witness : (n : ℕ) → (α n ≡ true) → ⟨ P ⟩
+  witness n = λ eq → ∃→P (n , eq)
+
+  -- For each n, define Rn = Σ_{αn=true} Q(witness(n, _))
+  -- This is open by openSigmaDecidable
+  Rn : ℕ → hProp ℓ-zero
+  Rn n = (∥ Σ[ eq ∈ (α n ≡ true) ] ⟨ Q (witness n eq) ⟩ ∥₁) , squash₁
+
+  Rn-open : (n : ℕ) → isOpenProp (Rn n)
+  Rn-open n = openSigmaDecidable (Dn n) (Dn-dec n)
+                (λ eq → Q (witness n eq))
+                (λ eq → Qopen (witness n eq))
+
+  -- ∥Σn. Rn∥₁ is open by openCountableUnion
+  countableUnionOpen : isOpenProp (∥ Σ[ n ∈ ℕ ] ⟨ Rn n ⟩ ∥₁ , squash₁)
+  countableUnionOpen = openCountableUnion Rn Rn-open
+
+  -- Now show ∥Σ P Q∥₁ ↔ ∥Σn. Rn∥₁
+  -- Forward: (p, q) : Σ P Q → get (n, αn=t) from P→∃ p, then ∣n, ∣αn=t, q'∣₁∣₁
+  forward-equiv : ∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ → ∥ Σ[ n ∈ ℕ ] ⟨ Rn n ⟩ ∥₁
+  forward-equiv = PT.rec squash₁ helper
+    where
+    helper : Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ → ∥ Σ[ n ∈ ℕ ] ⟨ Rn n ⟩ ∥₁
+    helper (p , qp) = ∣ n , ∣ αn=t , qp' ∣₁ ∣₁
+      where
+      n = fst (P→∃ p)
+      αn=t = snd (P→∃ p)
+      p' = witness n αn=t
+      p≡p' = snd P p p'
+      qp' : ⟨ Q (witness n αn=t) ⟩
+      qp' = subst (λ x → ⟨ Q x ⟩) p≡p' qp
+
+  -- Backward: (n, ∣αn=t, q∣₁) → ∣witness n αn=t, q∣₁
+  backward-equiv : ∥ Σ[ n ∈ ℕ ] ⟨ Rn n ⟩ ∥₁ → ∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁
+  backward-equiv = PT.rec squash₁ helper1
+    where
+    helper1 : Σ[ n ∈ ℕ ] ⟨ Rn n ⟩ → ∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁
+    helper1 (n , rn) = PT.rec squash₁ helper2 rn
+      where
+      helper2 : Σ[ eq ∈ (α n ≡ true) ] ⟨ Q (witness n eq) ⟩ → ∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁
+      helper2 (αn=t , qw) = ∣ witness n αn=t , qw ∣₁
+
+  -- Use the equivalence to transfer openness
+  -- Inline the openEquiv logic: if P ↔ Q and P is open, then Q is open
+  result : isOpenProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
+  result =
+    let (β , union→∃ , ∃→union) = countableUnionOpen
+    in β ,
+       (λ sigPQ → union→∃ (forward-equiv sigPQ)) ,
+       (λ w → backward-equiv (∃→union w))
+
+-- Closed propositions are closed under Σ-types (tex Corollary ClosedDependentSums 1785)
+-- If P is closed and Q : P → hProp with each Q(p) closed, then Σ P Q is closed.
+--
+-- Proof from tex: Closed propositions are Stone (as propositions), and
+-- the Σ of Stone spaces is Stone, so Σ P Q is Stone hence closed.
+--
+-- TODO: This requires Stone space infrastructure (tex Cor 1629: closed props are Stone,
+-- tex Cor 1776-1782: Σ of Stone over Stone is Stone, tex 1613-1619: truncation of Stone is closed).
+-- The key difficulty: we cannot define the witness β : binarySequence without having
+-- a concrete element of P, but isClosedProp requires exhibiting β uniformly.
+-- The tex proof uses that closed propositions are Stone spaces, allowing this construction.
+-- For now, we postulate this and mark it for completion when Stone infrastructure is added.
+
+postulate
+  closedSigmaClosed : (P : hProp ℓ-zero) → isClosedProp P
+                    → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
+                    → isClosedProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
+-- {-# WARNING_ON_USAGE closedSigmaClosed "Postulate: requires Stone infrastructure from tex" #-}
+
+-- =============================================================================
+-- Section 23: Additional closure properties
 -- =============================================================================
 
 -- Open implies ¬¬-stable (via openIsStable which requires MP)
