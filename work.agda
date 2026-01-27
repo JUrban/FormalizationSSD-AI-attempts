@@ -508,7 +508,7 @@ postulate
 -- We'll use a simple diagonal enumeration.
 
 -- Cantor pairing function: ⟨m, n⟩ = (m + n)(m + n + 1)/2 + n
--- For simplicity, we postulate the basic pairing properties
+-- The bijectivity is fully proved below using findDiagonal helper
 
 private
   -- Triangular number: T(n) = 0 + 1 + ... + n = n(n+1)/2
@@ -1053,13 +1053,16 @@ postulate
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - closedAnd, openOrMP, openOr (given mp postulate)
 -- - closedCountableIntersection, openCountableUnion
+-- - Cantor pairing bijectivity: cantorPair, cantorUnpair, cantorPair-unpair, cantorUnpair-pair
+--   (with all supporting lemmas: findDiagonal-correct, triangular-mono-<, etc.)
 
 -- POSTULATED (following from Stone Duality):
--- - mp, llpo, closedOr
--- - clopenIsDecidable, implicationOpenClosed, closedMarkov
-
--- POSTULATED (technical, provable):
--- - cantorUnpair, cantorPair-unpair, cantorUnpair-pair
+-- - mp : MarkovPrinciple (Markov's Principle)
+-- - llpo : LLPO (Lesser Limited Principle of Omniscience)
+-- - closedOr : closed propositions closed under disjunction (from LLPO)
+-- - clopenIsDecidable : clopen implies decidable
+-- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
+-- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ for closed (Pn)
 
 -- =============================================================================
 -- End of current formalization
