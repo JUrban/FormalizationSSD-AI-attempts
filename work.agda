@@ -603,6 +603,46 @@ postulate
 -- LLPO ↔ "For open P, Q: (¬P ∨ ¬Q) ↔ ¬(P ∧ Q)"
 --
 -- This is Proposition 1.4.1 of Diener's book on constructive reverse mathematics.
+-- We state and prove the forward direction here (LLPO → De Morgan for open props)
+
+-- De Morgan for open propositions: ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁
+-- This is a consequence of closedDeMorgan (which uses LLPO)
+-- since ¬P and ¬Q are closed when P and Q are open.
+openDeMorgan : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
+             → (¬ (⟨ P ⟩ × ⟨ Q ⟩)) ↔ ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
+openDeMorgan P Q Popen Qopen = forward , backward
+  where
+  -- ¬P is closed because P is open
+  ¬Pclosed : isClosedProp (¬hProp P)
+  ¬Pclosed = negOpenIsClosed P Popen
+
+  -- ¬Q is closed because Q is open
+  ¬Qclosed : isClosedProp (¬hProp Q)
+  ¬Qclosed = negOpenIsClosed Q Qopen
+
+  -- Forward: ¬(P ∧ Q) → ∥¬P ⊎ ¬Q∥₁
+  -- This follows from closedDeMorgan for ¬P, ¬Q which are closed
+  -- ¬(P ∧ Q) = ¬(¬¬P ∧ ¬¬Q) since P, Q are open hence ¬¬-stable
+  -- Use closedDeMorgan: ¬(¬(¬P) ∧ ¬(¬Q)) → ∥¬P ⊎ ¬Q∥₁
+  forward : ¬ (⟨ P ⟩ × ⟨ Q ⟩) → ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
+  forward ¬P×Q = closedDeMorgan (¬hProp P) (¬hProp Q) ¬Pclosed ¬Qclosed ¬¬¬P×¬¬Q
+    where
+    -- Need: ¬(¬¬P × ¬¬Q) which follows from ¬(P × Q) by ¬¬-stability of P and Q
+    Pstable : ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
+    Pstable = openIsStable mp P Popen
+
+    Qstable : ¬ ¬ ⟨ Q ⟩ → ⟨ Q ⟩
+    Qstable = openIsStable mp Q Qopen
+
+    ¬¬¬P×¬¬Q : ¬ ((¬ ¬ ⟨ P ⟩) × (¬ ¬ ⟨ Q ⟩))
+    ¬¬¬P×¬¬Q (¬¬p , ¬¬q) = ¬P×Q (Pstable ¬¬p , Qstable ¬¬q)
+
+  -- Backward: ∥¬P ⊎ ¬Q∥₁ → ¬(P ∧ Q) is trivial
+  backward : ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁ → ¬ (⟨ P ⟩ × ⟨ Q ⟩)
+  backward = PT.rec (isProp¬ _) λ
+    { (inl ¬p) (p , _) → ¬p p
+    ; (inr ¬q) (_ , q) → ¬q q
+    }
 
 -- Closed propositions closed under disjunction (using LLPO)
 -- The direct proof is more involved; we sketch the idea:
