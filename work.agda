@@ -667,11 +667,114 @@ private
   -- - For all acc < w: k ≥ triangular (suc acc), so we continue
   -- - For acc = w: k < triangular (suc w), so we stop
 
-  -- The proof requires well-founded induction on (w - acc)
-  -- For now, we postulate this key step
-  postulate
-    findDiagonal-correct : (m n : ℕ) →
-      findDiagonal (suc (cantorPair m n)) (cantorPair m n) 0 ≡ m +ℕ n
+  -- Key lemma: k ≥ triangular(suc acc) when acc < w and triangular w ≤ k
+  -- This is because triangular is monotonic: acc < w => triangular(suc acc) ≤ triangular w ≤ k
+
+  -- Triangular is strictly monotonic: n < m => triangular n < triangular m (for n > 0)
+  triangular-suc : (n : ℕ) → triangular n < triangular (suc n)
+  triangular-suc n = suc-≤-suc (≤-+k' (triangular n) (suc n))
+    where
+    ≤-+k' : (a b : ℕ) → a ≤ a +ℕ b
+    ≤-+k' a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
+    ≤-+k' a (suc b) = ≤-trans (≤-+k' a b) (n≤1+n _)
+
+  triangular-mono-< : (n m : ℕ) → n < m → triangular n < triangular m
+  triangular-mono-< n (suc m) (suc-≤-suc n≤m) with n ≟ m
+  ... | yes n≡m = subst (λ x → triangular x < triangular (suc m)) (sym n≡m) (triangular-suc m)
+  ... | no n≢m = ≤-trans (triangular-mono-< n m (≤∧≢→< n≤m n≢m)) (triangular-suc m)
+    where
+    ≤∧≢→< : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
+    ≤∧≢→< {zero} {zero} _ neq = ex-falso (neq refl)
+    ≤∧≢→< {zero} {suc b} _ _ = suc-≤-suc zero-≤
+    ≤∧≢→< {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→< a≤b (λ p → neq (cong suc p)))
+
+  -- If acc < w and k ≥ triangular w, then k ≥ triangular(suc acc)
+  k≥triangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
+                       → triangular (suc acc) ≤ k
+  k≥triangular-suc-acc k w acc acc<w Tw≤k =
+    ≤-trans (pred-≤-pred (triangular-mono-< (suc acc) w acc<w)) Tw≤k
+
+  -- Therefore k <ᵇ triangular(suc acc) ≡ false when acc < w
+  k≮ᵇtriangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
+                        → k <ᵇ triangular (suc acc) ≡ false
+  k≮ᵇtriangular-suc-acc k w acc acc<w Tw≤k = ≤-reflects-¬<ᵇ _ _ (k≥triangular-suc-acc k w acc acc<w Tw≤k)
+    where
+    ≤-reflects-¬<ᵇ : (a b : ℕ) → b ≤ a → a <ᵇ b ≡ false
+    ≤-reflects-¬<ᵇ a zero _ = refl
+    ≤-reflects-¬<ᵇ (suc a) (suc b) (suc-≤-suc b≤a) = ≤-reflects-¬<ᵇ a b b≤a
+
+  -- Main lemma: findDiagonal finds w when called with sufficient fuel
+  -- We prove this by induction on (w - acc)
+  findDiagonal-aux : (w k acc fuel : ℕ) → w ∸ acc ≤ fuel
+                   → k <ᵇ triangular (suc w) ≡ true
+                   → triangular w ≤ k
+                   → acc ≤ w
+                   → findDiagonal (suc fuel) k acc ≡ w
+  findDiagonal-aux w k acc zero w∸acc≤0 k<Tsw Tw≤k acc≤w with w ≟ acc
+  ... | yes w≡acc = findDiagonal-found 0 k acc (subst (λ x → k <ᵇ triangular (suc x) ≡ true) (sym w≡acc) k<Tsw)
+  ... | no w≢acc = ex-falso (¬m<m (≤-trans (∸-<-from w acc (≤∧≢→<' acc≤w (λ p → w≢acc (sym p)))) w∸acc≤0))
+    where
+    ≤∧≢→<' : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
+    ≤∧≢→<' {zero} {zero} _ neq = ex-falso (neq refl)
+    ≤∧≢→<' {zero} {suc b} _ _ = suc-≤-suc zero-≤
+    ≤∧≢→<' {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→<' a≤b (λ p → neq (cong suc p)))
+
+    ∸-<-from : (a b : ℕ) → b < a → 1 ≤ a ∸ b
+    ∸-<-from (suc a) zero _ = suc-≤-suc zero-≤
+    ∸-<-from (suc a) (suc b) (suc-≤-suc b<a) = ∸-<-from a b b<a
+
+    ¬m<m : {m : ℕ} → ¬ (m < m)
+    ¬m<m {suc m} (suc-≤-suc m<m) = ¬m<m m<m
+
+  findDiagonal-aux w k acc (suc fuel) w∸acc≤sf k<Tsw Tw≤k acc≤w with w ≟ acc
+  ... | yes w≡acc = findDiagonal-found fuel k acc (subst (λ x → k <ᵇ triangular (suc x) ≡ true) (sym w≡acc) k<Tsw)
+  ... | no w≢acc =
+    let acc<w = ≤∧≢→<'' acc≤w (λ p → w≢acc (sym p))
+        step1 = findDiagonal-continue fuel k acc (k≮ᵇtriangular-suc-acc k w acc acc<w Tw≤k)
+        step2 = findDiagonal-aux w k (suc acc) fuel (≤-pred-∸ w acc acc<w w∸acc≤sf) k<Tsw Tw≤k (pred-≤-pred acc<w)
+    in step1 ∙ step2
+    where
+    ≤∧≢→<'' : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
+    ≤∧≢→<'' {zero} {zero} _ neq = ex-falso (neq refl)
+    ≤∧≢→<'' {zero} {suc b} _ _ = suc-≤-suc zero-≤
+    ≤∧≢→<'' {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→<'' a≤b (λ p → neq (cong suc p)))
+
+    -- w ∸ acc ≤ suc fuel and acc < w imply w ∸ suc acc ≤ fuel
+    ≤-pred-∸ : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
+    ≤-pred-∸ (suc w) zero _ (suc-≤-suc p) = p
+    ≤-pred-∸ (suc w) (suc acc) (suc-≤-suc acc<w) p = ≤-pred-∸ w acc acc<w p
+
+  -- w ≤ triangular w for w ≥ 1, and trivially for w = 0
+  w≤triangular : (w : ℕ) → w ≤ triangular w +ℕ w
+  w≤triangular zero = zero-≤
+  w≤triangular (suc w) = suc-≤-suc (≤-trans (w≤triangular w) (≤-+k-r (triangular w +ℕ w) (suc w)))
+    where
+    ≤-+k-r : (a b : ℕ) → a ≤ a +ℕ b
+    ≤-+k-r a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
+    ≤-+k-r a (suc b) = ≤-trans (≤-+k-r a b) (n≤1+n _)
+
+  -- m + n ≤ cantorPair m n
+  w≤cantorPair : (m n : ℕ) → m +ℕ n ≤ cantorPair m n
+  w≤cantorPair m n = ≤-trans (n≤m+n m n) (≤-+k-l (triangular (m +ℕ n)) n)
+    where
+    n≤m+n : (m n : ℕ) → m +ℕ n ≤ triangular (m +ℕ n) +ℕ (m +ℕ n)
+    n≤m+n m n = w≤triangular (m +ℕ n)
+
+    ≤-+k-l : (a b : ℕ) → a +ℕ b ≤ a +ℕ (a +ℕ b)
+    ≤-+k-l zero b = ≤-refl
+    ≤-+k-l (suc a) b = suc-≤-suc (≤-trans (≤-+k-l a b) (n≤1+n _))
+
+  -- Putting it together: findDiagonal finds m + n for cantorPair m n
+  findDiagonal-correct : (m n : ℕ) →
+    findDiagonal (suc (cantorPair m n)) (cantorPair m n) 0 ≡ m +ℕ n
+  findDiagonal-correct m n =
+    let k = cantorPair m n
+        w = m +ℕ n
+    in findDiagonal-aux w k 0 k
+         (w≤cantorPair m n)
+         (cantorPair<ᵇ-triangular-suc m n)
+         (triangular≤cantorPair m n)
+         zero-≤
 
   -- Now we can prove cantorUnpair-pair
   cantorUnpair-pair : (m n : ℕ) → cantorUnpair (cantorPair m n) ≡ (m , n)
@@ -691,9 +794,93 @@ private
 
   -- For cantorPair-unpair, we need the reverse direction
   -- If cantorUnpair k = (m, n), then cantorPair m n = k
-  -- This follows from the bijectivity of the diagonal enumeration
-  postulate
-    cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
+
+  -- Helper: a + (b - a) = b when a ≤ b
+  a+b∸a≡b : (a b : ℕ) → a ≤ b → a +ℕ (b ∸ a) ≡ b
+  a+b∸a≡b zero b _ = refl
+  a+b∸a≡b (suc a) (suc b) (suc-≤-suc a≤b) = cong suc (a+b∸a≡b a b a≤b)
+
+  -- (w - n) + n = w when n ≤ w
+  w∸n+n≡w : (w n : ℕ) → n ≤ w → (w ∸ n) +ℕ n ≡ w
+  w∸n+n≡w w n n≤w = ∸+-cancel w n n≤w
+
+  -- Key: findDiagonal returns a value w such that triangular w ≤ k < triangular (suc w)
+  -- This means n = k - triangular w satisfies n ≤ w
+  -- and cantorPair m n = triangular(m + n) + n = triangular w + n = k
+
+  -- First: show n ≤ w when n = k - triangular w and k < triangular(suc w)
+  n≤w-from-bounds : (k w : ℕ) → triangular w ≤ k → k < triangular (suc w)
+                  → k ∸ triangular w ≤ w
+  n≤w-from-bounds k w Tw≤k k<Tsw =
+    -- k - triangular w < triangular(suc w) - triangular w = suc w
+    -- So k - triangular w ≤ w
+    pred-≤-pred (∸-mono-< k (triangular w) (triangular (suc w)) Tw≤k k<Tsw (triangular-suc w))
+    where
+    -- a ≤ b and b < c and c = b + d implies a - b < d, so a - b ≤ d - 1
+    ∸-mono-< : (a b c : ℕ) → b ≤ a → a < c → b < c → a ∸ b < c ∸ b
+    ∸-mono-< a b (suc c) b≤a (suc-≤-suc a≤c) b<sc with b ≤? a
+    ... | yes _ = suc-≤-suc (∸-mono a c b a≤c (pred-≤-pred b<sc))
+      where
+      ∸-mono : (x y z : ℕ) → x ≤ y → z ≤ x → x ∸ z ≤ y ∸ z
+      ∸-mono x y zero x≤y _ = x≤y
+      ∸-mono (suc x) (suc y) (suc z) (suc-≤-suc x≤y) (suc-≤-suc z≤x) = ∸-mono x y z x≤y z≤x
+      ∸-mono zero (suc y) (suc z) _ (suc-≤-suc ())
+      ∸-mono (suc x) zero (suc z) () _
+      ∸-mono zero zero (suc z) _ (suc-≤-suc ())
+
+    _≤?_ : (m n : ℕ) → Dec (m ≤ n)
+    zero ≤? n = yes zero-≤
+    suc m ≤? zero = no (λ ())
+    suc m ≤? suc n with m ≤? n
+    ... | yes m≤n = yes (suc-≤-suc m≤n)
+    ... | no ¬m≤n = no (λ { (suc-≤-suc m≤n) → ¬m≤n m≤n })
+
+  -- Show that findDiagonal returns the correct diagonal (satisfying bounds)
+  -- This requires that findDiagonal actually finds the right diagonal
+  -- Since findDiagonal-aux already ensures this, we just need to extract bounds
+
+  -- Actually, we can prove cantorPair-unpair more directly using the structure
+
+  cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
+  cantorPair-unpair k =
+    let w = findDiagonal (suc k) k 0
+        n = k ∸ triangular w
+        m = w ∸ n
+        -- We need: cantorPair m n = triangular (m + n) + n = k
+        -- Since m + n = (w - n) + n = w, this becomes triangular w + n = k
+        -- And n = k - triangular w, so triangular w + (k - triangular w) = k
+
+        -- Need to show: triangular w ≤ k (so the subtraction is valid)
+        -- And: m + n = w
+
+        -- These follow from findDiagonal properties
+        -- For now, we use the fact that our findDiagonal-aux proof
+        -- establishes that w is the unique diagonal containing k
+    in
+    uncurry cantorPair (cantorUnpair k)                      ≡⟨ refl ⟩
+    cantorPair m n                                            ≡⟨ refl ⟩
+    triangular (m +ℕ n) +ℕ n                                  ≡⟨ cong (λ x → triangular x +ℕ n) (w∸n+n≡w w n (∸-≤ w n)) ⟩
+    triangular w +ℕ n                                         ≡⟨ a+b∸a≡b (triangular w) k (findDiagonal-Tw≤k k) ⟩
+    k ∎
+    where
+    -- n ≤ w (since n = k - triangular w ≤ suc w - 1 = w when k < triangular(suc w))
+    ∸-≤ : (a b : ℕ) → a ∸ b ≤ a
+    ∸-≤ a zero = ≤-refl
+    ∸-≤ zero (suc b) = ≤-refl
+    ∸-≤ (suc a) (suc b) = ≤-trans (∸-≤ a b) (n≤1+n a)
+
+    -- findDiagonal returns w such that triangular w ≤ k
+    -- Proof: by induction on fuel, invariant is triangular acc ≤ k when we return acc
+    findDiagonal-Tw≤k-aux : (fuel k acc : ℕ) → triangular acc ≤ k
+                          → triangular (findDiagonal (suc fuel) k acc) ≤ k
+    findDiagonal-Tw≤k-aux fuel k acc Tacc≤k with k <ᵇ triangular (suc acc) | inspect (k <ᵇ_) (triangular (suc acc))
+    ... | true | _ = Tacc≤k  -- We stop and return acc
+    ... | false | [ p ] =
+      -- We continue: k ≥ triangular(suc acc), so triangular(suc acc) ≤ k
+      findDiagonal-Tw≤k-aux fuel k (suc acc) (¬<ᵇ-reflects k (triangular (suc acc)) p)
+
+    findDiagonal-Tw≤k : triangular (findDiagonal (suc k) k 0) ≤ k
+    findDiagonal-Tw≤k = findDiagonal-Tw≤k-aux k k 0 zero-≤
 
 -- Flattening a family of sequences into a single sequence
 flatten : (ℕ → binarySequence) → binarySequence
