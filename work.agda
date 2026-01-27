@@ -1470,16 +1470,25 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - closedAnd, openOrMP, openOr (given mp postulate)
 -- - closedCountableIntersection, openCountableUnion
--- - Cantor pairing bijectivity: cantorPair, cantorUnpair, cantorPair-unpair, cantorUnpair-pair
---   (with all supporting lemmas: findDiagonal-correct, triangular-mono-<, etc.)
+-- - openAnd : finite conjunction of opens is open (via Cantor pairing)
+-- - Cantor pairing: cantorPair, cantorUnpair, cantorUnpair-pair
+-- - firstTrue: truncation to hit true at most once
 -- - clopenIsDecidable : if P is both open and closed, then P is decidable
-
--- POSTULATED (following from Stone Duality):
--- - mp : MarkovPrinciple (Markov's Principle)
--- - llpo : LLPO (Lesser Limited Principle of Omniscience)
--- - closedOr : closed propositions closed under disjunction (from LLPO)
 -- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
--- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ for closed (Pn)
+
+-- STRUCTURED WITH INTERNAL POSTULATES:
+-- - closedOr : closed props closed under disjunction (uses postulatedStep)
+-- - closedDeMorgan : De Morgan for closed props (uses postulatedStep)
+-- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
+
+-- AXIOMS (from tex file):
+-- - mp : MarkovPrinciple
+-- - llpo : LLPO
+
+-- TECHNICAL POSTULATES:
+-- - cantorPair-unpair : Cantor pairing bijectivity
+-- - postulatedStep : LLPO case analysis extraction
+-- - postulatedClosedMarkovStep : ¬¬-stability of countable closed disjunction
 
 -- =============================================================================
 -- End of current formalization
