@@ -737,6 +737,30 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
     ... | no αn≠βn | γn=f = ex-falso (true≢false γn=f)
 
 -- =============================================================================
+-- Relationship to tex file axioms (main-monolithic.tex section 1.2)
+-- =============================================================================
+--
+-- The tex file has 4 axioms:
+--   1. Stone Duality (Axiom AxStoneDuality): evaluation B → 2^{Sp(B)} is iso
+--   2. Surjections are formal (Axiom SurjectionsAreFormalSurjections)
+--   3. Local choice (Axiom AxLocalChoice)
+--   4. Dependent choice (Axiom axDependentChoice)
+--
+-- From these, the tex proves:
+--   - Markov's Principle (MP) - Corollary MarkovPrinciple, line 530
+--   - LLPO - Theorem LLPO, line 541
+--   - ¬WLPO - Theorem NotWLPO, line 475
+--
+-- Our formalization takes MP and LLPO as axioms (postulates) rather than
+-- deriving them from the full Stone Duality infrastructure. This allows
+-- developing the open/closed theory without the Boolean ring machinery.
+--
+-- The closedSigmaClosed postulate requires Stone infrastructure to prove
+-- (specifically: closed props are Stone, Stone spaces are closed under Σ).
+--
+-- =============================================================================
+
+-- =============================================================================
 -- Section 12: Markov's Principle from Stone Duality
 -- =============================================================================
 
