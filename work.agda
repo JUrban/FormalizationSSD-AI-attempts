@@ -509,10 +509,16 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
 ℕ∞-witness-unique : (α : ℕ∞) → (n m : ℕ) → fst α n ≡ true → fst α m ≡ true → n ≡ m
 ℕ∞-witness-unique α n m αn=t αm=t = snd α n m αn=t αm=t
 
--- Classification of ℕ∞ elements: either α = ∞ or α = ι n for some unique n
--- This shows that ℕ∞ ≃ ℕ + 1 (as a set, not decidably)
-ℕ∞-classify : (α : ℕ∞) → (α ≡ ∞) ⊎ (Σ[ n ∈ ℕ ] α ≡ ι n) → Type₀
-ℕ∞-classify _ _ = Unit  -- This type exists
+-- α = ∞ ↔ ∀n. αn = false
+-- This characterizes the element ∞
+∞-char : (α : ℕ∞) → (α ≡ ∞) ↔ ((n : ℕ) → fst α n ≡ false)
+∞-char α = forward , backward
+  where
+  forward : α ≡ ∞ → (n : ℕ) → fst α n ≡ false
+  forward α=∞ n = cong (λ x → fst x n) α=∞
+
+  backward : ((n : ℕ) → fst α n ≡ false) → α ≡ ∞
+  backward all-false = Σ≡Prop isPropHitsAtMostOnce (funExt all-false)
 
 -- Given a witness n, α = ι n
 ℕ∞-witness→ι : (α : ℕ∞) → (n : ℕ) → fst α n ≡ true → α ≡ ι n
@@ -1939,6 +1945,8 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
 -- - openMarkovTex : ¬(∃n. Pₙ) ↔ ∀n. ¬Pₙ for open Pₙ (dual, trivially true)
 -- - ℕ∞ infrastructure: ∞, ι, ι-at-n, ι-at-m≠n, ι≠∞, ι-injective
+-- - ℕ∞-Markov, ℕ∞-notInfty→witness, witness→ℕ∞-notInfty (from tex line 500)
+-- - ℕ∞-witness-unique, ℕ∞-witness→ι, ∞-char (characterization of ℕ∞ elements)
 
 -- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
