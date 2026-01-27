@@ -1818,6 +1818,16 @@ openCountableUnion P αs = β , forward , backward
               true ∎
         in false≢true (sym (allFalse k) ∙ βk=t)
 
+-- Bundled version: countable intersection on Closed
+⋀-Closed : (ℕ → Closed) → Closed
+⋀-Closed Cs = (((n : ℕ) → ⟨ fst (Cs n) ⟩) , isPropΠ (λ n → snd (fst (Cs n)))) ,
+              closedCountableIntersection (λ n → fst (Cs n)) (λ n → snd (Cs n))
+
+-- Bundled version: countable union on Open
+⋁-Open : (ℕ → Open) → Open
+⋁-Open Os = ((∥ Σ[ n ∈ ℕ ] ⟨ fst (Os n) ⟩ ∥₁) , squash₁) ,
+            openCountableUnion (λ n → fst (Os n)) (λ n → snd (Os n))
+
 -- =============================================================================
 -- Section 18: Additional properties of open and closed propositions
 -- =============================================================================
@@ -2513,6 +2523,7 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - ⊥-Open, ⊥-Closed, ⊤-Open, ⊤-Closed: bundled ⊥/⊤
 -- - _∧-Open_, _∧-Closed_, _∨-Open_, _∨-Closed_: bundled meet/join
 -- - ¬-Open : Open → Closed, ¬-Closed : Closed → Open: bundled negation
+-- - ⋀-Closed : (ℕ → Closed) → Closed, ⋁-Open : (ℕ → Open) → Open: countable ops
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
