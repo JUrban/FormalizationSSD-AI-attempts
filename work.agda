@@ -2312,6 +2312,18 @@ complementClosedIsOpen : {T : Type₀} (A : T → hProp ℓ-zero)
                        → isOpenSubset (λ t → ¬hProp (A t))
 complementClosedIsOpen A Aclosed t = negClosedIsOpen mp (A t) (Aclosed t)
 
+-- Transitivity of openness (tex Corollary OpenTransitive 1319)
+-- If V ⊆ T is open and W ⊆ V is open (as a subset of V), then W ⊆ T is open.
+-- More precisely: given V : T → hProp and W : (t : T) → V(t) → hProp,
+-- the composite W'(t) = Σ_{v:V(t)} W(t,v) is open in T.
+openSubsetTransitive : {T : Type₀}
+                     → (V : T → hProp ℓ-zero) → isOpenSubset V
+                     → (W : (t : T) → ⟨ V t ⟩ → hProp ℓ-zero)
+                     → ((t : T) (v : ⟨ V t ⟩) → isOpenProp (W t v))
+                     → isOpenSubset (λ t → (∥ Σ[ v ∈ ⟨ V t ⟩ ] ⟨ W t v ⟩ ∥₁) , squash₁)
+openSubsetTransitive V Vopen W Wopen t =
+  openSigmaOpen (V t) (Vopen t) (W t) (Wopen t)
+
 -- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
@@ -2342,12 +2354,24 @@ complementClosedIsOpen A Aclosed t = negClosedIsOpen mp (A t) (Aclosed t)
 -- - ℕ∞-equality-closed: equality in ℕ∞ is closed (tex line 1636-1643)
 -- - openAndFixed, closedAndFixed: conjunction with fixed true prop preserves open/closed
 -- - openSigmaDecidable, closedSigmaDecidable: Σ over decidable base preserves open/closed
+-- - openSigmaOpen: Σ of open over open is open (tex Cor 1313)
+-- - openSubsetTransitive: transitivity of openness for subsets (tex Cor 1319)
+-- Synthetic Topology (subsets):
+-- - isOpenSubset, isClosedSubset definitions
+-- - preimageOpenIsOpen, preimageClosedIsClosed: continuity
+-- - emptySubsetOpen, emptySubsetClosed, fullSubsetOpen, fullSubsetClosed
+-- - openSubsetIntersection, closedSubsetIntersection
+-- - openSubsetUnion, closedSubsetUnion
+-- - closedSubsetCountableIntersection, openSubsetCountableUnion
+-- - complementOpenIsClosed, complementClosedIsOpen
 
 -- AXIOMS (from tex file):
 -- - mp : MarkovPrinciple
 -- - llpo : LLPO
 --
--- No other postulates! All theorems are fully proved from these axioms.
+-- POSTULATES (requiring additional infrastructure):
+-- - closedSigmaClosed: Σ of closed over closed is closed (tex Cor 1785)
+--   Requires Stone space infrastructure to prove properly
 
 -- =============================================================================
 -- End of current formalization
