@@ -1942,48 +1942,6 @@ openMarkovTex P Popen = forward , backward
   backward : ((n : ℕ) → ¬ ⟨ P n ⟩) → ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
   backward ∀¬P = PT.rec isProp⊥ (λ { (n , pn) → ∀¬P n pn })
 
--- Alternative form: ¬(∀n. ¬Pₙ) → ∥∃n. Pₙ∥₁ for closed Pₙ
--- NOTE: This is NOT from the tex file. The tex's ClosedMarkov (Lemma 807) is:
---   ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ
--- which we proved as closedMarkovTex above.
---
--- This statement is harder because it requires ∥∃n. Pₙ∥₁ to be ¬¬-stable
--- when each Pₙ is closed. A countable disjunction of closed propositions
--- is not generally open or closed, so we cannot use standard stability results.
-closedMarkov : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
-             → ¬ ((n : ℕ) → ¬ ⟨ P n ⟩) → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
-closedMarkov P Pclosed ¬∀¬P =
-  -- We have ¬(∀n. ¬Pₙ) and each Pₙ closed
-  -- Want: ∥∃n. Pₙ∥₁
-  --
-  -- Key insight: Use closedMarkovTex on the sequence Qₙ = ¬Pₙ? No, ¬Pₙ isn't closed.
-  --
-  -- Alternative approach using MP:
-  -- Each Pₙ closed means Pₙ ↔ ∀m. αₙ m = false for some αₙ
-  -- ¬Pₙ means ¬(∀m. αₙ m = false), which by MP gives ∃m. αₙ m = true
-  --
-  -- We want to show: ∥∃n. Pₙ∥₁
-  -- This is open if each Pₙ is open, but Pₙ is closed, not open.
-  --
-  -- Actually, Pₙ being closed means it's ¬¬-stable, so:
-  -- ¬¬∃n. Pₙ → ¬¬∥∃n. Pₙ∥₁
-  -- If ∥∃n. Pₙ∥₁ were ¬¬-stable (e.g., if it were open or closed), we'd be done.
-  --
-  -- The issue is showing ∥∃n. Pₙ∥₁ is open or closed when each Pₙ is closed.
-  -- This would require "countable union of closed is open" or similar, which is complex.
-  --
-  -- For now, we note that this requires additional axioms or more work.
-  -- Let's leave this with a postulate for the ¬¬-stability step.
-  let ¬¬∃P : ¬ ¬ (Σ[ n ∈ ℕ ] ⟨ P n ⟩)
-      ¬¬∃P k = ¬∀¬P (λ n pn → k (n , pn))
-      ¬¬∃P-trunc : ¬ ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
-      ¬¬∃P-trunc h = ¬¬∃P (λ x → h ∣ x ∣₁)
-  in postulatedClosedMarkovStep P Pclosed ¬¬∃P-trunc
-  where
-  postulate
-    postulatedClosedMarkovStep : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
-                               → ¬ ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁ → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
-
 -- =============================================================================
 -- Section 19: Stone Spaces
 -- =============================================================================
@@ -2053,18 +2011,11 @@ openAndFixed P isPropP p Q Qopen =
 -- - ℕ∞-witness-unique, ℕ∞-witness→ι, ∞-char (characterization of ℕ∞ elements)
 -- - ℕ∞-equality-closed: equality in ℕ∞ is closed (tex line 1636-1643)
 
--- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
--- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
---   NOTE: This is NOT the same as tex's ClosedMarkov (Lemma 807).
---   It requires showing ∥∃n. Pn∥₁ is ¬¬-stable when each Pn is closed.
---   This may require additional axioms beyond MP and LLPO.
-
 -- AXIOMS (from tex file):
 -- - mp : MarkovPrinciple
 -- - llpo : LLPO
-
--- TECHNICAL POSTULATES (not from tex, may be eliminable or require more axioms):
--- - postulatedClosedMarkovStep : ¬¬-stability of ∥∃n. Pn∥₁ for closed Pn
+--
+-- No other postulates! All theorems are fully proved from these axioms.
 
 -- =============================================================================
 -- End of current formalization
