@@ -1883,6 +1883,36 @@ openCountableUnion P αs = β , forward , backward
             openCountableUnion (λ n → fst (Os n)) (λ n → snd (Os n))
 
 -- =============================================================================
+-- Algebraic structure of Open and Closed
+-- =============================================================================
+--
+-- Open and Closed form σ-complete lattices with complementation:
+--
+-- OPEN propositions form a σ-complete lattice:
+--   ⊥-Open     : Open                       (bottom)
+--   ⊤-Open     : Open                       (top)
+--   _∧-Open_   : Open → Open → Open         (binary meet)
+--   _∨-Open_   : Open → Open → Open         (binary join, uses MP via openOr)
+--   ⋁-Open     : (ℕ → Open) → Open          (countable join)
+--   ¬-Open     : Open → Closed              (complement into Closed)
+--
+-- CLOSED propositions form a σ-complete lattice:
+--   ⊥-Closed   : Closed                     (bottom)
+--   ⊤-Closed   : Closed                     (top)
+--   _∧-Closed_ : Closed → Closed → Closed   (binary meet)
+--   _∨-Closed_ : Closed → Closed → Closed   (binary join, uses LLPO via closedOr)
+--   ⋀-Closed   : (ℕ → Closed) → Closed      (countable meet)
+--   ¬-Closed   : Closed → Open              (complement into Open, uses MP)
+--
+-- Key observations:
+-- - Open has countable join (⋁-Open) but only finite meet
+-- - Closed has countable meet (⋀-Closed) but only finite join
+-- - Complement switches between Open and Closed
+-- - Together with mp/llpo, this forms a duality between Open and Closed
+--
+-- =============================================================================
+
+-- =============================================================================
 -- Section 18: Additional properties of open and closed propositions
 -- =============================================================================
 
@@ -2622,6 +2652,9 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- Dominance structure (tex Remarks OpenDominance 1330, ClosedDominance 1794):
 -- - Open forms a dominance (⊤-isOpen + openSigmaOpen)
 -- - Closed forms a dominance (⊤-isClosed + closedSigmaClosed, pending Stone infrastructure)
+-- σ-complete lattice structure:
+-- - Open: ⊥, ⊤, ∧, ∨, ⋁ (countable join), ¬ (→ Closed)
+-- - Closed: ⊥, ⊤, ∧, ∨, ⋀ (countable meet), ¬ (→ Open)
 -- - allFalseIsClosed: canonical closed proposition (∀n. αn = false)
 -- - someTrueIsOpen: canonical open proposition (∃n. αn = true) (uses MP)
 -- - openPath, closedPath: path transport preserves open/closed
