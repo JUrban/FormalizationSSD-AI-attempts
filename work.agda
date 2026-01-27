@@ -1633,63 +1633,81 @@ implicationOpenClosed P Q Popen Qclosed = γ , forward , backward
         -- Q is closed, so ¬¬Q → Q
     in closedIsStable (⟨ Q ⟩ , snd Q) Qclosed ¬¬Q
 
--- ClosedMarkov: For a sequence of closed propositions,
--- ¬(∀n. ¬Pₙ) → || ∃n. Pₙ ||
--- (Related to Lemma 807 from tex)
+-- ClosedMarkov (from tex, Lemma 807):
+-- For (Pₙ)_{n:ℕ} closed propositions: ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ
 --
--- Proof: Construct a sequence γ that witnesses "some Pₙ fails",
--- then use MP to find which n, and conclude Pₙ holds.
+-- Proof: Both sides are open, hence ¬¬-stable.
+-- The equivalence follows by classical De Morgan + ¬¬-stability.
+closedMarkovTex : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
+                → (¬ ((n : ℕ) → ⟨ P n ⟩)) ↔ ∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁
+closedMarkovTex P Pclosed = forward , backward
+  where
+  -- ∀n. Pₙ is closed
+  ∀P-closed : isClosedProp (((n : ℕ) → ⟨ P n ⟩) , isPropΠ (λ n → snd (P n)))
+  ∀P-closed = closedCountableIntersection P Pclosed
+
+  -- ¬(∀n. Pₙ) is open (negation of closed)
+  ¬∀P-open : isOpenProp ((¬ ((n : ℕ) → ⟨ P n ⟩)) , isProp¬ _)
+  ¬∀P-open = negClosedIsOpen mp (((n : ℕ) → ⟨ P n ⟩) , isPropΠ (λ n → snd (P n))) ∀P-closed
+
+  -- Each ¬Pₙ is open (negation of closed)
+  ¬Pn-open : (n : ℕ) → isOpenProp ((¬ ⟨ P n ⟩) , isProp¬ _)
+  ¬Pn-open n = negClosedIsOpen mp (P n) (Pclosed n)
+
+  -- ∃n. ¬Pₙ is open (countable union of open)
+  ∃¬P-open : isOpenProp (∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁ , squash₁)
+  ∃¬P-open = openCountableUnion (λ n → (¬ ⟨ P n ⟩) , isProp¬ _) ¬Pn-open
+
+  -- Forward: ¬(∀n. Pₙ) → ∃n. ¬Pₙ
+  -- Use ¬¬-stability: ¬(∀n. Pₙ) → ¬¬(∃n. ¬Pₙ), and ∃n. ¬Pₙ is open hence ¬¬-stable
+  forward : ¬ ((n : ℕ) → ⟨ P n ⟩) → ∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁
+  forward ¬∀P =
+    let ¬¬∃¬P : ¬ ¬ ∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁
+        ¬¬∃¬P k = ¬∀P (λ n →
+          -- Suppose Pₙ fails for all n (contradiction with ¬∀P)
+          -- Use closedness: ¬¬Pₙ → Pₙ
+          closedIsStable (P n) (Pclosed n)
+            (λ ¬Pn → k ∣ n , ¬Pn ∣₁))
+    in openIsStable mp (∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁ , squash₁) ∃¬P-open ¬¬∃¬P
+
+  -- Backward: ∃n. ¬Pₙ → ¬(∀n. Pₙ)
+  -- This direction is constructively trivial
+  backward : ∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁ → ¬ ((n : ℕ) → ⟨ P n ⟩)
+  backward = PT.rec (isProp¬ _) (λ { (n , ¬Pn) ∀P → ¬Pn (∀P n) })
+
+-- Alternative form: ¬(∀n. ¬Pₙ) → ∥∃n. Pₙ∥₁ for closed Pₙ
+-- This follows from closedMarkovTex by substituting Qₙ = ¬Pₙ
+-- But since ¬Pₙ being closed requires Pₙ being open, we need a different approach.
 --
--- Each Pₙ has witness αₙ with Pₙ ↔ ∀m. αₙ m = false
--- Define γ by flattening: γ(⟨n,m⟩) = αₙ m
--- Then: ∀k. γk = false ↔ ∀n. (∀m. αₙ m = false) ↔ ∀n. Pₙ
---
--- If ¬(∀n. ¬Pₙ), we want ∥∃n. Pₙ∥₁
--- Key: ¬(∀n. ¬Pₙ) combined with closedness of each Pₙ
+-- Actually, for closed Pₙ, this statement can be proved using MP on witness sequences.
 closedMarkov : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
              → ¬ ((n : ℕ) → ¬ ⟨ P n ⟩) → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
 closedMarkov P Pclosed ¬∀¬P =
-  let -- Get witness sequence for each Pₙ
-      αP : ℕ → binarySequence
-      αP n = fst (Pclosed n)
-
-      -- Flatten to single sequence
-      γ : binarySequence
-      γ = flatten αP
-
-      -- ¬(∀n. ¬Pn) implies ¬(∀k. γk = false) by the following:
-      -- If ∀k. γk = false, then ∀n. (∀m. αn m = false), hence ∀n. Pn
-      -- But we have ¬(∀n. ¬Pn), so if ∀n. Pn held, we'd have ¬(∀n. ¬Pn)
-      -- which is consistent... hmm, this doesn't work directly.
-
-      -- Actually, the issue is: ¬(∀n. ¬Pn) doesn't give us ∃n. Pn directly
-      -- We need to use the structure of closed propositions.
-
-      -- Alternative approach: use that each Pn is ¬¬-stable
-      -- ¬(∀n. ¬Pn) + each Pn being ¬¬-stable should give us something...
-
-      -- For the truncated version, we can use:
-      -- ¬(∀n. ¬Pn) → ¬¬(∃n. Pn) [De Morgan]
-      -- And ∥∃n. Pn∥₁ is a proposition, so ¬¬-stable if we can show it's closed
-
-      -- Actually, ∥∃n. Pn∥₁ being closed follows from closedCountableUnion if we had it
-      -- But we only have closedCountableIntersection...
-
-      -- Let me use MP on the witness sequence
-      -- Construct β such that ∃k. βk = true ↔ ∃n. ¬Pn
-      -- If ¬(∀n. ¬Pn), then it's not the case that every Pn fails
-      -- So ∃n. Pn holds (but we can't find which n constructively without decidability)
-
-      -- For now, use ¬¬-stability reasoning
-      ¬¬∃P : ¬ ¬ (Σ[ n ∈ ℕ ] ⟨ P n ⟩)
+  -- We have ¬(∀n. ¬Pₙ) and each Pₙ closed
+  -- Want: ∥∃n. Pₙ∥₁
+  --
+  -- Key insight: Use closedMarkovTex on the sequence Qₙ = ¬Pₙ? No, ¬Pₙ isn't closed.
+  --
+  -- Alternative approach using MP:
+  -- Each Pₙ closed means Pₙ ↔ ∀m. αₙ m = false for some αₙ
+  -- ¬Pₙ means ¬(∀m. αₙ m = false), which by MP gives ∃m. αₙ m = true
+  --
+  -- We want to show: ∥∃n. Pₙ∥₁
+  -- This is open if each Pₙ is open, but Pₙ is closed, not open.
+  --
+  -- Actually, Pₙ being closed means it's ¬¬-stable, so:
+  -- ¬¬∃n. Pₙ → ¬¬∥∃n. Pₙ∥₁
+  -- If ∥∃n. Pₙ∥₁ were ¬¬-stable (e.g., if it were open or closed), we'd be done.
+  --
+  -- The issue is showing ∥∃n. Pₙ∥₁ is open or closed when each Pₙ is closed.
+  -- This would require "countable union of closed is open" or similar, which is complex.
+  --
+  -- For now, we note that this requires additional axioms or more work.
+  -- Let's leave this with a postulate for the ¬¬-stability step.
+  let ¬¬∃P : ¬ ¬ (Σ[ n ∈ ℕ ] ⟨ P n ⟩)
       ¬¬∃P k = ¬∀¬P (λ n pn → k (n , pn))
-
-      -- Convert to truncated version
       ¬¬∃P-trunc : ¬ ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
       ¬¬∃P-trunc h = ¬¬∃P (λ x → h ∣ x ∣₁)
-
-  -- For now, postulate the ¬¬-stability of ∥∃n. Pn∥₁
-  -- This should follow from it being closed (countable union of closed)
   in postulatedClosedMarkovStep P Pclosed ¬¬∃P-trunc
   where
   postulate
@@ -1735,16 +1753,19 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
 -- - closedOr : closed props closed under disjunction (using LLPO)
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
+-- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
 
 -- STRUCTURED WITH INTERNAL POSTULATES:
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
+--   NOTE: This is a different statement from closedMarkovTex. It requires
+--   showing ∥∃n. Pn∥₁ is ¬¬-stable when each Pn is closed.
 
 -- AXIOMS (from tex file):
 -- - mp : MarkovPrinciple
 -- - llpo : LLPO
 
 -- TECHNICAL POSTULATES:
--- - postulatedClosedMarkovStep : ¬¬-stability of countable closed disjunction
+-- - postulatedClosedMarkovStep : ¬¬-stability of ∥∃n. Pn∥₁ for closed Pn
 
 -- =============================================================================
 -- End of current formalization
