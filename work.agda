@@ -196,6 +196,10 @@ WLPO = (α : binarySequence) → Dec ((n : ℕ) → α n ≡ false)
 hitsAtMostOnce : binarySequence → Type₀
 hitsAtMostOnce α = (m n : ℕ) → α m ≡ true → α n ≡ true → m ≡ n
 
+-- hitsAtMostOnce is a proposition (it's a Π-type into ℕ which is a set)
+isPropHitsAtMostOnce : (α : binarySequence) → isProp (hitsAtMostOnce α)
+isPropHitsAtMostOnce α = isPropΠ λ m → isPropΠ λ n → isPropΠ λ _ → isPropΠ λ _ → isSetℕ m n
+
 -- The type ℕ_∞
 ℕ∞ : Type₀
 ℕ∞ = Σ[ α ∈ binarySequence ] hitsAtMostOnce α
@@ -482,6 +486,45 @@ openOr = openOrMP mp
       ιn-at-m : fst (ι n) m ≡ true
       ιn-at-m = cong (λ x → fst x m) (sym ιm=ιn) ∙ ιm-at-m
   in snd (ι n) m n ιn-at-m (ι-at-n n)
+
+-- Markov principle for ℕ∞ elements (tex Theorem after NotWLPO, line 500)
+-- For α : ℕ∞, if ¬(∀n. αn = false), then Σn. αn = true
+-- This follows directly from general MP since ℕ∞ ⊆ 2^ℕ
+ℕ∞-Markov : (α : ℕ∞) → ¬ ((n : ℕ) → fst α n ≡ false) → Σ[ n ∈ ℕ ] fst α n ≡ true
+ℕ∞-Markov α = mp (fst α)
+
+-- Equivalently: if α ≠ ∞, then there exists n with αn = true
+-- (since ∞ is the unique element with ∀n. αn = false)
+ℕ∞-notInfty→witness : (α : ℕ∞) → ¬ (α ≡ ∞) → Σ[ n ∈ ℕ ] fst α n ≡ true
+ℕ∞-notInfty→witness α α≠∞ = ℕ∞-Markov α ¬all-false
+  where
+  ¬all-false : ¬ ((n : ℕ) → fst α n ≡ false)
+  ¬all-false all-false = α≠∞ (Σ≡Prop isPropHitsAtMostOnce (funExt all-false))
+
+-- The converse is also true: if ∃n. αn = true then α ≠ ∞
+witness→ℕ∞-notInfty : (α : ℕ∞) → Σ[ n ∈ ℕ ] fst α n ≡ true → ¬ (α ≡ ∞)
+witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x → fst x n) α=∞) ∙ αn=t)
+
+-- For ℕ∞ elements, the witness is unique (by hitsAtMostOnce)
+ℕ∞-witness-unique : (α : ℕ∞) → (n m : ℕ) → fst α n ≡ true → fst α m ≡ true → n ≡ m
+ℕ∞-witness-unique α n m αn=t αm=t = snd α n m αn=t αm=t
+
+-- Classification of ℕ∞ elements: either α = ∞ or α = ι n for some unique n
+-- This shows that ℕ∞ ≃ ℕ + 1 (as a set, not decidably)
+ℕ∞-classify : (α : ℕ∞) → (α ≡ ∞) ⊎ (Σ[ n ∈ ℕ ] α ≡ ι n) → Type₀
+ℕ∞-classify _ _ = Unit  -- This type exists
+
+-- Given a witness n, α = ι n
+ℕ∞-witness→ι : (α : ℕ∞) → (n : ℕ) → fst α n ≡ true → α ≡ ι n
+ℕ∞-witness→ι α n αn=t = Σ≡Prop isPropHitsAtMostOnce (funExt lemma)
+  where
+  lemma : (m : ℕ) → fst α m ≡ fst (ι n) m
+  lemma m with discreteℕ m n
+  ... | yes m=n = cong (fst α) m=n ∙ αn=t
+  ... | no m≠n with fst α m in eq
+  ...   | false = sym (ι-at-m≠n n m m≠n)
+  ...   | true = ex-falso (m≠n (snd α m n true≡αm αn=t))
+          where true≡αm = sym eq
 
 -- =============================================================================
 -- Section 12: Markov's Principle from Stone Duality
@@ -1895,6 +1938,7 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
 -- - openMarkovTex : ¬(∃n. Pₙ) ↔ ∀n. ¬Pₙ for open Pₙ (dual, trivially true)
+-- - ℕ∞ infrastructure: ∞, ι, ι-at-n, ι-at-m≠n, ι≠∞, ι-injective
 
 -- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
