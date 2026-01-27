@@ -79,6 +79,30 @@ Open = Σ[ P ∈ hProp ℓ-zero ] isOpenProp P
 Closed : Type₁
 Closed = Σ[ P ∈ hProp ℓ-zero ] isClosedProp P
 
+-- Note: isOpenProp P is NOT a proposition (multiple witnesses possible),
+-- but it IS a set since binarySequence is a set.
+
+isSetBinarySequence : isSet binarySequence
+isSetBinarySequence = isSetΠ (λ _ → isSetBool)
+
+isSetIsOpenProp : (P : hProp ℓ-zero) → isSet (isOpenProp P)
+isSetIsOpenProp P = isSetΣ isSetBinarySequence
+  (λ α → isSet× (isProp→isSet (isPropΠ (λ _ → isSetΣ isSetℕ (λ n → isProp→isSet (isSetBool _ _)))))
+                 (isProp→isSet (isPropΠ (λ _ → snd P))))
+
+isSetIsClosedProp : (P : hProp ℓ-zero) → isSet (isClosedProp P)
+isSetIsClosedProp P = isSetΣ isSetBinarySequence
+  (λ α → isSet× (isProp→isSet (isPropΠ (λ _ → isPropΠ (λ _ → isSetBool _ _))))
+                 (isProp→isSet (isPropΠ (λ _ → snd P))))
+
+-- The property version: P merely has an openness witness
+-- This is the "exists α such that P ↔ ∃n. αn = true" formulation
+isOpen : hProp ℓ-zero → hProp ℓ-zero
+isOpen P = ∥ isOpenProp P ∥₁ , squash₁
+
+isClosed : hProp ℓ-zero → hProp ℓ-zero
+isClosed P = ∥ isClosedProp P ∥₁ , squash₁
+
 -- =============================================================================
 -- Section 3: Basic properties of Open and Closed propositions
 -- =============================================================================
@@ -2416,6 +2440,8 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 
 -- FULLY PROVED:
 -- - isOpenProp, isClosedProp definitions
+-- - isSetBinarySequence, isSetIsOpenProp, isSetIsClosedProp: isOpenProp/isClosedProp are sets
+-- - isOpen, isClosed: property versions (truncated)
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
