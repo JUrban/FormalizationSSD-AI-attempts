@@ -2066,6 +2066,50 @@ closedSigmaDecidable D (no ¬d) Q Qclosed =
      backward
 
 -- =============================================================================
+-- Section 22: Additional closure properties
+-- =============================================================================
+
+-- Open implies ¬¬-stable (via openIsStable which requires MP)
+-- This is part of rmkOpenClosedNegation in the tex
+open→¬¬stable : (P : hProp ℓ-zero) → isOpenProp P → (¬ ¬ ⟨ P ⟩ → ⟨ P ⟩)
+open→¬¬stable P Popen = openIsStable mp P Popen
+
+-- Closed implies ¬¬-stable (directly, no axioms needed)
+closed→¬¬stable : (P : hProp ℓ-zero) → isClosedProp P → (¬ ¬ ⟨ P ⟩ → ⟨ P ⟩)
+closed→¬¬stable P Pclosed = closedIsStable P Pclosed
+
+-- Forward direction: open → negation is closed
+-- (negOpenIsClosed is already defined)
+
+-- Forward direction: closed → negation is open (requires MP)
+-- (negClosedIsOpen is already defined)
+
+-- Note: The converse directions require more care:
+-- - If ¬P is closed, to show P is open requires showing P ↔ ¬¬P
+-- - This only works if P is already known to be open or closed
+-- So we don't have a full biconditional characterization
+
+-- For ¬¬-stable propositions: P is closed iff ¬P is open
+-- This is because both directions compose nicely when ¬¬P → P
+closed→¬open : (P : hProp ℓ-zero) → isClosedProp P → isOpenProp (¬hProp P)
+closed→¬open P = negClosedIsOpen mp P
+
+¬open→closed : (P : hProp ℓ-zero) → isOpenProp (¬hProp P) → isClosedProp (¬¬hProp P)
+¬open→closed P ¬Popen = negOpenIsClosed (¬hProp P) ¬Popen
+
+-- Equivalence preservation: if P ↔ Q and P is open, then Q is open
+openEquiv : (P Q : hProp ℓ-zero) → (⟨ P ⟩ → ⟨ Q ⟩) → (⟨ Q ⟩ → ⟨ P ⟩)
+          → isOpenProp P → isOpenProp Q
+openEquiv P Q P→Q Q→P (α , P→∃ , ∃→P) =
+  α , (λ q → P→∃ (Q→P q)) , (λ w → P→Q (∃→P w))
+
+-- Equivalence preservation: if P ↔ Q and P is closed, then Q is closed
+closedEquiv : (P Q : hProp ℓ-zero) → (⟨ P ⟩ → ⟨ Q ⟩) → (⟨ Q ⟩ → ⟨ P ⟩)
+            → isClosedProp P → isClosedProp Q
+closedEquiv P Q P→Q Q→P (α , P→∀ , ∀→P) =
+  α , (λ q → P→∀ (Q→P q)) , (λ w → P→Q (∀→P w))
+
+-- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
 
@@ -2093,6 +2137,8 @@ closedSigmaDecidable D (no ¬d) Q Qclosed =
 -- - ℕ∞-Markov, ℕ∞-notInfty→witness, witness→ℕ∞-notInfty (from tex line 500)
 -- - ℕ∞-witness-unique, ℕ∞-witness→ι, ∞-char (characterization of ℕ∞ elements)
 -- - ℕ∞-equality-closed: equality in ℕ∞ is closed (tex line 1636-1643)
+-- - openAndFixed, closedAndFixed: conjunction with fixed true prop preserves open/closed
+-- - openSigmaDecidable, closedSigmaDecidable: Σ over decidable base preserves open/closed
 
 -- AXIOMS (from tex file):
 -- - mp : MarkovPrinciple
