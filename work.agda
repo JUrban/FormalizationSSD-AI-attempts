@@ -591,10 +591,35 @@ openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (in
 -- 2. By Stone Duality (Sp is an embedding), Sp(2/α) = ∅ = Sp(trivial) ⟹ 2/α = trivial
 -- 3. Hence 0 = 1 in 2/α, so true ∈ αI (CommRingQuotients.TrivialIdeal.trivialQuotient→1∈I)
 -- 4. By MarkovLib.t∈I→αn and MarkovLib.extract', this gives Σn. αn = true
+
+-- Key lemma: If Sp B is empty and Stone Duality holds, then B is trivial (0 = 1)
+-- Proof idea: evaluationMap B : ⟨ B ⟩ → (Sp B → Bool) is an equivalence.
+-- If Sp B = ∅, then (∅ → Bool) has exactly one element (the empty function).
+-- So ⟨ B ⟩ ≅ {*}, meaning all elements of B are equal, including 0 and 1.
+module SpectrumEmptyImpliesTrivial (SD : StoneDualityAxiom) (B : Booleω) (spEmpty : Sp B → ⊥) where
+  open import Cubical.Foundations.Equiv
+  open import Axioms.StoneDuality using (evaluationMap)
+
+  -- If Sp B is empty, the type (Sp B → Bool) is contractible (any two functions are equal)
+  emptyFunContr : isContr (Sp B → Bool)
+  emptyFunContr = (λ sp → ex-falso (spEmpty sp)) , λ f → funExt (λ sp → ex-falso (spEmpty sp))
+
+  -- Since evaluationMap B is an equivalence, ⟨ B ⟩ is contractible
+  B-contr : isContr ⟨ fst B ⟩
+  B-contr = isOfHLevelRespectEquiv 0 (invEquiv (evaluationMap B , SD B)) emptyFunContr
+
+  -- 0 = 1 follows from contractibility
+  0≡1-in-B : BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B))
+  0≡1-in-B = isContr→isProp B-contr _ _
+
+-- For the full MP proof, we would need:
+-- 1. Show 2/α (the quotient by the image of α) is in Booleω (countably presented)
+-- 2. Apply MarkovLib.emptySp to show Sp(2/α) → ⊥
+-- 3. Use SpectrumEmptyImpliesTrivial.0≡1-in-B to get 0 = 1 in 2/α
+-- 4. Use CommRingQuotients.TrivialIdeal.trivialQuotient→1∈I
+-- 5. Use MarkovLib.t∈I→αn and MarkovLib.extract'
 --
--- The missing piece to complete the proof is:
---   spectrumEmptyImpliesTrivial : (B : Booleω) → (Sp B → ⊥) → 0 ≡ 1 in B
--- which requires showing that the trivial Boolean ring is in Booleω and using SpEmbedding.
+-- The technical difficulty is step 1: proving 2/α ∈ Booleω.
 -- For now, MP is postulated as a consequence of the Stone Duality axiom.
 postulate
   mp : MarkovPrinciple
