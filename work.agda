@@ -1759,6 +1759,28 @@ closedMarkovTex P Pclosed = forward , backward
   backward : ∥ Σ[ n ∈ ℕ ] (¬ ⟨ P n ⟩) ∥₁ → ¬ ((n : ℕ) → ⟨ P n ⟩)
   backward = PT.rec (isProp¬ _) (λ { (n , ¬Pn) ∀P → ¬Pn (∀P n) })
 
+-- Dual of closedMarkovTex for open propositions:
+-- For open (Pₙ)_{n:ℕ}, we have ¬(∃n. Pₙ) ↔ ∀n. ¬Pₙ
+--
+-- This is simpler than closedMarkovTex because:
+-- - ∃n. Pn is open (by openCountableUnion)
+-- - ¬(∃n. Pn) is closed (by negOpenIsClosed)
+-- - Each ¬Pn is closed (by negOpenIsClosed)
+-- - ∀n. ¬Pn is closed (by closedCountableIntersection)
+-- - Both sides are closed hence ¬¬-stable
+--
+-- Actually, this direction is trivially true constructively (no axioms needed):
+-- ¬(∃n. Pn) ↔ ∀n. ¬Pn is just the usual ¬∃↔∀¬ equivalence.
+openMarkovTex : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isOpenProp (P n))
+             → (¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁) ↔ ((n : ℕ) → ¬ ⟨ P n ⟩)
+openMarkovTex P Popen = forward , backward
+  where
+  forward : ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁ → (n : ℕ) → ¬ ⟨ P n ⟩
+  forward ¬∃P n pn = ¬∃P ∣ n , pn ∣₁
+
+  backward : ((n : ℕ) → ¬ ⟨ P n ⟩) → ¬ ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
+  backward ∀¬P = PT.rec isProp⊥ (λ { (n , pn) → ∀¬P n pn })
+
 -- Alternative form: ¬(∀n. ¬Pₙ) → ∥∃n. Pₙ∥₁ for closed Pₙ
 -- NOTE: This is NOT from the tex file. The tex's ClosedMarkov (Lemma 807) is:
 --   ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ
@@ -1831,6 +1853,9 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - isOpenProp, isClosedProp definitions
 -- - negOpenIsClosed, decIsOpen, decIsClosed
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
+-- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
+-- - ⊤-isOpen, ⊤-isClosed : true is both open and closed
+-- - doubleNegOpenIsOpen, doubleNegClosedIsClosed : ¬¬ preserves open/closed (given MP)
 -- - closedAnd, openOrMP, openOr (given mp postulate)
 -- - closedCountableIntersection, openCountableUnion
 -- - openAnd : finite conjunction of opens is open (via Cantor pairing)
@@ -1842,6 +1867,7 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedOr : closed props closed under disjunction (using LLPO)
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
+-- - openMarkovTex : ¬(∃n. Pₙ) ↔ ∀n. ¬Pₙ for open Pₙ (dual, trivially true)
 
 -- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
