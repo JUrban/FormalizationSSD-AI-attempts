@@ -314,9 +314,19 @@ MarkovPrinciple = (α : binarySequence) → ¬ ((n : ℕ) → α n ≡ false) �
 WLPO : Type₀
 WLPO = (α : binarySequence) → Dec ((n : ℕ) → α n ≡ false)
 
--- ¬WLPO follows from Stone Duality (proved in WLPO.agda)
--- The key insight is that any decidable property of binary sequences
--- is determined by a finite prefix of fixed length.
+-- ¬WLPO follows from Stone Duality (tex Theorem NotWLPO, line 475)
+--
+-- Proof sketch (from WLPO.agda):
+-- 1. Assume f : 2^ℕ → Bool decides "all zeros": f(α) = false ↔ ∀n. αn = false
+-- 2. By Stone Duality (Axiom 1), f is determined by some Boolean term c
+-- 3. The term c uses only finitely many generators g₀, ..., gₖ
+-- 4. Consider β = 0^ω (all zeros) and γ defined by γn = 0 if n ≤ k, else 1
+-- 5. β and γ agree on g₀, ..., gₖ, so f(β) = f(γ)
+-- 6. But f(β) should be false (β is all zeros) and f(γ) should be true
+-- 7. Contradiction: decidable properties can't distinguish infinite tails
+--
+-- This shows that "∀n. αn = false" is not decidable uniformly in α.
+-- The proof is formalized in WLPO.agda using Boolean ring infrastructure.
 
 -- =============================================================================
 -- Section 8: LLPO (Lesser Limited Principle of Omniscience)
