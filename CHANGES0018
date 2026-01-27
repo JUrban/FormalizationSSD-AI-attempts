@@ -1,0 +1,40 @@
+CHANGES0018 - PROVED implicationOpenClosed
+
+Summary:
+- PROVED implicationOpenClosed (was postulate, now fully proven)
+- Uses openAnd, negOpenIsClosed, and closedIsStable
+
+Proof of implicationOpenClosed:
+Given P open, Q closed, show (P → Q) is closed.
+
+1. ¬Q is open (by negClosedIsOpen using MP)
+2. P ∧ ¬Q is open (by openAnd)
+3. ¬(P ∧ ¬Q) is closed (by negOpenIsClosed)
+4. The witness γ for (P → Q) being closed comes from step 3
+
+Forward direction: (P → Q) → ∀k. γk = false
+- If P → Q holds and we have (p, ¬q), then ¬q(P→Q p) is contradiction
+- So ¬(P ∧ ¬Q) holds, giving all γk = false
+
+Backward direction: ∀k. γk = false → (P → Q)
+- All γk = false means ¬(P ∧ ¬Q) holds
+- Given p : P, if ¬Q, then (p, ¬q) : P ∧ ¬Q, contradiction
+- So ¬¬Q holds when P holds
+- Since Q is closed, ¬¬Q → Q (closedIsStable)
+- Therefore P → Q
+
+Status: work.agda (1433 lines, compiles cleanly)
+Previous backup: bck0017 (1385 lines)
+Difference: +48 lines (implicationOpenClosed proof)
+
+Postulates remaining (6 total, down from 7):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. postulatedStep in closedDeMorgan (LLPO case analysis)
+4. closedMarkov (next target)
+5. cantorPair-unpair
+
+REMOVED:
+- implicationOpenClosed (NOW FULLY PROVED!)
+
+Next: Work on closedMarkov

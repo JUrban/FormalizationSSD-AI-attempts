@@ -1,0 +1,37 @@
+CHANGES0019 - Added closedMarkov structure with postulate
+
+Summary:
+- Added closedMarkov definition (partial proof structure)
+- Still has postulatedClosedMarkovStep (¬¬-stability of ∥∃n. Pn∥₁)
+
+Proof structure of closedMarkov:
+Given P : ℕ → hProp and each Pn closed, and ¬(∀n. ¬Pn), show ∥∃n. Pn∥₁
+
+1. Extract ¬¬(∃n. Pn) from ¬(∀n. ¬Pn) using De Morgan
+2. Convert to ¬¬∥∃n. Pn∥₁
+3. Need: ¬¬∥∃n. Pn∥₁ → ∥∃n. Pn∥₁ (¬¬-stability)
+
+The ¬¬-stability would follow if ∥∃n. Pn∥₁ is closed.
+For ∥∃n. Pn∥₁ to be closed, we'd need closedCountableUnion,
+but we only have closedCountableIntersection.
+
+The postulatedClosedMarkovStep represents this ¬¬-stability step.
+
+Status: work.agda (1486 lines, compiles cleanly)
+Previous backup: bck0018 (1433 lines)
+Difference: +53 lines (closedMarkov structure)
+
+Postulates remaining (7 total):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. postulatedStep in closedDeMorgan (LLPO case analysis)
+4. postulatedClosedMarkovStep in closedMarkov (¬¬-stability)
+5. cantorPair-unpair
+
+Note: closedMarkov now has structure but still uses a postulate internally.
+The postulate captures the ¬¬-stability of countable closed disjunction.
+
+Summary of formalization progress:
+- PROVED: clopenIsDecidable, implicationOpenClosed
+- STRUCTURED: closedOr, closedDeMorgan, closedMarkov (have proof structures)
+- POSTULATED: mp, llpo, and internal steps requiring ¬¬-stability or LLPO analysis

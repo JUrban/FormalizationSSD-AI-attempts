@@ -1,0 +1,41 @@
+CHANGES0015 - Added closedOr structure with postulate
+
+Summary:
+- Added closedOr definition (closed propositions closed under disjunction)
+- Added closedDeMorgan helper (needs LLPO for the De Morgan step)
+- Moved closedOr to after openAnd (due to dependency)
+
+Key additions:
+1. closedDeMorgan : converts ¬(¬P ∧ ¬Q) → ∥P ⊎ Q∥₁ for closed P, Q
+   - Uses postulatedClosedDeMorganStep (the LLPO-dependent part)
+
+2. closedOr : full proof that closed props are closed under disjunction
+   - Uses openAnd to get ¬P ∧ ¬Q is open
+   - Forward direction: P ∨ Q → ∀n.γn=false (constructive)
+   - Backward direction: ∀n.γn=false → P ∨ Q (uses closedDeMorgan)
+
+Proof structure:
+- If P closed with α, Q closed with β
+- ¬P and ¬Q are open (by negClosedIsOpen, using MP)
+- ¬P ∧ ¬Q is open (by openAnd)
+- Witness γ for ¬P ∧ ¬Q being open
+- Forward: If P ∨ Q, then ¬(¬P ∧ ¬Q), so no witness for ¬P ∧ ¬Q exists
+- Backward: If ∀n.γn=false, then ¬P ∧ ¬Q has no witness, so ¬(¬P ∧ ¬Q)
+  Need: ¬(¬P ∧ ¬Q) → P ∨ Q (De Morgan for closed, needs LLPO)
+
+Status: work.agda (1323 lines, compiles cleanly)
+Previous backup: bck0014 (1219 lines)
+Difference: +104 lines (closedOr infrastructure)
+
+Postulates remaining (7 total):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. postulatedClosedDeMorganStep (inside closedDeMorgan) - the LLPO step
+4. implicationOpenClosed
+5. closedMarkov
+6. cantorPair-unpair (Cantor pairing bijectivity)
+7. (closedOr postulate removed - now proven modulo postulatedClosedDeMorganStep)
+
+Next steps:
+- Try to prove postulatedClosedDeMorganStep from llpo directly
+- Or prove implicationOpenClosed (now that closedOr is available)

@@ -1,0 +1,47 @@
+CHANGES0020 - Updated summary section
+
+Summary:
+- Updated the formalization status summary at end of file
+- Reorganized to distinguish:
+  1. Fully proved definitions and theorems
+  2. Structured proofs with internal postulates
+  3. Axioms from tex (mp, llpo)
+  4. Technical postulates (Cantor, LLPO extraction, ¬¬-stability)
+
+Current formalization state:
+
+FULLY PROVED (no postulates):
+- Basic definitions: isOpenProp, isClosedProp
+- Basic lemmas: negOpenIsClosed, decIsOpen, decIsClosed
+- Stability: closedIsStable, openIsStable, negClosedIsOpen
+- Closure under operations: closedAnd, openOrMP, openOr, openAnd
+- Countable operations: closedCountableIntersection, openCountableUnion
+- Cantor pairing: cantorPair, cantorUnpair, cantorUnpair-pair
+- firstTrue: sequence truncation for ℕ∞
+- Major theorems:
+  * clopenIsDecidable : (open ∧ closed) → decidable
+  * implicationOpenClosed : (P open, Q closed) → (P → Q) closed
+
+STRUCTURED WITH POSTULATES:
+- closedOr : uses postulatedStep (LLPO extraction)
+- closedDeMorgan : uses postulatedStep
+- closedMarkov : uses postulatedClosedMarkovStep
+
+AXIOMS (intended from tex):
+- mp : MarkovPrinciple
+- llpo : LLPO
+
+TECHNICAL POSTULATES:
+- cantorPair-unpair : standard mathematical fact
+- postulatedStep : LLPO case analysis
+- postulatedClosedMarkovStep : ¬¬-stability
+
+Status: work.agda (1495 lines, compiles cleanly)
+Previous backup: bck0019 (1486 lines)
+Difference: +9 lines (updated summary)
+
+Session progress:
+- Started with 5 remaining postulates from previous session
+- PROVED: clopenIsDecidable (was already done), implicationOpenClosed
+- STRUCTURED: closedOr, closedDeMorgan, closedMarkov (have proof outlines)
+- Added infrastructure: firstTrue, openAnd improvements

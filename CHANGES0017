@@ -1,0 +1,33 @@
+CHANGES0017 - Simplified closedDeMorgan, still has postulate
+
+Summary:
+- Simplified the helper function in closedDeMorgan
+- Still has postulatedStep that needs LLPO analysis to complete
+
+Current structure of closedDeMorgan:
+1. Interleave α, β (witnesses for P, Q closed)
+2. Apply firstTrue to get ℕ∞ element
+3. Apply llpo to get case split on evens/odds
+4. Both cases use postulatedStep (still needs proof)
+
+The postulated step represents the final extraction:
+- Given LLPO result (all evens false OR all odds false)
+- Combined with ¬(¬P ∧ ¬Q)
+- Need to produce ∥P ⊎ Q∥₁
+
+The intuition: If all evens false, either P holds (all αk false)
+or some βm was true first, meaning ¬Q, so by ¬(¬P ∧ ¬Q) + closedIsStable, P holds.
+
+Status: work.agda (1385 lines, compiles cleanly)
+Previous backup: bck0016 (1362 lines)
+Difference: +23 lines (comments)
+
+Postulates remaining (7 total):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. postulatedStep in closedDeMorgan (LLPO case analysis)
+4. implicationOpenClosed (next target)
+5. closedMarkov
+6. cantorPair-unpair
+
+Next: Work on implicationOpenClosed (P open, Q closed → P → Q closed)

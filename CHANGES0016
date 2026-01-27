@@ -1,0 +1,42 @@
+CHANGES0016 - Added firstTrue infrastructure for closedDeMorgan
+
+Summary:
+- Added firstTrue function (truncates sequence to hit true at most once)
+- Added proof that firstTrue preserves all-false sequences
+- Added proof that firstTrue output is in ℕ∞ (hitsAtMostOnce)
+- Restructured closedDeMorgan to use firstTrue and llpo
+
+Key additions:
+1. firstTrue : binarySequence → binarySequence
+   - firstTrue α n returns true at the first position where α is true (if any)
+   - All subsequent positions return false
+
+2. firstTrue-preserves-allFalse : if ∀n.αn=false, then ∀n.firstTrue α n=false
+
+3. firstTrue-hitsAtMostOnce : firstTrue α is always in ℕ∞
+
+4. closedDeMorgan now:
+   - Interleaves α and β (witnesses for P and Q being closed)
+   - Applies firstTrue to get an ℕ∞ element
+   - Applies llpo to get either all evens false or all odds false
+   - Still has postulatedStep for the final extraction
+
+Structure of closedDeMorgan proof:
+1. δ₀ = interleave α β
+2. δ = firstTrue δ₀ (now in ℕ∞)
+3. Apply llpo to (δ , δ-hamo)
+4. Case analysis on LLPO result (postulated for now)
+
+Status: work.agda (1362 lines, compiles cleanly)
+Previous backup: bck0015 (1323 lines)
+Difference: +39 lines (firstTrue infrastructure)
+
+Postulates remaining (7 total):
+1. mp : MarkovPrinciple
+2. llpo : LLPO
+3. postulatedStep in closedDeMorgan (final extraction from LLPO)
+4. implicationOpenClosed
+5. closedMarkov
+6. cantorPair-unpair
+
+Next: Try to fill in postulatedStep in closedDeMorgan
