@@ -33,13 +33,9 @@ open import Cubical.Algebra.CommRing
 open import Cubical.Algebra.BooleanRing
 open import Cubical.Algebra.BooleanRing.Instances.Bool
 
--- Note: Local library imports commented out due to syntax compatibility issues
--- with newer Agda versions (copattern definitions need to be updated).
--- The key theorems (Markov, LLPO, ¬WLPO) are stated here with postulates
--- indicating they follow from Stone Duality.
---
--- open import Axioms.StoneDuality
--- open import OmnisciencePrinciples.Markov as MP using (∃αn ; extract')
+-- Import local library modules (fixed for Agda 2.8 compatibility)
+open import Axioms.StoneDuality
+open import OmnisciencePrinciples.Markov as MP using (∃αn ; extract')
 
 -- =============================================================================
 -- Section 1: Preliminaries and Basic Definitions
@@ -263,15 +259,108 @@ private
   half-2k+1 zero = refl
   half-2k+1 (suc k) = subst (λ n → half (suc n) ≡ suc k) (sym (2·suc k)) (cong suc (half-2k+1 k))
 
--- For now, we postulate the closure properties and focus on more essential theorems
--- These can be proved later with more careful handling of the interleaving
+-- Interleave two sequences: γ(2k) = α(k), γ(2k+1) = β(k)
+interleave : binarySequence → binarySequence → binarySequence
+interleave α β n = if isEvenB n then α (half n) else β (half n)
 
+-- Correctness of interleave
+interleave-2k : (α β : binarySequence) (k : ℕ) → interleave α β (2 ·ℕ k) ≡ α k
+interleave-2k α β k =
+  interleave α β (2 ·ℕ k)          ≡⟨ refl ⟩
+  (if isEvenB (2 ·ℕ k) then α (half (2 ·ℕ k)) else β (half (2 ·ℕ k)))
+    ≡⟨ cong (λ x → if x then α (half (2 ·ℕ k)) else β (half (2 ·ℕ k))) (isEvenB-2k k) ⟩
+  α (half (2 ·ℕ k))                ≡⟨ cong α (half-2k k) ⟩
+  α k                              ∎
+
+interleave-2k+1 : (α β : binarySequence) (k : ℕ) → interleave α β (suc (2 ·ℕ k)) ≡ β k
+interleave-2k+1 α β k =
+  interleave α β (suc (2 ·ℕ k))    ≡⟨ refl ⟩
+  (if isEvenB (suc (2 ·ℕ k)) then α (half (suc (2 ·ℕ k))) else β (half (suc (2 ·ℕ k))))
+    ≡⟨ cong (λ x → if x then α (half (suc (2 ·ℕ k))) else β (half (suc (2 ·ℕ k)))) (isEvenB-2k+1 k) ⟩
+  β (half (suc (2 ·ℕ k)))          ≡⟨ cong β (half-2k+1 k) ⟩
+  β k                              ∎
+
+-- Closed propositions are closed under finite conjunction
+closedAnd : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
+          → isClosedProp ((⟨ P ⟩ × ⟨ Q ⟩) , isProp× (snd P) (snd Q))
+closedAnd P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) = γ , forward , backward
+  where
+  γ : binarySequence
+  γ = interleave α β
+
+  forward : ⟨ P ⟩ × ⟨ Q ⟩ → (n : ℕ) → γ n ≡ false
+  forward (p , q) n with isEvenB n =B true
+  ... | yes even = subst (λ x → (if x then α (half n) else β (half n)) ≡ false) (sym even) (P→∀α p (half n))
+  ... | no notEven = subst (λ x → (if x then α (half n) else β (half n)) ≡ false) (sym (¬true→false (isEvenB n) notEven)) (Q→∀β q (half n))
+
+  backward : ((n : ℕ) → γ n ≡ false) → ⟨ P ⟩ × ⟨ Q ⟩
+  backward all-zero = (∀α→P α-zero) , (∀β→Q β-zero)
+    where
+    α-zero : (k : ℕ) → α k ≡ false
+    α-zero k = sym (interleave-2k α β k) ∙ all-zero (2 ·ℕ k)
+
+    β-zero : (k : ℕ) → β k ≡ false
+    β-zero k = sym (interleave-2k+1 α β k) ∙ all-zero (suc (2 ·ℕ k))
+
+-- Open propositions are closed under finite disjunction (requires Markov's Principle)
+-- The forward direction needs MP to extract a concrete witness from ∥ P ⊎ Q ∥₁
+openOrMP : MarkovPrinciple → (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
+        → isOpenProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
+openOrMP mp P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , forward , backward
+  where
+  γ : binarySequence
+  γ = interleave α β
+
+  backward : Σ[ n ∈ ℕ ] γ n ≡ true → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+  backward (n , γn=t) with isEvenB n =B true
+  ... | yes even = ∣ inl (∃α→P (half n , claim)) ∣₁
+    where
+    claim : α (half n) ≡ true
+    claim = subst (λ x → (if x then α (half n) else β (half n)) ≡ true) even γn=t
+  ... | no notEven = ∣ inr (∃β→Q (half n , claim)) ∣₁
+    where
+    claim : β (half n) ≡ true
+    claim = subst (λ x → (if x then α (half n) else β (half n)) ≡ true) (¬true→false (isEvenB n) notEven) γn=t
+
+  -- Use Markov to extract a witness from the double negation
+  forward : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ → Σ[ n ∈ ℕ ] γ n ≡ true
+  forward truncPQ = mp γ ¬all-false
+    where
+    -- From ∥ P ⊎ Q ∥₁ and (∀n. γ n = false), we can derive a contradiction
+    ¬all-false : ¬ ((n : ℕ) → γ n ≡ false)
+    ¬all-false all-false = PT.rec isProp⊥ helper truncPQ
+      where
+      helper : ⟨ P ⟩ ⊎ ⟨ Q ⟩ → ⊥
+      helper (inl p) =
+        let (k , αk=t) = P→∃α p
+        in false≢true (sym (sym (interleave-2k α β k) ∙ all-false (2 ·ℕ k)) ∙ αk=t)
+      helper (inr q) =
+        let (k , βk=t) = Q→∃β q
+        in false≢true (sym (sym (interleave-2k+1 α β k) ∙ all-false (suc (2 ·ℕ k))) ∙ βk=t)
+
+-- Non-truncated version: given definite knowledge P ⊎ Q, produce a concrete witness
+openOrNonTrunc : (P Q : hProp ℓ-zero) (αP : isOpenProp P) (αQ : isOpenProp Q)
+               → ⟨ P ⟩ ⊎ ⟨ Q ⟩ → Σ[ n ∈ ℕ ] interleave (fst αP) (fst αQ) n ≡ true
+openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (inl p) =
+  let (k , αk=t) = P→∃α p
+  in (2 ·ℕ k) , (interleave-2k α β k ∙ αk=t)
+openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (inr q) =
+  let (k , βk=t) = Q→∃β q
+  in suc (2 ·ℕ k) , (interleave-2k+1 α β k ∙ βk=t)
+
+-- Markov's Principle follows from Stone Duality (proven in the library)
+-- Proof sketch:
+-- 1. If ¬(∀n. αn = false), then Sp(2/α) is empty (emptySp from Markov.agda)
+-- 2. By Stone Duality (Sp is an embedding), Sp(2/α) = ∅ = Sp(trivial) ⟹ 2/α = trivial
+-- 3. Hence 0 = 1 in 2/α, so true ∈ αI (trivialQuotient→1∈I)
+-- 4. By t∈I→αn, this gives Σn. αn = true
 postulate
-  closedAnd : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
-            → isClosedProp ((⟨ P ⟩ × ⟨ Q ⟩) , isProp× (snd P) (snd Q))
+  mp : MarkovPrinciple
 
-  openOr : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
-         → isOpenProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
+-- Open propositions are closed under finite disjunction (derived from MP)
+openOr : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
+       → isOpenProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
+openOr = openOrMP mp
 
 -- =============================================================================
 -- Section 11: ℕ_∞ specific elements
