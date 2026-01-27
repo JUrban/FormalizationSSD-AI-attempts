@@ -501,6 +501,128 @@ postulate
 -- 3. Closed subsets are closed under finite unions and arbitrary intersections
 
 -- =============================================================================
+-- Section 17: Countable closure properties
+-- =============================================================================
+
+-- We need a bijection ℕ × ℕ ≅ ℕ for countable closure properties.
+-- We'll use a simple diagonal enumeration.
+
+-- Cantor pairing function: ⟨m, n⟩ = (m + n)(m + n + 1)/2 + n
+-- For simplicity, we postulate the basic pairing properties
+
+private
+  -- Sum of first k natural numbers: 0 + 1 + ... + (k-1)
+  triangular : ℕ → ℕ
+  triangular zero = zero
+  triangular (suc k) = k +ℕ triangular k
+
+  -- Cantor pairing
+  cantorPair : ℕ → ℕ → ℕ
+  cantorPair m n = triangular (m +ℕ n) +ℕ n
+
+  -- We postulate unpair properties (proving them is tedious but standard)
+  postulate
+    cantorUnpair : ℕ → ℕ × ℕ
+    cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
+    cantorUnpair-pair : (m n : ℕ) → cantorUnpair (cantorPair m n) ≡ (m , n)
+
+-- Flattening a family of sequences into a single sequence
+flatten : (ℕ → binarySequence) → binarySequence
+flatten αs k = let (m , n) = cantorUnpair k in αs m n
+
+-- Countable intersection of closed propositions
+-- If each Pₙ is closed (witnessed by αₙ), then ∀n.Pₙ is closed
+closedCountableIntersection : (P : ℕ → hProp ℓ-zero)
+                            → ((n : ℕ) → isClosedProp (P n))
+                            → isClosedProp (((n : ℕ) → ⟨ P n ⟩) , isPropΠ (λ n → snd (P n)))
+closedCountableIntersection P αs = β , forward , backward
+  where
+  -- Get witness sequence for each Pₙ
+  αP : ℕ → binarySequence
+  αP n = fst (αs n)
+
+  -- Flatten to single sequence
+  β : binarySequence
+  β = flatten αP
+
+  forward : ((n : ℕ) → ⟨ P n ⟩) → (k : ℕ) → β k ≡ false
+  forward allP k =
+    let (m , n) = cantorUnpair k
+        Pm→allFalse = fst (snd (αs m))
+    in Pm→allFalse (allP m) n
+
+  backward : ((k : ℕ) → β k ≡ false) → (n : ℕ) → ⟨ P n ⟩
+  backward allβFalse n = allFalse→Pn allαnFalse
+    where
+    allFalse→Pn : ((k : ℕ) → αP n k ≡ false) → ⟨ P n ⟩
+    allFalse→Pn = snd (snd (αs n))
+    -- β (cantorPair n k) = αP (fst (cantorUnpair (cantorPair n k))) (snd (cantorUnpair (cantorPair n k)))
+    -- By cantorUnpair-pair: cantorUnpair (cantorPair n k) = (n, k)
+    -- So β (cantorPair n k) ≡ αP n k (by path)
+    allαnFalse : (k : ℕ) → αP n k ≡ false
+    allαnFalse k =
+      αP n k
+        ≡⟨ cong (λ p → αP (fst p) (snd p)) (sym (cantorUnpair-pair n k)) ⟩
+      αP (fst (cantorUnpair (cantorPair n k))) (snd (cantorUnpair (cantorPair n k)))
+        ≡⟨ allβFalse (cantorPair n k) ⟩
+      false ∎
+
+-- Countable union of open propositions (requires MP)
+-- If each Pₙ is open (witnessed by αₙ), then ∃n.Pₙ is open
+openCountableUnion : (P : ℕ → hProp ℓ-zero)
+                   → ((n : ℕ) → isOpenProp (P n))
+                   → isOpenProp (∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁ , squash₁)
+openCountableUnion P αs = β , forward , backward
+  where
+  -- Get witness sequence for each Pₙ
+  αP : ℕ → binarySequence
+  αP n = fst (αs n)
+
+  -- Flatten to single sequence
+  β : binarySequence
+  β = flatten αP
+
+  backward : Σ[ k ∈ ℕ ] β k ≡ true → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
+  backward (k , βk=t) = ∣ n , Pn ∣₁
+    where
+    nm : ℕ × ℕ
+    nm = cantorUnpair k
+    n = fst nm
+    m = snd nm
+    αnm=t : αP n m ≡ true
+    αnm=t = βk=t
+    exists→Pn = snd (snd (αs n))
+    Pn : ⟨ P n ⟩
+    Pn = exists→Pn (m , αnm=t)
+
+  -- Use Markov to extract witness from double negation
+  forward : ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁ → Σ[ k ∈ ℕ ] β k ≡ true
+  forward truncExists = mp β ¬allFalse
+    where
+    ¬allFalse : ¬ ((k : ℕ) → β k ≡ false)
+    ¬allFalse allFalse = PT.rec isProp⊥ helper truncExists
+      where
+      helper : Σ[ n ∈ ℕ ] ⟨ P n ⟩ → ⊥
+      helper (n , pn) =
+        let Pn→exists = fst (snd (αs n))
+            (m , αnm=t) = Pn→exists pn
+            k = cantorPair n m
+            -- β k = αP (fst (cantorUnpair k)) (snd (cantorUnpair k))
+            -- = αP (fst (cantorUnpair (cantorPair n m))) (snd (cantorUnpair (cantorPair n m)))
+            -- ≡ αP n m (by cantorUnpair-pair)
+            -- ≡ true (by αnm=t)
+            βk=t : β k ≡ true
+            βk=t =
+              β k
+                ≡⟨ refl ⟩
+              αP (fst (cantorUnpair k)) (snd (cantorUnpair k))
+                ≡⟨ cong (λ p → αP (fst p) (snd p)) (cantorUnpair-pair n m) ⟩
+              αP n m
+                ≡⟨ αnm=t ⟩
+              true ∎
+        in false≢true (sym (allFalse k) ∙ βk=t)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
 
