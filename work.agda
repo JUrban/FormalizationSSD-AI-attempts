@@ -1721,10 +1721,13 @@ closedMarkovTex P Pclosed = forward , backward
   backward = PT.rec (isProp¬ _) (λ { (n , ¬Pn) ∀P → ¬Pn (∀P n) })
 
 -- Alternative form: ¬(∀n. ¬Pₙ) → ∥∃n. Pₙ∥₁ for closed Pₙ
--- This follows from closedMarkovTex by substituting Qₙ = ¬Pₙ
--- But since ¬Pₙ being closed requires Pₙ being open, we need a different approach.
+-- NOTE: This is NOT from the tex file. The tex's ClosedMarkov (Lemma 807) is:
+--   ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ
+-- which we proved as closedMarkovTex above.
 --
--- Actually, for closed Pₙ, this statement can be proved using MP on witness sequences.
+-- This statement is harder because it requires ∥∃n. Pₙ∥₁ to be ¬¬-stable
+-- when each Pₙ is closed. A countable disjunction of closed propositions
+-- is not generally open or closed, so we cannot use standard stability results.
 closedMarkov : (P : ℕ → hProp ℓ-zero) → ((n : ℕ) → isClosedProp (P n))
              → ¬ ((n : ℕ) → ¬ ⟨ P n ⟩) → ∥ Σ[ n ∈ ℕ ] ⟨ P n ⟩ ∥₁
 closedMarkov P Pclosed ¬∀¬P =
@@ -1801,16 +1804,17 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
 
--- STRUCTURED WITH INTERNAL POSTULATES:
+-- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
---   NOTE: This is a different statement from closedMarkovTex. It requires
---   showing ∥∃n. Pn∥₁ is ¬¬-stable when each Pn is closed.
+--   NOTE: This is NOT the same as tex's ClosedMarkov (Lemma 807).
+--   It requires showing ∥∃n. Pn∥₁ is ¬¬-stable when each Pn is closed.
+--   This may require additional axioms beyond MP and LLPO.
 
 -- AXIOMS (from tex file):
 -- - mp : MarkovPrinciple
 -- - llpo : LLPO
 
--- TECHNICAL POSTULATES:
+-- TECHNICAL POSTULATES (not from tex, may be eliminable or require more axioms):
 -- - postulatedClosedMarkovStep : ¬¬-stability of ∥∃n. Pn∥₁ for closed Pn
 
 -- =============================================================================
