@@ -20,6 +20,7 @@ open import Cubical.Foundations.Powerset
 open import Cubical.Data.Nat renaming (_+_ to _+ℕ_ ; _·_ to _·ℕ_)
 open import Cubical.Data.Nat.Order
 open import Cubical.Data.Nat.Properties using (discreteℕ)
+import Cubical.Induction.WellFounded as WF
 open import Cubical.Data.Bool hiding (_≤_ ; _≥_) renaming (_≟_ to _=B_)
 open import Cubical.Data.Empty renaming (rec to ex-falso)
 open import Cubical.Data.Sigma
@@ -258,6 +259,24 @@ private
   half-2k+1 zero = refl
   half-2k+1 (suc k) = subst (λ n → half (suc n) ≡ suc k) (sym (2·suc k)) (cong suc (half-2k+1 k))
 
+  -- If n is even (isEvenB n ≡ true), then 2 · (half n) ≡ n
+  2·half-even : (n : ℕ) → isEvenB n ≡ true → 2 ·ℕ (half n) ≡ n
+  2·half-even zero _ = refl
+  2·half-even (suc zero) even-f = ex-falso (false≢true even-f)
+  2·half-even (suc (suc n)) even-ssn =
+    2 ·ℕ (suc (half n))      ≡⟨ 2·suc (half n) ⟩
+    suc (suc (2 ·ℕ (half n))) ≡⟨ cong (suc ∘ suc) (2·half-even n even-ssn) ⟩
+    suc (suc n)              ∎
+
+  -- If n is odd (isEvenB n ≡ false), then suc (2 · (half n)) ≡ n
+  suc-2·half-odd : (n : ℕ) → isEvenB n ≡ false → suc (2 ·ℕ (half n)) ≡ n
+  suc-2·half-odd zero odd-f = ex-falso (true≢false odd-f)
+  suc-2·half-odd (suc zero) _ = refl
+  suc-2·half-odd (suc (suc n)) odd-ssn =
+    suc (2 ·ℕ (suc (half n)))      ≡⟨ cong suc (2·suc (half n)) ⟩
+    suc (suc (suc (2 ·ℕ (half n)))) ≡⟨ cong (suc ∘ suc) (suc-2·half-odd n odd-ssn) ⟩
+    suc (suc n)                    ∎
+
 -- Interleave two sequences: γ(2k) = α(k), γ(2k+1) = β(k)
 interleave : binarySequence → binarySequence → binarySequence
 interleave α β n = if isEvenB n then α (half n) else β (half n)
@@ -278,6 +297,25 @@ interleave-2k+1 α β k =
     ≡⟨ cong (λ x → if x then α (half (suc (2 ·ℕ k))) else β (half (suc (2 ·ℕ k)))) (isEvenB-2k+1 k) ⟩
   β (half (suc (2 ·ℕ k)))          ≡⟨ cong β (half-2k+1 k) ⟩
   β k                              ∎
+
+-- Generalized versions: given n and proof of evenness/oddness
+interleave-even : (α β : binarySequence) (n : ℕ) → isEvenB n ≡ true
+                 → interleave α β n ≡ α (half n)
+interleave-even α β n n-even =
+  interleave α β n
+    ≡⟨ refl ⟩
+  (if isEvenB n then α (half n) else β (half n))
+    ≡⟨ cong (λ x → if x then α (half n) else β (half n)) n-even ⟩
+  α (half n) ∎
+
+interleave-odd : (α β : binarySequence) (n : ℕ) → isEvenB n ≡ false
+                → interleave α β n ≡ β (half n)
+interleave-odd α β n n-odd =
+  interleave α β n
+    ≡⟨ refl ⟩
+  (if isEvenB n then α (half n) else β (half n))
+    ≡⟨ cong (λ x → if x then α (half n) else β (half n)) n-odd ⟩
+  β (half n) ∎
 
 -- Closed propositions are closed under finite conjunction
 closedAnd : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
@@ -540,13 +578,13 @@ private
   suc m <ᵇ' suc n = m <ᵇ' n
 
   -- Helper: find diagonal w given k, using fuel
-  -- Invariant: we're checking if k is on diagonal (acc + fuel - remaining_fuel)
+  -- Invariant: we're checking if k is on diagonal (diag + fuel - remaining_fuel)
   findDiagonal : ℕ → ℕ → ℕ → ℕ
-  findDiagonal zero k acc = acc  -- out of fuel, return current
-  findDiagonal (suc fuel) k acc =
-    if k <ᵇ' triangular (suc acc)
-    then acc  -- k < triangular(acc+1), so k is on diagonal acc
-    else findDiagonal fuel k (suc acc)  -- k >= triangular(acc+1), try next
+  findDiagonal zero k diag = diag  -- out of fuel, return current
+  findDiagonal (suc fuel) k diag =
+    if k <ᵇ' triangular (suc diag)
+    then diag  -- k < triangular(diag+1), so k is on diagonal diag
+    else findDiagonal fuel k (suc diag)  -- k >= triangular(diag+1), try next
 
   -- Cantor unpairing: find diagonal w, then compute (w - n, n) where n = k - triangular w
   cantorUnpair : ℕ → ℕ × ℕ
@@ -668,17 +706,17 @@ private
     goal = subst (_≤ triangular (suc w)) (sym eq1)
              (subst (triangular w +ℕ suc n ≤_) (eq2 ∙ eq3) step1)
 
-  -- Key lemma: if k < triangular (suc acc), then findDiagonal returns acc
-  findDiagonal-found : (fuel k acc : ℕ) → k <ᵇ' triangular (suc acc) ≡ true
-                     → findDiagonal (suc fuel) k acc ≡ acc
-  findDiagonal-found fuel k acc p with k <ᵇ' triangular (suc acc) | p
+  -- Key lemma: if k < triangular (suc diag), then findDiagonal returns diag
+  findDiagonal-found : (fuel k diag : ℕ) → k <ᵇ' triangular (suc diag) ≡ true
+                     → findDiagonal (suc fuel) k diag ≡ diag
+  findDiagonal-found fuel k diag p with k <ᵇ' triangular (suc diag) | p
   ... | true | _ = refl
   ... | false | q = ex-falso (false≢true q)
 
-  -- If k >= triangular (suc acc), findDiagonal continues to next acc
-  findDiagonal-continue : (fuel k acc : ℕ) → k <ᵇ' triangular (suc acc) ≡ false
-                        → findDiagonal (suc fuel) k acc ≡ findDiagonal fuel k (suc acc)
-  findDiagonal-continue fuel k acc p with k <ᵇ' triangular (suc acc) | p
+  -- If k >= triangular (suc diag), findDiagonal continues to next diag
+  findDiagonal-continue : (fuel k diag : ℕ) → k <ᵇ' triangular (suc diag) ≡ false
+                        → findDiagonal (suc fuel) k diag ≡ findDiagonal fuel k (suc diag)
+  findDiagonal-continue fuel k diag p with k <ᵇ' triangular (suc diag) | p
   ... | false | _ = refl
   ... | true | q = ex-falso (true≢false q)
 
@@ -1036,6 +1074,42 @@ firstTrue-hitsAtMostOnce α m n ftm=t ftn=t = aux α m n ftm=t ftn=t
   aux α (suc m) (suc n) ft-sm=t ft-sn=t | true = ex-falso (false≢true ft-sm=t)
   aux α (suc m) (suc n) ft-sm=t ft-sn=t | false = cong suc (aux (α ∘ suc) m n ft-sm=t ft-sn=t)
 
+-- Key lemma: firstTrue α n = true implies α n = true (and all earlier are false)
+firstTrue-true-implies-original-true : (α : binarySequence) (n : ℕ)
+                                      → firstTrue α n ≡ true → α n ≡ true
+firstTrue-true-implies-original-true α zero ft0=t = ft0=t
+firstTrue-true-implies-original-true α (suc n) ft-sn=t with α zero
+... | true  = ex-falso (false≢true ft-sn=t)
+... | false = firstTrue-true-implies-original-true (α ∘ suc) n ft-sn=t
+
+-- Key lemma: if firstTrue α n = false but α n = true, then some earlier position hit true
+-- Using witness: we return the position m as a natural number and prove m < n separately
+private
+  firstTrue-with : (α : binarySequence) (n : ℕ) (b : Bool)
+                  → α zero ≡ b
+                  → firstTrue α (suc n) ≡ (if b then false else firstTrue (α ∘ suc) n)
+  firstTrue-with α n true  p with α zero
+  ... | true = refl
+  ... | false = ex-falso (true≢false (sym p))
+  firstTrue-with α n false p with α zero
+  ... | true = ex-falso (false≢true (sym p))
+  ... | false = refl
+
+firstTrue-false-but-original-true : (α : binarySequence) (n : ℕ)
+                                   → firstTrue α n ≡ false → α n ≡ true
+                                   → Σ[ m ∈ ℕ ] (suc m ≤ n) × (α m ≡ true)
+firstTrue-false-but-original-true α zero ft0=f α0=t = ex-falso (true≢false (sym α0=t ∙ ft0=f))
+firstTrue-false-but-original-true α (suc n) ft-sn=f α-sn=t with α zero =B true
+... | yes α0=t = zero , suc-≤-suc zero-≤ , α0=t
+... | no α0≠t =
+  let α0=f = ¬true→false (α zero) α0≠t
+      eq : firstTrue α (suc n) ≡ firstTrue (α ∘ suc) n
+      eq = firstTrue-with α n false α0=f ∙ refl
+      ft-sn=f' : firstTrue (α ∘ suc) n ≡ false
+      ft-sn=f' = sym eq ∙ ft-sn=f
+      (m , m<n , αsm=t) = firstTrue-false-but-original-true (α ∘ suc) n ft-sn=f' α-sn=t
+  in suc m , suc-≤-suc m<n , αsm=t
+
 -- De Morgan law for closed propositions (consequence of LLPO)
 -- This is the key step: ¬(¬P ∧ ¬Q) → ∥P ⊎ Q∥₁ for closed P, Q
 closedDeMorgan : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
@@ -1094,22 +1168,120 @@ closedDeMorgan P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬�
   -- - Since Q is closed, Q is ¬¬-stable, so Q holds.
   -- Similarly for the other case.
 
-  -- The remaining step: extract P ∨ Q from the LLPO case analysis
-  -- Given ¬(¬P ∧ ¬Q) and closed P, Q:
-  -- - If P fails, then ¬P holds, so by ¬(¬P ∧ ¬Q), ¬¬Q holds
-  -- - Since Q is closed, ¬¬Q → Q (closedIsStable), so Q holds
-  -- - Symmetrically if Q fails, P holds
-  -- - We can't constructively decide which, but LLPO gives us the decision
-  postulate
-    postulatedStep : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
+  -- Key lemma: if all evens of δ are false, then P holds
+  -- Proof outline:
+  -- 1. If all evens of firstTrue(interleave α β) are false, and interleave hits true
+  --    somewhere, then the FIRST true position must be at an odd index.
+  -- 2. If first true is at odd position 2j+1, then β(j) = true, so ¬Q.
+  -- 3. Suppose ¬P. Then some αk = true, so interleave hits true at even 2k.
+  -- 4. By (1), the first true is at an odd position, so ¬Q.
+  -- 5. ¬P ∧ ¬Q contradicts ¬(¬P ∧ ¬Q).
+
+  -- Helper: extract first true position using well-founded recursion on <
+  -- The key fact is that firstTrue-false-but-original-true gives m < n
+  module _ where
+    open WF.WFI (<-wellfounded)
+
+    ResultOdd : ℕ → Type₀
+    ResultOdd n = interleave α β n ≡ true
+                → ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
+                → Σ[ m ∈ ℕ ] (isEvenB m ≡ false) × (β (half m) ≡ true)
+
+    find-first-true-odd-step : (n : ℕ) → ((m : ℕ) → m < n → ResultOdd m) → ResultOdd n
+    find-first-true-odd-step n rec δ₀-n=t allEvensF with firstTrue (interleave α β) n =B true
+    ... | yes ft-n=t with isEvenB n =B true
+    ...   | yes n-even =
+            let k = half n
+                2k=n : 2 ·ℕ k ≡ n
+                2k=n = 2·half-even n n-even
+            in ex-falso (true≢false (sym (subst (λ x → firstTrue (interleave α β) x ≡ true) (sym 2k=n) ft-n=t)
+                                     ∙ allEvensF k))
+    ...   | no n-odd =
+            let j = half n
+                m-odd-eq : isEvenB n ≡ false
+                m-odd-eq = ¬true→false (isEvenB n) n-odd
+                βj=t : β j ≡ true
+                βj=t = sym (interleave-odd α β n m-odd-eq) ∙ δ₀-n=t
+            in n , m-odd-eq , βj=t
+    find-first-true-odd-step n rec δ₀-n=t allEvensF | no ft-n≠t =
+      let ft-n=f = ¬true→false (firstTrue (interleave α β) n) ft-n≠t
+          (m , m<n , δ₀-m=t) = firstTrue-false-but-original-true (interleave α β) n ft-n=f δ₀-n=t
+      in rec m m<n δ₀-m=t allEvensF
+
+    find-first-true-odd : (n : ℕ) → ResultOdd n
+    find-first-true-odd = induction find-first-true-odd-step
+
+  allEvensF-implies-P : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false) → ⟨ P ⟩
+  allEvensF-implies-P allEvensF = closedIsStable P (α , P→∀α , ∀α→P) ¬¬P
+    where
+    ¬¬P : ¬ ¬ ⟨ P ⟩
+    ¬¬P ¬p =
+      let -- From ¬P, get witness that α has a true
+          (k , αk=t) = mp α (λ all-false → ¬p (∀α→P all-false))
+          -- interleave α β (2k) = αk = true
+          δ₀-2k=t : interleave α β (2 ·ℕ k) ≡ true
+          δ₀-2k=t = interleave-2k α β k ∙ αk=t
+          -- Find first true; it must be at an odd position
+          (m , m-odd , βj=t) = find-first-true-odd (2 ·ℕ k) δ₀-2k=t allEvensF
+          j = half m
+          -- So β(j) = true, meaning Q fails
+          ¬q : ¬ ⟨ Q ⟩
+          ¬q q = false≢true (sym (Q→∀β q j) ∙ βj=t)
+      in ¬¬P∧¬Q (¬p , ¬q)
+
+  -- Similarly: if all odds of δ are false, then Q holds
+  module _ where
+    open WF.WFI (<-wellfounded)
+
+    ResultEven : ℕ → Type₀
+    ResultEven n = interleave α β n ≡ true
+                 → ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
+                 → Σ[ m ∈ ℕ ] (isEvenB m ≡ true) × (α (half m) ≡ true)
+
+    find-first-true-even-step : (n : ℕ) → ((m : ℕ) → m < n → ResultEven m) → ResultEven n
+    find-first-true-even-step n rec δ₀-n=t allOddsF with firstTrue (interleave α β) n =B true
+    ... | yes ft-n=t with isEvenB n =B true
+    ...   | yes n-even =
+            let j = half n
+                αj=t : α j ≡ true
+                αj=t = sym (interleave-even α β n n-even) ∙ δ₀-n=t
+            in n , n-even , αj=t
+    ...   | no n-odd =
+            let k = half n
+                n-odd-eq : isEvenB n ≡ false
+                n-odd-eq = ¬true→false (isEvenB n) n-odd
+                2k+1=n : suc (2 ·ℕ k) ≡ n
+                2k+1=n = suc-2·half-odd n n-odd-eq
+            in ex-falso (true≢false (sym (subst (λ x → firstTrue (interleave α β) x ≡ true) (sym 2k+1=n) ft-n=t)
+                                     ∙ allOddsF k))
+    find-first-true-even-step n rec δ₀-n=t allOddsF | no ft-n≠t =
+      let ft-n=f = ¬true→false (firstTrue (interleave α β) n) ft-n≠t
+          (m , m<n , δ₀-m=t) = firstTrue-false-but-original-true (interleave α β) n ft-n=f δ₀-n=t
+      in rec m m<n δ₀-m=t allOddsF
+
+    find-first-true-even : (n : ℕ) → ResultEven n
+    find-first-true-even = induction find-first-true-even-step
+
+  allOddsF-implies-Q : ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false) → ⟨ Q ⟩
+  allOddsF-implies-Q allOddsF = closedIsStable Q (β , Q→∀β , ∀β→Q) ¬¬Q
+    where
+    ¬¬Q : ¬ ¬ ⟨ Q ⟩
+    ¬¬Q ¬q =
+      let (k , βk=t) = mp β (λ all-false → ¬q (∀β→Q all-false))
+          δ₀-odd-k=t : interleave α β (suc (2 ·ℕ k)) ≡ true
+          δ₀-odd-k=t = interleave-2k+1 α β k ∙ βk=t
+          (m , m-even , αj=t) = find-first-true-even (suc (2 ·ℕ k)) δ₀-odd-k=t allOddsF
+          j = half m
+          ¬p : ¬ ⟨ P ⟩
+          ¬p p = false≢true (sym (P→∀α p j) ∙ αj=t)
+      in ¬¬P∧¬Q (¬p , ¬q)
 
   -- From LLPO result, derive P ∨ Q
-  -- The proof uses ¬(¬P ∧ ¬Q) and closed stability
   helper : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
          ⊎ ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
          → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
-  helper (inl allEvensF) = postulatedStep
-  helper (inr allOddsF) = postulatedStep
+  helper (inl allEvensF) = ∣ inl (allEvensF-implies-P allEvensF) ∣₁
+  helper (inr allOddsF) = ∣ inr (allOddsF-implies-Q allOddsF) ∣₁
 
 -- Now we can define closedOr
 closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
