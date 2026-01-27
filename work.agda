@@ -534,19 +534,19 @@ private
   -- The k-th element overall is on diagonal w where triangular w ≤ k < triangular (w+1)
   -- Within the diagonal, position is k - triangular w
 
-  -- Boolean less-than for natural numbers
-  _<ᵇ_ : ℕ → ℕ → Bool
-  zero <ᵇ zero = false
-  zero <ᵇ suc n = true
-  suc m <ᵇ zero = false
-  suc m <ᵇ suc n = m <ᵇ n
+  -- Boolean less-than for natural numbers (local version)
+  _<ᵇ'_ : ℕ → ℕ → Bool
+  zero <ᵇ' zero = false
+  zero <ᵇ' suc n = true
+  suc m <ᵇ' zero = false
+  suc m <ᵇ' suc n = m <ᵇ' n
 
   -- Helper: find diagonal w given k, using fuel
   -- Invariant: we're checking if k is on diagonal (acc + fuel - remaining_fuel)
   findDiagonal : ℕ → ℕ → ℕ → ℕ
   findDiagonal zero k acc = acc  -- out of fuel, return current
   findDiagonal (suc fuel) k acc =
-    if k <ᵇ triangular (suc acc)
+    if k <ᵇ' triangular (suc acc)
     then acc  -- k < triangular(acc+1), so k is on diagonal acc
     else findDiagonal fuel k (suc acc)  -- k >= triangular(acc+1), try next
 
@@ -559,43 +559,59 @@ private
     in (m , n)
 
   -- Lemmas about boolean comparison
-  <ᵇ-reflects : (m n : ℕ) → m <ᵇ n ≡ true → m < n
-  <ᵇ-reflects zero (suc n) _ = suc-≤-suc zero-≤
-  <ᵇ-reflects (suc m) (suc n) p = suc-≤-suc (<ᵇ-reflects m n p)
+  <ᵇ'-reflects : (m n : ℕ) → m <ᵇ' n ≡ true → m < n
+  <ᵇ'-reflects zero zero p = ex-falso (false≢true p)
+  <ᵇ'-reflects zero (suc n) _ = suc-≤-suc zero-≤
+  <ᵇ'-reflects (suc m) zero p = ex-falso (false≢true p)
+  <ᵇ'-reflects (suc m) (suc n) p = suc-≤-suc (<ᵇ'-reflects m n p)
 
-  ¬<ᵇ-reflects : (m n : ℕ) → m <ᵇ n ≡ false → n ≤ m
-  ¬<ᵇ-reflects zero zero _ = ≤-refl
-  ¬<ᵇ-reflects (suc m) zero _ = zero-≤
-  ¬<ᵇ-reflects (suc m) (suc n) p = suc-≤-suc (¬<ᵇ-reflects m n p)
+  ¬<ᵇ'-reflects : (m n : ℕ) → m <ᵇ' n ≡ false → n ≤ m
+  ¬<ᵇ'-reflects zero zero _ = ≤-refl
+  ¬<ᵇ'-reflects zero (suc n) p = ex-falso (true≢false p)
+  ¬<ᵇ'-reflects (suc m) zero _ = zero-≤
+  ¬<ᵇ'-reflects (suc m) (suc n) p = suc-≤-suc (¬<ᵇ'-reflects m n p)
 
   -- Arithmetic lemmas
+  -- Note: (a + suc b) ∸ suc c = a + b ∸ c when suc c ≤ suc b
   +-∸-assoc : (a b c : ℕ) → c ≤ b → a +ℕ b ∸ c ≡ a +ℕ (b ∸ c)
   +-∸-assoc a zero zero _ = refl
+  +-∸-assoc a zero (suc c) sc≤0 = ex-falso (¬-<-zero sc≤0)
   +-∸-assoc a (suc b) zero _ = refl
-  +-∸-assoc a (suc b) (suc c) (suc-≤-suc c≤b) = +-∸-assoc a b c c≤b
+  +-∸-assoc a (suc b) (suc c) sc≤sb =
+    a +ℕ suc b ∸ suc c   ≡⟨ cong (_∸ suc c) (+-suc a b) ⟩
+    suc (a +ℕ b) ∸ suc c ≡⟨ refl ⟩
+    a +ℕ b ∸ c           ≡⟨ +-∸-assoc a b c (pred-≤-pred sc≤sb) ⟩
+    a +ℕ (b ∸ c)         ∎
 
   +∸-cancel : (a b : ℕ) → (a +ℕ b) ∸ b ≡ a
   +∸-cancel a zero = +-zero a
-  +∸-cancel a (suc b) = +∸-cancel a b
+  +∸-cancel a (suc b) =
+    (a +ℕ suc b) ∸ suc b   ≡⟨ cong (_∸ suc b) (+-suc a b) ⟩
+    suc (a +ℕ b) ∸ suc b   ≡⟨ refl ⟩
+    (a +ℕ b) ∸ b           ≡⟨ +∸-cancel a b ⟩
+    a                      ∎
 
   ∸+-cancel : (a b : ℕ) → b ≤ a → (a ∸ b) +ℕ b ≡ a
   ∸+-cancel a zero _ = +-zero a
-  ∸+-cancel (suc a) (suc b) (suc-≤-suc b≤a) =
+  ∸+-cancel zero (suc b) sb≤0 = ex-falso (¬-<-zero sb≤0)
+  ∸+-cancel (suc a) (suc b) sb≤sa =
     (suc a ∸ suc b) +ℕ suc b   ≡⟨ refl ⟩
     (a ∸ b) +ℕ suc b           ≡⟨ +-suc (a ∸ b) b ⟩
-    suc ((a ∸ b) +ℕ b)         ≡⟨ cong suc (∸+-cancel a b b≤a) ⟩
+    suc ((a ∸ b) +ℕ b)         ≡⟨ cong suc (∸+-cancel a b (pred-≤-pred sb≤sa)) ⟩
     suc a ∎
 
   -- triangular w ≤ triangular w + n
   triangular≤cantorPair : (m n : ℕ) → triangular (m +ℕ n) ≤ cantorPair m n
-  triangular≤cantorPair m n = ≤-+k (triangular (m +ℕ n)) n
+  triangular≤cantorPair m n = ≤-+k-local (triangular (m +ℕ n)) n
     where
-    ≤-+k : (a b : ℕ) → a ≤ a +ℕ b
-    ≤-+k a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
-    ≤-+k a (suc b) = ≤-trans (≤-+k a b) (≤-suc ≤-refl)
-      where
-      ≤-suc : {x y : ℕ} → x ≤ y → x ≤ suc y
-      ≤-suc z = ≤-trans z (n≤1+n _)
+    ≤-+k-local : (a b : ℕ) → a ≤ a +ℕ b
+    ≤-+k-local a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
+    ≤-+k-local a (suc b) =
+      let step1 : a ≤ a +ℕ b
+          step1 = ≤-+k-local a b
+          step2 : a ≤ suc (a +ℕ b)
+          step2 = ≤-suc step1
+      in subst (a ≤_) (sym (+-suc a b)) step2
 
   -- cantorPair m n < triangular (suc (m + n))
   -- triangular (suc w) = (suc w) + triangular w
@@ -605,40 +621,83 @@ private
   -- This is always true since n ≤ m + n < suc (m + n)
 
   cantorPair<triangular-suc : (m n : ℕ) → cantorPair m n < triangular (suc (m +ℕ n))
-  cantorPair<triangular-suc m n = suc-≤-suc (≤-+k (triangular (m +ℕ n)) n (m +ℕ n) (n≤m+n m n))
+  cantorPair<triangular-suc m n = goal
     where
-    n≤m+n : (a b : ℕ) → b ≤ a +ℕ b
-    n≤m+n zero b = ≤-refl
-    n≤m+n (suc a) b = ≤-trans (n≤m+n a b) (n≤1+n _)
+    w = m +ℕ n
+    -- cantorPair m n = triangular w + n
+    -- triangular (suc w) = suc w + triangular w
+    -- We need: suc (triangular w + n) ≤ suc w + triangular w
+    -- Since n ≤ w, we have suc n ≤ suc w
+    -- So: triangular w + suc n ≤ triangular w + suc w
+    -- And: suc (triangular w + n) = triangular w + suc n (by +-suc)
 
-    ≤-+k : (a b c : ℕ) → b ≤ c → a +ℕ b ≤ a +ℕ c
-    ≤-+k zero b c b≤c = b≤c
-    ≤-+k (suc a) b c b≤c = suc-≤-suc (≤-+k a b c b≤c)
+    n≤w : n ≤ w
+    n≤w = n≤m+n-local m n
+      where
+      n≤m+n-local : (a b : ℕ) → b ≤ a +ℕ b
+      n≤m+n-local zero b = ≤-refl
+      n≤m+n-local (suc a) b = ≤-trans (n≤m+n-local a b) ≤-sucℕ
+
+    sucn≤sucw : suc n ≤ suc w
+    sucn≤sucw = suc-≤-suc n≤w
+
+    -- triangular w + suc n ≤ triangular w + suc w
+    step1 : triangular w +ℕ suc n ≤ triangular w +ℕ suc w
+    step1 = ≤-+k-mono (triangular w) (suc n) (suc w) sucn≤sucw
+      where
+      ≤-+k-mono : (a b c : ℕ) → b ≤ c → a +ℕ b ≤ a +ℕ c
+      ≤-+k-mono zero b c b≤c = b≤c
+      ≤-+k-mono (suc a) b c b≤c = suc-≤-suc (≤-+k-mono a b c b≤c)
+
+    -- suc (triangular w + n) = triangular w + suc n
+    eq1 : suc (triangular w +ℕ n) ≡ triangular w +ℕ suc n
+    eq1 = sym (+-suc (triangular w) n)
+
+    -- triangular w + suc w = suc w + triangular w (commutativity)
+    eq2 : triangular w +ℕ suc w ≡ suc w +ℕ triangular w
+    eq2 = +-comm (triangular w) (suc w)
+
+    -- suc w + triangular w = triangular (suc w)
+    eq3 : suc w +ℕ triangular w ≡ triangular (suc w)
+    eq3 = refl
+
+    -- step1 : triangular w +ℕ suc n ≤ triangular w +ℕ suc w
+    -- We need: suc (triangular w +ℕ n) ≤ triangular (suc w)
+    -- Using: suc (triangular w +ℕ n) ≡ triangular w +ℕ suc n
+    -- And: triangular w +ℕ suc w ≡ suc w +ℕ triangular w = triangular (suc w)
+
+    goal : suc (triangular w +ℕ n) ≤ triangular (suc w)
+    goal = subst (_≤ triangular (suc w)) (sym eq1)
+             (subst (triangular w +ℕ suc n ≤_) (eq2 ∙ eq3) step1)
 
   -- Key lemma: if k < triangular (suc acc), then findDiagonal returns acc
-  findDiagonal-found : (fuel k acc : ℕ) → k <ᵇ triangular (suc acc) ≡ true
+  findDiagonal-found : (fuel k acc : ℕ) → k <ᵇ' triangular (suc acc) ≡ true
                      → findDiagonal (suc fuel) k acc ≡ acc
-  findDiagonal-found fuel k acc p with k <ᵇ triangular (suc acc)
-  ... | true = refl
+  findDiagonal-found fuel k acc p with k <ᵇ' triangular (suc acc) | p
+  ... | true | _ = refl
+  ... | false | q = ex-falso (false≢true q)
 
   -- If k >= triangular (suc acc), findDiagonal continues to next acc
-  findDiagonal-continue : (fuel k acc : ℕ) → k <ᵇ triangular (suc acc) ≡ false
+  findDiagonal-continue : (fuel k acc : ℕ) → k <ᵇ' triangular (suc acc) ≡ false
                         → findDiagonal (suc fuel) k acc ≡ findDiagonal fuel k (suc acc)
-  findDiagonal-continue fuel k acc p with k <ᵇ triangular (suc acc)
-  ... | false = refl
+  findDiagonal-continue fuel k acc p with k <ᵇ' triangular (suc acc) | p
+  ... | false | _ = refl
+  ... | true | q = ex-falso (true≢false q)
 
   -- Boolean comparison properties
-  <ᵇ-suc : (n : ℕ) → n <ᵇ suc n ≡ true
-  <ᵇ-suc zero = refl
-  <ᵇ-suc (suc n) = <ᵇ-suc n
+  <ᵇ'-suc : (n : ℕ) → n <ᵇ' suc n ≡ true
+  <ᵇ'-suc zero = refl
+  <ᵇ'-suc (suc n) = <ᵇ'-suc n
 
-  -- Helper to convert between < and <ᵇ
-  <-reflects-<ᵇ : (a b : ℕ) → a < b → a <ᵇ b ≡ true
-  <-reflects-<ᵇ zero (suc b) _ = refl
-  <-reflects-<ᵇ (suc a) (suc b) (suc-≤-suc a<b) = <-reflects-<ᵇ a b a<b
+  -- Helper to convert between < and <ᵇ'
+  <-reflects-<ᵇ' : (a b : ℕ) → a < b → a <ᵇ' b ≡ true
+  <-reflects-<ᵇ' zero zero 1≤0 = ex-falso (¬-<-zero 1≤0)
+  <-reflects-<ᵇ' zero (suc b) _ = refl
+  <-reflects-<ᵇ' (suc a) zero sa<0 = ex-falso (¬-<-zero sa<0)
+  <-reflects-<ᵇ' (suc a) (suc b) sa<sb = <-reflects-<ᵇ' a b (pred-≤-pred sa<sb)
 
-  cantorPair<ᵇ-triangular-suc : (m n : ℕ) → cantorPair m n <ᵇ triangular (suc (m +ℕ n)) ≡ true
-  cantorPair<ᵇ-triangular-suc m n = <-reflects-<ᵇ _ _ (cantorPair<triangular-suc m n)
+  cantorPair<ᵇ'-triangular-suc : (m n : ℕ) → cantorPair m n <ᵇ' triangular (suc (m +ℕ n)) ≡ true
+  cantorPair<ᵇ'-triangular-suc m n = <-reflects-<ᵇ' _ _ (cantorPair<triangular-suc m n)
 
   -- For the full bijectivity proofs, we need:
   -- 1. findDiagonal finds the correct diagonal w = m + n for cantorPair m n
@@ -647,7 +706,7 @@ private
   --
   -- Step 2: (triangular w + n) - triangular w = n (by +∸-cancel)
   cantorPair-triangular-diff : (m n : ℕ) → cantorPair m n ∸ triangular (m +ℕ n) ≡ n
-  cantorPair-triangular-diff m n = +∸-cancel n (triangular (m +ℕ n))
+  cantorPair-triangular-diff m n = +∸-cancel' n (triangular (m +ℕ n))
     where
     +∸-cancel' : (a b : ℕ) → (b +ℕ a) ∸ b ≡ a
     +∸-cancel' a zero = refl
@@ -671,98 +730,126 @@ private
   -- This is because triangular is monotonic: acc < w => triangular(suc acc) ≤ triangular w ≤ k
 
   -- Triangular is strictly monotonic: n < m => triangular n < triangular m (for n > 0)
+  -- triangular n < triangular (suc n) = suc n + triangular n
+  -- i.e., suc (triangular n) ≤ suc n + triangular n
+  -- i.e., 1 + triangular n ≤ suc n + triangular n
+  -- By monotonicity: since 1 ≤ suc n
   triangular-suc : (n : ℕ) → triangular n < triangular (suc n)
-  triangular-suc n = suc-≤-suc (≤-+k' (triangular n) (suc n))
+  triangular-suc n = ≤-+k-mono-l 1 (suc n) (triangular n) (suc-≤-suc zero-≤)
     where
-    ≤-+k' : (a b : ℕ) → a ≤ a +ℕ b
-    ≤-+k' a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
-    ≤-+k' a (suc b) = ≤-trans (≤-+k' a b) (n≤1+n _)
+    ≤-+k-mono-l : (a b c : ℕ) → a ≤ b → a +ℕ c ≤ b +ℕ c
+    ≤-+k-mono-l zero b c _ = ≤-+k-r b c
+      where
+      ≤-+k-r : (x y : ℕ) → y ≤ x +ℕ y
+      ≤-+k-r zero y = ≤-refl
+      ≤-+k-r (suc x) y = ≤-trans (≤-+k-r x y) ≤-sucℕ
+    ≤-+k-mono-l (suc a) zero c sa≤0 = ex-falso (¬-<-zero sa≤0)
+    ≤-+k-mono-l (suc a) (suc b) c sa≤sb = suc-≤-suc (≤-+k-mono-l a b c (pred-≤-pred sa≤sb))
 
   triangular-mono-< : (n m : ℕ) → n < m → triangular n < triangular m
-  triangular-mono-< n (suc m) (suc-≤-suc n≤m) with n ≟ m
-  ... | yes n≡m = subst (λ x → triangular x < triangular (suc m)) (sym n≡m) (triangular-suc m)
-  ... | no n≢m = ≤-trans (triangular-mono-< n m (≤∧≢→< n≤m n≢m)) (triangular-suc m)
-    where
-    ≤∧≢→< : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
-    ≤∧≢→< {zero} {zero} _ neq = ex-falso (neq refl)
-    ≤∧≢→< {zero} {suc b} _ _ = suc-≤-suc zero-≤
-    ≤∧≢→< {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→< a≤b (λ p → neq (cong suc p)))
+  triangular-mono-< n zero n<0 = ex-falso (¬-<-zero n<0)
+  triangular-mono-< n (suc m) sn≤sm with n ≟ m
+  ... | lt n<m = <-trans (triangular-mono-< n m n<m) (triangular-suc m)
+  ... | eq n≡m = subst (λ x → triangular x < triangular (suc m)) (sym n≡m) (triangular-suc m)
+  -- gt means m < n, but we have n < suc m i.e. suc n ≤ suc m i.e. n ≤ m
+  -- So m < n and n ≤ m gives m < m, contradiction
+  ... | gt m<n = ex-falso (¬m<m (≤-trans m<n (pred-≤-pred sn≤sm)))
+
+  -- triangular is monotonic for ≤
+  triangular-mono-≤ : (n m : ℕ) → n ≤ m → triangular n ≤ triangular m
+  triangular-mono-≤ n m n≤m with n ≟ m
+  ... | lt n<m = <-weaken (triangular-mono-< n m n<m)
+  ... | eq n≡m = subst (λ x → triangular n ≤ triangular x) n≡m ≤-refl
+  ... | gt m<n = ex-falso (¬m<m (≤-trans m<n n≤m))
 
   -- If acc < w and k ≥ triangular w, then k ≥ triangular(suc acc)
+  -- acc < w means suc acc ≤ w, so triangular (suc acc) ≤ triangular w ≤ k
   k≥triangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
                        → triangular (suc acc) ≤ k
   k≥triangular-suc-acc k w acc acc<w Tw≤k =
-    ≤-trans (pred-≤-pred (triangular-mono-< (suc acc) w acc<w)) Tw≤k
+    ≤-trans (triangular-mono-≤ (suc acc) w acc<w) Tw≤k
 
-  -- Therefore k <ᵇ triangular(suc acc) ≡ false when acc < w
-  k≮ᵇtriangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
-                        → k <ᵇ triangular (suc acc) ≡ false
-  k≮ᵇtriangular-suc-acc k w acc acc<w Tw≤k = ≤-reflects-¬<ᵇ _ _ (k≥triangular-suc-acc k w acc acc<w Tw≤k)
+  -- Therefore k <ᵇ' triangular(suc acc) ≡ false when acc < w
+  k≮ᵇ'triangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
+                        → k <ᵇ' triangular (suc acc) ≡ false
+  k≮ᵇ'triangular-suc-acc k w acc acc<w Tw≤k = ≤-reflects-¬<ᵇ' _ _ (k≥triangular-suc-acc k w acc acc<w Tw≤k)
     where
-    ≤-reflects-¬<ᵇ : (a b : ℕ) → b ≤ a → a <ᵇ b ≡ false
-    ≤-reflects-¬<ᵇ a zero _ = refl
-    ≤-reflects-¬<ᵇ (suc a) (suc b) (suc-≤-suc b≤a) = ≤-reflects-¬<ᵇ a b b≤a
+    ≤-reflects-¬<ᵇ' : (a b : ℕ) → b ≤ a → a <ᵇ' b ≡ false
+    ≤-reflects-¬<ᵇ' zero zero _ = refl
+    ≤-reflects-¬<ᵇ' (suc a) zero _ = refl
+    ≤-reflects-¬<ᵇ' zero (suc b) sb≤0 = ex-falso (¬-<-zero sb≤0)
+    ≤-reflects-¬<ᵇ' (suc a) (suc b) sb≤sa = ≤-reflects-¬<ᵇ' a b (pred-≤-pred sb≤sa)
 
   -- Main lemma: findDiagonal finds w when called with sufficient fuel
   -- We prove this by induction on (w - acc)
   findDiagonal-aux : (w k acc fuel : ℕ) → w ∸ acc ≤ fuel
-                   → k <ᵇ triangular (suc w) ≡ true
+                   → k <ᵇ' triangular (suc w) ≡ true
                    → triangular w ≤ k
                    → acc ≤ w
                    → findDiagonal (suc fuel) k acc ≡ w
   findDiagonal-aux w k acc zero w∸acc≤0 k<Tsw Tw≤k acc≤w with w ≟ acc
-  ... | yes w≡acc = findDiagonal-found 0 k acc (subst (λ x → k <ᵇ triangular (suc x) ≡ true) (sym w≡acc) k<Tsw)
-  ... | no w≢acc = ex-falso (¬m<m (≤-trans (∸-<-from w acc (≤∧≢→<' acc≤w (λ p → w≢acc (sym p)))) w∸acc≤0))
+  ... | lt w<acc = ex-falso (¬m<m (≤-trans w<acc acc≤w))
+  ... | eq w≡acc = subst (findDiagonal 1 k acc ≡_) (sym w≡acc) (findDiagonal-found 0 k acc (subst (λ x → k <ᵇ' triangular (suc x) ≡ true) w≡acc k<Tsw))
+  ... | gt acc<w = ex-falso (¬m<m (≤-trans (∸-<-from w acc acc<w) w∸acc≤0))
     where
-    ≤∧≢→<' : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
-    ≤∧≢→<' {zero} {zero} _ neq = ex-falso (neq refl)
-    ≤∧≢→<' {zero} {suc b} _ _ = suc-≤-suc zero-≤
-    ≤∧≢→<' {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→<' a≤b (λ p → neq (cong suc p)))
-
     ∸-<-from : (a b : ℕ) → b < a → 1 ≤ a ∸ b
+    ∸-<-from zero zero 1≤0 = ex-falso (¬-<-zero 1≤0)
+    ∸-<-from zero (suc b) sb<0 = ex-falso (¬-<-zero sb<0)
     ∸-<-from (suc a) zero _ = suc-≤-suc zero-≤
-    ∸-<-from (suc a) (suc b) (suc-≤-suc b<a) = ∸-<-from a b b<a
-
-    ¬m<m : {m : ℕ} → ¬ (m < m)
-    ¬m<m {suc m} (suc-≤-suc m<m) = ¬m<m m<m
+    ∸-<-from (suc a) (suc b) sb<sa = ∸-<-from a b (pred-≤-pred sb<sa)
 
   findDiagonal-aux w k acc (suc fuel) w∸acc≤sf k<Tsw Tw≤k acc≤w with w ≟ acc
-  ... | yes w≡acc = findDiagonal-found fuel k acc (subst (λ x → k <ᵇ triangular (suc x) ≡ true) (sym w≡acc) k<Tsw)
-  ... | no w≢acc =
-    let acc<w = ≤∧≢→<'' acc≤w (λ p → w≢acc (sym p))
-        step1 = findDiagonal-continue fuel k acc (k≮ᵇtriangular-suc-acc k w acc acc<w Tw≤k)
-        step2 = findDiagonal-aux w k (suc acc) fuel (≤-pred-∸ w acc acc<w w∸acc≤sf) k<Tsw Tw≤k (pred-≤-pred acc<w)
+  ... | lt w<acc = ex-falso (¬m<m (≤-trans w<acc acc≤w))
+  ... | eq w≡acc = subst (findDiagonal (suc (suc fuel)) k acc ≡_) (sym w≡acc) (findDiagonal-found (suc fuel) k acc (subst (λ x → k <ᵇ' triangular (suc x) ≡ true) w≡acc k<Tsw))
+  ... | gt acc<w =
+    let step1 = findDiagonal-continue (suc fuel) k acc (k≮ᵇ'triangular-suc-acc k w acc acc<w Tw≤k)
+        step2 = findDiagonal-aux w k (suc acc) fuel (≤-pred-∸' w acc acc<w w∸acc≤sf) k<Tsw Tw≤k acc<w
     in step1 ∙ step2
     where
-    ≤∧≢→<'' : {a b : ℕ} → a ≤ b → ¬ (a ≡ b) → a < b
-    ≤∧≢→<'' {zero} {zero} _ neq = ex-falso (neq refl)
-    ≤∧≢→<'' {zero} {suc b} _ _ = suc-≤-suc zero-≤
-    ≤∧≢→<'' {suc a} {suc b} (suc-≤-suc a≤b) neq = suc-≤-suc (≤∧≢→<'' a≤b (λ p → neq (cong suc p)))
-
     -- w ∸ acc ≤ suc fuel and acc < w imply w ∸ suc acc ≤ fuel
-    ≤-pred-∸ : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
-    ≤-pred-∸ (suc w) zero _ (suc-≤-suc p) = p
-    ≤-pred-∸ (suc w) (suc acc) (suc-≤-suc acc<w) p = ≤-pred-∸ w acc acc<w p
+    -- Since acc < w, we can case split to show w ≥ 1
+    ≤-pred-∸' : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
+    ≤-pred-∸' zero acc 0<acc _ = ex-falso (¬-<-zero 0<acc)
+    ≤-pred-∸' (suc w') acc acc<sw w∸acc≤sf = ≤-pred-∸-aux w' acc acc<sw w∸acc≤sf
+      where
+      ≤-pred-∸-aux : (w acc : ℕ) → acc < suc w → suc w ∸ acc ≤ suc fuel → suc w ∸ suc acc ≤ fuel
+      ≤-pred-∸-aux w zero _ sw∸0≤sf = pred-≤-pred sw∸0≤sf
+      ≤-pred-∸-aux w (suc acc) sacc<sw p = ≤-pred-∸-aux' w acc (pred-≤-pred sacc<sw) p
+        where
+        ≤-pred-∸-aux' : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
+        ≤-pred-∸-aux' zero acc 1≤0 _ = ex-falso (¬-<-zero 1≤0)
+        ≤-pred-∸-aux' (suc w') acc acc<sw' w∸acc≤sf' = ≤-pred-∸-aux w' acc acc<sw' w∸acc≤sf'
 
-  -- w ≤ triangular w for w ≥ 1, and trivially for w = 0
+  -- w ≤ triangular w + w
   w≤triangular : (w : ℕ) → w ≤ triangular w +ℕ w
-  w≤triangular zero = zero-≤
-  w≤triangular (suc w) = suc-≤-suc (≤-trans (w≤triangular w) (≤-+k-r (triangular w +ℕ w) (suc w)))
+  w≤triangular w = ≤-+k-r' w (triangular w)
     where
+    -- n ≤ m + n for any m, n
+    ≤-+k-r' : (n m : ℕ) → n ≤ m +ℕ n
+    ≤-+k-r' n zero = ≤-refl
+    ≤-+k-r' n (suc m) = ≤-trans (≤-+k-r' n m) ≤-sucℕ
+
+  -- m + n ≤ cantorPair m n = triangular (m + n) + n
+  -- Since m + n ≤ triangular (m + n), we have m + n ≤ triangular (m + n) + n
+  w≤cantorPair : (m n : ℕ) → m +ℕ n ≤ cantorPair m n
+  w≤cantorPair m n = ≤-trans (m+n≤tri-m+n m n) (≤-+k-r (triangular (m +ℕ n)) n)
+    where
+    -- n ≤ triangular n for all n
+    n≤triangular-n : (n : ℕ) → n ≤ triangular n
+    n≤triangular-n zero = zero-≤
+    n≤triangular-n (suc n) = suc-≤-suc (≤-trans (n≤triangular-n n) (≤-+k-r' (triangular n) n))
+      where
+      ≤-+k-r' : (a b : ℕ) → a ≤ b +ℕ a
+      ≤-+k-r' a zero = ≤-refl
+      ≤-+k-r' a (suc b) = ≤-trans (≤-+k-r' a b) ≤-sucℕ
+
+    m+n≤tri-m+n : (m n : ℕ) → m +ℕ n ≤ triangular (m +ℕ n)
+    m+n≤tri-m+n m n = n≤triangular-n (m +ℕ n)
+
+    -- a ≤ a + b
     ≤-+k-r : (a b : ℕ) → a ≤ a +ℕ b
     ≤-+k-r a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
-    ≤-+k-r a (suc b) = ≤-trans (≤-+k-r a b) (n≤1+n _)
-
-  -- m + n ≤ cantorPair m n
-  w≤cantorPair : (m n : ℕ) → m +ℕ n ≤ cantorPair m n
-  w≤cantorPair m n = ≤-trans (n≤m+n m n) (≤-+k-l (triangular (m +ℕ n)) n)
-    where
-    n≤m+n : (m n : ℕ) → m +ℕ n ≤ triangular (m +ℕ n) +ℕ (m +ℕ n)
-    n≤m+n m n = w≤triangular (m +ℕ n)
-
-    ≤-+k-l : (a b : ℕ) → a +ℕ b ≤ a +ℕ (a +ℕ b)
-    ≤-+k-l zero b = ≤-refl
-    ≤-+k-l (suc a) b = suc-≤-suc (≤-trans (≤-+k-l a b) (n≤1+n _))
+    ≤-+k-r a (suc b) = subst (a ≤_) (sym (+-suc a b)) (≤-trans (≤-+k-r a b) ≤-sucℕ)
 
   -- Putting it together: findDiagonal finds m + n for cantorPair m n
   findDiagonal-correct : (m n : ℕ) →
@@ -772,7 +859,7 @@ private
         w = m +ℕ n
     in findDiagonal-aux w k 0 k
          (w≤cantorPair m n)
-         (cantorPair<ᵇ-triangular-suc m n)
+         (cantorPair<ᵇ'-triangular-suc m n)
          (triangular≤cantorPair m n)
          zero-≤
 
@@ -798,7 +885,8 @@ private
   -- Helper: a + (b - a) = b when a ≤ b
   a+b∸a≡b : (a b : ℕ) → a ≤ b → a +ℕ (b ∸ a) ≡ b
   a+b∸a≡b zero b _ = refl
-  a+b∸a≡b (suc a) (suc b) (suc-≤-suc a≤b) = cong suc (a+b∸a≡b a b a≤b)
+  a+b∸a≡b (suc a) zero sa≤0 = ex-falso (¬-<-zero sa≤0)
+  a+b∸a≡b (suc a) (suc b) sa≤sb = cong suc (a+b∸a≡b a b (pred-≤-pred sa≤sb))
 
   -- (w - n) + n = w when n ≤ w
   w∸n+n≡w : (w n : ℕ) → n ≤ w → (w ∸ n) +ℕ n ≡ w
@@ -814,26 +902,34 @@ private
   n≤w-from-bounds k w Tw≤k k<Tsw =
     -- k - triangular w < triangular(suc w) - triangular w = suc w
     -- So k - triangular w ≤ w
-    pred-≤-pred (∸-mono-< k (triangular w) (triangular (suc w)) Tw≤k k<Tsw (triangular-suc w))
+    let step1 : k ∸ triangular w < triangular (suc w) ∸ triangular w
+        step1 = ∸-mono-< k (triangular w) (triangular (suc w)) Tw≤k k<Tsw (triangular-suc w)
+        -- triangular (suc w) ∸ triangular w = suc w
+        eq : triangular (suc w) ∸ triangular w ≡ suc w
+        eq = +∸-cancel (suc w) (triangular w)
+        step2 : k ∸ triangular w < suc w
+        step2 = subst (k ∸ triangular w <_) eq step1
+    in pred-≤-pred step2
     where
     -- a ≤ b and b < c and c = b + d implies a - b < d, so a - b ≤ d - 1
     ∸-mono-< : (a b c : ℕ) → b ≤ a → a < c → b < c → a ∸ b < c ∸ b
-    ∸-mono-< a b (suc c) b≤a (suc-≤-suc a≤c) b<sc with b ≤? a
-    ... | yes _ = suc-≤-suc (∸-mono a c b a≤c (pred-≤-pred b<sc))
+    ∸-mono-< a b zero b≤a a<0 _ = ex-falso (¬-<-zero a<0)
+    ∸-mono-< a b (suc c) b≤a sa≤sc b<sc with ≤Dec b a
+    ... | yes b≤a' = subst (suc (a ∸ b) ≤_) (sym (suc-∸ c b (pred-≤-pred b<sc))) (suc-≤-suc (∸-mono a c b (pred-≤-pred sa≤sc) b≤a'))
       where
+      -- b ≤ c implies suc c ∸ b ≡ suc (c ∸ b)
+      suc-∸ : (x y : ℕ) → y ≤ x → suc x ∸ y ≡ suc (x ∸ y)
+      suc-∸ x zero _ = refl
+      suc-∸ (suc x) (suc y) sy≤sx = suc-∸ x y (pred-≤-pred sy≤sx)
+      suc-∸ zero (suc y) sy≤0 = ex-falso (¬-<-zero sy≤0)
+
       ∸-mono : (x y z : ℕ) → x ≤ y → z ≤ x → x ∸ z ≤ y ∸ z
       ∸-mono x y zero x≤y _ = x≤y
-      ∸-mono (suc x) (suc y) (suc z) (suc-≤-suc x≤y) (suc-≤-suc z≤x) = ∸-mono x y z x≤y z≤x
-      ∸-mono zero (suc y) (suc z) _ (suc-≤-suc ())
-      ∸-mono (suc x) zero (suc z) () _
-      ∸-mono zero zero (suc z) _ (suc-≤-suc ())
-
-    _≤?_ : (m n : ℕ) → Dec (m ≤ n)
-    zero ≤? n = yes zero-≤
-    suc m ≤? zero = no (λ ())
-    suc m ≤? suc n with m ≤? n
-    ... | yes m≤n = yes (suc-≤-suc m≤n)
-    ... | no ¬m≤n = no (λ { (suc-≤-suc m≤n) → ¬m≤n m≤n })
+      ∸-mono zero zero (suc z) _ sz≤0 = ex-falso (¬-<-zero sz≤0)
+      ∸-mono zero (suc y) (suc z) _ sz≤0 = ex-falso (¬-<-zero sz≤0)
+      ∸-mono (suc x) zero (suc z) sx≤0 _ = ex-falso (¬-<-zero sx≤0)
+      ∸-mono (suc x) (suc y) (suc z) sx≤sy sz≤sx = ∸-mono x y z (pred-≤-pred sx≤sy) (pred-≤-pred sz≤sx)
+    ... | no ¬b≤a = ex-falso (¬b≤a b≤a)
 
   -- Show that findDiagonal returns the correct diagonal (satisfying bounds)
   -- This requires that findDiagonal actually finds the right diagonal
@@ -863,24 +959,70 @@ private
     triangular w +ℕ n                                         ≡⟨ a+b∸a≡b (triangular w) k (findDiagonal-Tw≤k k) ⟩
     k ∎
     where
-    -- n ≤ w (since n = k - triangular w ≤ suc w - 1 = w when k < triangular(suc w))
-    ∸-≤ : (a b : ℕ) → a ∸ b ≤ a
-    ∸-≤ a zero = ≤-refl
-    ∸-≤ zero (suc b) = ≤-refl
-    ∸-≤ (suc a) (suc b) = ≤-trans (∸-≤ a b) (n≤1+n a)
-
     -- findDiagonal returns w such that triangular w ≤ k
     -- Proof: by induction on fuel, invariant is triangular acc ≤ k when we return acc
     findDiagonal-Tw≤k-aux : (fuel k acc : ℕ) → triangular acc ≤ k
                           → triangular (findDiagonal (suc fuel) k acc) ≤ k
-    findDiagonal-Tw≤k-aux fuel k acc Tacc≤k with k <ᵇ triangular (suc acc) | inspect (k <ᵇ_) (triangular (suc acc))
-    ... | true | _ = Tacc≤k  -- We stop and return acc
-    ... | false | [ p ] =
-      -- We continue: k ≥ triangular(suc acc), so triangular(suc acc) ≤ k
-      findDiagonal-Tw≤k-aux fuel k (suc acc) (¬<ᵇ-reflects k (triangular (suc acc)) p)
+    findDiagonal-Tw≤k-aux fuel k acc Tacc≤k = helper (k <ᵇ' triangular (suc acc)) refl
+      where
+      helper : (b : Bool) → b ≡ k <ᵇ' triangular (suc acc)
+             → triangular (findDiagonal (suc fuel) k acc) ≤ k
+      helper true p =
+        -- When k <ᵇ' triangular (suc acc) ≡ true, findDiagonal returns acc
+        let fd≡acc : findDiagonal (suc fuel) k acc ≡ acc
+            fd≡acc = findDiagonal-found fuel k acc (sym p)
+        in subst (λ x → triangular x ≤ k) (sym fd≡acc) Tacc≤k
+      helper false p = findDiagonal-Tw≤k-aux fuel k (suc acc) (¬<ᵇ'-reflects k (triangular (suc acc)) (sym p))
 
     findDiagonal-Tw≤k : triangular (findDiagonal (suc k) k 0) ≤ k
     findDiagonal-Tw≤k = findDiagonal-Tw≤k-aux k k 0 zero-≤
+
+-- Open propositions are closed under finite conjunction
+-- If P ↔ ∃n. αn = 1 and Q ↔ ∃m. βm = 1, then P ∧ Q ↔ ∃k. γk = 1
+-- where γ(⟨n,m⟩) = αn ∧ᵇ βm (using Cantor pairing)
+openAnd : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
+        → isOpenProp ((⟨ P ⟩ × ⟨ Q ⟩) , isProp× (snd P) (snd Q))
+openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , forward , backward
+  where
+  γ : binarySequence
+  γ k = let (n , m) = cantorUnpair k in α n and β m
+
+  forward : ⟨ P ⟩ × ⟨ Q ⟩ → Σ[ k ∈ ℕ ] γ k ≡ true
+  forward (p , q) =
+    let (n , αn=t) = P→∃α p
+        (m , βm=t) = Q→∃β q
+        k = cantorPair n m
+        -- γ k = α (fst (cantorUnpair k)) ∧ᵇ β (snd (cantorUnpair k))
+        -- = α n ∧ᵇ β m (by cantorUnpair-pair)
+        -- = true ∧ᵇ true = true
+        γk=t : γ k ≡ true
+        γk=t =
+          γ k
+            ≡⟨ cong (λ p → α (fst p) and β (snd p)) (cantorUnpair-pair n m) ⟩
+          α n and β m
+            ≡⟨ cong (λ x → x and β m) αn=t ⟩
+          true and β m
+            ≡⟨ cong (true and_) βm=t ⟩
+          true ∎
+    in (k , γk=t)
+
+  backward : Σ[ k ∈ ℕ ] γ k ≡ true → ⟨ P ⟩ × ⟨ Q ⟩
+  backward (k , γk=t) =
+    let (n , m) = cantorUnpair k
+        -- γ k = α n ∧ᵇ β m = true means both α n = true and β m = true
+        αn∧βm=t : α n and β m ≡ true
+        αn∧βm=t = γk=t
+        αn=t : α n ≡ true
+        αn=t = and-true-left (α n) (β m) αn∧βm=t
+        βm=t : β m ≡ true
+        βm=t = and-true-right (α n) (β m) αn∧βm=t
+    in (∃α→P (n , αn=t)) , (∃β→Q (m , βm=t))
+    where
+    and-true-left : (a b : Bool) → a and b ≡ true → a ≡ true
+    and-true-left true true _ = refl
+
+    and-true-right : (a b : Bool) → a and b ≡ true → b ≡ true
+    and-true-right true true _ = refl
 
 -- Flattening a family of sequences into a single sequence
 flatten : (ℕ → binarySequence) → binarySequence
@@ -994,11 +1136,11 @@ openCountableUnion P αs = β , forward , backward
 -- We need: openOr P (¬P) where ¬P is open (from negClosedIsOpen)
 
 -- Helper: P ⊎ ¬P is a proposition when P is
-isPropDec : (P : hProp ℓ-zero) → isProp (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩)
-isPropDec P (inl p) (inl p') = cong inl (snd P p p')
-isPropDec P (inl p) (inr ¬p) = ex-falso (¬p p)
-isPropDec P (inr ¬p) (inl p) = ex-falso (¬p p)
-isPropDec P (inr ¬p) (inr ¬p') = cong inr (isProp¬ ⟨ P ⟩ ¬p ¬p')
+isProp⊎¬ : (P : hProp ℓ-zero) → isProp (⟨ P ⟩ ⊎ (¬ ⟨ P ⟩))
+isProp⊎¬ P (inl p) (inl p') = cong inl (snd P p p')
+isProp⊎¬ P (inl p) (inr ¬p) = ex-falso (¬p p)
+isProp⊎¬ P (inr ¬p) (inl p) = ex-falso (¬p p)
+isProp⊎¬ P (inr ¬p) (inr ¬p') = cong inr (isProp¬ ⟨ P ⟩ ¬p ¬p')
 
 clopenIsDecidable : (P : hProp ℓ-zero) → isOpenProp P → isClosedProp P → Dec ⟨ P ⟩
 clopenIsDecidable P Popen Pclosed =
@@ -1011,17 +1153,17 @@ clopenIsDecidable P Popen Pclosed =
 
       -- P ∨ ¬P is open (finite disjunction of opens)
       P∨¬P : hProp ℓ-zero
-      P∨¬P = (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩) , isPropDec P
+      P∨¬P = (⟨ P ⟩ ⊎ (¬ ⟨ P ⟩)) , isProp⊎¬ P
 
       P∨¬Popen : isOpenProp P∨¬P
       P∨¬Popen = openOr P ¬P Popen ¬Popen
 
       -- ¬¬(P ∨ ¬P) is provable (excluded middle is ¬¬-stable)
-      ¬¬P∨¬P : ¬ ¬ (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩)
+      ¬¬P∨¬P : ¬ ¬ (⟨ P ⟩ ⊎ (¬ ⟨ P ⟩))
       ¬¬P∨¬P k = k (inr (λ p → k (inl p)))
 
       -- Open propositions are ¬¬-stable, so P ∨ ¬P holds
-      P∨¬P-holds : ⟨ P ⟩ ⊎ ¬ ⟨ P ⟩
+      P∨¬P-holds : ⟨ P ⟩ ⊎ (¬ ⟨ P ⟩)
       P∨¬P-holds = openIsStable P∨¬P P∨¬Popen ¬¬P∨¬P
 
   in ⊎-rec (λ p → yes p) (λ ¬p → no ¬p) P∨¬P-holds
