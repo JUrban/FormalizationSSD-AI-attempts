@@ -214,6 +214,26 @@ someTrueIsOpen α = α , forward , backward
   backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁
   backward = ∣_∣₁
 
+-- Equality in Bool is decidable (hence both open and closed)
+Bool-equality-decidable : (a b : Bool) → Dec (a ≡ b)
+Bool-equality-decidable = _=B_
+
+Bool-equality-open : (a b : Bool) → isOpenProp ((a ≡ b) , isSetBool a b)
+Bool-equality-open a b = decIsOpen ((a ≡ b) , isSetBool a b) (Bool-equality-decidable a b)
+
+Bool-equality-closed : (a b : Bool) → isClosedProp ((a ≡ b) , isSetBool a b)
+Bool-equality-closed a b = decIsClosed ((a ≡ b) , isSetBool a b) (Bool-equality-decidable a b)
+
+-- Equality in ℕ is decidable (hence both open and closed)
+ℕ-equality-decidable : (m n : ℕ) → Dec (m ≡ n)
+ℕ-equality-decidable = discreteℕ
+
+ℕ-equality-open : (m n : ℕ) → isOpenProp ((m ≡ n) , isSetℕ m n)
+ℕ-equality-open m n = decIsOpen ((m ≡ n) , isSetℕ m n) (ℕ-equality-decidable m n)
+
+ℕ-equality-closed : (m n : ℕ) → isClosedProp ((m ≡ n) , isSetℕ m n)
+ℕ-equality-closed m n = decIsClosed ((m ≡ n) , isSetℕ m n) (ℕ-equality-decidable m n)
+
 -- Negation of decidable proposition is decidable
 decNeg : {P : Type₀} → isProp P → Dec P → Dec (¬ P)
 decNeg _ (yes p) = no (λ ¬p → ¬p p)
@@ -2524,6 +2544,7 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - _∧-Open_, _∧-Closed_, _∨-Open_, _∨-Closed_: bundled meet/join
 -- - ¬-Open : Open → Closed, ¬-Closed : Closed → Open: bundled negation
 -- - ⋀-Closed : (ℕ → Closed) → Closed, ⋁-Open : (ℕ → Open) → Open: countable ops
+-- - Bool-equality-*, ℕ-equality-*: equality in Bool/ℕ is decidable/open/closed
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
