@@ -532,6 +532,35 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
   ...   | true = ex-falso (m≠n (snd α m n true≡αm αn=t))
           where true≡αm = sym eq
 
+-- Equality in ℕ∞ is closed
+-- (This is a special case of the general Stone space theorem: equality in Stone spaces is closed)
+-- Proof: α = β ↔ ∀n. fst α n = fst β n (pointwise equality)
+-- Each (fst α n = fst β n) is decidable (Bool has decidable equality)
+-- So α = β is a countable conjunction of decidable propositions, hence closed.
+ℕ∞-equality-closed : (α β : ℕ∞) → isClosedProp ((α ≡ β) , isSetΣSndProp (isSetΠ (λ _ → isSetBool)) isPropHitsAtMostOnce α β)
+ℕ∞-equality-closed α β = γ , forward , backward
+  where
+  -- The witness: γ n = true iff fst α n ≠ fst β n
+  γ : binarySequence
+  γ n with fst α n ≟ fst β n
+  ... | yes _ = false
+  ... | no _ = true
+
+  -- Forward: α = β → ∀n. γ n = false
+  forward : α ≡ β → (n : ℕ) → γ n ≡ false
+  forward α=β n with fst α n ≟ fst β n
+  ... | yes _ = refl
+  ... | no αn≠βn = ex-falso (αn≠βn (cong (λ x → fst x n) α=β))
+
+  -- Backward: ∀n. γ n = false → α = β
+  backward : ((n : ℕ) → γ n ≡ false) → α ≡ β
+  backward all-false = Σ≡Prop isPropHitsAtMostOnce (funExt pointwise)
+    where
+    pointwise : (n : ℕ) → fst α n ≡ fst β n
+    pointwise n with fst α n ≟ fst β n
+    ... | yes αn=βn = αn=βn
+    ... | no αn≠βn = ex-falso (true≢false (all-false n))
+
 -- =============================================================================
 -- Section 12: Markov's Principle from Stone Duality
 -- =============================================================================
@@ -1982,11 +2011,13 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - implicationClosedOpen : (P closed, Q open) → (P → Q) open
 -- - closedOr : closed props closed under disjunction (using LLPO)
 -- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
+-- - openDeMorgan : ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁ for open P, Q (tex line 716)
 -- - closedMarkovTex : ¬(∀n. Pₙ) ↔ ∃n. ¬Pₙ for closed Pₙ (from tex Lemma 807)
 -- - openMarkovTex : ¬(∃n. Pₙ) ↔ ∀n. ¬Pₙ for open Pₙ (dual, trivially true)
 -- - ℕ∞ infrastructure: ∞, ι, ι-at-n, ι-at-m≠n, ι≠∞, ι-injective
 -- - ℕ∞-Markov, ℕ∞-notInfty→witness, witness→ℕ∞-notInfty (from tex line 500)
 -- - ℕ∞-witness-unique, ℕ∞-witness→ι, ∞-char (characterization of ℕ∞ elements)
+-- - ℕ∞-equality-closed: equality in ℕ∞ is closed (tex line 1636-1643)
 
 -- STRUCTURED WITH INTERNAL POSTULATES (NOT from tex):
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
