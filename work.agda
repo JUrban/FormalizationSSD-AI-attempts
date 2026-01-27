@@ -543,6 +543,13 @@ postulate
 -- We need a bijection ℕ × ℕ ≅ ℕ for countable closure properties.
 -- We'll use a simple diagonal enumeration.
 
+-- The inspect idiom for capturing equalities from with-abstractions
+data Reveal_·_is_ {A : Type₀} {B : A → Type₀} (f : (x : A) → B x) (x : A) (y : B x) : Type₀ where
+  [_] : f x ≡ y → Reveal f · x is y
+
+inspect : ∀ {A : Type₀} {B : A → Type₀} (f : (x : A) → B x) (x : A) → Reveal f · x is (f x)
+inspect f x = [ refl ]
+
 -- Cantor pairing function: ⟨m, n⟩ = (m + n)(m + n + 1)/2 + n
 -- The bijectivity is fully proved below using findDiagonal helper
 
@@ -971,11 +978,90 @@ private
   -- This requires that findDiagonal actually finds the right diagonal
   -- Since findDiagonal-aux already ensures this, we just need to extract bounds
 
-  -- Postulate cantorPair-unpair for now; the proof requires careful
-  -- analysis of findDiagonal bounds (triangular w ≤ k < triangular (suc w))
-  -- which ensures n = k ∸ triangular w satisfies n ≤ w
-  postulate
-    cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
+  -- For cantorPair-unpair, we need the bounds that findDiagonal's result satisfies.
+  -- The key is that findDiagonal returns w such that:
+  -- - triangular w ≤ k (accumulated from starting at 0)
+  -- - k < triangular (suc w) (the stopping condition)
+  --
+  -- We prove these bounds by induction on the fuel parameter.
+
+  -- Lemma: findDiagonal satisfies the lower bound (triangular w ≤ k)
+  -- when started with triangular diag ≤ k
+  findDiagonal-lower-bound : (fuel k diag : ℕ) → triangular diag ≤ k
+                           → triangular (findDiagonal fuel k diag) ≤ k
+  findDiagonal-lower-bound zero k diag Td≤k = Td≤k
+  findDiagonal-lower-bound (suc fuel) k diag Td≤k with k <ᵇ' triangular (suc diag) | inspect (k <ᵇ'_) (triangular (suc diag))
+  ... | true | _ = Td≤k
+  ... | false | [ p ] = findDiagonal-lower-bound fuel k (suc diag) (¬<ᵇ'-reflects k (triangular (suc diag)) p)
+
+  -- Lemma: findDiagonal satisfies the upper bound (k < triangular (suc w))
+  -- Invariant: diag + fuel > k (strict), which means fuel runs out only when diag > k
+  findDiagonal-upper-bound : (fuel k diag : ℕ) → suc k ≤ diag +ℕ fuel
+                           → k < triangular (suc (findDiagonal fuel k diag))
+  findDiagonal-upper-bound zero k diag sk≤d0 =
+    -- fuel = 0, so findDiagonal returns diag
+    -- sk≤d0 : suc k ≤ diag +ℕ 0
+    -- We have suc k ≤ diag, i.e., k < diag
+    -- Need: k < triangular (suc diag), i.e., suc k ≤ triangular (suc diag)
+    -- triangular (suc diag) = suc diag + triangular diag ≥ suc diag ≥ suc k (since suc k ≤ diag < suc diag)
+    let sk≤d : suc k ≤ diag
+        sk≤d = subst (suc k ≤_) (+-zero diag) sk≤d0
+        sk≤sd : suc k ≤ suc diag
+        sk≤sd = ≤-trans sk≤d ≤-sucℕ
+        -- triangular (suc diag) = suc diag + triangular diag, so suc diag ≤ triangular (suc diag)
+        sd≤Tsd : suc diag ≤ triangular (suc diag)
+        sd≤Tsd = n≤n+m (suc diag) (triangular diag)
+    in ≤-trans sk≤sd sd≤Tsd
+    where
+    n≤n+m : (n m : ℕ) → n ≤ n +ℕ m
+    n≤n+m n zero = subst (n ≤_) (sym (+-zero n)) ≤-refl
+    n≤n+m n (suc m) = subst (n ≤_) (sym (+-suc n m)) (≤-trans (n≤n+m n m) ≤-sucℕ)
+  findDiagonal-upper-bound (suc fuel) k diag sk≤df with k <ᵇ' triangular (suc diag) | inspect (k <ᵇ'_) (triangular (suc diag))
+  ... | true | [ p ] = <ᵇ'-reflects k (triangular (suc diag)) p
+  ... | false | _ =
+    -- Recurse: need suc k ≤ suc diag +ℕ fuel = suc (diag +ℕ fuel)
+    -- We have suc k ≤ diag +ℕ suc fuel = suc (diag +ℕ fuel) by +-suc
+    findDiagonal-upper-bound fuel k (suc diag) (subst (suc k ≤_) (+-suc diag fuel) sk≤df)
+
+  -- Combine the bounds
+  findDiagonal-bounds : (k : ℕ) →
+    let w = findDiagonal (suc k) k 0
+    in (triangular w ≤ k) × (k < triangular (suc w))
+  findDiagonal-bounds k =
+    let Tw≤k = findDiagonal-lower-bound (suc k) k 0 zero-≤
+        -- Need: suc k ≤ 0 +ℕ suc k = suc k, which is ≤-refl
+        k<Tsw = findDiagonal-upper-bound (suc k) k 0 ≤-refl
+    in Tw≤k , k<Tsw
+
+  -- Now prove cantorPair-unpair using the bounds
+  cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
+  cantorPair-unpair k =
+    let w = findDiagonal (suc k) k 0
+        n' = k ∸ triangular w
+        m' = w ∸ n'
+        (Tw≤k , k<Tsw) = findDiagonal-bounds k
+        n'≤w = n≤w-from-bounds k w Tw≤k k<Tsw
+        -- m' + n' = w
+        m'+n'=w : m' +ℕ n' ≡ w
+        m'+n'=w = w∸n+n≡w w n' n'≤w
+        -- cantorPair m' n' = triangular(m' + n') + n' = triangular w + n'
+        step1 : cantorPair m' n' ≡ triangular (m' +ℕ n') +ℕ n'
+        step1 = refl
+        step2 : triangular (m' +ℕ n') +ℕ n' ≡ triangular w +ℕ n'
+        step2 = cong (λ x → triangular x +ℕ n') m'+n'=w
+        -- triangular w + n' = triangular w + (k - triangular w) = k
+        step3 : triangular w +ℕ n' ≡ k
+        step3 = a+b∸a≡b (triangular w) k Tw≤k
+    in
+    uncurry cantorPair (cantorUnpair k)
+      ≡⟨ refl ⟩
+    cantorPair m' n'
+      ≡⟨ step1 ⟩
+    triangular (m' +ℕ n') +ℕ n'
+      ≡⟨ step2 ⟩
+    triangular w +ℕ n'
+      ≡⟨ step3 ⟩
+    k ∎
 
 -- Open propositions are closed under finite conjunction
 -- If P ↔ ∃n. αn = 1 and Q ↔ ∃m. βm = 1, then P ∧ Q ↔ ∃k. γk = 1
@@ -1643,14 +1729,14 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - closedAnd, openOrMP, openOr (given mp postulate)
 -- - closedCountableIntersection, openCountableUnion
 -- - openAnd : finite conjunction of opens is open (via Cantor pairing)
--- - Cantor pairing: cantorPair, cantorUnpair, cantorUnpair-pair
+-- - Cantor pairing: cantorPair, cantorUnpair, cantorUnpair-pair, cantorPair-unpair
 -- - firstTrue: truncation to hit true at most once
 -- - clopenIsDecidable : if P is both open and closed, then P is decidable
 -- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
+-- - closedOr : closed props closed under disjunction (using LLPO)
+-- - closedDeMorgan : De Morgan for closed props (using LLPO + well-founded recursion)
 
 -- STRUCTURED WITH INTERNAL POSTULATES:
--- - closedOr : closed props closed under disjunction (uses postulatedStep)
--- - closedDeMorgan : De Morgan for closed props (uses postulatedStep)
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ (uses postulatedClosedMarkovStep)
 
 -- AXIOMS (from tex file):
@@ -1658,8 +1744,6 @@ closedMarkov P Pclosed ¬∀¬P =
 -- - llpo : LLPO
 
 -- TECHNICAL POSTULATES:
--- - cantorPair-unpair : Cantor pairing bijectivity
--- - postulatedStep : LLPO case analysis extraction
 -- - postulatedClosedMarkovStep : ¬¬-stability of countable closed disjunction
 
 -- =============================================================================
