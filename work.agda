@@ -511,16 +511,30 @@ postulate
 -- For simplicity, we postulate the basic pairing properties
 
 private
-  -- Sum of first k natural numbers: 0 + 1 + ... + (k-1)
+  -- Sum of first k natural numbers: 0 + 1 + ... + (k-1) = k(k-1)/2
   triangular : ℕ → ℕ
   triangular zero = zero
   triangular (suc k) = k +ℕ triangular k
 
-  -- Cantor pairing
+  -- Cantor pairing: ⟨m, n⟩ = triangular(m + n) + n
   cantorPair : ℕ → ℕ → ℕ
   cantorPair m n = triangular (m +ℕ n) +ℕ n
 
-  -- We postulate unpair properties (proving them is tedious but standard)
+  -- For unpairing, we enumerate diagonals:
+  -- k=0: (0,0)
+  -- k=1: (1,0)
+  -- k=2: (0,1)
+  -- k=3: (2,0)
+  -- k=4: (1,1)
+  -- k=5: (0,2)
+  -- etc.
+  --
+  -- On diagonal w (sum = w), positions are: (w,0), (w-1,1), ..., (0,w)
+  -- The k-th element overall is on diagonal w where triangular w ≤ k < triangular (w+1)
+  -- Within the diagonal, position is k - triangular w
+
+  -- We postulate the unpair function and properties
+  -- (The implementation requires arithmetic lemmas about triangular numbers)
   postulate
     cantorUnpair : ℕ → ℕ × ℕ
     cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
