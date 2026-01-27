@@ -2131,6 +2131,68 @@ decidable↔open×closed P = decidable→open×closed P , open×closed→decidab
 -- (we don't prove this since isOpenProp isn't necessarily a prop without more work)
 
 -- =============================================================================
+-- Section 24: Open and closed subsets of types (Synthetic Topology viewpoint)
+-- =============================================================================
+
+-- Definition (tex line 884-886):
+-- A subset A ⊆ T is open (resp. closed) if A(t) is open (resp. closed) for all t:T
+
+isOpenSubset : {T : Type₀} → (A : T → hProp ℓ-zero) → Type₀
+isOpenSubset {T} A = (t : T) → isOpenProp (A t)
+
+isClosedSubset : {T : Type₀} → (A : T → hProp ℓ-zero) → Type₀
+isClosedSubset {T} A = (t : T) → isClosedProp (A t)
+
+-- The pre-image of an open subset under any map is open (tex remark 889)
+-- This shows that all maps are continuous in the synthetic topology sense
+preimageOpenIsOpen : {S T : Type₀} (f : S → T) (A : T → hProp ℓ-zero)
+                   → isOpenSubset A → isOpenSubset (λ s → A (f s))
+preimageOpenIsOpen f A Aopen s = Aopen (f s)
+
+-- Similarly for closed subsets
+preimageClosedIsClosed : {S T : Type₀} (f : S → T) (A : T → hProp ℓ-zero)
+                       → isClosedSubset A → isClosedSubset (λ s → A (f s))
+preimageClosedIsClosed f A Aclosed s = Aclosed (f s)
+
+-- Empty subset is both open and closed
+emptySubsetOpen : {T : Type₀} → isOpenSubset {T} (λ _ → ⊥-hProp)
+emptySubsetOpen _ = ⊥-isOpen
+
+emptySubsetClosed : {T : Type₀} → isClosedSubset {T} (λ _ → ⊥-hProp)
+emptySubsetClosed _ = ⊥-isClosed
+
+-- Full subset (all of T) is both open and closed
+fullSubsetOpen : {T : Type₀} → isOpenSubset {T} (λ _ → ⊤-hProp)
+fullSubsetOpen _ = ⊤-isOpen
+
+fullSubsetClosed : {T : Type₀} → isClosedSubset {T} (λ _ → ⊤-hProp)
+fullSubsetClosed _ = ⊤-isClosed
+
+-- Intersection of open subsets is open
+openSubsetIntersection : {T : Type₀} (A B : T → hProp ℓ-zero)
+                       → isOpenSubset A → isOpenSubset B
+                       → isOpenSubset (λ t → (⟨ A t ⟩ × ⟨ B t ⟩) , isProp× (snd (A t)) (snd (B t)))
+openSubsetIntersection A B Aopen Bopen t = openAnd (A t) (B t) (Aopen t) (Bopen t)
+
+-- Intersection of closed subsets is closed
+closedSubsetIntersection : {T : Type₀} (A B : T → hProp ℓ-zero)
+                         → isClosedSubset A → isClosedSubset B
+                         → isClosedSubset (λ t → (⟨ A t ⟩ × ⟨ B t ⟩) , isProp× (snd (A t)) (snd (B t)))
+closedSubsetIntersection A B Aclosed Bclosed t = closedAnd (A t) (B t) (Aclosed t) (Bclosed t)
+
+-- Union of open subsets is open (truncated)
+openSubsetUnion : {T : Type₀} (A B : T → hProp ℓ-zero)
+                → isOpenSubset A → isOpenSubset B
+                → isOpenSubset (λ t → (∥ ⟨ A t ⟩ ⊎ ⟨ B t ⟩ ∥₁) , squash₁)
+openSubsetUnion A B Aopen Bopen t = openOr (A t) (B t) (Aopen t) (Bopen t)
+
+-- Union of closed subsets is closed (requires LLPO via closedOr)
+closedSubsetUnion : {T : Type₀} (A B : T → hProp ℓ-zero)
+                  → isClosedSubset A → isClosedSubset B
+                  → isClosedSubset (λ t → (∥ ⟨ A t ⟩ ⊎ ⟨ B t ⟩ ∥₁) , squash₁)
+closedSubsetUnion A B Aclosed Bclosed t = closedOr (A t) (B t) (Aclosed t) (Bclosed t)
+
+-- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
 
