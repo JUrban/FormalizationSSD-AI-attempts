@@ -103,6 +103,31 @@ isOpen P = ∥ isOpenProp P ∥₁ , squash₁
 isClosed : hProp ℓ-zero → hProp ℓ-zero
 isClosed P = ∥ isClosedProp P ∥₁ , squash₁
 
+-- Projections from Open and Closed
+openProp : Open → hProp ℓ-zero
+openProp = fst
+
+closedProp : Closed → hProp ℓ-zero
+closedProp = fst
+
+-- The underlying type of an open/closed proposition
+openType : Open → Type₀
+openType O = ⟨ fst O ⟩
+
+closedType : Closed → Type₀
+closedType C = ⟨ fst C ⟩
+
+-- Coercion: Open includes into hProp
+open→hProp : Open → hProp ℓ-zero
+open→hProp = fst
+
+-- Coercion: Closed includes into hProp
+closed→hProp : Closed → hProp ℓ-zero
+closed→hProp = fst
+
+-- ⊥ and ⊤ as Open/Closed (defined later: ⊥-isOpen, ⊤-isOpen, ⊥-isClosed, ⊤-isClosed)
+-- Meet (∧) and Join (∨) operations on Open/Closed are defined after the basic lemmas
+
 -- =============================================================================
 -- Section 3: Basic properties of Open and Closed propositions
 -- =============================================================================
@@ -155,6 +180,19 @@ decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (
 
 ⊤-isClosed : isClosedProp ⊤-hProp
 ⊤-isClosed = decIsClosed ⊤-hProp (yes tt)
+
+-- Bundled versions: ⊥ and ⊤ as elements of Open and Closed
+⊥-Open : Open
+⊥-Open = ⊥-hProp , ⊥-isOpen
+
+⊥-Closed : Closed
+⊥-Closed = ⊥-hProp , ⊥-isClosed
+
+⊤-Open : Open
+⊤-Open = ⊤-hProp , ⊤-isOpen
+
+⊤-Closed : Closed
+⊤-Closed = ⊤-hProp , ⊤-isClosed
 
 -- Canonical closed proposition: (∀n. α n ≡ false) is closed with witness α
 -- This is the defining property of closed propositions
@@ -1314,6 +1352,16 @@ openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , for
     and-true-right false true p = ex-falso (false≢true p)
     and-true-right false false p = ex-falso (false≢true p)
 
+-- Bundled version: meet (∧) on Open
+_∧-Open_ : Open → Open → Open
+O₁ ∧-Open O₂ = (⟨ fst O₁ ⟩ × ⟨ fst O₂ ⟩) , isProp× (snd (fst O₁)) (snd (fst O₂)) ,
+               openAnd (fst O₁) (fst O₂) (snd O₁) (snd O₂)
+
+-- Bundled version: meet (∧) on Closed
+_∧-Closed_ : Closed → Closed → Closed
+C₁ ∧-Closed C₂ = (⟨ fst C₁ ⟩ × ⟨ fst C₂ ⟩) , isProp× (snd (fst C₁)) (snd (fst C₂)) ,
+                 closedAnd (fst C₁) (fst C₂) (snd C₁) (snd C₂)
+
 -- =============================================================================
 -- Closed propositions are closed under disjunction (uses LLPO)
 -- =============================================================================
@@ -1614,6 +1662,16 @@ closedOr P Q Pclosed Qclosed = γ , forward , backward
           let (n , γn=t) = fst (snd ¬P∧¬Qopen) (¬p , ¬q)
           in false≢true (sym (all-false n) ∙ γn=t)
     in closedDeMorgan P Q Pclosed Qclosed ¬¬P∧¬Q
+
+-- Bundled version: join (∨) on Open
+_∨-Open_ : Open → Open → Open
+O₁ ∨-Open O₂ = (∥ ⟨ fst O₁ ⟩ ⊎ ⟨ fst O₂ ⟩ ∥₁) , squash₁ ,
+               openOr (fst O₁) (fst O₂) (snd O₁) (snd O₂)
+
+-- Bundled version: join (∨) on Closed
+_∨-Closed_ : Closed → Closed → Closed
+C₁ ∨-Closed C₂ = (∥ ⟨ fst C₁ ⟩ ⊎ ⟨ fst C₂ ⟩ ∥₁) , squash₁ ,
+                 closedOr (fst C₁) (fst C₂) (snd C₁) (snd C₂)
 
 -- De Morgan for open propositions: ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁
 -- This is a consequence of closedDeMorgan (which uses LLPO)
@@ -2442,6 +2500,9 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- - isOpenProp, isClosedProp definitions
 -- - isSetBinarySequence, isSetIsOpenProp, isSetIsClosedProp: isOpenProp/isClosedProp are sets
 -- - isOpen, isClosed: property versions (truncated)
+-- - openProp, closedProp, openType, closedType, open→hProp, closed→hProp: projections
+-- - ⊥-Open, ⊥-Closed, ⊤-Open, ⊤-Closed: bundled ⊥/⊤
+-- - _∧-Open_, _∧-Closed_, _∨-Open_, _∨-Closed_: bundled meet/join
 -- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
