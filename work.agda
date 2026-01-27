@@ -985,15 +985,50 @@ openCountableUnion P αs = β , forward , backward
 -- If a proposition is both open and closed, it is decidable
 -- (ClopenDecidable from tex Corollary 774)
 --
--- Proof idea:
--- P is open: P ↔ ∃n. αn = 1
--- P is closed: P ↔ ∀n. βn = 0
--- Key: by LLPO, we can decide between "∃n even. γn=1" and "∃n odd. γn=1"
--- for appropriate γ built from α and β
+-- Proof from tex:
+-- If P is open and closed, then P ∨ ¬P is open (P is open, ¬P is open since P is closed and MP gives ¬closed = open)
+-- Open propositions are ¬¬-stable (by openIsStable)
+-- ¬¬(P ∨ ¬P) is provable
+-- Therefore P ∨ ¬P, i.e., P is decidable
 --
--- For now, postulated:
-postulate
-  clopenIsDecidable : (P : hProp ℓ-zero) → isOpenProp P → isClosedProp P → Dec ⟨ P ⟩
+-- We need: openOr P (¬P) where ¬P is open (from negClosedIsOpen)
+
+-- Helper: P ⊎ ¬P is a proposition when P is
+isPropDec : (P : hProp ℓ-zero) → isProp (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩)
+isPropDec P (inl p) (inl p') = cong inl (snd P p p')
+isPropDec P (inl p) (inr ¬p) = ex-falso (¬p p)
+isPropDec P (inr ¬p) (inl p) = ex-falso (¬p p)
+isPropDec P (inr ¬p) (inr ¬p') = cong inr (isProp¬ ⟨ P ⟩ ¬p ¬p')
+
+clopenIsDecidable : (P : hProp ℓ-zero) → isOpenProp P → isClosedProp P → Dec ⟨ P ⟩
+clopenIsDecidable P Popen Pclosed =
+  let -- ¬P is open because P is closed (and we have MP)
+      ¬P : hProp ℓ-zero
+      ¬P = (¬ ⟨ P ⟩) , isProp¬ ⟨ P ⟩
+
+      ¬Popen : isOpenProp ¬P
+      ¬Popen = negClosedIsOpen P Pclosed
+
+      -- P ∨ ¬P is open (finite disjunction of opens)
+      P∨¬P : hProp ℓ-zero
+      P∨¬P = (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩) , isPropDec P
+
+      P∨¬Popen : isOpenProp P∨¬P
+      P∨¬Popen = openOr P ¬P Popen ¬Popen
+
+      -- ¬¬(P ∨ ¬P) is provable (excluded middle is ¬¬-stable)
+      ¬¬P∨¬P : ¬ ¬ (⟨ P ⟩ ⊎ ¬ ⟨ P ⟩)
+      ¬¬P∨¬P k = k (inr (λ p → k (inl p)))
+
+      -- Open propositions are ¬¬-stable, so P ∨ ¬P holds
+      P∨¬P-holds : ⟨ P ⟩ ⊎ ¬ ⟨ P ⟩
+      P∨¬P-holds = openIsStable P∨¬P P∨¬Popen ¬¬P∨¬P
+
+  in ⊎-rec (λ p → yes p) (λ ¬p → no ¬p) P∨¬P-holds
+  where
+  ⊎-rec : {A B C : Type} → (A → C) → (B → C) → A ⊎ B → C
+  ⊎-rec f g (inl a) = f a
+  ⊎-rec f g (inr b) = g b
 
 -- If P is open and Q is closed, then P → Q is closed
 -- (ImplicationOpenClosed from tex Lemma 857)
@@ -1055,12 +1090,12 @@ postulate
 -- - closedCountableIntersection, openCountableUnion
 -- - Cantor pairing bijectivity: cantorPair, cantorUnpair, cantorPair-unpair, cantorUnpair-pair
 --   (with all supporting lemmas: findDiagonal-correct, triangular-mono-<, etc.)
+-- - clopenIsDecidable : if P is both open and closed, then P is decidable
 
 -- POSTULATED (following from Stone Duality):
 -- - mp : MarkovPrinciple (Markov's Principle)
 -- - llpo : LLPO (Lesser Limited Principle of Omniscience)
 -- - closedOr : closed propositions closed under disjunction (from LLPO)
--- - clopenIsDecidable : clopen implies decidable
 -- - implicationOpenClosed : (P open, Q closed) → (P → Q) closed
 -- - closedMarkov : ¬(∀n.¬Pn) → ∥∃n.Pn∥ for closed (Pn)
 
