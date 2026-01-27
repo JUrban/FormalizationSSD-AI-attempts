@@ -137,6 +137,21 @@ decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (
 allFalseIsClosed : (α : binarySequence) → isClosedProp (((n : ℕ) → α n ≡ false) , isPropΠ (λ n → isSetBool (α n) false))
 allFalseIsClosed α = α , (λ p → p) , (λ p → p)
 
+-- Canonical open proposition: (∃n. α n ≡ true) is open with witness α
+-- This is the defining property of open propositions
+-- Note: We use the truncated version ∥ Σ n. α n ≡ true ∥₁ for the hProp
+-- The forward direction uses MP to extract a witness from the truncated existential
+someTrueIsOpen : (α : binarySequence) → isOpenProp ((∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁) , squash₁)
+someTrueIsOpen α = α , forward , backward
+  where
+  forward : ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
+  forward trunc = mp α ¬allFalse
+    where
+    ¬allFalse : ¬ ((n : ℕ) → α n ≡ false)
+    ¬allFalse all-false = PT.rec isProp⊥ (λ { (n , αn=t) → true≢false (sym αn=t ∙ all-false n) }) trunc
+  backward : Σ[ n ∈ ℕ ] α n ≡ true → ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁
+  backward = ∣_∣₁
+
 -- Negation of decidable proposition is decidable
 decNeg : {P : Type₀} → isProp P → Dec P → Dec (¬ P)
 decNeg _ (yes p) = no (λ ¬p → ¬p p)
@@ -2349,6 +2364,53 @@ closedSubsetTransitive V Vclosed W Wclosed t =
   closedSigmaClosed (V t) (Vclosed t) (W t) (Wclosed t)
 
 -- =============================================================================
+-- Section: Surjection from 2^ℕ to Closed (tex line 1753)
+-- =============================================================================
+
+-- Every binary sequence α defines a closed proposition: (∀n. αn = false)
+-- This is stated in tex line 1753: "We have a surjection 2^ℕ → Closed defined by
+-- α ↦ ∀n∈ℕ. αn = 0"
+
+-- The proposition (∀n. αn = false) as an hProp
+allFalseProp : binarySequence → hProp ℓ-zero
+allFalseProp α = ((n : ℕ) → α n ≡ false) , isPropΠ (λ n → isSetBool (α n) false)
+
+-- The surjection 2^ℕ → Closed
+binarySeqToClosed : binarySequence → Closed
+binarySeqToClosed α = allFalseProp α , allFalseIsClosed α
+
+-- This map is surjective: for any closed proposition, there exists a binary
+-- sequence that maps to it (up to equivalence of propositions)
+--
+-- Given (P, (α, forward, backward)) : Closed, the witness α produces
+-- P ↔ (∀n. αn = false), so the image of α under binarySeqToClosed
+-- is equivalent to P.
+
+binarySeqToClosed-surjective : (C : Closed) → ∥ Σ[ α ∈ binarySequence ] (⟨ fst C ⟩ ↔ ⟨ fst (binarySeqToClosed α) ⟩) ∥₁
+binarySeqToClosed-surjective (P , α , forward , backward) =
+  ∣ α , forward , backward ∣₁
+
+-- The dual: surjection 2^ℕ → Open defined by α ↦ ∃n∈ℕ. αn = true
+-- (tex remark: open is dual of closed)
+
+-- The proposition (∃n. αn = true) as an hProp (truncated)
+someTrueProp : binarySequence → hProp ℓ-zero
+someTrueProp α = (∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁) , squash₁
+
+-- The surjection 2^ℕ → Open
+binarySeqToOpen : binarySequence → Open
+binarySeqToOpen α = someTrueProp α , someTrueIsOpen α
+
+-- This map is surjective: for any open proposition, there exists a binary
+-- sequence that maps to it (up to equivalence of propositions)
+binarySeqToOpen-surjective : (O : Open) → ∥ Σ[ α ∈ binarySequence ] (⟨ fst O ⟩ ↔ ⟨ fst (binarySeqToOpen α) ⟩) ∥₁
+binarySeqToOpen-surjective (P , α , forward , backward) =
+  ∣ α , (λ p → ∣ forward p ∣₁) , (λ trunc → backward (fwd trunc)) ∣₁
+  where
+  fwd : ∥ Σ[ n ∈ ℕ ] α n ≡ true ∥₁ → Σ[ n ∈ ℕ ] α n ≡ true
+  fwd = someTrueIsOpen α .snd .fst
+
+-- =============================================================================
 -- Summary of formalization status
 -- =============================================================================
 
@@ -2381,6 +2443,13 @@ closedSubsetTransitive V Vclosed W Wclosed t =
 -- - openSigmaOpen: Σ of open over open is open (tex Cor 1313)
 -- - openSubsetTransitive: transitivity of openness for subsets (tex Cor 1319)
 -- - closedSubsetTransitive: transitivity of closedness (uses postulate closedSigmaClosed)
+-- - allFalseIsClosed: canonical closed proposition (∀n. αn = false)
+-- - someTrueIsOpen: canonical open proposition (∃n. αn = true) (uses MP)
+-- - openPath, closedPath: path transport preserves open/closed
+-- Surjections from 2^ℕ (tex line 1753):
+-- - allFalseProp, binarySeqToClosed, binarySeqToClosed-surjective
+-- - someTrueProp, binarySeqToOpen, binarySeqToOpen-surjective
+-- - openEquiv, closedEquiv: equivalence preservation
 -- Synthetic Topology (subsets):
 -- - isOpenSubset, isClosedSubset definitions
 -- - preimageOpenIsOpen, preimageClosedIsClosed: continuity
