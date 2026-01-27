@@ -542,13 +542,15 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
 ℕ∞-witness→ι : (α : ℕ∞) → (n : ℕ) → fst α n ≡ true → α ≡ ι n
 ℕ∞-witness→ι α n αn=t = Σ≡Prop isPropHitsAtMostOnce (funExt lemma)
   where
+  -- Need to case on discreteℕ to reduce fst (ι n) m
   lemma : (m : ℕ) → fst α m ≡ fst (ι n) m
   lemma m with discreteℕ m n
-  ... | yes m=n = cong (fst α) m=n ∙ αn=t
-  ... | no m≠n with fst α m in eq
-  ...   | false = sym (ι-at-m≠n n m m≠n)
-  ...   | true = ex-falso (m≠n (snd α m n true≡αm αn=t))
-          where true≡αm = sym eq
+  lemma m | yes m=n = cong (fst α) m=n ∙ αn=t  -- fst (ι n) m = true
+  lemma m | no m≠n = helper (fst α m) refl  -- fst (ι n) m = false here
+    where
+    helper : (b : Bool) → fst α m ≡ b → fst α m ≡ false
+    helper false αm=f = αm=f
+    helper true αm=t = ex-falso (m≠n (snd α m n αm=t αn=t))
 
 -- Equality in ℕ∞ is closed
 -- (This is a special case of the general Stone space theorem: equality in Stone spaces is closed)
@@ -560,13 +562,13 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
   where
   -- The witness: γ n = true iff fst α n ≠ fst β n
   γ : binarySequence
-  γ n with fst α n ≟ fst β n
+  γ n with fst α n =B fst β n
   ... | yes _ = false
   ... | no _ = true
 
   -- Forward: α = β → ∀n. γ n = false
   forward : α ≡ β → (n : ℕ) → γ n ≡ false
-  forward α=β n with fst α n ≟ fst β n
+  forward α=β n with fst α n =B fst β n
   ... | yes _ = refl
   ... | no αn≠βn = ex-falso (αn≠βn (cong (λ x → fst x n) α=β))
 
@@ -575,9 +577,9 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
   backward all-false = Σ≡Prop isPropHitsAtMostOnce (funExt pointwise)
     where
     pointwise : (n : ℕ) → fst α n ≡ fst β n
-    pointwise n with fst α n ≟ fst β n
-    ... | yes αn=βn = αn=βn
-    ... | no αn≠βn = ex-falso (true≢false (all-false n))
+    pointwise n with fst α n =B fst β n | all-false n
+    ... | yes αn=βn | _ = αn=βn
+    ... | no αn≠βn | γn=f = ex-falso (true≢false γn=f)
 
 -- =============================================================================
 -- Section 12: Markov's Principle from Stone Duality
@@ -647,50 +649,6 @@ postulate
 -- Instead, we use LLPO on sequences that hit at most once.
 
 -- For the full characterization, we would prove:
--- LLPO ↔ "For open P, Q: (¬P ∨ ¬Q) ↔ ¬(P ∧ Q)"
---
--- This is Proposition 1.4.1 of Diener's book on constructive reverse mathematics.
--- We state and prove the forward direction here (LLPO → De Morgan for open props)
-
--- De Morgan for open propositions: ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁
--- This is a consequence of closedDeMorgan (which uses LLPO)
--- since ¬P and ¬Q are closed when P and Q are open.
-openDeMorgan : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
-             → (¬ (⟨ P ⟩ × ⟨ Q ⟩)) ↔ ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
-openDeMorgan P Q Popen Qopen = forward , backward
-  where
-  -- ¬P is closed because P is open
-  ¬Pclosed : isClosedProp (¬hProp P)
-  ¬Pclosed = negOpenIsClosed P Popen
-
-  -- ¬Q is closed because Q is open
-  ¬Qclosed : isClosedProp (¬hProp Q)
-  ¬Qclosed = negOpenIsClosed Q Qopen
-
-  -- Forward: ¬(P ∧ Q) → ∥¬P ⊎ ¬Q∥₁
-  -- This follows from closedDeMorgan for ¬P, ¬Q which are closed
-  -- ¬(P ∧ Q) = ¬(¬¬P ∧ ¬¬Q) since P, Q are open hence ¬¬-stable
-  -- Use closedDeMorgan: ¬(¬(¬P) ∧ ¬(¬Q)) → ∥¬P ⊎ ¬Q∥₁
-  forward : ¬ (⟨ P ⟩ × ⟨ Q ⟩) → ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
-  forward ¬P×Q = closedDeMorgan (¬hProp P) (¬hProp Q) ¬Pclosed ¬Qclosed ¬¬¬P×¬¬Q
-    where
-    -- Need: ¬(¬¬P × ¬¬Q) which follows from ¬(P × Q) by ¬¬-stability of P and Q
-    Pstable : ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
-    Pstable = openIsStable mp P Popen
-
-    Qstable : ¬ ¬ ⟨ Q ⟩ → ⟨ Q ⟩
-    Qstable = openIsStable mp Q Qopen
-
-    ¬¬¬P×¬¬Q : ¬ ((¬ ¬ ⟨ P ⟩) × (¬ ¬ ⟨ Q ⟩))
-    ¬¬¬P×¬¬Q (¬¬p , ¬¬q) = ¬P×Q (Pstable ¬¬p , Qstable ¬¬q)
-
-  -- Backward: ∥¬P ⊎ ¬Q∥₁ → ¬(P ∧ Q) is trivial
-  backward : ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁ → ¬ (⟨ P ⟩ × ⟨ Q ⟩)
-  backward = PT.rec (isProp¬ _) λ
-    { (inl ¬p) (p , _) → ¬p p
-    ; (inr ¬q) (_ , q) → ¬q q
-    }
-
 -- Closed propositions closed under disjunction (using LLPO)
 -- The direct proof is more involved; we sketch the idea:
 
@@ -1612,6 +1570,46 @@ closedOr P Q Pclosed Qclosed = γ , forward , backward
           let (n , γn=t) = fst (snd ¬P∧¬Qopen) (¬p , ¬q)
           in false≢true (sym (all-false n) ∙ γn=t)
     in closedDeMorgan P Q Pclosed Qclosed ¬¬P∧¬Q
+
+-- De Morgan for open propositions: ¬(P ∧ Q) ↔ ∥¬P ⊎ ¬Q∥₁
+-- This is a consequence of closedDeMorgan (which uses LLPO)
+-- since ¬P and ¬Q are closed when P and Q are open.
+-- (tex line 716)
+openDeMorgan : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
+             → (¬ (⟨ P ⟩ × ⟨ Q ⟩)) ↔ ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
+openDeMorgan P Q Popen Qopen = forward , backward
+  where
+  -- ¬P is closed because P is open
+  ¬Pclosed : isClosedProp (¬hProp P)
+  ¬Pclosed = negOpenIsClosed P Popen
+
+  -- ¬Q is closed because Q is open
+  ¬Qclosed : isClosedProp (¬hProp Q)
+  ¬Qclosed = negOpenIsClosed Q Qopen
+
+  -- Forward: ¬(P ∧ Q) → ∥¬P ⊎ ¬Q∥₁
+  -- This follows from closedDeMorgan for ¬P, ¬Q which are closed
+  -- ¬(P ∧ Q) = ¬(¬¬P ∧ ¬¬Q) since P, Q are open hence ¬¬-stable
+  -- Use closedDeMorgan: ¬(¬(¬P) ∧ ¬(¬Q)) → ∥¬P ⊎ ¬Q∥₁
+  forward : ¬ (⟨ P ⟩ × ⟨ Q ⟩) → ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
+  forward ¬P×Q = closedDeMorgan (¬hProp P) (¬hProp Q) ¬Pclosed ¬Qclosed ¬¬¬P×¬¬Q
+    where
+    -- Need: ¬(¬¬P × ¬¬Q) which follows from ¬(P × Q) by ¬¬-stability of P and Q
+    Pstable : ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
+    Pstable = openIsStable mp P Popen
+
+    Qstable : ¬ ¬ ⟨ Q ⟩ → ⟨ Q ⟩
+    Qstable = openIsStable mp Q Qopen
+
+    ¬¬¬P×¬¬Q : ¬ ((¬ ¬ ⟨ P ⟩) × (¬ ¬ ⟨ Q ⟩))
+    ¬¬¬P×¬¬Q (¬¬p , ¬¬q) = ¬P×Q (Pstable ¬¬p , Qstable ¬¬q)
+
+  -- Backward: ∥¬P ⊎ ¬Q∥₁ → ¬(P ∧ Q) is trivial
+  backward : ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁ → ¬ (⟨ P ⟩ × ⟨ Q ⟩)
+  backward = PT.rec (isProp¬ _) λ
+    { (inl ¬p) (p , _) → ¬p p
+    ; (inr ¬q) (_ , q) → ¬q q
+    }
 
 -- Flattening a family of sequences into a single sequence
 flatten : (ℕ → binarySequence) → binarySequence
