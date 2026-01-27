@@ -1322,10 +1322,58 @@ clopenIsDecidable P Popen Pclosed =
 --
 -- Alternatively: ¬(P ∧ ¬Q), and P ∧ ¬Q is open...
 --
--- For now, postulated:
-postulate
-  implicationOpenClosed : (P Q : hProp ℓ-zero) → isOpenProp P → isClosedProp Q
-                        → isClosedProp ((⟨ P ⟩ → ⟨ Q ⟩) , isPropΠ (λ _ → snd Q))
+-- Proof: (P → Q) ↔ ¬(P ∧ ¬Q)
+-- - P is open (given)
+-- - ¬Q is open (by negClosedIsOpen, since Q is closed)
+-- - P ∧ ¬Q is open (by openAnd)
+-- - ¬(P ∧ ¬Q) is closed (by negOpenIsClosed)
+-- - Show (P → Q) ↔ ¬(P ∧ ¬Q) via De Morgan
+
+implicationOpenClosed : (P Q : hProp ℓ-zero) → isOpenProp P → isClosedProp Q
+                      → isClosedProp ((⟨ P ⟩ → ⟨ Q ⟩) , isPropΠ (λ _ → snd Q))
+implicationOpenClosed P Q Popen Qclosed = γ , forward , backward
+  where
+  -- ¬Q is open (since Q is closed and we have MP)
+  ¬Q : hProp ℓ-zero
+  ¬Q = (¬ ⟨ Q ⟩) , isProp¬ ⟨ Q ⟩
+
+  ¬Qopen : isOpenProp ¬Q
+  ¬Qopen = negClosedIsOpen mp Q Qclosed
+
+  -- P ∧ ¬Q is open (by openAnd)
+  P∧¬Q : hProp ℓ-zero
+  P∧¬Q = (⟨ P ⟩ × (¬ ⟨ Q ⟩)) , isProp× (snd P) (isProp¬ ⟨ Q ⟩)
+
+  P∧¬Qopen : isOpenProp P∧¬Q
+  P∧¬Qopen = openAnd P ¬Q Popen ¬Qopen
+
+  -- ¬(P ∧ ¬Q) is closed (by negOpenIsClosed)
+  ¬P∧¬Qclosed : isClosedProp (¬hProp P∧¬Q)
+  ¬P∧¬Qclosed = negOpenIsClosed P∧¬Q P∧¬Qopen
+
+  -- The witness for (P → Q) being closed is the same as for ¬(P ∧ ¬Q)
+  γ : binarySequence
+  γ = fst ¬P∧¬Qclosed
+
+  -- Forward: (P → Q) → ∀k. γk = false
+  -- Equivalent to: (P → Q) → ¬(P ∧ ¬Q) [easy]
+  forward : (⟨ P ⟩ → ⟨ Q ⟩) → (n : ℕ) → γ n ≡ false
+  forward p→q = fst (snd ¬P∧¬Qclosed) ¬P∧¬Q-holds
+    where
+    ¬P∧¬Q-holds : ¬ (⟨ P ⟩ × (¬ ⟨ Q ⟩))
+    ¬P∧¬Q-holds (p , ¬q) = ¬q (p→q p)
+
+  -- Backward: ∀k. γk = false → (P → Q)
+  -- Equivalent to: ¬(P ∧ ¬Q) → (P → Q) [needs Q being ¬¬-stable when P holds]
+  backward : ((n : ℕ) → γ n ≡ false) → ⟨ P ⟩ → ⟨ Q ⟩
+  backward all-false p =
+    let ¬P∧¬Q-holds : ¬ (⟨ P ⟩ × (¬ ⟨ Q ⟩))
+        ¬P∧¬Q-holds = snd (snd ¬P∧¬Qclosed) all-false
+        -- Since ¬(P ∧ ¬Q) and P holds, we must have ¬¬Q
+        ¬¬Q : ¬ ¬ ⟨ Q ⟩
+        ¬¬Q ¬q = ¬P∧¬Q-holds (p , ¬q)
+        -- Q is closed, so ¬¬Q → Q
+    in closedIsStable (⟨ Q ⟩ , snd Q) Qclosed ¬¬Q
 
 -- ClosedMarkov: For a sequence of closed propositions,
 -- ¬(∀n. ¬Pₙ) → || ∃n. Pₙ ||
