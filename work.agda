@@ -132,6 +132,24 @@ decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (
 ⊤-isClosed : isClosedProp ⊤-hProp
 ⊤-isClosed = decIsClosed ⊤-hProp (yes tt)
 
+-- Negation of decidable proposition is decidable
+decNeg : {P : Type₀} → isProp P → Dec P → Dec (¬ P)
+decNeg _ (yes p) = no (λ ¬p → ¬p p)
+decNeg _ (no ¬p) = yes ¬p
+
+-- Product of decidable propositions is decidable
+decProd : {P Q : Type₀} → isProp P → isProp Q → Dec P → Dec Q → Dec (P × Q)
+decProd _ _ (no ¬p) _ = no (λ pq → ¬p (fst pq))
+decProd _ _ (yes _) (no ¬q) = no (λ pq → ¬q (snd pq))
+decProd _ _ (yes p) (yes q) = yes (p , q)
+
+-- Coproduct of decidable propositions is decidable (as ∥ P ⊎ Q ∥₁)
+-- Note: Without truncation, P ⊎ Q is not a proposition
+decCoprod : {P Q : Type₀} → isProp P → isProp Q → Dec P → Dec Q → Dec ∥ P ⊎ Q ∥₁
+decCoprod _ _ (yes p) _ = yes ∣ inl p ∣₁
+decCoprod _ _ (no _) (yes q) = yes ∣ inr q ∣₁
+decCoprod _ _ (no ¬p) (no ¬q) = no (PT.rec isProp⊥ λ { (inl p) → ¬p p ; (inr q) → ¬q q })
+
 -- =============================================================================
 -- Section 4: Stone Spaces and Stone Duality Axiom
 -- =============================================================================
@@ -1996,7 +2014,7 @@ closedMarkov P Pclosed ¬∀¬P =
 
 -- FULLY PROVED:
 -- - isOpenProp, isClosedProp definitions
--- - negOpenIsClosed, decIsOpen, decIsClosed
+-- - negOpenIsClosed, decIsOpen, decIsClosed, decNeg, decProd, decCoprod
 -- - closedIsStable, openIsStable (given MP), negClosedIsOpen (given MP)
 -- - ⊥-isOpen, ⊥-isClosed : false is both open and closed
 -- - ⊤-isOpen, ⊤-isClosed : true is both open and closed
