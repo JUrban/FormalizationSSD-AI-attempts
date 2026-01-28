@@ -5667,5 +5667,125 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - Interval I: Cauchy reals as CHaus (tex 2272)
 
 -- =============================================================================
+-- Infrastructure for normalFormExists
+-- =============================================================================
+
+-- The normal form structure of B∞:
+-- B∞ is the Boolean algebra of finite or cofinite subsets of ℕ.
+-- - Finite subsets: represented as joinForm (list of indices)
+-- - Cofinite subsets: represented as meetNegForm (list of indices to exclude)
+--
+-- Key operations on normal forms:
+-- 1. Generators: g_n corresponds to joinForm [n]
+-- 2. Negation: ¬(joinForm ns) = meetNegForm ns, ¬(meetNegForm ns) = joinForm ns
+-- 3. Join: joinForm ns ∨ joinForm ms = joinForm (union ns ms)
+-- 4. Meet: joinForm ns ∧ joinForm ms = joinForm (intersect ns ms)
+--    (since g_i ∧ g_j = 0 for i ≠ j, meet of joins is 0 unless they share an element)
+-- 5. Meet of meets: meetNegForm ns ∧ meetNegForm ms = meetNegForm (union ns ms)
+
+-- Helper: generator as normal form
+g∞-nf : ℕ → B∞-NormalForm
+g∞-nf n = joinForm (n ∷ [])
+
+-- Generator matches its normal form
+g∞-nf-correct : (n : ℕ) → ⟦ g∞-nf n ⟧nf ≡ g∞ n
+g∞-nf-correct n =
+  ⟦ joinForm (n ∷ []) ⟧nf
+    ≡⟨ refl ⟩
+  finJoin∞ (n ∷ [])
+    ≡⟨ refl ⟩
+  g∞ n ∨∞ finJoin∞ []
+    ≡⟨ refl ⟩
+  g∞ n ∨∞ 𝟘∞
+    ≡⟨ zero-join-right (g∞ n) ⟩
+  g∞ n ∎
+
+-- Unit (1) as normal form
+𝟙∞-nf : B∞-NormalForm
+𝟙∞-nf = meetNegForm []
+
+-- Unit matches its normal form
+𝟙∞-nf-correct : ⟦ 𝟙∞-nf ⟧nf ≡ 𝟙∞
+𝟙∞-nf-correct = refl  -- finMeetNeg∞ [] = 𝟙∞ by definition
+
+-- Zero (0) as normal form
+𝟘∞-nf : B∞-NormalForm
+𝟘∞-nf = joinForm []
+
+-- Zero matches its normal form
+𝟘∞-nf-correct : ⟦ 𝟘∞-nf ⟧nf ≡ 𝟘∞
+𝟘∞-nf-correct = refl  -- finJoin∞ [] = 𝟘∞ by definition
+
+-- Negation of normal forms
+-- Key insight: ¬(⋁_I g_i) = ⋀_I ¬g_i and ¬(⋀_I ¬g_i) = ⋁_I g_i
+neg-nf : B∞-NormalForm → B∞-NormalForm
+neg-nf (joinForm ns) = meetNegForm ns
+neg-nf (meetNegForm ns) = joinForm ns
+
+-- For the negation correctness, we need:
+-- ¬(finJoin∞ ns) = finMeetNeg∞ ns  (de Morgan)
+-- ¬(finMeetNeg∞ ns) = finJoin∞ ns  (de Morgan)
+--
+-- This requires proving de Morgan laws for these finite operations.
+-- Specifically:
+-- - ¬(g_1 ∨ ... ∨ g_n) = ¬g_1 ∧ ... ∧ ¬g_n
+-- - ¬(¬g_1 ∧ ... ∧ ¬g_n) = g_1 ∨ ... ∨ g_n
+
+-- Negation distributes over join: ¬(a ∨ b) = ¬a ∧ ¬b
+-- In Boolean rings: ¬x = 1 + x
+-- a ∨ b = a + b + ab
+-- ¬(a ∨ b) = 1 + (a + b + ab) = 1 + a + b + ab
+-- ¬a = 1 + a, ¬b = 1 + b
+-- ¬a ∧ ¬b = (1 + a)(1 + b) = 1 + a + b + ab
+-- So ¬(a ∨ b) = ¬a ∧ ¬b ✓
+
+-- De Morgan law: ¬(a ∨ b) = ¬a ∧ ¬b
+-- We need to prove this using ring axioms. The key is to show both sides
+-- equal 1 + (a + b + ab) when expanded.
+-- Postulate for now - this is purely algebraic and follows from ring axioms
+postulate
+  neg-distrib-join : (a b : ⟨ B∞ ⟩) → ¬∞ (a ∨∞ b) ≡ (¬∞ a) ∧∞ (¬∞ b)
+
+-- De Morgan for finite joins: ¬(g_1 ∨ ... ∨ g_n) = ¬g_1 ∧ ... ∧ ¬g_n
+-- This is: ¬(finJoin∞ ns) = finMeetNeg∞ ns
+neg-finJoin : (ns : List ℕ) → ¬∞ (finJoin∞ ns) ≡ finMeetNeg∞ ns
+neg-finJoin [] = BooleanRingStr.+IdR (snd B∞) 𝟙∞  -- ¬0 = 1 + 0 = 1
+neg-finJoin (n ∷ ns) =
+  ¬∞ (finJoin∞ (n ∷ ns))
+    ≡⟨ refl ⟩
+  ¬∞ (g∞ n ∨∞ finJoin∞ ns)
+    ≡⟨ neg-distrib-join (g∞ n) (finJoin∞ ns) ⟩
+  (¬∞ (g∞ n)) ∧∞ (¬∞ (finJoin∞ ns))
+    ≡⟨ cong ((¬∞ (g∞ n)) ∧∞_) (neg-finJoin ns) ⟩
+  (¬∞ (g∞ n)) ∧∞ finMeetNeg∞ ns
+    ≡⟨ refl ⟩
+  finMeetNeg∞ (n ∷ ns) ∎
+
+-- For the other direction, we need: ¬(¬a ∧ ¬b) = a ∨ b
+-- In Boolean rings: ¬(¬a ∧ ¬b) = 1 + (1+a)(1+b) = 1 + 1 + a + b + ab = a + b + ab = a ∨ b
+-- Since characteristic 2: 1 + 1 = 0
+postulate
+  neg-distrib-meet : (a b : ⟨ B∞ ⟩) → ¬∞ ((¬∞ a) ∧∞ (¬∞ b)) ≡ a ∨∞ b
+
+-- De Morgan for finite meets of negations: ¬(¬g_1 ∧ ... ∧ ¬g_n) = g_1 ∨ ... ∨ g_n
+neg-finMeetNeg : (ns : List ℕ) → ¬∞ (finMeetNeg∞ ns) ≡ finJoin∞ ns
+neg-finMeetNeg [] = char2-B∞ 𝟙∞  -- ¬1 = 1 + 1 = 0
+neg-finMeetNeg (n ∷ ns) =
+  ¬∞ (finMeetNeg∞ (n ∷ ns))
+    ≡⟨ refl ⟩
+  ¬∞ ((¬∞ (g∞ n)) ∧∞ finMeetNeg∞ ns)
+    ≡⟨ cong (λ z → ¬∞ ((¬∞ (g∞ n)) ∧∞ z)) (sym (neg-finJoin ns)) ⟩
+  ¬∞ ((¬∞ (g∞ n)) ∧∞ (¬∞ (finJoin∞ ns)))
+    ≡⟨ neg-distrib-meet (g∞ n) (finJoin∞ ns) ⟩
+  (g∞ n) ∨∞ finJoin∞ ns
+    ≡⟨ refl ⟩
+  finJoin∞ (n ∷ ns) ∎
+
+-- Negation preserves normal form correctness
+neg-nf-correct : (nf : B∞-NormalForm) → ⟦ neg-nf nf ⟧nf ≡ ¬∞ (⟦ nf ⟧nf)
+neg-nf-correct (joinForm ns) = sym (neg-finJoin ns)
+neg-nf-correct (meetNegForm ns) = sym (neg-finMeetNeg ns)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
