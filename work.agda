@@ -10895,6 +10895,54 @@ module StoneAsClosedSubsetOfCantorModule where
     (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp) (doubleComplementClosed A x)))
     (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
 
+  -- Double complement is identity (for open subsets, requires MP for ¬¬-stability)
+  -- This follows from the characterization of open props: they are ¬¬-stable via MP
+  doubleComplementOpen : (A : OpenSubsetOfCantor)
+    → (x : CantorSpace)
+    → fst (fst (ClosedSubsetComplement (OpenSubsetComplement A)) x) ≡ fst (fst A x)
+  doubleComplementOpen (A , Aopen) x =
+    hPropExt (snd (¬hProp (¬hProp (A x)))) (snd (A x))
+             (openIsStable mp (A x) (Aopen x))
+             (λ ax ¬ax → ¬ax ax)
+
+  -- Helper: isProp for isOpenProp
+  -- Note: isOpenProp is a set, not a prop, but we can still use isProp→PathP
+  -- if we're transporting along an hProp path
+  isPropIsOpenProp : (P : hProp ℓ-zero) → isProp (isOpenProp P)
+  isPropIsOpenProp P (α , P→∃ , ∃→P) (β , Q→∃ , ∃→Q) =
+    Σ≡Prop (λ γ → isProp× (isPropΠ (λ _ → isSetΣ isSetℕ (λ _ → isProp→isSet (isSetBool _ _)) _ _))
+                          (isPropΠ (λ _ → snd P)))
+           α≡β
+    where
+    -- The sequences α and β must be equal because they characterize the same prop
+    α≡β : α ≡ β
+    α≡β = funExt (λ n → lemma n)
+      where
+      lemma : (n : ℕ) → α n ≡ β n
+      lemma n with α n | β n | inspect (α) n | inspect (β) n
+      ... | false | false | _ | _ = refl
+      ... | true | true | _ | _ = refl
+      ... | true | false | [ αn≡t ] | [ βn≡f ] =
+        -- α n = true means P holds, so β should witness it
+        let p : ⟨ P ⟩
+            p = ∃→P (n , αn≡t)
+            (m , βm≡t) = Q→∃ p
+        in ex-falso (true≢false (sym βm≡t ∙ βn≡f))
+      ... | false | true | [ αn≡f ] | [ βn≡t ] =
+        -- β n = true means P holds, so α should witness it
+        let p : ⟨ P ⟩
+            p = ∃→Q (n , βn≡t)
+            (m , αm≡t) = P→∃ p
+        in ex-falso (true≢false (sym αm≡t ∙ αn≡f))
+
+  -- Complement is an involution for open subsets
+  -- ClosedSubsetComplement (OpenSubsetComplement A) ≡ A
+  complementInvolutionOpen : (A : OpenSubsetOfCantor)
+    → ClosedSubsetComplement (OpenSubsetComplement A) ≡ A
+  complementInvolutionOpen A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp) (doubleComplementOpen A x)))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
   -- Preimage of an open subset under a Cantor → Cantor map
   OpenSubsetPreimageCantor : (f : CantorSpace → CantorSpace)
     → OpenSubsetOfCantor → OpenSubsetOfCantor
