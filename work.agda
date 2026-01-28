@@ -763,22 +763,45 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
   ... | inr m = g m    -- relations from α
 
   -- Now we need to show: BoolBR /Im α ≅ freeBA ℕ /Im h
-  -- This follows from:
-  -- 1. BoolBR ≅ freeBA ℕ /Im f₀ (by is-cp-2)
-  -- 2. (freeBA ℕ /Im f₀) /Im α' ≅ freeBA ℕ /Im (⊎.rec f₀ g) (by BoolQuotientEquiv)
-  -- 3. freeBA ℕ /Im (⊎.rec f₀ g) ≅ freeBA ℕ /Im h (by ℕ ⊎ ℕ ≅ ℕ)
+  -- The proof composes three equivalences:
+  --
+  -- Step 1: BoolBR /Im α ≅ (freeBA ℕ /Im f₀) /Im α' (transport through equiv)
+  -- Step 2: (freeBA ℕ /Im f₀) /Im (π₀ ∘ g) ≅ freeBA ℕ /Im (⊎.rec f₀ g) (BoolQuotientEquiv)
+  -- Step 3: freeBA ℕ /Im (⊎.rec f₀ g) ≅ freeBA ℕ /Im h (reparametrize via ℕ⊎ℕ≅ℕ)
+  --
+  -- Key observation: α' = π₀ ∘ g (both map n to 𝟙 if α n = true, else 𝟘)
+  -- This is because:
+  -- - equiv preserves 𝟘 and 𝟙 (ring homomorphism)
+  -- - π₀ preserves 𝟘 and 𝟙 (quotient homomorphism)
+  -- - embBR = fst (fst equiv), so embBR(true) = 𝟙 and embBR(false) = 𝟘
+  -- - g n = if (α n) then 𝟙 else 𝟘 in freeBA ℕ
+  -- - π₀ (g n) = if (α n) then 𝟙 else 𝟘 in freeBA ℕ /Im f₀ = α' n
 
-  -- Step 1: Transport quotient through the equivalence
-  -- BoolBR /Im α ≅ (freeBA ℕ /Im f₀) /Im (embBR ∘ α)
+  -- The detailed proof requires:
+  -- 1. Showing that transporting quotient through an equivalence gives an equivalence
+  -- 2. Using BoolQuotientEquiv (currently postulated in QuotientConclusions)
+  -- 3. Showing that reparametrization via an isomorphism preserves quotient structure
 
   -- For now, construct the witness directly using h
   presentationWitness : has-Boole-ω' (BoolBR QB./Im α)
   presentationWitness = h , equivToPresentation
     where
     -- We need: BooleanRingEquiv (BoolBR /Im α) (freeBA ℕ /Im h)
-    -- This is complex; postulate for now and document the proof path
+    --
+    -- Proof outline:
+    -- BoolBR /Im α
+    --   ≅ (freeBA ℕ /Im f₀) /Im α'      [Step 1: transport through equiv]
+    --   = (freeBA ℕ /Im f₀) /Im (π₀ ∘ g) [α' = π₀ ∘ g as argued above]
+    --   ≅ freeBA ℕ /Im (⊎.rec f₀ g)     [Step 2: BoolQuotientEquiv⁻¹]
+    --   ≅ freeBA ℕ /Im h                [Step 3: h = (⊎.rec f₀ g) ∘ decode]
+    --
+    -- Each step is a composition of equivalences.
+    -- Step 1 uses that equiv induces an equivalence on quotients.
+    -- Step 2 uses BoolQuotientEquiv (inverse direction).
+    -- Step 3 uses that decode is a bijection.
     postulate
       equivToPresentation : BooleanRingEquiv (BoolBR QB./Im α) (freeBA ℕ QB./Im h)
+    -- TODO: Prove using the above composition strategy
 
 -- 2/α as a Booleω element
 2/α-Booleω : (α : binarySequence) → Booleω
