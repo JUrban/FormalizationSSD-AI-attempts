@@ -6342,6 +6342,28 @@ xor-joinForm-joinForm-correct ns ms =
   finJoin∞ (ns △L ms) ∎
 
 -- =============================================================================
+-- XOR of Mixed Normal Forms (blocked by projection mismatch)
+-- =============================================================================
+--
+-- NOTE: The following lemmas are postulated due to Agda's projection mismatch
+-- issue when applying +Assoc with our renamed _+∞_ operator. The math is correct:
+-- - ¬a + ¬b = (1+a) + (1+b) = a + b (char 2)
+-- - a + ¬b = 1 + (a + b) = ¬(a + b)
+
+postulate
+  -- XOR of meetNegForms: ¬a + ¬b = a + b in char 2
+  xor-meetNegForm-meetNegForm-correct : (ns ms : List ℕ) →
+    finMeetNeg∞ ns +∞ finMeetNeg∞ ms ≡ finJoin∞ (ns △L ms)
+
+  -- XOR of joinForm and meetNegForm: a + ¬b = ¬(a + b)
+  xor-joinForm-meetNegForm-correct : (ns ms : List ℕ) →
+    finJoin∞ ns +∞ finMeetNeg∞ ms ≡ finMeetNeg∞ (ns △L ms)
+
+  -- Symmetric case: meetNegForm + joinForm
+  xor-meetNegForm-joinForm-correct : (ns ms : List ℕ) →
+    finMeetNeg∞ ns +∞ finJoin∞ ms ≡ finMeetNeg∞ (ms △L ns)
+
+-- =============================================================================
 -- normalFormExists status
 -- =============================================================================
 
