@@ -11032,6 +11032,34 @@ module StoneAsClosedSubsetOfCantorModule where
       ≡ OpenSubsetCountableUnion (λ n → OpenSubsetPreimageCantor f (An n))
   preimageCountableUnion f An = refl
 
+  -- ==========================================================================
+  -- Functoriality: preimage respects composition and identity
+  -- ==========================================================================
+
+  -- Preimage under composition is composition of preimages (closed)
+  preimageClosedComposition : (f g : CantorSpace → CantorSpace)
+    → (A : ClosedSubsetOfCantor)
+    → ClosedSubsetPreimageCantor (λ x → f (g x)) A
+      ≡ ClosedSubsetPreimageCantor g (ClosedSubsetPreimageCantor f A)
+  preimageClosedComposition f g A = refl
+
+  -- Preimage under composition is composition of preimages (open)
+  preimageOpenComposition : (f g : CantorSpace → CantorSpace)
+    → (A : OpenSubsetOfCantor)
+    → OpenSubsetPreimageCantor (λ x → f (g x)) A
+      ≡ OpenSubsetPreimageCantor g (OpenSubsetPreimageCantor f A)
+  preimageOpenComposition f g A = refl
+
+  -- Preimage under identity is identity (closed)
+  preimageClosedId : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetPreimageCantor (λ x → x) A ≡ A
+  preimageClosedId A = refl
+
+  -- Preimage under identity is identity (open)
+  preimageOpenId : (A : OpenSubsetOfCantor)
+    → OpenSubsetPreimageCantor (λ x → x) A ≡ A
+  preimageOpenId A = refl
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
@@ -12201,6 +12229,8 @@ module BrouwerFixedPointTheoremModule where
 -- - preimageEmpty, preimageFull, preimageOpenEmpty, preimageOpenFull: boundary preservation
 -- - preimageCountableIntersection: preimage preserves countable ∩ (closed)
 -- - preimageCountableUnion: preimage preserves countable ∪ (open)
+-- - preimageClosedComposition, preimageOpenComposition: preimage respects ∘
+-- - preimageClosedId, preimageOpenId: preimage preserves identity
 --
 -- INTERVAL TOPOLOGY (tex 2605-2762):
 -- - Unit interval I is CHaus (IntervalIsCHaus)
