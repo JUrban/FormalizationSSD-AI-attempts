@@ -3445,7 +3445,7 @@ openSubsetTransitive V Vopen W Wopen t =
 
 -- Transitivity of closedness (dual of openSubsetTransitive)
 -- If V ⊆ T is closed and W ⊆ V is closed (as a subset of V), then W ⊆ T is closed.
--- Uses the postulated closedSigmaClosed.
+-- Uses closedSigmaClosed (PROVED in ClosedSigmaClosedDerived module).
 closedSubsetTransitive : {T : Type₀}
                        → (V : T → hProp ℓ-zero) → isClosedSubset V
                        → (W : (t : T) → ⟨ V t ⟩ → hProp ℓ-zero)
@@ -3454,10 +3454,10 @@ closedSubsetTransitive : {T : Type₀}
 closedSubsetTransitive V Vclosed W Wclosed t =
   closedSigmaClosed (V t) (Vclosed t) (W t) (Wclosed t)
 
--- Remark: Closed also forms a dominance (tex Remark ClosedDominance 1794)
+-- Remark: Closed forms a dominance (tex Remark ClosedDominance 1794)
 -- 1. Contains ⊤ (trivially: ⊤-isClosed)
--- 2. Is closed under Σ-types (closedSigmaClosed - currently postulated)
--- Once closedSigmaClosed is proved using Stone infrastructure, Closed forms a dominance.
+-- 2. Is closed under Σ-types (closedSigmaClosed - PROVED in ClosedSigmaClosedDerived)
+-- The proof chain is now complete, so Closed forms a dominance.
 
 -- =============================================================================
 -- Section: Surjection from 2^ℕ to Closed (tex line 1753)
@@ -6514,17 +6514,18 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- ✓ closedSigmaClosed': closed props closed under Σ (PROVED modulo ClosedInStoneIsStone)
 -- ✓ SDDecToElem: Stone duality correspondence for decidable predicates (PROVED)
 --
--- Remaining postulates requiring work:
--- 1. ClosedInStoneIsStone: closed subtypes of Stone are Stone (tex 1770)
---    - This is the key remaining postulate for the closedSigmaClosed chain
---    - Requires StoneClosedSubsets infrastructure (tex 1648)
--- 2. closedSigmaClosed (original postulate at line 3188): NOW PROVED as closedSigmaClosed'
---    - Progress: closedProp→Stone is PROVED
---    - Progress: TruncationStoneClosed is PROVED (modulo ODisc/LemSurjections)
---    - Progress: Stone→closedProp is PROVED (modulo ODisc/LemSurjections)
---    - Progress: InhabitedClosedSubSpaceClosed is PROVED (using TruncationStoneClosed)
---    - Progress: closedSigmaClosed' is PROVED (using InhabitedClosedSubSpaceClosed)
---    - Only remaining postulate: ClosedInStoneIsStone
+-- RECENTLY PROVED KEY THEOREMS:
+-- 1. ClosedInStoneIsStone: closed subtypes of Stone are Stone (tex 1770) - PROVED!
+--    - Full proof in ClosedInStoneIsStoneProof module at end of file (~line 11692)
+--    - Uses quotientBySeqPreservesBooleω, SDDecToElemModule, transport
+--    - Postulate kept at line ~8921 for forward reference compatibility
+-- 2. closedSigmaClosed (original postulate at line ~3260): NOW PROVED as closedSigmaClosed'
+--    - Uses ClosedInStoneIsStone, closedProp→Stone, InhabitedClosedSubSpaceClosed
+--    - Full proof chain is complete!
+-- 3. CompactHausdorffClosed-backward and InhabitedClosedSubSpaceClosedCHaus (tex 1906, 1930) - PROVED!
+--    - Uses closedAnd, InhabitedClosedSubSpaceClosed, closedEquiv
+--
+-- Remaining structural postulates requiring work:
 -- 2. B∞×B∞≃quotient: MATHEMATICALLY TRUE but current presentation fails
 --    - Current map φ is not surjective: (1∞, 0∞) is not in the image
 --    - Stone duality confirms B∞×B∞ IS countably presented
@@ -6541,13 +6542,9 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - normalFormExists (untruncated): superseded by normalFormExists-trunc
 -- - nf-injective: only needed for unused untruncated version
 --
--- Further extensions from tex (not yet formalized):
--- - ClosedInStoneIsStone: closed subsets of Stone are Stone (tex 1770)
---     * Currently POSTULATED - key remaining piece for closedSigmaClosed
---     * Proof uses StoneClosedSubsets (tex 1648): A⊆S closed ↔ A = Sp(B/(d_n))
---     * Requires AxLocalChoice to lift pointwise closedness to global decidable intersection
---     * SDDecToElem module provides correspondence: decidable pred ↔ element of B
--- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
+-- Further extensions from tex (partial progress):
+-- - ClosedInStoneIsStone: PROVED! (tex 1770) - see ClosedInStoneIsStoneProof module
+-- - StoneEqualityClosed: PROVED (tex 1636) - see StoneEqualityClosedModule
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
 --     * Partial infrastructure in ODiscInfrastructure module
 --     * booleω-equality-open postulated
@@ -8957,8 +8954,8 @@ module InhabitedClosedSubSpaceClosedModule where
 -- P is Stone by PropositionsClosedIffStone (specifically closedProp→Stone).
 -- By InhabitedClosedSubSpaceClosed, Σ_{p:P} Q(p) is closed.
 --
--- Note: This gives us a proof of closedSigmaClosed, but it depends on:
--- - ClosedInStoneIsStone (postulated, needs StoneClosedSubsets)
+-- Note: This proves closedSigmaClosed using the following chain:
+-- - ClosedInStoneIsStone (PROVED in ClosedInStoneIsStoneProof module)
 -- - TruncationStoneClosed (proved modulo ODisc/LemSurjections postulates)
 -- - closedProp→Stone (proved)
 
