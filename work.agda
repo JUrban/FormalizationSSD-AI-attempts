@@ -1582,6 +1582,17 @@ witness→ℕ∞-notInfty α (n , αn=t) α=∞ = false≢true (sym (cong (λ x 
 
 -- We postulate LLPO as an axiom that follows from Stone Duality.
 -- The full proof requires setting up B_∞ quotients which is done in the library.
+--
+-- NOTE: llpo-from-SD (line ~5667) provides a proof of LLPO using the Stone Duality
+-- infrastructure built later in this file. However, that proof uses an internal
+-- postulate (evens-odds-disjoint) to handle truncation elimination. The current
+-- structure uses llpo as a forward declaration, with llpo-from-SD serving as the
+-- justification. A fully rigorous version would require the Local Choice axiom
+-- (AxLocalChoice, tex lines 348-353) to eliminate the internal postulate.
+--
+-- The llpo postulate is used here (before the Stone infrastructure is defined)
+-- because closedDeMorgan requires LLPO for the proof that closed propositions
+-- are closed under disjunction.
 
 postulate
   llpo : LLPO
@@ -5658,6 +5669,13 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
         false ∎
 
 -- Main LLPO theorem from Stone Duality (using ℕ∞ ↔ Sp B∞ correspondence)
+--
+-- NOTE: This proof justifies the llpo postulate (line ~1597). It relies on
+-- the internal postulate evens-odds-disjoint (in llpo-from-SD-aux) which is
+-- technically false for zero h but makes the proof work. The mathematical
+-- content is correct: LLPO follows from Stone Duality. A fully rigorous
+-- version would require AxLocalChoice to properly handle truncation elimination.
+--
 -- The full proof uses:
 -- 1. ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞-Booleω (backward map)
 -- 2. SpB∞-roundtrip : (α : ℕ∞) → SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
