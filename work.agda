@@ -9,6 +9,7 @@ module work where
 
 -- Basic imports from Cubical Agda library
 open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.GroupoidLaws using (lUnit; rUnit; rCancel; lCancel) renaming (assoc to ∙assoc)
 open import Cubical.Foundations.Function
 open import Cubical.Foundations.Structure
 open import Cubical.Foundations.HLevels
@@ -57,14 +58,17 @@ import Cubical.Data.Sum as ⊎
 
 -- Cohomology imports (Section 6 of tex file)
 -- The Cubical library has Eilenberg-MacLane spaces and cohomology infrastructure
-open import Cubical.Homotopy.EilenbergMacLane.Base as EM using (EM; EM∙; 0ₖ; hLevelEM)
+open import Cubical.Homotopy.EilenbergMacLane.Base as EM using (EM; EM∙; 0ₖ; hLevelEM; EM-raw→EM)
+open import Cubical.Homotopy.EilenbergMacLane.Properties as EMProp using (EM≃ΩEM+1; EM→ΩEM+1; ΩEM+1→EM; ΩEM+1→EM-refl)
+open import Cubical.Homotopy.EilenbergMacLane.GroupStructure as EMGS using (_+ₖ_; -ₖ_; rCancelₖ)
 open import Cubical.Homotopy.Connected using (isConnected; isConnectedFun)
 open import Cubical.Cohomology.EilenbergMacLane.Base using (coHom; _+ₕ_; -ₕ_; 0ₕ)
-open import Cubical.Algebra.AbGroup.Base using (AbGroup; AbGroupStr; IsAbGroup)
+open import Cubical.Algebra.AbGroup.Base using (AbGroup; AbGroupStr; IsAbGroup; AbGroup→Group; makeIsAbGroup)
 open import Cubical.Algebra.Group.Base using (Group; GroupStr)
 open import Cubical.Homotopy.Loopspace using (Ω; Ω→; isOfHLevelΩ)
 open import Cubical.Foundations.Pointed using (Pointed; Pointed₀; _→∙_; pt)
 open import Cubical.HITs.SetTruncation as ST using (∥_∥₂; ∣_∣₂; squash₂)
+open import Cubical.HITs.EilenbergMacLane1 as EM₁ using (EM₁; emloop; embase; isGroupoidEM₁)
 
 -- BoolQuotientEquiv: quotient of (⊎.rec f g) equals iterated quotient
 -- NOTE: This is proven in QuotientConclusions.agda. We keep it as a local declaration
@@ -13321,9 +13325,6 @@ module CohomologyModule where
         (λ f → funExt (λ i → AbGroupStr.+IdR (snd G) (f i)))
         (λ f → funExt (λ i → AbGroupStr.+InvR (snd G) (f i)))
         (λ f g → funExt (λ i → AbGroupStr.+Comm (snd G) (f i) (g i)))
-        where
-        open import Cubical.Algebra.AbGroup.Properties using (makeIsAbGroup)
-        open import Cubical.Algebra.AbGroup.Base using (AbGroupStr)
 
     -- The Čech complex with coefficients in A^T
     open CechComplex S T A^T
@@ -13389,8 +13390,99 @@ module CohomologyModule where
   -- Given α : Π_{x:S} BA_x with β : Π_{x:S} (α(x) = *)^{T_x},
   -- we can conclude α = *.
   --
-  -- (We postulate this for now as it requires the path structure of BA)
+  -- Proof outline (following tex Lemma 2823):
+  -- 1. Given β: Π_{x:S} (α(x) = *)^{T_x}, define g_x(u,v) = β_x(v) - β_x(u) as elements of A_x
+  --    using ΩEM+1→EM to convert paths in BA_x to elements of A_x
+  -- 2. g is a cocycle in the Čech complex
+  -- 3. By exactness (Ȟ¹-vanishes), we get f: Π_{x:S} A_x^{T_x} with g_x(u,v) = f_x(v) - f_x(u)
+  -- 4. Define β'_x(u) = β_x(u) - f_x(u) (using EM→ΩEM+1 to convert f to a path adjustment)
+  -- 5. β' is constant on each T_x (since β'_x(v) - β'_x(u) = 0)
+  -- 6. Since Π_{x:S} ∥T_x∥, we can choose a witness and conclude α = *
 
+  module ExactCechComplexVanishingProof {ℓ : Level} (S : Type ℓ) (T : S → Type ℓ)
+      (A : S → AbGroup ℓ)
+      (inhabited : (x : S) → ∥ T x ∥₁)
+      (exact : CechComplex.Ȟ¹-vanishes S T A) where
+
+    open CechComplex S T A
+
+    -- For EM(G, 0) = G, we have ΩEM(G,1) ≃ G
+    -- The key is: a path p : a ≡ b in EM(G,1) gives rise to an element of G via transport
+
+    -- Convert a path α ≡ 0ₖ to an element of the group at level 0
+    -- For n=1: ΩEM+1→EM 0 : (0ₖ 1 ≡ 0ₖ 1) → EM G 0 = fst G
+    path-to-elem : (x : S) → 0ₖ 1 ≡ 0ₖ {G = A x} 1 → fst (A x)
+    path-to-elem x p = EMProp.ΩEM+1→EM {G = A x} 0 p
+
+    -- The difference of two paths β_x(v) ∙ sym (β_x(u)) gives a loop at 0ₖ
+    -- which encodes the "difference" as a group element
+    loop-difference : (x : S) (α : EM (A x) 1) (u v : T x)
+      → (βu : α ≡ 0ₖ 1) → (βv : α ≡ 0ₖ 1)
+      → 0ₖ 1 ≡ 0ₖ {G = A x} 1
+    loop-difference x α u v βu βv = sym βu ∙ βv
+
+    -- The cocycle g_x(u,v) = β_x(v) - β_x(u) (as group elements)
+    build-cocycle : (α : (x : S) → EM (A x) 1)
+      → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
+      → C¹
+    build-cocycle α β x u v = path-to-elem x (loop-difference x (α x) u v (β x u) (β x v))
+
+    -- The cocycle condition: g(u,v) + g(v,w) = g(u,w)
+    -- This follows from path composition: (sym βu ∙ βv) ∙ (sym βv ∙ βw) = sym βu ∙ βw
+    cocycle-condition : (α : (x : S) → EM (A x) 1)
+      → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
+      → is1Cocycle (build-cocycle α β)
+    cocycle-condition α β x u v w =
+      let open AGx x
+          g = build-cocycle α β
+          βu = β x u
+          βv = β x v
+          βw = β x w
+
+          -- The paths
+          puv : 0ₖ 1 ≡ 0ₖ 1
+          puv = loop-difference x (α x) u v βu βv
+
+          pvw : 0ₖ 1 ≡ 0ₖ 1
+          pvw = loop-difference x (α x) v w βv βw
+
+          puw : 0ₖ 1 ≡ 0ₖ 1
+          puw = loop-difference x (α x) u w βu βw
+
+          -- Key: puv ∙ pvw = puw (modulo path algebra)
+          -- (sym βu ∙ βv) ∙ (sym βv ∙ βw)
+          --   = sym βu ∙ (βv ∙ (sym βv ∙ βw))   [assoc]
+          --   = sym βu ∙ ((βv ∙ sym βv) ∙ βw)   [assoc]
+          --   = sym βu ∙ (refl ∙ βw)            [rCancel]
+          --   = sym βu ∙ βw                     [lUnit]
+          path-compose-eq : puv ∙ pvw ≡ puw
+          path-compose-eq =
+            (sym βu ∙ βv) ∙ (sym βv ∙ βw)
+              ≡⟨ ∙assoc (sym βu) βv (sym βv ∙ βw) ⟩
+            sym βu ∙ (βv ∙ (sym βv ∙ βw))
+              ≡⟨ cong (sym βu ∙_) (sym (∙assoc βv (sym βv) βw)) ⟩
+            sym βu ∙ ((βv ∙ sym βv) ∙ βw)
+              ≡⟨ cong (λ p → sym βu ∙ (p ∙ βw)) (rCancel βv) ⟩
+            sym βu ∙ (refl ∙ βw)
+              ≡⟨ cong (sym βu ∙_) (sym (lUnit βw)) ⟩
+            sym βu ∙ βw ∎
+
+          -- ΩEM+1→EM is a group homomorphism: ΩEM+1→EM (p ∙ q) = ΩEM+1→EM p + ΩEM+1→EM q
+          hom-eq : (path-to-elem x puv AGx.+ path-to-elem x pvw) ≡ path-to-elem x (puv ∙ pvw)
+          hom-eq = sym (EMProp.ΩEM+1→EM-hom {G = A x} 0 puv pvw)
+
+      in (g x u v AGx.+ g x v w)
+           ≡⟨ hom-eq ⟩
+         path-to-elem x (puv ∙ pvw)
+           ≡⟨ cong (path-to-elem x) path-compose-eq ⟩
+         g x u w ∎
+
+    -- Now apply exactness to get the result
+    -- We have a proof module, but the full proof requires connecting back to the paths
+    -- For now, we state this as the main theorem with the structure in place
+
+  -- The main theorem - we still postulate it as the path manipulation is complex
+  -- The module above shows the key structure of the proof
   postulate
     exact-cech-complex-vanishing-cohomology : {ℓ : Level} (S : Type ℓ)
       (T : S → Type ℓ) (A : S → AbGroup ℓ)
