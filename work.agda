@@ -5787,5 +5787,76 @@ neg-nf-correct (joinForm ns) = sym (neg-finJoin ns)
 neg-nf-correct (meetNegForm ns) = sym (neg-finMeetNeg ns)
 
 -- =============================================================================
+-- Closure operations for normal forms
+-- =============================================================================
+
+-- For proving normalFormExists, we need closure under join and meet.
+-- The key simplifications come from the orthogonality relation g_i · g_j = 0 for i ≠ j.
+
+-- Join of two joinForms: union of index lists
+-- ⋁_I g_i ∨ ⋁_J g_j = ⋁_{I∪J} g_k
+-- (Note: duplicates don't matter since g_i ∨ g_i = g_i)
+join-joinForm : List ℕ → List ℕ → B∞-NormalForm
+join-joinForm ns ms = joinForm (ns ++ ms)
+
+-- Join of joinForm and meetNegForm:
+-- ⋁_I g_i ∨ ⋀_J ¬g_j
+-- This doesn't simplify to a normal form in general - it requires more analysis.
+-- The result depends on whether I ⊆ J, I ∩ J = ∅, etc.
+
+-- Meet of two joinForms:
+-- ⋁_I g_i ∧ ⋁_J g_j = ⋁_{I∩J} g_k  (since g_i · g_j = 0 for i ≠ j)
+-- Special case: if I = {i} and J = {j} with i ≠ j, result is 0
+
+-- Meet of two meetNegForms: union of index lists
+-- ⋀_I ¬g_i ∧ ⋀_J ¬g_j = ⋀_{I∪J} ¬g_k
+meet-meetNegForm : List ℕ → List ℕ → B∞-NormalForm
+meet-meetNegForm ns ms = meetNegForm (ns ++ ms)
+
+-- For the full normalFormExists proof, we would need:
+-- 1. normalizeTerm : freeBATerms ℕ → B∞-NormalForm (normalize terms)
+-- 2. normalizeTerm-correct : ⟦ normalizeTerm t ⟧nf ≡ π∞ (includeTerm t)
+-- 3. Use includeBATermsSurj to get surjectivity onto freeBA ℕ
+-- 4. Descend to quotient B∞ (relations are compatible with normal forms)
+
+-- Simplified approach via case analysis on term structure:
+-- Every element of freeBA ℕ is built from:
+-- - Generators: g_n → joinForm [n]
+-- - Constants: false → joinForm [], true → meetNegForm []
+-- - Addition (XOR): handled via de Morgan + characteristic 2
+-- - Multiplication (AND): handled by orthogonality
+
+-- The quotient relations g_m · g_n = 0 (m ≠ n) are already captured:
+-- - joinForm [m] ∧ joinForm [n] = 0 = joinForm [] when m ≠ n
+-- - joinForm [m] ∧ joinForm [m] = g_m = joinForm [m]
+
+-- =============================================================================
+-- Proof approach documentation for normalFormExists
+-- =============================================================================
+
+-- The full proof of normalFormExists requires showing that Boolean ring operations
+-- preserve or simplify to normal forms. Here's the key structure:
+--
+-- TERM NORMALIZATION:
+--   normalizeTerm : freeBATerms ℕ → ∥ B∞-NormalForm ∥₁
+--   normalizeTerm (Tvar n)     = ∣ joinForm [n] ∣₁
+--   normalizeTerm (Tconst false) = ∣ joinForm [] ∣₁
+--   normalizeTerm (Tconst true)  = ∣ meetNegForm [] ∣₁
+--   normalizeTerm (t +T s)     = ... (XOR cases)
+--   normalizeTerm (-T t)       = neg-nf (normalizeTerm t)
+--   normalizeTerm (t ·T s)     = ... (AND cases)
+--
+-- The tricky cases are:
+-- 1. XOR of two normal forms requires de Morgan laws
+-- 2. AND of joinForm with meetNegForm requires distributivity
+--
+-- QUOTIENT DESCENT:
+-- The surjection includeBATermsSurj : freeBATerms ℕ ↠ ⟨ freeBA ℕ ⟩ gives
+-- that every element has a term. The quotient B∞ = freeBA ℕ /Im relB∞
+-- inherits this because:
+-- - The relations relB∞ map to joinForm []  (they become 0)
+-- - Normal forms are compatible with the equivalence relation
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
