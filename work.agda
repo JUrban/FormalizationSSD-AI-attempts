@@ -4327,17 +4327,41 @@ h'-right-true→left-false h' h'-right-true x =
 -- First, extend to freeBA ℕ, then descend to the quotient
 
 -- The map on freeBA ℕ induced by α
-postulate
-  ℕ∞-to-SpB∞-free : ℕ∞ → BoolHom (freeBA ℕ) BoolBR
+-- Uses the universal property of freeBA: extend ℕ∞-on-gen to a homomorphism
+ℕ∞-to-SpB∞-free : ℕ∞ → BoolHom (freeBA ℕ) BoolBR
+ℕ∞-to-SpB∞-free α = inducedBAHom ℕ BoolBR (ℕ∞-on-gen α)
+
+-- Key property: ℕ∞-to-SpB∞-free agrees with ℕ∞-on-gen on generators
+ℕ∞-to-SpB∞-free-on-gen : (α : ℕ∞) → fst (ℕ∞-to-SpB∞-free α) ∘ generator ≡ ℕ∞-on-gen α
+ℕ∞-to-SpB∞-free-on-gen α = evalBAInduce ℕ BoolBR (ℕ∞-on-gen α)
 
 -- This respects the quotient relations (g_m · g_n = 0 for m ≠ n maps to 0)
-postulate
-  ℕ∞-to-SpB∞-respects-rel : (α : ℕ∞) (k : ℕ) →
-    fst (ℕ∞-to-SpB∞-free α) (relB∞ k) ≡ false
+-- relB∞ k = gen a · gen (a + suc d) where (a, d) = cantorUnpair k
+-- Since ℕ∞-to-SpB∞-free is a ring homomorphism, it preserves multiplication
+-- The map sends relB∞ k to (ℕ∞-on-gen α a) · (ℕ∞-on-gen α (a + suc d))
+-- which equals false by ℕ∞-gen-respects-relations (since a ≠ a + suc d)
 
--- Descend to the quotient
-postulate
-  ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞-Booleω
+-- Helper: distinct generators map to and-zero under ℕ∞-to-SpB∞-free
+ℕ∞-to-SpB∞-free-distinct-zero : (α : ℕ∞) (a b : ℕ) → ¬ (a ≡ b) →
+  fst (ℕ∞-to-SpB∞-free α) (gen a · gen b) ≡ false
+ℕ∞-to-SpB∞-free-distinct-zero α a b a≠b =
+  fst (ℕ∞-to-SpB∞-free α) (gen a · gen b)
+    ≡⟨ IsCommRingHom.pres· (snd (ℕ∞-to-SpB∞-free α)) (gen a) (gen b) ⟩
+  (fst (ℕ∞-to-SpB∞-free α) (gen a)) and (fst (ℕ∞-to-SpB∞-free α) (gen b))
+    ≡⟨ cong₂ _and_ (funExt⁻ (ℕ∞-to-SpB∞-free-on-gen α) a) (funExt⁻ (ℕ∞-to-SpB∞-free-on-gen α) b) ⟩
+  (ℕ∞-on-gen α a) and (ℕ∞-on-gen α b)
+    ≡⟨ ℕ∞-gen-respects-relations α a b a≠b ⟩
+  false ∎
+
+ℕ∞-to-SpB∞-respects-rel : (α : ℕ∞) (k : ℕ) →
+  fst (ℕ∞-to-SpB∞-free α) (relB∞ k) ≡ false
+ℕ∞-to-SpB∞-respects-rel α k =
+  let (a , d) = cantorUnpair k
+  in ℕ∞-to-SpB∞-free-distinct-zero α a (a +ℕ suc d) (a≠a+suc-d a d)
+
+-- Descend to the quotient using QB.inducedHom
+ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞-Booleω
+ℕ∞-to-SpB∞ α = QB.inducedHom {B = freeBA ℕ} {f = relB∞} BoolBR (ℕ∞-to-SpB∞-free α) (ℕ∞-to-SpB∞-respects-rel α)
 
 -- The round-trip property: SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
 postulate
