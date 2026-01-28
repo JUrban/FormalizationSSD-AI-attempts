@@ -9449,5 +9449,120 @@ module BooleEpiMonoModule where
       → (x : Sp B) → isClosedProp (∥ Σ[ y ∈ Sp C ] y ∘cr g ≡ x ∥₁ , squash₁)
 
 -- =============================================================================
+-- Compact Hausdorff Spaces (tex Definition at line 1898)
+-- =============================================================================
+--
+-- A type X is called a compact Hausdorff space (CHaus) if:
+-- 1. Its identity types are closed propositions
+-- 2. There exists some S : Stone with a surjection S ↠ X
+--
+-- Equivalently: CHaus spaces are precisely quotients of Stone spaces
+-- by closed equivalence relations.
+
+module CompactHausdorffModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Definition: A type has CHaus structure if
+  -- 1. X is a set (equivalent to: equality is closed)
+  -- 2. Equality is closed (x =_X y is closed for all x,y : X)
+  -- 3. There exists a Stone space with a surjection onto X
+  --
+  -- Note: We include isSetX explicitly because isClosedProp requires isProp,
+  -- and we need to construct the hProp (x ≡ y , isSetX x y) first.
+  -- In the tex, being closed implies being a set, but we make this explicit.
+
+  record hasCHausStr (X : Type₀) : Type₁ where
+    field
+      isSetX : isSet X
+      equalityClosed : (x y : X) → isClosedProp ((x ≡ y) , isSetX x y)
+      stoneCover : ∥ Σ[ S ∈ Stone ] Σ[ q ∈ (fst S → X) ] isSurjection q ∥₁
+
+  CHaus : Type₁
+  CHaus = Σ[ X ∈ Type₀ ] hasCHausStr X
+
+  -- Stone spaces are CHaus
+  -- Proof: Stone spaces have closed equality (StoneEqualityClosed)
+  -- and the identity map from themselves is a surjection.
+  Stone→CHaus : Stone → CHaus
+  Stone→CHaus S = fst S , record
+    { isSetX = hasStoneStr→isSet S
+    ; equalityClosed = StoneEqualityClosed S
+    ; stoneCover = ∣ S , (λ x → x) , (λ x → ∣ x , refl ∣₁) ∣₁
+    }
+    where
+    open StoneEqualityClosedModule
+
+  -- A subset of a CHaus space
+  ClosedSubsetOfCHaus : CHaus → Type₁
+  ClosedSubsetOfCHaus X = Σ[ A ∈ (fst X → hProp ℓ-zero) ] ((x : fst X) → isClosedProp (A x))
+
+-- =============================================================================
+-- CompactHausdorffClosed (tex Lemma 1906)
+-- =============================================================================
+--
+-- Let X : CHaus, S : Stone, and q : S ↠ X surjective.
+-- Then A ⊆ X is closed iff it is the image of a closed subset of S by q.
+--
+-- Proof outline:
+-- (→) If A is closed, then q⁻¹(A) is closed. Since q is surjective, q(q⁻¹(A)) = A.
+-- (←) If B ⊆ S is closed, then x ∈ q(B) iff ∃_{s:S} (B(s) ∧ q(s) = x).
+--     By InhabitedClosedSubSpaceClosed, q(B) is closed.
+
+module CompactHausdorffClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedModule
+
+  -- Note: preimageClosedIsClosed already defined at line ~3321
+
+  -- The main characterization of closed subsets in CHaus
+  -- For now, we state this as a postulate (full proof requires infrastructure)
+  postulate
+    -- Forward: if A is closed in CHaus, then A = q(q⁻¹(A)) for closed q⁻¹(A) in S
+    -- Backward: if B is closed in S, then q(B) is closed in X
+    CompactHausdorffClosed-backward : (X : CHaus) (S : Stone)
+      → (q : fst S → fst X) → isSurjection q
+      → (B : fst S → hProp ℓ-zero) → ((s : fst S) → isClosedProp (B s))
+      → (x : fst X) → isClosedProp (∥ Σ[ s ∈ fst S ] fst (B s) × (q s ≡ x) ∥₁ , squash₁)
+
+-- =============================================================================
+-- InhabitedClosedSubSpaceClosedCHaus (tex Corollary 1930)
+-- =============================================================================
+--
+-- For X : CHaus with A ⊆ X closed, ∃_{x:X} A(x) is closed and equivalent to A ≠ ∅.
+
+module InhabitedClosedSubSpaceClosedCHausModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open CompactHausdorffModule
+  open TruncationStoneClosedComplete
+
+  -- The main theorem: existence of element in closed subset is closed
+  postulate
+    InhabitedClosedSubSpaceClosedCHaus : (X : CHaus)
+      → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
+      → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+
+-- =============================================================================
+-- AllOpenSubspaceOpen (tex Corollary 1967)
+-- =============================================================================
+--
+-- For X : CHaus with U ⊆ X open, ∀_{x:X} U(x) is open.
+--
+-- Proof: ¬U is closed, so ∃_{x:X} ¬U(x) is closed.
+-- Therefore ¬(∃_{x:X} ¬U(x)) is open.
+-- This equals ∀_{x:X} ¬¬U(x) = ∀_{x:X} U(x) (using openness of U).
+
+module AllOpenSubspaceOpenModule where
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedCHausModule
+
+  postulate
+    AllOpenSubspaceOpen : (X : CHaus)
+      → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+      → isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
