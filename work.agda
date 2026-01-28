@@ -3971,9 +3971,83 @@ f-respects-relations m n m≠n with parity m in pm | parity n in pn
 -- Case 4: m odd, n even
 ... | false | true = inr-inl-mult-zero (g∞ (div2 m)) (g∞ (div2 n))
 
--- This induces a homomorphism by the universal property of freeBA ℕ
--- and respects the relations because:
--- - For distinct n, m: f(g_n) ∧ f(g_m) = 0 (case analysis on parities)
+-- =============================================================================
+-- Constructing the full homomorphism f : B∞ → B∞×B∞
+-- =============================================================================
+
+-- Step 1: Use the universal property of freeBA ℕ to get a map freeBA ℕ → B∞×B∞
+-- This uses inducedBAHom from FreeBool.agda
+open import BooleanRing.FreeBooleanRing.FreeBool using (inducedBAHom; generator; evalBAInduce)
+
+-- The induced homomorphism from freeBA ℕ to B∞×B∞
+f-free : BoolHom (freeBA ℕ) B∞×B∞
+f-free = inducedBAHom ℕ B∞×B∞ f-on-gen
+
+-- Key property: f-free agrees with f-on-gen on generators
+f-free-on-gen : fst f-free ∘ generator ≡ f-on-gen
+f-free-on-gen = evalBAInduce ℕ B∞×B∞ f-on-gen
+
+-- Step 2: Show that f-free sends relB∞ k to (0, 0) for all k
+-- This follows from the fact that relB∞ k = gen a · gen (a + suc d)
+-- for some a, d, and f-free preserves multiplication
+
+-- First, recall that the generator in freeBA ℕ is 'generator' and
+-- the generator in B∞ is g∞ = fst π∞ ∘ gen
+-- The relation is: gen m · gen n = 0 in B∞ for m ≠ n
+
+-- Key: f-free(gen m · gen n) = f-free(gen m) ·× f-free(gen n)
+--                             = f-on-gen m ·× f-on-gen n  (by f-free-on-gen)
+--                             = (0, 0) for m ≠ n         (by f-respects-relations)
+
+-- The product in freeBA ℕ
+private
+  open BooleanRingStr (snd (freeBA ℕ)) using () renaming (_·_ to _·free_)
+
+-- Homomorphism property of f-free
+f-free-pres· : (x y : ⟨ freeBA ℕ ⟩) → fst f-free (x ·free y) ≡ (fst f-free x) ·× (fst f-free y)
+f-free-pres· x y = IsCommRingHom.pres· (snd f-free) x y
+
+-- gen in freeBA ℕ is just 'generator'
+gen-is-generator : gen ≡ generator
+gen-is-generator = refl
+
+-- The crucial lemma: f-free sends products of distinct generators to zero
+f-free-distinct-zero : (m n : ℕ) → ¬ (m ≡ n) →
+  fst f-free (gen m ·free gen n) ≡ (𝟘∞ , 𝟘∞)
+f-free-distinct-zero m n m≠n =
+  fst f-free (gen m ·free gen n)             ≡⟨ f-free-pres· (gen m) (gen n) ⟩
+  (fst f-free (gen m)) ·× (fst f-free (gen n)) ≡⟨ cong₂ _·×_ (funExt⁻ f-free-on-gen m) (funExt⁻ f-free-on-gen n) ⟩
+  f-on-gen m ·× f-on-gen n                    ≡⟨ f-respects-relations m n m≠n ⟩
+  (𝟘∞ , 𝟘∞) ∎
+
+-- Now we need to show that f-free sends relB∞ k to (0, 0)
+-- Recall: relB∞ k = relB∞-from-pair (cantorUnpair k) = gen a · gen (a + suc d)
+-- where (a, d) = cantorUnpair k
+
+-- Since a < a + suc d, we have a ≠ a + suc d
+-- Proof: if a = a + suc d, then 0 = suc d (contradiction)
+-- We use: a + 0 = a = a + suc d → 0 = suc d
+a≠a+suc-d : (a d : ℕ) → ¬ (a ≡ a +ℕ suc d)
+a≠a+suc-d a d = λ eq →
+  let step1 : a +ℕ zero ≡ a +ℕ suc d
+      step1 = +-zero a ∙ eq
+      step2 : zero ≡ suc d
+      step2 = inj-m+ step1
+  in znots step2
+
+-- f-free sends relB∞ k to zero
+f-free-on-relB∞ : (k : ℕ) → fst f-free (relB∞ k) ≡ (𝟘∞ , 𝟘∞)
+f-free-on-relB∞ k =
+  let (a , d) = cantorUnpair k
+  in f-free-distinct-zero a (a +ℕ suc d) (a≠a+suc-d a d)
+
+-- Step 3: Use QB.inducedHom to descend to the quotient
+-- B∞ = freeBA ℕ /Im relB∞
+-- We have f-free : freeBA ℕ → B∞×B∞ with f-free(relB∞ k) = 0 for all k
+-- So we get f : B∞ → B∞×B∞
+
+f : BoolHom B∞ B∞×B∞
+f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
 
 -- The key theorem we need (SurjectionsAreFormalSurjections, tex line 294):
 -- For g : B → C in Booleω: g is injective ↔ Sp(g) is surjective
