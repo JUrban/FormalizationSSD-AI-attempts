@@ -10088,6 +10088,36 @@ module IntervalTopologyModule where
           in <I-implies-≢ y z y<z y=z
     in <I-from-≤-≢ x z x≤z x≢z
 
+  -- Derived: equality implies ≤ (via reflexivity)
+  ≤I-from-≡ : (x y : UnitInterval) → x ≡ y → x ≤I y
+  ≤I-from-≡ x y x=y = subst (x ≤I_) x=y (≤I-refl x)
+
+  -- Derived: x < y implies ¬(y ≤ x) (contrapositive of antisymmetry-like property)
+  <I-implies-¬≤I : (x y : UnitInterval) → x <I y → y ≤I x → ⊥
+  <I-implies-¬≤I x y x<y y≤x =
+    let x≤y : x ≤I y
+        x≤y = ≤-from-<I x y x<y
+        x=y : x ≡ y
+        x=y = ≤I-antisym x y x≤y y≤x
+    in <I-implies-≢ x y x<y x=y
+
+  -- Trichotomy: for any x, y, either x < y, x = y, or y < x
+  -- This follows from ≤I-linear and the definition of <
+  -- Proof: By ≤I-linear, we have (x ≤ y) ⊎ (y ≤ x).
+  -- Case 1: x ≤ y. Then either x = y (equality case) or x < y (from ≤ and ≢)
+  -- Case 2: y ≤ x. Then either x = y or y < x.
+  -- The key insight: if x ≤ y but x ≠ y, we need to show y ≤ x → ⊥.
+  -- This follows because x ≤ y ∧ y ≤ x → x = y, contradicting x ≠ y.
+  --
+  -- However, to prove x ≠ y constructively from just x ≤ y, we need more information.
+  -- Instead, we use both directions: if x ≤ y and y ≤ x, then x = y.
+  -- If x ≤ y and ¬(y ≤ x), then since ≤I-linear gives y ≤ x or x ≤ y, we have a case analysis.
+  --
+  -- Simplified approach: This actually needs decidable equality or a stronger axiom.
+  -- For now, we postulate trichotomy and can prove it from stronger assumptions later.
+  postulate
+    <I-trichotomy : (x y : UnitInterval) → (x <I y) ⊎ ((x ≡ y) ⊎ (y <I x))
+
   -- Closed interval [a,b]
   ClosedInterval : (a b : UnitInterval) → Type₀
   ClosedInterval a b = Σ[ x ∈ UnitInterval ] (a ≤I x) × (x ≤I b)
