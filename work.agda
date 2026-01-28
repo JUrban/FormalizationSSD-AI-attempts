@@ -10223,6 +10223,14 @@ module BrouwerFixedPointTheoremModule where
 -- - Cantor space is Stone (CantorIsStone)
 -- - Stone spaces embed as closed subsets of Cantor (StoneAsClosedSubsetOfCantor)
 --
+-- INTERVAL TOPOLOGY (tex 2605-2762):
+-- - Unit interval I is CHaus (IntervalIsCHaus)
+-- - Linear order on I (≤I-linear, ≤I-antisym, ≤I-trans, ≤I-refl)
+-- - Strict order is open (<I-isOpen), weak order is closed (≤I-isClosed)
+-- - Apartness characterization (≠I-apartness)
+-- - Interval topology is standard (IntervalTopologyStandard)
+-- - Image of decidable sets are closed intervals (ImageDecidableClosedInterval)
+--
 -- MAIN THEOREMS:
 -- - Intermediate Value Theorem (IntermediateValueTheorem)
 -- - Brouwer's Fixed Point Theorem (BrouwerFixedPointTheorem)
