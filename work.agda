@@ -4299,14 +4299,19 @@ data B∞-NormalForm : Type₀ where
 -- This is essentially equivalent to normalFormExists.
 --
 -- normalFormExists is now partially resolved:
--- - normalFormExists-trunc (truncated version) is PROVED at line ~7092
--- - normalFormExists-from-surj (untruncated) is proved at line ~7125
+-- - normalFormExists-trunc (truncated version) is PROVED at line ~7849
+-- - normalFormExists-from-surj (untruncated) is proved at line ~7882
 --   but requires nf-injective which is still postulated
 --
 -- For f-injective, we don't need the untruncated version - see f-injective-from-trunc
--- at line ~7156 which uses only the truncated normal form existence.
+-- at line ~7905 which uses only the truncated normal form existence.
 --
--- This postulate is kept for compatibility with existing code that uses untruncated forms.
+-- ANALYSIS: This postulate is UNUSED in the main proof chain!
+-- - The only use is in f-injective-from-normalForm (line ~6144)
+-- - But f-injective-from-normalForm is NEVER USED (superseded by f-injective-from-trunc)
+-- - Therefore this postulate could be safely removed without affecting the formalization
+--
+-- Kept for documentation purposes only.
 postulate
   normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
 
@@ -6141,6 +6146,11 @@ f-kernel-normalForm (meetNegForm ns) fx=0 =
 
 -- f-injective derived from normalFormExists
 -- NOTE: This uses normalFormExists which is still postulated
+--
+-- IMPORTANT: This function is REDUNDANT and UNUSED!
+-- The function f-injective-from-trunc (line ~7905) proves the same result
+-- using only truncated normal forms, without requiring the postulated normalFormExists.
+-- This function is kept only for documentation/reference purposes.
 f-injective-from-normalForm : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
 f-injective-from-normalForm x y fx=fy =
   let -- Get normal forms
@@ -7871,9 +7881,20 @@ normalFormExists-trunc x = PT.map
 -- (a) Using sorted/canonical lists, or
 -- (b) Quotienting by list permutation/deduplication, or
 -- (c) Using finite subsets (FinSet) instead of lists
+--
+-- ANALYSIS: This postulate is UNUSED in the main proof chain!
+-- - nf-injective is only used in isProp-NormalForm-fiber (below)
+-- - isProp-NormalForm-fiber is only used in normalFormExists-from-surj
+-- - normalFormExists-from-surj is NEVER USED (the truncated version suffices)
+-- - Therefore this postulate could be safely removed without affecting the formalization
+--
+-- Kept for documentation purposes only.
 postulate
   nf-injective : (nf₁ nf₂ : B∞-NormalForm) → ⟦ nf₁ ⟧nf ≡ ⟦ nf₂ ⟧nf → nf₁ ≡ nf₂
 
+-- NOTE: isProp-NormalForm-fiber and normalFormExists-from-surj are UNUSED
+-- They demonstrate how to get untruncated normal forms if nf-injective were proved,
+-- but the main formalization uses truncated versions instead.
 isProp-NormalForm-fiber : (x : ⟨ B∞ ⟩) → isProp (Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x)
 isProp-NormalForm-fiber x (nf₁ , eq₁) (nf₂ , eq₂) =
   Σ≡Prop (λ nf → BooleanRingStr.is-set (snd B∞) (⟦ nf ⟧nf) x)
@@ -7976,15 +7997,17 @@ f-injective-from-trunc x y fx=fy =
 -- ------------------------------------
 -- 7. closedSigmaClosed (line 3188): Requires Stone space infrastructure
 --
--- PROVABLE WITH CANONICAL REPRESENTATIONS:
--- -----------------------------------------
--- 8. normalFormExists (line 4311): Uses untruncated sigma, needs nf-injective
---    - normalFormExists-trunc (line 7849) is PROVED
---    - For key theorems like f-injective, the truncated version suffices
+-- UNUSED POSTULATES (could be removed):
+-- --------------------------------------
+-- 8. normalFormExists (line 4311): UNUSED in main proof chain
+--    - Only used in f-injective-from-normalForm which is itself UNUSED
+--    - normalFormExists-trunc (line 7849) is PROVED and suffices for key theorems
+--    - Kept for documentation purposes only
 --
--- 9. nf-injective (line 7875): Requires canonical list representation
---    - Only needed for untruncated normalFormExists
---    - Not needed for f-injective (uses truncated version)
+-- 9. nf-injective (line 7875): UNUSED in main proof chain
+--    - Only used in isProp-NormalForm-fiber which is itself UNUSED
+--    - Would require canonical list representation to prove
+--    - Kept for documentation purposes only
 --
 -- LOCAL POSTULATES (within proof blocks):
 -- ----------------------------------------
