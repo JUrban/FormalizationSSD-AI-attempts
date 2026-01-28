@@ -5951,5 +5951,58 @@ SpB∞≃ℕ∞ : Sp B∞-Booleω ≃ ℕ∞
 SpB∞≃ℕ∞ = isoToEquiv SpB∞≅ℕ∞
 
 -- =============================================================================
+-- Normal Form Operations - Building blocks for normalFormExists
+-- =============================================================================
+
+-- The key insight is that B∞ has orthogonal generators: g_m · g_n = 0 for m ≠ n
+-- This means finite joins of generators remain as joinForms under multiplication:
+-- (⋁_I g_i) ∧ (⋁_J g_j) = ⋁_{I∩J} g_k (since mixed products are 0)
+
+-- Check if n is in list
+_∈?_ : ℕ → List ℕ → Bool
+n ∈? [] = false
+n ∈? (m ∷ ms) with discreteℕ n m
+... | yes _ = true
+... | no _ = n ∈? ms
+
+-- Intersection of two lists
+_∩L_ : List ℕ → List ℕ → List ℕ
+[] ∩L ms = []
+(n ∷ ns) ∩L ms with n ∈? ms
+... | true = n ∷ (ns ∩L ms)
+... | false = ns ∩L ms
+
+-- Meet of two joinForms (uses intersection due to orthogonality)
+-- ⋁_I g_i ∧ ⋁_J g_j = ⋁_{I∩J} g_k
+meet-joinForm-joinForm : List ℕ → List ℕ → B∞-NormalForm
+meet-joinForm-joinForm ns ms = joinForm (ns ∩L ms)
+
+-- =============================================================================
+-- normalFormExists status
+-- =============================================================================
+
+-- The normalFormExists proof requires showing that every element of B∞ can be
+-- written as either a finite join of generators or a finite meet of negated generators.
+--
+-- This is a standard result but the full formalization involves:
+-- 1. Term normalization: mapping freeBATerms ℕ → B∞-NormalForm
+-- 2. Correctness of normalization for each term constructor
+-- 3. Compatibility with quotient relations
+--
+-- For now, normalFormExists remains postulated (see line ~4287).
+--
+-- Key results that follow from normalFormExists:
+-- - f-injective-from-normalForm (line ~5426): derives f-injective from normalFormExists
+-- - f-kernel-normalForm (line ~5313): shows kernel of f is trivial on normal forms
+--
+-- Alternative approach via spectrum:
+-- - SpB∞-to-ℕ∞-injective (line ~5888): homomorphisms are determined by generators
+-- - SpB∞≅ℕ∞ (line ~5946): the spectrum isomorphism, independent of normalFormExists
+--
+-- The main theorem llpo-from-SD (line ~5619) depends on f-injective, which can
+-- be derived from normalFormExists or (once the fundamental axioms are proven)
+-- from the spectrum approach using sd-axiom and surj-formal-axiom.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
