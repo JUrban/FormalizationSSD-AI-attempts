@@ -4698,6 +4698,38 @@ module B∞×B∞-Presentation where
   genProd : ℕ → ⟨ B∞×B∞ ⟩
   genProd n = genProd⊎ (decode× n)
 
+  -- Key lemma: genProd⊎ generators are orthogonal when indices are distinct
+  -- Pattern match on both ℕ ⊎ ℕ arguments
+  genProd⊎-orthog : (x y : ℕ ⊎ ℕ) → ¬ (x ≡ y) → genProd⊎ x ·× genProd⊎ y ≡ (𝟘∞ , 𝟘∞)
+  genProd⊎-orthog (⊎.inl m) (⊎.inl n) m≠n =
+    -- Both in left factor: (g∞ m, 0) · (g∞ n, 0) = (g∞ m · g∞ n, 0)
+    let m≠n' : ¬ (m ≡ n)
+        m≠n' meq = m≠n (cong ⊎.inl meq)
+    in cong₂ _,_ (g∞-distinct-mult-zero m n m≠n') (0∞-absorbs-left 𝟘∞)
+  genProd⊎-orthog (⊎.inl m) (⊎.inr n) _ =
+    -- Different factors: (g∞ m, 0) · (0, g∞ n) = (0, 0)
+    inl-inr-mult-zero (g∞ m) (g∞ n)
+  genProd⊎-orthog (⊎.inr m) (⊎.inl n) _ =
+    -- Different factors: (0, g∞ m) · (g∞ n, 0) = (0, 0)
+    inr-inl-mult-zero (g∞ m) (g∞ n)
+  genProd⊎-orthog (⊎.inr m) (⊎.inr n) m≠n =
+    -- Both in right factor: (0, g∞ m) · (0, g∞ n) = (0, g∞ m · g∞ n)
+    let m≠n' : ¬ (m ≡ n)
+        m≠n' meq = m≠n (cong ⊎.inr meq)
+    in cong₂ _,_ (0∞-absorbs-left 𝟘∞) (g∞-distinct-mult-zero m n m≠n')
+
+  -- Transfer to ℕ-indexed genProd: if m ≠ n then genProd m · genProd n = 0
+  genProd-orthog : (m n : ℕ) → ¬ (m ≡ n) → genProd m ·× genProd n ≡ (𝟘∞ , 𝟘∞)
+  genProd-orthog m n m≠n = genProd⊎-orthog (decode× m) (decode× n) decode-neq
+    where
+    -- If m ≠ n, then decode× m ≠ decode× n (since decode× is injective)
+    decode-neq : ¬ (decode× m ≡ decode× n)
+    decode-neq deq = m≠n (
+      m                    ≡⟨ sym (encode×∘decode× m) ⟩
+      encode× (decode× m)  ≡⟨ cong encode× deq ⟩
+      encode× (decode× n)  ≡⟨ encode×∘decode× n ⟩
+      n                    ∎)
+
   -- Relations: all distinct generators are orthogonal
   -- We encode pairs (i, j) where i < j (using cantorUnpair) in the ℕ ⊎ ℕ space
   -- Then transfer to ℕ via the bijection
@@ -4732,24 +4764,63 @@ module B∞×B∞-Presentation where
   -- 2. There's a homomorphism ψ : B∞×B∞ → B∞×B∞-quotient
   -- 3. They are inverses
 
-  -- For φ: We need to show that genProd respects the relations, i.e.,
-  -- genProd(m) · genProd(m + suc d) = 0 in B∞×B∞
+  -- Step 1: Build a homomorphism from freeBA ℕ → B∞×B∞ using the universal property
+  genProd-free : BoolHom (freeBA ℕ) B∞×B∞
+  genProd-free = inducedBAHom ℕ B∞×B∞ genProd
+
+  genProd-free-on-gen : fst genProd-free ∘ generator ≡ genProd
+  genProd-free-on-gen = evalBAInduce ℕ B∞×B∞ genProd
+
+  -- Step 2: Show that genProd-free sends relB∞×B∞ k to 0
+  -- relB∞×B∞ k = gen m · gen (m + suc d) where (m, d) = cantorUnpair k
+  -- Helper: m ≠ m + suc d for any m, d (m < m + suc d always)
+  m≠m+suc-d : (m d : ℕ) → ¬ (m ≡ m +ℕ suc d)
+  m≠m+suc-d zero d meq = snotz (sym meq)
+  m≠m+suc-d (suc m) d meq = m≠m+suc-d m d (injSuc meq)
+
+  genProd-respects-rel-pair : (p : ℕ × ℕ) → fst genProd-free (relB∞×B∞-from-pair p) ≡ (𝟘∞ , 𝟘∞)
+  genProd-respects-rel-pair (m , d) =
+    let n = m +ℕ suc d
+        m≠n = m≠m+suc-d m d
+    in fst genProd-free (gen m · gen n)
+         ≡⟨ IsCommRingHom.pres· (snd genProd-free) (gen m) (gen n) ⟩
+       fst genProd-free (gen m) ·× fst genProd-free (gen n)
+         ≡⟨ cong₂ _·×_ (funExt⁻ genProd-free-on-gen m) (funExt⁻ genProd-free-on-gen n) ⟩
+       genProd m ·× genProd n
+         ≡⟨ genProd-orthog m n m≠n ⟩
+       (𝟘∞ , 𝟘∞) ∎
+
+  genProd-respects-rel : (k : ℕ) → fst genProd-free (relB∞×B∞ k) ≡ (𝟘∞ , 𝟘∞)
+  genProd-respects-rel k = genProd-respects-rel-pair (cantorUnpair k)
+
+  -- Step 3: Build φ : B∞×B∞-quotient → B∞×B∞ using the induced homomorphism
+  φ : BoolHom B∞×B∞-quotient B∞×B∞
+  φ = QB.inducedHom B∞×B∞ genProd-free genProd-respects-rel
+
+  -- φ sends g× n to genProd n
+  φ-on-g× : (n : ℕ) → fst φ (g× n) ≡ genProd n
+  φ-on-g× n = funExt⁻ (cong fst (QB.evalInduce B∞×B∞)) (gen n) ∙ funExt⁻ genProd-free-on-gen n
+
+  -- Step 4: Build ψ : B∞×B∞ → B∞×B∞-quotient
+  -- The construction requires building homomorphisms for each factor of the product.
+  -- This uses the universal property of B∞ and the fact that g×-left / g×-right
+  -- generators are orthogonal.
   --
-  -- PROOF OUTLINE for genProd-orthog:
-  -- Case analysis on decode× m and decode× n:
-  -- 1. inl m', inl n': Both in left factor
-  --    genProd m · genProd n = (g∞ m', 0) · (g∞ n', 0) = (g∞ m' · g∞ n', 0)
-  --    If m ≠ n, then m' ≠ n' (since encode is injective on inl)
-  --    So g∞ m' · g∞ n' = 0 by g∞-distinct-mult-zero
-  -- 2. inl m', inr n': Different factors
-  --    genProd m · genProd n = (g∞ m', 0) · (0, g∞ n') = (g∞ m' · 0, 0 · g∞ n') = (0, 0)
-  -- 3. inr m', inl n': Different factors (symmetric)
-  -- 4. inr m', inr n': Both in right factor (symmetric to case 1)
-
-  -- The full proof requires careful handling of the with-abstraction
-  -- to get the equality decode× m = inl m' in scope for the subproof.
-  -- We postulate this for now; the mathematical content is correct.
-
+  -- Full proof outline:
+  -- 1. Define ψ-left : B∞ → B∞×B∞-quotient sending g∞ n to g× (encode× (inl n))
+  -- 2. Define ψ-right : B∞ → B∞×B∞-quotient sending g∞ n to g× (encode× (inr n))
+  -- 3. Combine: ψ(x,y) = ψ-left(x) + ψ-right(y)
+  -- 4. Show ψ ∘ φ ≡ id and φ ∘ ψ ≡ id
+  --
+  -- Key insight: The proof that g×-left and g×-right generators are orthogonal
+  -- follows from the same pattern as genProd-orthog but in the quotient.
+  --
+  -- For now, we keep the postulate but document the progress made:
+  -- - genProd⊎-orthog: PROVED
+  -- - genProd-orthog: PROVED
+  -- - genProd-free: Defined
+  -- - genProd-respects-rel: PROVED
+  -- - φ : B∞×B∞-quotient → B∞×B∞: PROVED (via QB.inducedHom)
   postulate
     B∞×B∞≃quotient : BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
 
