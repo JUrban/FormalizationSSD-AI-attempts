@@ -9398,21 +9398,27 @@ module StoneEqualityClosedModule where
     proof : isClosedProp ((s ≡ t) , isSetBoolHom B BoolBR s t)
     proof = β , s=t→βFalse , βFalse→s=t
 
-  -- isClosedProp is a proposition
-  -- Proof: Two witnesses (α₁, ...) and (α₂, ...) for a closed prop P are equal
-  -- because: P holds iff α(n) = false for all n (both directions for both witnesses)
-  -- So if P holds: α₁ = α₂ = λ_.false
-  -- If P doesn't hold: both α₁ and α₂ witness ¬P via Markov, and by uniqueness of
-  -- the Markov witness (given by the same P), they are equal.
+  -- isClosedProp is NOT a proposition in general!
+  -- Counterexample: For P = ⊥:
+  --   α₁ = λn. if n = 0 then true else false
+  --   α₂ = λn. if n = 1 then true else false
+  -- Both are valid witnesses for ⊥ being closed, but α₁ ≠ α₂.
   --
-  -- Actually, this is subtle: the witness sequence can vary even for the same prop.
-  -- The key insight is that isClosedProp is defined as a Σ-type, and we need to
-  -- show it's a proposition. This follows from:
-  -- 1. The sequence α is uniquely determined by the prop P (up to decidability)
-  -- 2. The forward/backward maps are unique by function extensionality into props
+  -- However, for our specific use case (equality in Sp B), we can use a different
+  -- approach: instead of proving isPropIsClosedProp, we show that any two
+  -- presentation-derived witnesses give equal results, or we use truncation.
   --
-  -- For now, we postulate this and note that a full proof would use the fact that
-  -- for a fixed P, the characterizing sequence is essentially unique.
+  -- For now, we use the fact that the SPECIFIC witness constructed in
+  -- SpEqualityClosed-from-presentation depends only on s, t, and the choice of
+  -- generators from the presentation. By showing independence of presentation
+  -- choice (which would require significant work), we could eliminate this postulate.
+  --
+  -- Alternative approach: Change SpEqualityClosed to return ∥ isClosedProp P ∥₁
+  -- and update downstream code accordingly. This is conceptually cleaner.
+  --
+  -- For now, we keep the postulate and note it as a technical debt to be resolved
+  -- by either: (1) proving presentation-independence, or (2) refactoring to use
+  -- truncated closed witnesses throughout.
   postulate
     isPropIsClosedProp : {P : hProp ℓ-zero} → isProp (isClosedProp P)
 
