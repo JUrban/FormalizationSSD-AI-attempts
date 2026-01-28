@@ -5300,17 +5300,110 @@ f-kernel-normalForm (joinForm ns) fx=0 =
       ns=[] = f-kernel-joinForm ns fx=0
   in cong finJoin∞ ns=[]  -- finJoin∞ [] = 𝟘∞
 f-kernel-normalForm (meetNegForm ns) fx=0 =
-  -- finMeetNeg∞ ns ≠ 0 always, so f(finMeetNeg∞ ns) ≠ (0, 0) for any reasonable f
-  -- But if f(x) = 0, then we need to show x = 0
-  -- Actually: we need to show f(finMeetNeg∞ ns) ≠ (0, 0)
-  -- This is NOT immediate from finMeetNeg∞-nonzero alone...
-  -- We need: finMeetNeg∞ ns ≠ 0 AND f is a nonzero-preserving map on this element
-  -- Actually, we need f(finMeetNeg∞ ns) ≠ 0, which requires more infrastructure.
-  -- For now, we note this case is blocked pending additional analysis.
-  ex-falso (meetNegCase-needs-more-work ns fx=0)
+  -- Proof: Use a witness homomorphism h' : Sp(B∞ × B∞) to derive contradiction
+  -- h' = h₀ ∘ π₁ sends (a, b) to h₀(a)
+  -- We show h'(f(finMeetNeg∞ ns)) = true, but h'((0,0)) = false
+  ex-falso (f-meetNeg-nonzero fx=0)
   where
-  postulate
-    meetNegCase-needs-more-work : (ns : List ℕ) → fst f (finMeetNeg∞ ns) ≡ (𝟘∞ , 𝟘∞) → ⊥
+  -- h' : Sp(B∞ × B∞) defined as h₀ ∘ π₁
+  -- Since h₀ is a ring hom B∞ → Bool and π₁ is a ring hom B∞×B∞ → B∞,
+  -- their composition is a ring hom B∞×B∞ → Bool
+  h' : ⟨ B∞×B∞ ⟩ → Bool
+  h' (a , b) = h₀ $cr a
+
+  -- f sends ¬g_n to either (¬g_k, 1) or (1, ¬g_k) depending on parity
+  -- In either case, π₁ gives either ¬g_k or 1, both of which h₀ evaluates to true
+
+  -- For even n = 2k: f(¬g_{2k}) = (¬g_k, 1), so h'(f(¬g_{2k})) = h₀(¬g_k) = true
+  -- For odd n = 2k+1: f(¬g_{2k+1}) = (1, ¬g_k), so h'(f(¬g_{2k+1})) = h₀(1) = true
+
+  h'-on-f-neg-gen-even : (k : ℕ) → h' (fst f (¬∞ (g∞ (2 ·ℕ k)))) ≡ true
+  h'-on-f-neg-gen-even k =
+    h' (fst f (¬∞ (g∞ (2 ·ℕ k))))
+      ≡⟨ cong h' (f-pres-neg (g∞ (2 ·ℕ k))) ⟩
+    h' (¬∞ (fst (fst f (g∞ (2 ·ℕ k)))) , ¬∞ (snd (fst f (g∞ (2 ·ℕ k)))))
+      ≡⟨ cong (λ x → h' (¬∞ (fst x) , ¬∞ (snd x))) (f-even-gen k) ⟩
+    h' (¬∞ (g∞ k) , ¬∞ 𝟘∞)
+      ≡⟨ refl ⟩
+    h₀ $cr (¬∞ (g∞ k))
+      ≡⟨ h₀-on-neg-gen k ⟩
+    true ∎
+
+  h'-on-f-neg-gen-odd : (k : ℕ) → h' (fst f (¬∞ (g∞ (suc (2 ·ℕ k))))) ≡ true
+  h'-on-f-neg-gen-odd k =
+    h' (fst f (¬∞ (g∞ (suc (2 ·ℕ k)))))
+      ≡⟨ cong h' (f-pres-neg (g∞ (suc (2 ·ℕ k)))) ⟩
+    h' (¬∞ (fst (fst f (g∞ (suc (2 ·ℕ k))))) , ¬∞ (snd (fst f (g∞ (suc (2 ·ℕ k))))))
+      ≡⟨ cong (λ x → h' (¬∞ (fst x) , ¬∞ (snd x))) (f-odd-gen k) ⟩
+    h' (¬∞ 𝟘∞ , ¬∞ (g∞ k))
+      ≡⟨ refl ⟩
+    h₀ $cr (¬∞ 𝟘∞)
+      ≡⟨ h-pres-neg-Bool h₀ 𝟘∞ ⟩
+    notBool (h₀ $cr 𝟘∞)
+      ≡⟨ cong notBool (IsCommRingHom.pres0 (snd h₀)) ⟩
+    notBool false
+      ≡⟨ refl ⟩
+    true ∎
+
+  -- For any n, h'(f(¬g_n)) = true
+  h'-on-f-neg-gen : (n : ℕ) → h' (fst f (¬∞ (g∞ n))) ≡ true
+  h'-on-f-neg-gen n = h'-on-f-neg-gen-aux (isEven n) refl
+    where
+    h'-on-f-neg-gen-aux : (b : Bool) → isEven n ≡ b → h' (fst f (¬∞ (g∞ n))) ≡ true
+    h'-on-f-neg-gen-aux true even-n =
+      -- n is even: n = 2k for some k
+      let k = half n
+          n=2k : n ≡ 2 ·ℕ k
+          n=2k = sym (isEven→even n even-n)
+      in subst (λ m → h' (fst f (¬∞ (g∞ m))) ≡ true) (sym n=2k) (h'-on-f-neg-gen-even k)
+    h'-on-f-neg-gen-aux false odd-n =
+      -- n is odd: n = 2k + 1 for some k
+      let k = half n
+          n=2k+1 : n ≡ suc (2 ·ℕ k)
+          n=2k+1 = sym (isEven→odd n odd-n)
+      in subst (λ m → h' (fst f (¬∞ (g∞ m))) ≡ true) (sym n=2k+1) (h'-on-f-neg-gen-odd k)
+
+  -- h' preserves multiplication (since it's h₀ ∘ π₁)
+  h'-pres-· : (x y : ⟨ B∞×B∞ ⟩) → h' (x ·× y) ≡ (h' x) and (h' y)
+  h'-pres-· (a₁ , b₁) (a₂ , b₂) = IsCommRingHom.pres· (snd h₀) a₁ a₂
+
+  -- h'(f(finMeetNeg∞ ns)) = true by induction
+  h'-on-f-finMeetNeg : (ms : List ℕ) → h' (fst f (finMeetNeg∞ ms)) ≡ true
+  h'-on-f-finMeetNeg [] =
+    h' (fst f 𝟙∞)
+      ≡⟨ cong h' f-pres1 ⟩
+    h' (𝟙∞ , 𝟙∞)
+      ≡⟨ refl ⟩
+    h₀ $cr 𝟙∞
+      ≡⟨ IsCommRingHom.pres1 (snd h₀) ⟩
+    true ∎
+  h'-on-f-finMeetNeg (m ∷ ms) =
+    h' (fst f (finMeetNeg∞ (m ∷ ms)))
+      ≡⟨ refl ⟩  -- finMeetNeg∞ (m ∷ ms) = ¬g_m ∧ finMeetNeg∞ ms
+    h' (fst f ((¬∞ (g∞ m)) ∧∞ (finMeetNeg∞ ms)))
+      ≡⟨ cong h' (IsCommRingHom.pres· (snd f) (¬∞ (g∞ m)) (finMeetNeg∞ ms)) ⟩
+    h' ((fst f (¬∞ (g∞ m))) ·× (fst f (finMeetNeg∞ ms)))
+      ≡⟨ h'-pres-· (fst f (¬∞ (g∞ m))) (fst f (finMeetNeg∞ ms)) ⟩
+    (h' (fst f (¬∞ (g∞ m)))) and (h' (fst f (finMeetNeg∞ ms)))
+      ≡⟨ cong₂ _and_ (h'-on-f-neg-gen m) (h'-on-f-finMeetNeg ms) ⟩
+    true and true
+      ≡⟨ refl ⟩
+    true ∎
+
+  -- If f(finMeetNeg∞ ns) = (0, 0), then h'((0, 0)) = false, contradiction
+  f-meetNeg-nonzero : fst f (finMeetNeg∞ ns) ≡ (𝟘∞ , 𝟘∞) → ⊥
+  f-meetNeg-nonzero f-meetNeg=0 = false≢true (sym h'-on-0 ∙ h'-on-f-meetNeg-eq-0)
+    where
+    h'-on-0 : h' (𝟘∞ , 𝟘∞) ≡ false
+    h'-on-0 = IsCommRingHom.pres0 (snd h₀)
+
+    h'-on-f-meetNeg : h' (fst f (finMeetNeg∞ ns)) ≡ true
+    h'-on-f-meetNeg = h'-on-f-finMeetNeg ns
+
+    -- Transport: h'(f(finMeetNeg∞ ns)) = true and f(finMeetNeg∞ ns) = (0,0)
+    -- so h'((0,0)) = true
+    h'-on-f-meetNeg-eq-0 : h' (𝟘∞ , 𝟘∞) ≡ true
+    h'-on-f-meetNeg-eq-0 = subst (λ z → h' z ≡ true) f-meetNeg=0 h'-on-f-meetNeg
 
 -- f-injective derived from normalFormExists
 -- NOTE: This uses normalFormExists which is still postulated
