@@ -4756,6 +4756,54 @@ Sp-prod-to-sum h with h $cr unit-left in p
 ... | true = ⊎.inl (restrict-to-left h (builtin→Path-Bool p))
 ... | false = ⊎.inr (restrict-to-right h (builtin→Path-Bool p))
 
+-- Backward: embed Sp B∞ into Sp B∞×B∞ via left factor
+-- Given h : B∞ → Bool, define h' : B∞×B∞ → Bool by h'(x, y) = h(x)
+inject-left : Sp B∞-Booleω → Sp B∞×B∞-Booleω
+inject-left h = h' , h'-is-hom
+  where
+  open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1 ; pres+ to h-pres+ ; pres· to h-pres·)
+
+  -- h'(x, y) = h(x)
+  h' : ⟨ B∞×B∞ ⟩ → Bool
+  h' (x , y) = h $cr x
+
+  -- h' preserves 1: h'(1,1) = h(1) = true
+  h'-pres1 : h' (𝟙∞ , 𝟙∞) ≡ true
+  h'-pres1 = h-pres1
+
+  -- h' preserves +: The + on B∞×B∞ is componentwise
+  h'-pres+ : (a b : ⟨ B∞×B∞ ⟩) → h' (a +× b) ≡ (h' a) ⊕ (h' b)
+  h'-pres+ (x1 , y1) (x2 , y2) = h-pres+ x1 x2
+
+  -- h' preserves ·
+  h'-pres· : (a b : ⟨ B∞×B∞ ⟩) → h' (a ·×' b) ≡ (h' a) and (h' b)
+  h'-pres· (x1 , y1) (x2 , y2) = h-pres· x1 x2
+
+  h'-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞×B∞)) h' (snd (BooleanRing→CommRing BoolBR))
+  h'-is-hom = makeIsCommRingHom h'-pres1 h'-pres+ h'-pres·
+
+-- Similarly for right factor
+inject-right : Sp B∞-Booleω → Sp B∞×B∞-Booleω
+inject-right h = h' , h'-is-hom
+  where
+  open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1 ; pres+ to h-pres+ ; pres· to h-pres·)
+
+  -- h'(x, y) = h(y)
+  h' : ⟨ B∞×B∞ ⟩ → Bool
+  h' (x , y) = h $cr y
+
+  h'-pres1 : h' (𝟙∞ , 𝟙∞) ≡ true
+  h'-pres1 = h-pres1
+
+  h'-pres+ : (a b : ⟨ B∞×B∞ ⟩) → h' (a +× b) ≡ (h' a) ⊕ (h' b)
+  h'-pres+ (x1 , y1) (x2 , y2) = h-pres+ y1 y2
+
+  h'-pres· : (a b : ⟨ B∞×B∞ ⟩) → h' (a ·×' b) ≡ (h' a) and (h' b)
+  h'-pres· (x1 , y1) (x2 , y2) = h-pres· y1 y2
+
+  h'-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞×B∞)) h' (snd (BooleanRing→CommRing BoolBR))
+  h'-is-hom = makeIsCommRingHom h'-pres1 h'-pres+ h'-pres·
+
 -- =============================================================================
 -- LLPO from Stone Duality
 -- =============================================================================
