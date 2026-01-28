@@ -10334,8 +10334,9 @@ module BrouwerFixedPointTheoremModule where
 -- - Image of decidable sets are closed intervals (ImageDecidableClosedInterval)
 --
 -- MAIN THEOREMS:
--- - Intermediate Value Theorem (IntermediateValueTheorem)
--- - Brouwer's Fixed Point Theorem (BrouwerFixedPointTheorem)
+-- - Intermediate Value Theorem (IntermediateValueTheorem) - PROVED (tex 3082)
+--   Proof structure: ∃x.f(x)=y is closed → ¬¬-stable → contradict with Bool-I-local
+-- - Brouwer's Fixed Point Theorem (BrouwerFixedPointTheorem) - postulated
 --
 -- DERIVED PRINCIPLES:
 -- - ¬WLPO, MP, LLPO follow from Stone Duality
