@@ -10684,6 +10684,37 @@ module StoneAsClosedSubsetOfCantorModule where
 
   -- The type of Stone spaces is equivalent to the type of merely closed subsets of 2^ℕ
   -- (This is a structural characterization of Stone spaces)
+  --
+  -- Stone spaces: Stone = Σ[ X ∈ Type₀ ] hasStoneStr X
+  -- Closed subsets: ClosedSubsetOfCantor = Σ[ A ∈ (CantorSpace → hProp) ] isClosedPred A
+  --
+  -- The correspondence is:
+  -- Forward: Stone → ∥ ClosedSubsetOfCantor ∥₁ (by Stone→ClosedInCantor)
+  -- Backward: ClosedSubsetOfCantor → Stone (by ClosedInCantor→Stone)
+
+  -- Type of closed subsets together with their underlying type
+  ClosedSubsetWithType : Type₁
+  ClosedSubsetWithType = Σ[ A ∈ ClosedSubsetOfCantor ] Type₀
+
+  -- Extract the underlying type from a closed subset
+  closedSubsetType : ClosedSubsetOfCantor → Type₀
+  closedSubsetType (A , _) = Σ[ x ∈ CantorSpace ] fst (A x)
+
+  -- Every closed subset of Cantor gives a Stone space
+  ClosedSubsetOfCantor→Stone : ClosedSubsetOfCantor → Stone
+  ClosedSubsetOfCantor→Stone A = closedSubsetType A , ClosedInCantor→Stone A
+
+  -- The underlying type correspondence: Stone → ∥ ClosedSubsetOfCantor ∥₁
+  -- with the property that the underlying types are equivalent
+  Stone→ClosedWithEquiv : (S : Stone)
+    → ∥ Σ[ A ∈ ClosedSubsetOfCantor ] (fst S ≃ closedSubsetType A) ∥₁
+  Stone→ClosedWithEquiv = Stone→ClosedInCantor
+
+  -- The round-trip starting from ClosedSubsetOfCantor gives back the same underlying type
+  -- (definitionally, by construction)
+  ClosedSubset-roundtrip : (A : ClosedSubsetOfCantor)
+    → fst (ClosedSubsetOfCantor→Stone A) ≡ closedSubsetType A
+  ClosedSubset-roundtrip A = refl
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
