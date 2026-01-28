@@ -692,10 +692,14 @@ mp-from-SD SD α α≠0 = MarkovLib.extract' α (MarkovLib.∃αn α true-in-ide
   0≡1-BR : BooleanRingStr.𝟘 (snd (BoolBR QB./Im α)) ≡ BooleanRingStr.𝟙 (snd (BoolBR QB./Im α))
   0≡1-BR = SpectrumEmptyImpliesTrivial.0≡1-in-B SD (2/α-Booleω α) sp-empty
 
-  -- Convert to CommRing notation (which is the same path)
-  -- The quotient BoolBR /Im α has underlying CommRing BoolCR / αIdeal
-  0≡1-CR : CommRingStr.0r (snd (BoolCR IQ./Im α)) ≡ CommRingStr.1r (snd (BoolCR IQ./Im α))
-  0≡1-CR = 0≡1-BR
+  -- Convert to CommRing notation
+  -- BoolBR QB./Im α = idemCommRing→BR (BoolCR IQ./Im α) quotientPreservesIdem
+  -- So the 𝟘 and 𝟙 of the BooleanRing quotient are the 0r and 1r of the CommRing quotient
+  open import QuotientBool using (_/Im_; quotientPreservesIdem)
+  opaque
+    unfolding _/Im_
+    0≡1-CR : CommRingStr.0r (snd (BoolCR IQ./Im α)) ≡ CommRingStr.1r (snd (BoolCR IQ./Im α))
+    0≡1-CR = 0≡1-BR
 
   -- trivialQuotient→1∈I expects 1r ≡ 0r (swapped), so we sym it
   1≡0-CR : CommRingStr.1r (snd (BoolCR IQ./Im α)) ≡ CommRingStr.0r (snd (BoolCR IQ./Im α))
