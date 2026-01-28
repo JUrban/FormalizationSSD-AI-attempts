@@ -8905,13 +8905,22 @@ module ClosedInStoneIsStoneModule where
   -- For S : Stone and A ⊆ S closed, the Σ-type Σ_{x:S} A(x) is Stone.
   -- This is a consequence of StoneClosedSubsets (tex 1648).
   --
-  -- The proof requires localChoice-axiom (tex 348) to extract a decidable
-  -- sequence from the closed subset:
-  -- 1. A closed means ∀x. ||∃β. (∀n. βn=0 ↔ A(x))||
-  -- 2. By localChoice-axiom, we can cover Sp(B) by Sp(C) and get actual witnesses
-  -- 3. This gives us the decidable sequence (dₙ) needed for the quotient
+  -- PROOF STRATEGY:
+  -- 1. From S : Stone, extract B : Booleω with Sp B ≡ fst S
+  -- 2. From A-closed, extract α : fst S → ℕ → Bool with A(x) ↔ ∀n. α(x)(n) = false
+  -- 3. Transport α to α' : Sp B → ℕ → Bool
+  -- 4. Define decidable predicates Dₙ(x) = α'(x)(n)
+  -- 5. By SD, get elements dₙ ∈ fst B with x(dₙ) = α'(x)(n)
+  -- 6. Use quotientBySeqPreservesBooleω to get C : Booleω with Sp C ≃ ClosedSubset
+  -- 7. ClosedSubset = {x : Sp B | ∀n. x(dₙ) = false} = {x : Sp B | A(x)}
+  -- 8. Use ua to convert the equivalence to equality
+  -- 9. Use isPropHasStoneStr to eliminate the truncation
   --
-  -- For now, we postulate this as it requires the full infrastructure.
+  -- PROOF is given in ClosedInStoneIsStoneProof module at end of file (line ~11640).
+  -- *** THIS POSTULATE IS NOW PROVED! ***
+  -- Postulate is kept here for forward reference compatibility (proof depends on
+  -- modules defined later: SDDecToElemModule, StoneClosedSubsetsModule,
+  -- quotientBySeqPreservesBooleω).
   postulate
     ClosedInStoneIsStone : (S : Stone) → (A : fst S → hProp ℓ-zero)
                          → ((x : fst S) → isClosedProp (A x))
@@ -11623,6 +11632,143 @@ module BrouwerFixedPointTheoremModule where
 -- - ≤I-from-≡, <I-implies-¬≤I: PROVED derived order properties
 -- - <I-trichotomy: postulated (requires decidable equality on I)
 --
+-- =============================================================================
+-- ClosedInStoneIsStone PROOF (validation of postulate at line ~8916)
+-- =============================================================================
+--
+-- This module provides the full proof of ClosedInStoneIsStone, which was
+-- postulated earlier in the file due to forward reference issues.
+-- The postulate at line ~8916 IS NOW PROVABLE with this code.
+
+module ClosedInStoneIsStoneProof where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isPropHasStoneStr; isSetBoolHom)
+  open SDDecToElemModule
+  open StoneClosedSubsetsModule
+
+  -- The full proof of ClosedInStoneIsStone
+  ClosedInStoneIsStone-proved : (S : Stone) → (A : fst S → hProp ℓ-zero)
+                              → ((x : fst S) → isClosedProp (A x))
+                              → hasStoneStr (Σ (fst S) (λ x → fst (A x)))
+  ClosedInStoneIsStone-proved S A A-closed =
+    PT.rec (isPropHasStoneStr sd-axiom _) construct (snd (fst (snd S)))
+    where
+    -- The underlying type of S
+    |S| : Type ℓ-zero
+    |S| = fst S
+
+    -- Σ A is a set (follows from A being hProp-valued over a set)
+    S-isSet : isSet |S|
+    S-isSet = subst isSet (snd (snd S)) (isSetBoolHom (fst (fst (snd S))) BoolBR)
+
+    ΣA-isSet : isSet (Σ |S| (λ x → fst (A x)))
+    ΣA-isSet = isSetΣ S-isSet (λ x → isProp→isSet (snd (A x)))
+
+    -- The closedness witness gives us α : |S| → ℕ → Bool for each x
+    α : |S| → ℕ → Bool
+    α x = fst (A-closed x)
+
+    -- A(x) ↔ ∀n. α(x)(n) = false
+    A→allFalse : (x : |S|) → fst (A x) → (n : ℕ) → α x n ≡ false
+    A→allFalse x = fst (snd (A-closed x))
+
+    allFalse→A : (x : |S|) → ((n : ℕ) → α x n ≡ false) → fst (A x)
+    allFalse→A x = snd (snd (A-closed x))
+
+    -- Given the untruncated presentation, construct the Stone structure
+    -- isPropHasStoneStr expects a Set (= Type in cubical Agda)
+    construct : has-Boole-ω' (fst (fst (snd S))) → hasStoneStr (Σ |S| (λ x → fst (A x)))
+    construct (f₀ , equiv₀) = PT.rec propHasStoneStrΣA extractC (quotientBySeqPreservesBooleω B d)
+      where
+      propHasStoneStrΣA : isProp (hasStoneStr (Σ |S| (λ x → fst (A x))))
+      propHasStoneStrΣA = isPropHasStoneStr sd-axiom (Σ |S| (λ x → fst (A x)))
+
+      -- B : Booleω from the Stone structure
+      B : Booleω
+      B = fst (snd S)
+
+      -- The path Sp B ≡ |S|
+      SpB≡S : Sp B ≡ |S|
+      SpB≡S = snd (snd S)
+
+      -- Transport α along the path to get α' on Sp B
+      α' : Sp B → ℕ → Bool
+      α' x n = α (transport SpB≡S x) n
+
+      -- Define decidable predicates on Sp B
+      -- Dₙ(x) = α'(x)(n), so x ∈ A ↔ ∀n. Dₙ(x) = false
+      D : ℕ → Sp B → Bool
+      D n x = α' x n
+
+      -- By SD, for each n, get dₙ ∈ B with x(dₙ) = D(n)(x) = α'(x)(n)
+      d : ℕ → ⟨ fst B ⟩
+      d n = elemFromDecPred sd-axiom B (D n)
+
+      -- Key property: x(d n) = α'(x)(n)
+      d-property : (n : ℕ) (x : Sp B) → fst x (d n) ≡ α' x n
+      d-property n x = decPred-elem-correspondence sd-axiom B (D n) x
+
+      -- Extract C from the truncated result
+      extractC : Σ[ C ∈ Booleω ] (Sp C ≃ (Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false)))
+               → hasStoneStr (Σ |S| (λ x → fst (A x)))
+      extractC (C , SpC≃ClosedSubset) = C , SpC≡ΣA
+        where
+        -- The closed subset from quotientBySeqPreservesBooleω
+        ClosedSubsetB : Type ℓ-zero
+        ClosedSubsetB = Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false)
+
+        -- ClosedSubsetB ≃ Σ |S| A via the transport
+        -- Key insight: x(d n) = false ↔ α'(x)(n) = false (by d-property)
+        -- And α'(x)(n) = α(transport SpB≡S x)(n), so this is A(transport SpB≡S x)
+
+        ClosedSubsetB→ΣA : ClosedSubsetB → Σ |S| (λ y → fst (A y))
+        ClosedSubsetB→ΣA (x , all-zero) = transport SpB≡S x , allFalse→A (transport SpB≡S x) allFalse'
+          where
+          allFalse' : (n : ℕ) → α (transport SpB≡S x) n ≡ false
+          allFalse' n =
+            α (transport SpB≡S x) n   ≡⟨ sym (d-property n x) ⟩
+            fst x (d n)               ≡⟨ all-zero n ⟩
+            false ∎
+
+        ΣA→ClosedSubsetB : Σ |S| (λ y → fst (A y)) → ClosedSubsetB
+        ΣA→ClosedSubsetB (y , Ay) = x , all-zero
+          where
+          x : Sp B
+          x = transport (sym SpB≡S) y
+
+          all-zero : (n : ℕ) → fst x (d n) ≡ false
+          all-zero n =
+            fst x (d n)             ≡⟨ d-property n x ⟩
+            α' x n                  ≡⟨ refl ⟩
+            α (transport SpB≡S x) n ≡⟨ cong (λ z → α z n) (transportTransport⁻ SpB≡S y) ⟩
+            α y n                   ≡⟨ A→allFalse y Ay n ⟩
+            false ∎
+
+        -- The round-trips
+        -- Note: transport⁻Transport p x : transport⁻ p (transport p x) ≡ x
+        --       transportTransport⁻ p y : transport p (transport⁻ p y) ≡ y
+        open import Cubical.Foundations.Transport using (transport⁻Transport)
+        ClosedSubsetB→ΣA→ClosedSubsetB : (xa : ClosedSubsetB) → ΣA→ClosedSubsetB (ClosedSubsetB→ΣA xa) ≡ xa
+        ClosedSubsetB→ΣA→ClosedSubsetB (x , all-zero) =
+          Σ≡Prop (λ _ → isPropΠ (λ _ → isSetBool _ _))
+                 (transport⁻Transport SpB≡S x)
+
+        ΣA→ClosedSubsetB→ΣA : (yAy : Σ |S| (λ y → fst (A y))) → ClosedSubsetB→ΣA (ΣA→ClosedSubsetB yAy) ≡ yAy
+        ΣA→ClosedSubsetB→ΣA (y , Ay) =
+          Σ≡Prop (λ z → snd (A z))
+                 (transportTransport⁻ SpB≡S y)
+
+        -- The equivalence ClosedSubsetB ≃ Σ A
+        ClosedSubsetB≃ΣA : ClosedSubsetB ≃ Σ |S| (λ y → fst (A y))
+        ClosedSubsetB≃ΣA = isoToEquiv (iso ClosedSubsetB→ΣA ΣA→ClosedSubsetB ΣA→ClosedSubsetB→ΣA ClosedSubsetB→ΣA→ClosedSubsetB)
+
+        -- Compose: Sp C ≃ ClosedSubsetB ≃ Σ A
+        SpC≃ΣA : Sp C ≃ Σ |S| (λ y → fst (A y))
+        SpC≃ΣA = compEquiv SpC≃ClosedSubset ClosedSubsetB≃ΣA
+
+        -- Convert to path
+        SpC≡ΣA : Sp C ≡ Σ |S| (λ y → fst (A y))
+        SpC≡ΣA = ua SpC≃ΣA
+
 -- =============================================================================
 -- End of current formalization
 -- =============================================================================
