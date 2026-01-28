@@ -4071,21 +4071,129 @@ f-kernel-trivial x fx=0 = f-injective x 𝟘∞ (fx=0 ∙ sym f-pres0)
   f-pres0 = IsCommRingHom.pres0 (snd f)
 
 -- =============================================================================
--- LLPO from Stone Duality (outline)
+-- Spectrum of Products: Sp(A × B) ≅ Sp(A) + Sp(B)
+-- =============================================================================
+
+-- For Boolean rings, the spectrum of a product is the coproduct of spectra.
+-- Key insight: a homomorphism h : A × B → 2 must satisfy:
+--   h(1,0) ∧ h(0,1) = h((1,0) · (0,1)) = h(0,0) = 0
+-- So exactly one of h(1,0), h(0,1) is 1 (for non-trivial h).
+
+-- B∞×B∞ has a presentation as B∞ × B∞ with:
+-- (1_A, 0_B) and (0_A, 1_B) as orthogonal idempotents
+
+-- The unit elements in B∞×B∞
+module B∞×B∞-Units where
+  open BooleanRingStr (snd B∞×B∞) using () renaming (𝟙 to 𝟙×)
+  open BooleanRingStr (snd B∞) using () renaming (𝟙 to 𝟙B∞)
+
+  unit-left : ⟨ B∞×B∞ ⟩
+  unit-left = (𝟙B∞ , 𝟘∞)
+
+  unit-right : ⟨ B∞×B∞ ⟩
+  unit-right = (𝟘∞ , 𝟙B∞)
+
+  -- The full unit is the sum of the two orthogonal units
+  unit-sum : unit-left ·× unit-right ≡ (𝟘∞ , 𝟘∞)
+  unit-sum = cong₂ _,_ (0∞-absorbs-right 𝟙B∞) (0∞-absorbs-left 𝟙B∞)
+
+open B∞×B∞-Units
+
+-- A homomorphism h : B∞×B∞ → 2 corresponds to a choice of left or right factor
+-- Sp(B∞×B∞) → Sp(B∞) + Sp(B∞)
+
+-- First, we need to show B∞×B∞ has a presentation
+-- B∞×B∞ is countably presented since B∞ is, and products preserve countable presentation
+-- The generators are pairs (g_n, 0) and (0, g_n), and relations are inherited
+
+-- For now, postulate this infrastructure
+postulate
+  B∞×B∞-has-Boole-ω' : has-Boole-ω' B∞×B∞
+
+B∞×B∞-Booleω : Booleω
+B∞×B∞-Booleω = B∞×B∞ , ∣ B∞×B∞-has-Boole-ω' ∣₁
+
+-- Forward: given h : Sp(B∞×B∞), determine which factor it comes from
+-- The key is to check whether h(1,0) = true or h(0,1) = true
+-- (exactly one must be true for a non-trivial homomorphism)
+Sp-prod-to-sum : Sp B∞×B∞-Booleω → (Sp B∞-Booleω) ⊎.⊎ (Sp B∞-Booleω)
+Sp-prod-to-sum h with h $cr unit-left
+... | true = ⊎.inl (h-left h)
+  where
+  -- h restricted to the left factor
+  h-left : Sp B∞×B∞-Booleω → Sp B∞-Booleω
+  h-left h' = h-on-left , h-on-left-is-hom
+    where
+    -- h on left factor: x ↦ h(x, 0)
+    h-on-left : ⟨ B∞ ⟩ → Bool
+    h-on-left x = h' $cr (x , 𝟘∞)
+
+    -- Need to show this is a ring homomorphism
+    postulate
+      h-on-left-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-left (snd (BooleanRing→CommRing BoolBR))
+... | false = ⊎.inr (h-right h)
+  where
+  -- h restricted to the right factor
+  h-right : Sp B∞×B∞-Booleω → Sp B∞-Booleω
+  h-right h' = h-on-right , h-on-right-is-hom
+    where
+    -- h on right factor: x ↦ h(0, x)
+    h-on-right : ⟨ B∞ ⟩ → Bool
+    h-on-right x = h' $cr (𝟘∞ , x)
+
+    -- Need to show this is a ring homomorphism
+    postulate
+      h-on-right-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-right (snd (BooleanRing→CommRing BoolBR))
+
+-- =============================================================================
+-- LLPO from Stone Duality
 -- =============================================================================
 
 -- The key theorem we need (SurjectionsAreFormalSurjections, tex line 294):
 -- For g : B → C in Booleω: g is injective ↔ Sp(g) is surjective
 
--- This is part of the Stone Duality axiom and would give us:
--- f injective → Sp(f) : Sp(B∞ × B∞) → Sp(B∞) surjective
--- Since Sp(B∞ × B∞) ≅ ℕ∞ + ℕ∞ and Sp(B∞) ≅ ℕ∞,
--- we get a surjection ℕ∞ + ℕ∞ → ℕ∞
+-- Sp(f) : Sp(B∞×B∞) → Sp(B∞) is defined by precomposition with f
+-- Given h : B∞×B∞ → 2, we get h ∘ f : B∞ → 2
+Sp-f : Sp B∞×B∞-Booleω → Sp B∞-Booleω
+Sp-f h = h ∘cr f
 
--- For any α : ℕ∞, there exists x : ℕ∞ + ℕ∞ with Sp(f)(x) = α
--- If x = inl(β), then α_{2k+1} = 0 for all k
--- If x = inr(β), then α_{2k} = 0 for all k
--- This is exactly LLPO!
+-- The key axiom: injective homomorphisms induce surjective spectrum maps
+-- (tex line 294-297: SurjectionsAreFormalSurjections)
+-- For g : B → C in Booleω: g is injective ↔ (-) ∘ g : Sp(C) → Sp(B) is surjective
+-- We postulate this axiom for our specific case
+postulate
+  Sp-f-surjective : (h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁
+
+-- Connection to ℕ∞: Sp(B∞) ≅ ℕ∞
+-- We already have SpB∞-to-ℕ∞ : Sp B∞-Booleω → ℕ∞
+
+-- For the LLPO proof, we need to show how Sp(f) relates to the parity decomposition
+-- Key insight from tex lines 590-594:
+-- If h' = Sp-prod-to-sum gives inl(h-left), then for all k:
+--   h(f(g_{2k+1})) = h-left(0) = 0  (since f(g_{2k+1}) = (0, g_k))
+-- If h' gives inr(h-right), then for all k:
+--   h(f(g_{2k})) = h-right(0) = 0   (since f(g_{2k}) = (g_k, 0))
+
+-- f applied to odd generators gives right factor
+-- Proof: f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since 2k+1 is odd
+-- This requires showing that the quotient map π∞ ∘ f-free respects this
+postulate
+  f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
+
+-- f applied to even generators gives left factor
+-- Proof: f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since 2k is even
+postulate
+  f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
+
+-- The LLPO derivation:
+-- Given α : ℕ∞ represented as h : Sp B∞-Booleω
+-- By surjectivity, ∃ h' : Sp B∞×B∞-Booleω with Sp-f h' = h
+-- Case analysis on Sp-prod-to-sum h':
+--   inl h-left → α_{2k+1} = h(g_{2k+1}) = h'(f(g_{2k+1})) = h'(0, g_k) = h-left(0) = 0
+--   inr h-right → α_{2k} = h(g_{2k}) = h'(f(g_{2k})) = h'(g_k, 0) = h-right(0) = 0
+
+-- This gives LLPO once we complete the ℕ∞ correspondence
+-- The full proof requires SpB∞-to-ℕ∞ to be an equivalence (both directions)
 
 -- =============================================================================
 -- FUTURE WORK (not yet formalized)
