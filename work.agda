@@ -900,8 +900,47 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
 
     -- Step 1: Transport quotient through equiv
     -- BoolBR /Im α ≅ (freeBA ℕ /Im f₀) /Im α'
-    -- This requires showing that the equivalence equiv induces a quotient equivalence
-    -- For now, postulate (requires more infrastructure)
+    -- This follows from equiv : BoolBR ≅ freeBA ℕ /Im f₀
+
+    -- For the forward direction:
+    -- embBR : BoolBR → freeBA ℕ /Im f₀ is a ring hom
+    -- We need embBR(α n) = 0 in (freeBA ℕ /Im f₀) /Im α'
+    -- But embBR(α n) = α'(n), which IS 0 in that quotient by definition
+
+    -- For the backward direction:
+    -- equiv⁻¹ : freeBA ℕ /Im f₀ → BoolBR is a ring hom
+    -- We need equiv⁻¹(α' n) = 0 in BoolBR /Im α
+    -- equiv⁻¹(α' n) = equiv⁻¹(embBR(α n)) = α n (since equiv⁻¹ ∘ embBR = id)
+    -- And α n IS 0 in BoolBR /Im α by definition
+
+    -- The target quotient ring
+    target : BooleanRing ℓ-zero
+    target = (freeBA ℕ QB./Im f₀) QB./Im α'
+
+    -- embBR as a BoolHom
+    embBR-hom : BoolHom BoolBR (freeBA ℕ QB./Im f₀)
+    embBR-hom = fst (fst equiv) , snd equiv
+
+    -- The composite quotient homomorphism π_{α'} ∘ embBR : BoolBR → target
+    -- sends α n to 0 in the target
+    π-α' : BoolHom (freeBA ℕ QB./Im f₀) target
+    π-α' = QB.quotientImageHom
+
+    composite-hom : BoolHom BoolBR target
+    composite-hom = π-α' ∘cr embBR-hom
+
+    -- α n maps to 0: composite-hom (α n) = π-α' (embBR (α n)) = π-α' (α' n) = 0
+    composite-sends-α-to-0 : (n : ℕ) → composite-hom $cr (α n) ≡ BooleanRingStr.𝟘 (snd target)
+    composite-sends-α-to-0 n = QB.zeroOnImage {f = α'} n
+
+    -- Induced hom from quotient: BoolBR /Im α → target
+    forward-hom : BoolHom (BoolBR QB./Im α) target
+    forward-hom = QB.inducedHom target composite-hom composite-sends-α-to-0
+
+    -- For backward direction, we need equiv⁻¹ ∘ π_{α'} ... this is more complex
+    -- because we're composing with the inverse equivalence
+
+    -- For now, postulate the full equivalence (requires more infrastructure)
     postulate
       step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
 
