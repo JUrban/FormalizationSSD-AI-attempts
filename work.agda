@@ -4153,48 +4153,117 @@ postulate
 B∞×B∞-Booleω : Booleω
 B∞×B∞-Booleω = B∞×B∞ , ∣ B∞×B∞-has-Boole-ω' ∣₁
 
+-- Helper: restrict a homomorphism to the left factor, given that it maps unit-left to true
+restrict-to-left : (h' : Sp B∞×B∞-Booleω) → h' $cr unit-left ≡ true → Sp B∞-Booleω
+restrict-to-left h' h'-unit-left-true = h-on-left , h-on-left-is-hom
+  where
+  open IsCommRingHom (snd h') renaming (pres0 to h'-pres0 ; pres1 to h'-pres1 ; pres+ to h'-pres+ ; pres· to h'-pres·)
+  open CommRingStr (snd (BooleanRing→CommRing B∞)) renaming (_+_ to _+B∞_ ; _·_ to _·B∞_ ; +IdL to +B∞-IdL)
+  open CommRingStr (snd (BooleanRing→CommRing B∞×B∞)) renaming (_+_ to _+B∞×B∞_ ; _·_ to _·B∞×B∞_)
+  open import Cubical.Algebra.CommRing using (makeIsCommRingHom)
+
+  -- h on left factor: x ↦ h(x, 0)
+  h-on-left : ⟨ B∞ ⟩ → Bool
+  h-on-left x = h' $cr (x , 𝟘∞)
+
+  -- pres0: h'(0, 0) = false
+  h-on-left-pres0 : h-on-left 𝟘∞ ≡ false
+  h-on-left-pres0 = h'-pres0
+
+  -- pres1: h'(1, 0) = true (by assumption)
+  h-on-left-pres1 : h-on-left 𝟙∞ ≡ true
+  h-on-left-pres1 = h'-unit-left-true
+
+  -- pres+: componentwise addition, second component is 0+0=0
+  h-on-left-pres+ : (x y : ⟨ B∞ ⟩) → h-on-left (x +B∞ y) ≡ (h-on-left x) ⊕ (h-on-left y)
+  h-on-left-pres+ x y =
+    h' $cr (x +B∞ y , 𝟘∞)
+      ≡⟨ cong (h' $cr_) (cong₂ _,_ refl (sym (+B∞-IdL 𝟘∞))) ⟩
+    h' $cr (_+B∞×B∞_ (x , 𝟘∞) (y , 𝟘∞))
+      ≡⟨ h'-pres+ (x , 𝟘∞) (y , 𝟘∞) ⟩
+    (h' $cr (x , 𝟘∞)) ⊕ (h' $cr (y , 𝟘∞)) ∎
+
+  -- pres·: componentwise multiplication, 0·0=0
+  h-on-left-pres· : (x y : ⟨ B∞ ⟩) → h-on-left (x ·B∞ y) ≡ (h-on-left x) and (h-on-left y)
+  h-on-left-pres· x y =
+    h' $cr (x ·B∞ y , 𝟘∞)
+      ≡⟨ cong (h' $cr_) (cong₂ _,_ refl (sym (0∞-absorbs-left 𝟘∞))) ⟩
+    h' $cr (_·B∞×B∞_ (x , 𝟘∞) (y , 𝟘∞))
+      ≡⟨ h'-pres· (x , 𝟘∞) (y , 𝟘∞) ⟩
+    (h' $cr (x , 𝟘∞)) and (h' $cr (y , 𝟘∞)) ∎
+
+  -- Build the IsCommRingHom using makeIsCommRingHom
+  h-on-left-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-left (snd (BooleanRing→CommRing BoolBR))
+  h-on-left-is-hom = makeIsCommRingHom h-on-left-pres1 h-on-left-pres+ h-on-left-pres·
+
+-- Helper: restrict a homomorphism to the right factor, given that it maps unit-left to false
+restrict-to-right : (h' : Sp B∞×B∞-Booleω) → h' $cr unit-left ≡ false → Sp B∞-Booleω
+restrict-to-right h' h'-unit-left-false = h-on-right , h-on-right-is-hom
+  where
+  open IsCommRingHom (snd h') renaming (pres0 to h'-pres0 ; pres1 to h'-pres1 ; pres+ to h'-pres+ ; pres· to h'-pres·)
+  open CommRingStr (snd (BooleanRing→CommRing B∞)) renaming (_+_ to _+B∞_ ; _·_ to _·B∞_ ; +IdL to +B∞-IdL ; +IdR to +B∞-IdR)
+  open CommRingStr (snd (BooleanRing→CommRing B∞×B∞)) renaming (_+_ to _+B∞×B∞_ ; _·_ to _·B∞×B∞_)
+  open import Cubical.Algebra.CommRing using (makeIsCommRingHom)
+
+  -- h on right factor: x ↦ h(0, x)
+  h-on-right : ⟨ B∞ ⟩ → Bool
+  h-on-right x = h' $cr (𝟘∞ , x)
+
+  -- pres0: h'(0, 0) = false
+  h-on-right-pres0 : h-on-right 𝟘∞ ≡ false
+  h-on-right-pres0 = h'-pres0
+
+  -- pres1: h'(0, 1) = true
+  -- This requires showing: if h' unit-left = false and h' is a hom, then h' unit-right = true
+  -- Because h' 1 = h' (unit-left + unit-right) = true (hom preserves 1)
+  -- And unit-left · unit-right = 0, so one of them must be true
+  -- If unit-left = false, then unit-right = true
+  h-on-right-pres1 : h-on-right 𝟙∞ ≡ true
+  h-on-right-pres1 =
+    let
+      -- h' preserves 1: h' (1,1) = true
+      h'-on-1 : h' $cr (𝟙∞ , 𝟙∞) ≡ true
+      h'-on-1 = h'-pres1
+      -- (1,1) = (1,0) + (0,1) in B∞×B∞
+      unit-sum' : (𝟙∞ , 𝟙∞) ≡ _+B∞×B∞_ (𝟙∞ , 𝟘∞) (𝟘∞ , 𝟙∞)
+      unit-sum' = cong₂ _,_ (sym (+B∞-IdR 𝟙∞)) (sym (+B∞-IdL 𝟙∞))
+      -- h'(1,1) = h'(1,0) ⊕ h'(0,1)
+      h'-sum : h' $cr (𝟙∞ , 𝟙∞) ≡ (h' $cr unit-left) ⊕ (h' $cr unit-right)
+      h'-sum = cong (h' $cr_) unit-sum' ∙ h'-pres+ unit-left unit-right
+      -- false ⊕ h'(0,1) = true
+      xor-eq : false ⊕ (h' $cr unit-right) ≡ true
+      xor-eq = cong (λ b → b ⊕ (h' $cr unit-right)) (sym h'-unit-left-false) ∙ sym h'-sum ∙ h'-on-1
+    in xor-eq
+
+  -- pres+: componentwise addition, first component is 0+0=0
+  h-on-right-pres+ : (x y : ⟨ B∞ ⟩) → h-on-right (x +B∞ y) ≡ (h-on-right x) ⊕ (h-on-right y)
+  h-on-right-pres+ x y =
+    h' $cr (𝟘∞ , x +B∞ y)
+      ≡⟨ cong (h' $cr_) (cong₂ _,_ (sym (+B∞-IdL 𝟘∞)) refl) ⟩
+    h' $cr (_+B∞×B∞_ (𝟘∞ , x) (𝟘∞ , y))
+      ≡⟨ h'-pres+ (𝟘∞ , x) (𝟘∞ , y) ⟩
+    (h' $cr (𝟘∞ , x)) ⊕ (h' $cr (𝟘∞ , y)) ∎
+
+  -- pres·: componentwise multiplication, 0·0=0
+  h-on-right-pres· : (x y : ⟨ B∞ ⟩) → h-on-right (x ·B∞ y) ≡ (h-on-right x) and (h-on-right y)
+  h-on-right-pres· x y =
+    h' $cr (𝟘∞ , x ·B∞ y)
+      ≡⟨ cong (h' $cr_) (cong₂ _,_ (sym (0∞-absorbs-left 𝟘∞)) refl) ⟩
+    h' $cr (_·B∞×B∞_ (𝟘∞ , x) (𝟘∞ , y))
+      ≡⟨ h'-pres· (𝟘∞ , x) (𝟘∞ , y) ⟩
+    (h' $cr (𝟘∞ , x)) and (h' $cr (𝟘∞ , y)) ∎
+
+  -- Build the IsCommRingHom using makeIsCommRingHom
+  h-on-right-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-right (snd (BooleanRing→CommRing BoolBR))
+  h-on-right-is-hom = makeIsCommRingHom h-on-right-pres1 h-on-right-pres+ h-on-right-pres·
+
 -- Forward: given h : Sp(B∞×B∞), determine which factor it comes from
 -- The key is to check whether h(1,0) = true or h(0,1) = true
 -- (exactly one must be true for a non-trivial homomorphism)
 Sp-prod-to-sum : Sp B∞×B∞-Booleω → (Sp B∞-Booleω) ⊎.⊎ (Sp B∞-Booleω)
-Sp-prod-to-sum h with h $cr unit-left
-... | true = ⊎.inl (h-left h)
-  where
-  -- h restricted to the left factor
-  h-left : Sp B∞×B∞-Booleω → Sp B∞-Booleω
-  h-left h' = h-on-left , h-on-left-is-hom
-    where
-    -- h on left factor: x ↦ h(x, 0)
-    h-on-left : ⟨ B∞ ⟩ → Bool
-    h-on-left x = h' $cr (x , 𝟘∞)
-
-    -- Need to show this is a ring homomorphism
-    -- Proof: h-on-left x = h'(x, 0) where h' is a homomorphism.
-    -- For any homomorphism h' : B∞×B∞ → 2, its restriction to left factor
-    -- via x ↦ h'(x, 0) is also a homomorphism because:
-    -- - pres0: h'(0, 0) = 0 by h' being a hom
-    -- - pres1: h'(1, 0) = true by assumption (h' $cr unit-left = true)
-    -- - pres+: h'(x+y, 0) = h'((x,0) + (y,0)) = h'(x,0) + h'(y,0)
-    -- - pres·: h'(x·y, 0) = h'((x,0) · (y,0)) = h'(x,0) · h'(y,0)
-    -- - pres-: h'(-x, 0) = h'(-(x,0)) = -h'(x,0) = h'(x,0) (in Bool ring)
-    postulate
-      h-on-left-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-left (snd (BooleanRing→CommRing BoolBR))
-... | false = ⊎.inr (h-right h)
-  where
-  -- h restricted to the right factor
-  h-right : Sp B∞×B∞-Booleω → Sp B∞-Booleω
-  h-right h' = h-on-right , h-on-right-is-hom
-    where
-    -- h on right factor: x ↦ h(0, x)
-    h-on-right : ⟨ B∞ ⟩ → Bool
-    h-on-right x = h' $cr (𝟘∞ , x)
-
-    -- Need to show this is a ring homomorphism
-    -- Proof: h-on-right x = h'(0, x) where h' is a homomorphism.
-    -- For any homomorphism h' : B∞×B∞ → 2, its restriction to right factor
-    -- via x ↦ h'(0, x) is also a homomorphism (similar to h-on-left).
-    postulate
-      h-on-right-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-right (snd (BooleanRing→CommRing BoolBR))
+Sp-prod-to-sum h with h $cr unit-left in p
+... | true = ⊎.inl (restrict-to-left h (builtin→Path-Bool p))
+... | false = ⊎.inr (restrict-to-right h (builtin→Path-Bool p))
 
 -- =============================================================================
 -- LLPO from Stone Duality
