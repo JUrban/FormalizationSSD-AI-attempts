@@ -11060,6 +11060,224 @@ module StoneAsClosedSubsetOfCantorModule where
     → OpenSubsetPreimageCantor (λ x → x) A ≡ A
   preimageOpenId A = refl
 
+  -- ==========================================================================
+  -- Boolean algebra laws for closed subsets
+  -- ==========================================================================
+
+  -- Commutativity of intersection (closed)
+  closedIntersectionComm : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A B ≡ ClosedSubsetIntersection B A
+  closedIntersectionComm A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd (fst B x)))
+                (isProp× (snd (fst B x)) (snd (fst A x)))
+                (λ (a , b) → b , a)
+                (λ (b , a) → a , b))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Commutativity of union (closed) - uses propositional truncation
+  closedUnionComm : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A B ≡ ClosedSubsetUnion B A
+  closedUnionComm A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ squash₁
+                (PT.map (λ { (inl a) → inr a ; (inr b) → inl b }))
+                (PT.map (λ { (inl b) → inr b ; (inr a) → inl a })))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Idempotence of intersection (closed)
+  closedIntersectionIdem : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A A ≡ A
+  closedIntersectionIdem A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd (fst A x)))
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , a))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Idempotence of union (closed)
+  closedUnionIdem : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A A ≡ A
+  closedUnionIdem A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr a) → a }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Absorption: A ∩ (A ∪ B) = A
+  closedAbsorption1 : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A (ClosedSubsetUnion A B) ≡ A
+  closedAbsorption1 A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) squash₁)
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Absorption: A ∪ (A ∩ B) = A
+  closedAbsorption2 : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A (ClosedSubsetIntersection A B) ≡ A
+  closedAbsorption2 A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr (a , _)) → a }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Identity: A ∩ Full = A
+  closedIntersectionFull : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A FullClosedSubset ≡ A
+  closedIntersectionFull A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd ⊤-hProp))
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , tt))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Identity: A ∪ Empty = A
+  closedUnionEmpty : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A EmptyClosedSubset ≡ A
+  closedUnionEmpty A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr ()) }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Annihilation: A ∩ Empty = Empty
+  closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
+  closedIntersectionEmpty A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) isProp⊥)
+                isProp⊥
+                (λ { (_ , ()) })
+                (λ { () }))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Annihilation: A ∪ Full = Full
+  closedUnionFull : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A FullClosedSubset ≡ FullClosedSubset
+  closedUnionFull A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd ⊤-hProp)
+                (λ _ → tt)
+                (λ _ → ∣ inr tt ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- ==========================================================================
+  -- Boolean algebra laws for open subsets
+  -- ==========================================================================
+
+  -- Commutativity of intersection (open)
+  openIntersectionComm : (A B : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A B ≡ OpenSubsetIntersection B A
+  openIntersectionComm A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd (fst B x)))
+                (isProp× (snd (fst B x)) (snd (fst A x)))
+                (λ (a , b) → b , a)
+                (λ (b , a) → a , b))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Commutativity of union (open)
+  openUnionComm : (A B : OpenSubsetOfCantor)
+    → OpenSubsetUnion A B ≡ OpenSubsetUnion B A
+  openUnionComm A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ squash₁
+                (PT.map (λ { (inl a) → inr a ; (inr b) → inl b }))
+                (PT.map (λ { (inl b) → inr b ; (inr a) → inl a })))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Idempotence of intersection (open)
+  openIntersectionIdem : (A : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A A ≡ A
+  openIntersectionIdem A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd (fst A x)))
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , a))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Idempotence of union (open)
+  openUnionIdem : (A : OpenSubsetOfCantor)
+    → OpenSubsetUnion A A ≡ A
+  openUnionIdem A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr a) → a }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Absorption: A ∩ (A ∪ B) = A (open)
+  openAbsorption1 : (A B : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A (OpenSubsetUnion A B) ≡ A
+  openAbsorption1 A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) squash₁)
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Absorption: A ∪ (A ∩ B) = A (open)
+  openAbsorption2 : (A B : OpenSubsetOfCantor)
+    → OpenSubsetUnion A (OpenSubsetIntersection A B) ≡ A
+  openAbsorption2 A B = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr (a , _)) → a }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Identity: A ∩ Full = A (open)
+  openIntersectionFull : (A : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A FullOpenSubset ≡ A
+  openIntersectionFull A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (snd ⊤-hProp))
+                (snd (fst A x))
+                (λ (a , _) → a)
+                (λ a → a , tt))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Identity: A ∪ Empty = A (open)
+  openUnionEmpty : (A : OpenSubsetOfCantor)
+    → OpenSubsetUnion A EmptyOpenSubset ≡ A
+  openUnionEmpty A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd (fst A x))
+                (PT.rec (snd (fst A x)) (λ { (inl a) → a ; (inr ()) }))
+                (λ a → ∣ inl a ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Annihilation: A ∩ Empty = Empty (open)
+  openIntersectionEmpty : (A : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A EmptyOpenSubset ≡ EmptyOpenSubset
+  openIntersectionEmpty A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) isProp⊥)
+                isProp⊥
+                (λ { (_ , ()) })
+                (λ { () }))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Annihilation: A ∪ Full = Full (open)
+  openUnionFull : (A : OpenSubsetOfCantor)
+    → OpenSubsetUnion A FullOpenSubset ≡ FullOpenSubset
+  openUnionFull A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ (snd ⊤-hProp)
+                (λ _ → tt)
+                (λ _ → ∣ inr tt ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
