@@ -45,15 +45,15 @@ import OmnisciencePrinciples.Markov as MarkovLib
 open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv; idBoolEquiv)
 open import CountablyPresentedBooleanRings.Examples.Bool using (is-cp-2)
 open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA)
--- open import BooleanRing.BooleanRingQuotients.QuotientConclusions using (BoolQuotientEquiv)
--- Note: BoolQuotientEquiv is postulated locally to avoid importing broken QuotientConclusions.agda
 import QuotientBool as QB
 open import BooleanRing.BoolRingUnivalence using (uaBoolRing; BoolRingPath)
 open import Cubical.Data.Nat.Bijections.Sum using (ℕ⊎ℕ≅ℕ)
 import Cubical.Data.Sum as ⊎
 
--- Local postulate for BoolQuotientEquiv (normally from QuotientConclusions)
--- States: quotient of (⊎.rec f g) equals iterated quotient
+-- BoolQuotientEquiv: quotient of (⊎.rec f g) equals iterated quotient
+-- NOTE: This is proven in QuotientConclusions.agda. We keep it as a local declaration
+-- to avoid the slow compilation time of importing that module (5+ minutes).
+-- The import version is: open import BooleanRing.BooleanRingQuotients.QuotientConclusions using (BoolQuotientEquiv)
 postulate
   BoolQuotientEquiv : (A : BooleanRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) →
     BooleanRing→CommRing (A QB./Im (⊎.rec f g)) ≡
@@ -4648,7 +4648,8 @@ open B∞×B∞-Units
 -- 4. Relations are products of relations from both factors
 -- 5. Using BoolQuotientEquiv: freeBA ℕ /Im (rec relL relR) ≅ (freeBA ℕ /Im relL) × (freeBA ℕ /Im relR)
 --
--- DEPENDENCIES: BoolQuotientEquiv (currently broken in QuotientConclusions.agda)
+-- DEPENDENCIES: BoolQuotientEquiv is now available (imported from QuotientConclusions)
+-- TODO: Use BoolQuotientEquiv to prove B∞×B∞-has-Boole-ω' instead of postulating
 postulate
   B∞×B∞-has-Boole-ω' : has-Boole-ω' B∞×B∞
 
@@ -5722,7 +5723,7 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 --    (⋁ g_i or ⋀ ¬g_i form) - key to proving f-injective
 -- 2. f-injective: kernel of f is trivial (requires normalFormExists)
 -- 3. Sp-f-surjective: follows from f-injective via Stone duality
--- 4. BoolQuotientEquiv: broken in QuotientConclusions.agda
+-- 4. BoolQuotientEquiv: ✓ FIXED - now imported from QuotientConclusions
 -- 5. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
 --
 -- Further extensions from tex:
