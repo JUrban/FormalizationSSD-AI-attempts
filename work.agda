@@ -10011,6 +10011,29 @@ module IntervalTopologyModule where
     ≠I-apartness : (x y : UnitInterval)
       → (x ≡ y → ⊥) ↔ ((x <I y) ⊎ (y <I x))
 
+  -- tex Lemma around 2500: Linear order on I
+  -- For any x,y : I, we have x ≤ y ∨ y ≤ x
+  -- This is a consequence of ClosedFiniteDisjunction and rmkOpenClosedNegation
+  postulate
+    ≤I-linear : (x y : UnitInterval) → (x ≤I y) ⊎ (y ≤I x)
+
+  -- Antisymmetry: (x ≤ y) ∧ (y ≤ x) → x = y
+  postulate
+    ≤I-antisym : (x y : UnitInterval) → x ≤I y → y ≤I x → x ≡ y
+
+  -- Transitivity
+  postulate
+    ≤I-trans : (x y z : UnitInterval) → x ≤I y → y ≤I z → x ≤I z
+
+  -- Reflexivity
+  postulate
+    ≤I-refl : (x : UnitInterval) → x ≤I x
+
+  -- Connection between ≤ and <: x < y ↔ (x ≤ y) × (x ≢ y)
+  postulate
+    <I-from-≤-≢ : (x y : UnitInterval) → x ≤I y → (x ≡ y → ⊥) → x <I y
+    ≤-from-<I : (x y : UnitInterval) → x <I y → x ≤I y
+
   -- Closed interval [a,b]
   ClosedInterval : (a b : UnitInterval) → Type₀
   ClosedInterval a b = Σ[ x ∈ UnitInterval ] (a ≤I x) × (x ≤I b)
