@@ -4049,6 +4049,31 @@ f-free-on-relB∞ k =
 f : BoolHom B∞ B∞×B∞
 f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
 
+-- =============================================================================
+-- Injectivity of f (tex line 567-583)
+-- =============================================================================
+
+-- The proof of injectivity uses the following argument:
+-- If x ≠ 0 in B∞, then x can be written in a normal form involving generators
+-- When we apply f, the generators get split into even and odd positions
+-- Since x ≠ 0, at least one of the two factors in f(x) is nonzero
+
+-- For now, we postulate this as the proof requires detailed analysis of
+-- the structure of elements in B∞ as set quotients
+postulate
+  f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+
+-- Alternative formulation: kernel is trivial
+f-kernel-trivial : (x : ⟨ B∞ ⟩) → fst f x ≡ (𝟘∞ , 𝟘∞) → x ≡ 𝟘∞
+f-kernel-trivial x fx=0 = f-injective x 𝟘∞ (fx=0 ∙ sym f-pres0)
+  where
+  f-pres0 : fst f 𝟘∞ ≡ (𝟘∞ , 𝟘∞)
+  f-pres0 = IsCommRingHom.pres0 (snd f)
+
+-- =============================================================================
+-- LLPO from Stone Duality (outline)
+-- =============================================================================
+
 -- The key theorem we need (SurjectionsAreFormalSurjections, tex line 294):
 -- For g : B → C in Booleω: g is injective ↔ Sp(g) is surjective
 
