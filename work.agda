@@ -4235,6 +4235,32 @@ f-on-zero = IsCommRingHom.pres0 (snd f)
 
 -- Next, we need to show f(g_n ∨ x) = f(g_n) ∨ f(x) and then use the parity of n
 
+-- Helper: 0 ∨ x = x (zero is identity for join)
+zero-join-left : (x : ⟨ B∞ ⟩) → 𝟘∞ ∨∞ x ≡ x
+zero-join-left x =
+  𝟘∞ ∨∞ x                     ≡⟨ refl ⟩
+  𝟘∞ +∞ x +∞ (𝟘∞ ·∞ x)        ≡⟨ cong (𝟘∞ +∞ x +∞_) (0∞-absorbs-left x) ⟩
+  𝟘∞ +∞ x +∞ 𝟘∞              ≡⟨ BooleanRingStr.+IdR (snd B∞) (𝟘∞ +∞ x) ⟩
+  𝟘∞ +∞ x                     ≡⟨ BooleanRingStr.+IdL (snd B∞) x ⟩
+  x ∎
+
+-- Helper: x ∨ 0 = x (zero is identity for join, right version)
+zero-join-right : (x : ⟨ B∞ ⟩) → x ∨∞ 𝟘∞ ≡ x
+zero-join-right x =
+  x ∨∞ 𝟘∞                     ≡⟨ refl ⟩
+  x +∞ 𝟘∞ +∞ (x ·∞ 𝟘∞)        ≡⟨ cong (x +∞ 𝟘∞ +∞_) (0∞-absorbs-right x) ⟩
+  x +∞ 𝟘∞ +∞ 𝟘∞              ≡⟨ BooleanRingStr.+IdR (snd B∞) (x +∞ 𝟘∞) ⟩
+  x +∞ 𝟘∞                     ≡⟨ BooleanRingStr.+IdR (snd B∞) x ⟩
+  x ∎
+
+-- The key induction: f(finJoin∞ ns) = (finJoin∞ evens, finJoin∞ odds)
+-- This requires f-even-gen and f-odd-gen which are defined later in the file.
+-- We postulate it for now and will prove it after those lemmas.
+postulate
+  f-on-finJoin : (ns : List ℕ) →
+    let (evens , odds) = splitByParity ns
+    in fst f (finJoin∞ ns) ≡ (finJoin∞ evens , finJoin∞ odds)
+
 -- The injectivity of f then follows:
 -- If fst f x = (0,0), then using normal form:
 -- - If x = ⋁_I g_i, then both parity-splits are empty, so I = ∅, so x = 0
