@@ -8767,5 +8767,124 @@ module Stone→closedPropModule where
     hProp-path = Σ≡Prop {B = λ A → isProp A} (λ _ → isPropIsProp) fst-path
 
 -- =============================================================================
+-- ClosedInStoneIsStone (tex Corollary 1770)
+-- =============================================================================
+--
+-- Statement: Closed subtypes of Stone spaces are Stone.
+--
+-- Proof sketch (from tex):
+-- By StoneClosedSubsets (tex 1648), a subset A ⊆ S (for S : Stone) is closed iff
+-- there exists a Stone space T and a map T → S whose image is A.
+-- This means A, with its induced structure, is Stone.
+--
+-- The full proof requires StoneClosedSubsets which characterizes closed subsets
+-- of Stone spaces in 5 equivalent ways:
+-- (i) There exists α : S → 2^ℕ such that A(x) ↔ ∀n. αₓₙ = 0
+-- (ii) A = ⋂_{n:ℕ} Dₙ for decidable Dₙ
+-- (iii) A is the image of an embedding T → S for some T : Stone
+-- (iv) A is the image of a map T → S for some T : Stone
+-- (v) A is closed
+--
+-- This requires substantial infrastructure including:
+-- - Local choice (tex LocalChoiceSurjectionForm)
+-- - The characterization of Closed via 2^ℕ sequences
+-- - Stone embeddings and images
+
+module ClosedInStoneIsStoneModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+
+  -- For S : Stone and A ⊆ S closed, the Σ-type Σ_{x:S} A(x) is Stone.
+  -- This is a consequence of StoneClosedSubsets (tex 1648).
+  -- For now, we postulate this as it requires StoneClosedSubsets infrastructure.
+  postulate
+    ClosedInStoneIsStone : (S : Stone) → (A : fst S → hProp ℓ-zero)
+                         → ((x : fst S) → isClosedProp (A x))
+                         → hasStoneStr (Σ (fst S) (λ x → fst (A x)))
+
+-- =============================================================================
+-- InhabitedClosedSubSpaceClosed (tex Corollary 1776)
+-- =============================================================================
+--
+-- Statement: For S : Stone and A ⊆ S closed, ∃_{x:S} A(x) is closed.
+--
+-- Proof:
+-- By ClosedInStoneIsStone, Σ_{x:S} A(x) is Stone.
+-- By TruncationStoneClosed, ||Σ_{x:S} A(x)|| is closed.
+-- But ||Σ_{x:S} A(x)|| ≃ ∃_{x:S} A(x), so ∃_{x:S} A(x) is closed.
+
+module InhabitedClosedSubSpaceClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open ClosedInStoneIsStoneModule
+  open TruncationStoneClosedComplete
+
+  InhabitedClosedSubSpaceClosed : (S : Stone) → (A : fst S → hProp ℓ-zero)
+                                → ((x : fst S) → isClosedProp (A x))
+                                → isClosedProp (∥ Σ (fst S) (λ x → fst (A x)) ∥₁ , squash₁)
+  InhabitedClosedSubSpaceClosed S A A-closed =
+    TruncationStoneClosed (Σ (fst S) (λ x → fst (A x)) , ClosedInStoneIsStone S A A-closed)
+
+-- =============================================================================
+-- ClosedDependentSums / closedSigmaClosed (tex Corollary 1785)
+-- =============================================================================
+--
+-- Statement: Closed propositions are closed under sigma types.
+--
+-- Proof:
+-- Let P : Closed and Q : P → Closed.
+-- Then Σ_{p:P} Q(p) ↔ ∃_{p:P} Q(p) (since Q(p) is a prop for each p).
+-- P is Stone by PropositionsClosedIffStone (specifically closedProp→Stone).
+-- By InhabitedClosedSubSpaceClosed, Σ_{p:P} Q(p) is closed.
+--
+-- Note: This gives us a proof of closedSigmaClosed, but it depends on:
+-- - ClosedInStoneIsStone (postulated, needs StoneClosedSubsets)
+-- - TruncationStoneClosed (proved modulo ODisc/LemSurjections postulates)
+-- - closedProp→Stone (proved)
+
+module ClosedDependentSumsModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open ClosedPropIffStone
+  open InhabitedClosedSubSpaceClosedModule
+
+  -- This proves closedSigmaClosed using the infrastructure above
+  closedSigmaClosed' : (P : hProp ℓ-zero) → isClosedProp P
+                     → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
+                     → isClosedProp (Σ ⟨ P ⟩ (λ p → fst (Q p)) , isOfHLevelΣ 1 (snd P) (λ p → snd (Q p)))
+  closedSigmaClosed' P P-closed Q Q-closed = result
+    where
+    -- The Σ type is a proposition
+    ΣPQ : Type₀
+    ΣPQ = Σ ⟨ P ⟩ (λ p → fst (Q p))
+
+    ΣPQ-isProp : isProp ΣPQ
+    ΣPQ-isProp = isOfHLevelΣ 1 (snd P) (λ p → snd (Q p))
+
+    ΣPQ-hProp : hProp ℓ-zero
+    ΣPQ-hProp = ΣPQ , ΣPQ-isProp
+
+    -- P as a Stone space
+    P-Stone : Stone
+    P-Stone = fst P , closedProp→hasStoneStr P P-closed
+
+    -- ||Σ P Q||₁ is closed by InhabitedClosedSubSpaceClosed
+    truncΣ-closed : isClosedProp (∥ ΣPQ ∥₁ , squash₁)
+    truncΣ-closed = InhabitedClosedSubSpaceClosed P-Stone Q Q-closed
+
+    -- Since ΣPQ is a prop, ||ΣPQ||₁ ≃ ΣPQ
+    propTruncIdem : ∥ ΣPQ ∥₁ ≃ ΣPQ
+    propTruncIdem = propTruncIdempotent≃ ΣPQ-isProp
+
+    -- Path in Type
+    fst-path : ∥ ΣPQ ∥₁ ≡ ΣPQ
+    fst-path = ua propTruncIdem
+
+    -- Path in hProp
+    hProp-path : (∥ ΣPQ ∥₁ , squash₁) ≡ ΣPQ-hProp
+    hProp-path = Σ≡Prop {B = λ A → isProp A} (λ _ → isPropIsProp) fst-path
+
+    -- Transport closedness along this path
+    result : isClosedProp ΣPQ-hProp
+    result = transport (cong isClosedProp hProp-path) truncΣ-closed
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
