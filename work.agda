@@ -6558,5 +6558,37 @@ normalizeTerm-correct (t ·T s) =
   interpretB∞ t ·∞ interpretB∞ s ∎
 
 -- =============================================================================
+-- Connection between interpretB∞ and the quotient map
+-- =============================================================================
+
+-- The key observation: interpretB∞ is defined to match π∞ ∘ includeBATermsSurj
+-- on generators. Since both are ring homomorphisms from the free Boolean algebra,
+-- they agree everywhere by equalityFromEqualityOnGenerators.
+
+-- However, proving this directly requires unfolding the opaque definitions.
+-- Instead, we can prove normalFormExists using includeBATermsSurj surjectivity.
+
+-- Surjectivity gives: for any x : ⟨ freeBA ℕ ⟩, there exists t with includeBATermsSurj t = x
+-- Then: fst π∞ x = fst π∞ (includeBATermsSurj t) = interpretB∞ t = ⟦ normalizeTerm t ⟧nf
+
+-- For normalFormExists on B∞, we need to show every element has a normal form.
+-- The approach:
+-- 1. For any x : ⟨ B∞ ⟩, use surjectivity of π∞ to get y : ⟨ freeBA ℕ ⟩ with π∞ y = x
+-- 2. Use includeBATermsSurj to get t : freeBATerms ℕ with includeBATermsSurj t = y
+-- 3. Then normalizeTerm t gives a normal form with ⟦ normalizeTerm t ⟧nf = interpretB∞ t = x
+
+-- For now, we note that normalFormExists can be derived from the surjectivity
+-- of the composition π∞ ∘ includeBATermsSurj (which equals interpretB∞ on terms).
+
+-- The homomorphism from terms to B∞
+termHom : freeBATerms ℕ → ⟨ B∞ ⟩
+termHom = interpretB∞
+
+-- Normal form exists for any element in the image of termHom
+-- (i.e., for any element reachable from terms)
+normalForm-from-term : (t : freeBATerms ℕ) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ termHom t
+normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
