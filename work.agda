@@ -25,6 +25,9 @@ open import Cubical.Data.Bool hiding (_≤_ ; _≥_) renaming (_≟_ to _=B_)
 open import Cubical.Data.Empty renaming (rec to ex-falso)
 open import Cubical.Data.Sigma
 open import Cubical.Data.Sum
+open import Cubical.Data.Sum.Properties using (isEmbedding-inl; isEmbedding-inr)
+
+open import Cubical.Functions.Embedding using (isEmbedding→Inj)
 
 open import Cubical.Relation.Nullary
 
@@ -4676,6 +4679,13 @@ open B∞×B∞-Units
 module B∞×B∞-Presentation where
   open Iso
 
+  -- ¬(a < b) implies b ≤ a
+  ≮→≥ : {a b : ℕ} → ¬ (a < b) → b ≤ a
+  ≮→≥ {zero} {zero} _ = ≤-refl
+  ≮→≥ {zero} {suc b} ¬0<sb = ex-falso (¬0<sb (suc-≤-suc zero-≤))
+  ≮→≥ {suc a} {zero} _ = zero-≤
+  ≮→≥ {suc a} {suc b} ¬sa<sb = suc-≤-suc (≮→≥ (λ a<b → ¬sa<sb (suc-≤-suc a<b)))
+
   -- The bijection ℕ ⊎ ℕ ≅ ℕ
   encode× : ℕ ⊎ ℕ → ℕ
   encode× = fun ℕ⊎ℕ≅ℕ
@@ -4778,6 +4788,28 @@ module B∞×B∞-Presentation where
   m≠m+suc-d zero d meq = snotz (sym meq)
   m≠m+suc-d (suc m) d meq = m≠m+suc-d m d (injSuc meq)
 
+  -- When i < j, we have i + suc (j ∸ suc i) ≡ j
+  -- Proof: i < j means ∃ k. k + suc i ≡ j, so j ∸ suc i relates to k
+  i+suc[j∸suc-i]≡j : (i j : ℕ) → i < j → i +ℕ suc (j ∸ suc i) ≡ j
+  i+suc[j∸suc-i]≡j i zero (k , p) = ex-falso (¬-<-zero (k , p))
+  i+suc[j∸suc-i]≡j i (suc j) (k , p) =
+    -- p : k + suc i ≡ suc j
+    -- +-suc k i : k + suc i ≡ suc (k + i)
+    -- So: suc (k + i) ≡ suc j, hence k + i ≡ j
+    -- suc j ∸ suc i = j ∸ i
+    -- We need: i + suc (j ∸ i) ≡ suc j
+    let eq : k +ℕ i ≡ j
+        eq = injSuc (sym (+-suc k i) ∙ p)
+        i≤j : i ≤ j
+        i≤j = k , eq
+    in i +ℕ suc (j ∸ i)
+         ≡⟨ +-suc i (j ∸ i) ⟩
+       suc (i +ℕ (j ∸ i))
+         ≡⟨ cong suc (+-comm i (j ∸ i)) ⟩
+       suc ((j ∸ i) +ℕ i)
+         ≡⟨ cong suc (≤-∸-+-cancel i≤j) ⟩
+       suc j ∎
+
   genProd-respects-rel-pair : (p : ℕ × ℕ) → fst genProd-free (relB∞×B∞-from-pair p) ≡ (𝟘∞ , 𝟘∞)
   genProd-respects-rel-pair (m , d) =
     let n = m +ℕ suc d
@@ -4815,12 +4847,178 @@ module B∞×B∞-Presentation where
   -- Key insight: The proof that g×-left and g×-right generators are orthogonal
   -- follows from the same pattern as genProd-orthog but in the quotient.
   --
-  -- For now, we keep the postulate but document the progress made:
-  -- - genProd⊎-orthog: PROVED
-  -- - genProd-orthog: PROVED
-  -- - genProd-free: Defined
-  -- - genProd-respects-rel: PROVED
-  -- - φ : B∞×B∞-quotient → B∞×B∞: PROVED (via QB.inducedHom)
+  -- Step 5: Build ψ : B∞×B∞ → B∞×B∞-quotient
+  -- We need homomorphisms from each B∞ factor to B∞×B∞-quotient
+
+  -- Left generator map: n ↦ g× (encode× (inl n))
+  g×-left-gen : ℕ → ⟨ B∞×B∞-quotient ⟩
+  g×-left-gen n = g× (encode× (⊎.inl n))
+
+  -- Right generator map: n ↦ g× (encode× (inr n))
+  g×-right-gen : ℕ → ⟨ B∞×B∞-quotient ⟩
+  g×-right-gen n = g× (encode× (⊎.inr n))
+
+  -- ψ-left-free : freeBA ℕ → B∞×B∞-quotient
+  ψ-left-free : BoolHom (freeBA ℕ) B∞×B∞-quotient
+  ψ-left-free = inducedBAHom ℕ B∞×B∞-quotient g×-left-gen
+
+  ψ-left-free-on-gen : fst ψ-left-free ∘ generator ≡ g×-left-gen
+  ψ-left-free-on-gen = evalBAInduce ℕ B∞×B∞-quotient g×-left-gen
+
+  -- Show ψ-left-free sends relB∞ k to 0
+  -- relB∞ k = gen m · gen (m + suc d) where cantorUnpair k = (m, d)
+  -- We need: g×-left-gen m · g×-left-gen (m + suc d) = 0
+  -- i.e., g× (encode× (inl m)) · g× (encode× (inl (m + suc d))) = 0
+  -- This follows because encode× (inl m) ≠ encode× (inl (m + suc d))
+  -- and the quotient relations make distinct generators orthogonal
+
+  -- Key lemma: encode× (inl m) ≠ encode× (inl n) when m ≠ n
+  encode×-inl-injective : (m n : ℕ) → encode× (⊎.inl m) ≡ encode× (⊎.inl n) → m ≡ n
+  encode×-inl-injective m n = λ eq → isEmbedding→Inj isEmbedding-inl m n (
+    ⊎.inl m            ≡⟨ sym (decode×∘encode× (⊎.inl m)) ⟩
+    decode× (encode× (⊎.inl m))  ≡⟨ cong decode× eq ⟩
+    decode× (encode× (⊎.inl n))  ≡⟨ decode×∘encode× (⊎.inl n) ⟩
+    ⊎.inl n            ∎)
+
+  -- g×-left generators are orthogonal in the quotient
+  g×-left-orthog : (m n : ℕ) → ¬ (m ≡ n) →
+    BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-left-gen m) (g×-left-gen n) ≡
+    BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  g×-left-orthog m n m≠n =
+    let i = encode× (⊎.inl m)
+        j = encode× (⊎.inl n)
+        i≠j : ¬ (i ≡ j)
+        i≠j = λ eq → m≠n (encode×-inl-injective m n eq)
+    in g×-orthog i j i≠j
+    where
+    -- Distinct quotient generators are orthogonal (via the relations)
+    -- Direct proof of orthogonality when i < j
+    g×-orthog-base : (i j : ℕ) → i < j →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog-base i j i<j =
+      let k = cantorPair i (j ∸ suc i)
+          rel-eq : relB∞×B∞ k ≡ gen i · gen j
+          rel-eq = cong relB∞×B∞-from-pair (cantorUnpair-pair i (j ∸ suc i))
+                 ∙ cong (λ x → gen i · gen x) (i+suc[j∸suc-i]≡j i j i<j)
+      in sym (IsCommRingHom.pres· (snd π×) (gen i) (gen j))
+         ∙ cong (fst π×) (sym rel-eq)
+         ∙ QB.zeroOnImage k
+
+    g×-orthog : (i j : ℕ) → ¬ (i ≡ j) →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog i j i≠j with Cubical.Data.Nat.Order.<Dec i j
+    ... | yes i<j = g×-orthog-base i j i<j
+    ... | no ¬i<j with Cubical.Data.Nat.Order.<Dec j i
+    ...   | yes j<i =
+            -- Use commutativity and the base case
+            BooleanRingStr.·Comm (snd B∞×B∞-quotient) (g× i) (g× j)
+            ∙ g×-orthog-base j i j<i
+    ...   | no ¬j<i =
+            -- ¬(i < j) → j ≤ i; ¬(j < i) → i ≤ j
+            -- ≤-antisym (i ≤ j) (j ≤ i) : i ≡ j
+            ex-falso (i≠j (≤-antisym (≮→≥ ¬j<i) (≮→≥ ¬i<j)))
+
+  -- ψ-left-free respects relB∞
+  ψ-left-respects-relB∞ : (k : ℕ) → fst ψ-left-free (relB∞ k) ≡ BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  ψ-left-respects-relB∞ k =
+    let (m , d) = cantorUnpair k
+        n = m +ℕ suc d
+        m≠n = m≠m+suc-d m d
+    in fst ψ-left-free (gen m · gen n)
+         ≡⟨ IsCommRingHom.pres· (snd ψ-left-free) (gen m) (gen n) ⟩
+       BooleanRingStr._·_ (snd B∞×B∞-quotient) (fst ψ-left-free (gen m)) (fst ψ-left-free (gen n))
+         ≡⟨ cong₂ (BooleanRingStr._·_ (snd B∞×B∞-quotient))
+                  (funExt⁻ ψ-left-free-on-gen m) (funExt⁻ ψ-left-free-on-gen n) ⟩
+       BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-left-gen m) (g×-left-gen n)
+         ≡⟨ g×-left-orthog m n m≠n ⟩
+       BooleanRingStr.𝟘 (snd B∞×B∞-quotient) ∎
+
+  -- ψ-left : B∞ → B∞×B∞-quotient (induced from quotient)
+  ψ-left : BoolHom B∞ B∞×B∞-quotient
+  ψ-left = QB.inducedHom B∞×B∞-quotient ψ-left-free ψ-left-respects-relB∞
+
+  -- Similarly for right factor
+  ψ-right-free : BoolHom (freeBA ℕ) B∞×B∞-quotient
+  ψ-right-free = inducedBAHom ℕ B∞×B∞-quotient g×-right-gen
+
+  encode×-inr-injective : (m n : ℕ) → encode× (⊎.inr m) ≡ encode× (⊎.inr n) → m ≡ n
+  encode×-inr-injective m n = λ eq → isEmbedding→Inj isEmbedding-inr m n (
+    ⊎.inr m            ≡⟨ sym (decode×∘encode× (⊎.inr m)) ⟩
+    decode× (encode× (⊎.inr m))  ≡⟨ cong decode× eq ⟩
+    decode× (encode× (⊎.inr n))  ≡⟨ decode×∘encode× (⊎.inr n) ⟩
+    ⊎.inr n            ∎)
+
+  ψ-right-free-on-gen : fst ψ-right-free ∘ generator ≡ g×-right-gen
+  ψ-right-free-on-gen = evalBAInduce ℕ B∞×B∞-quotient g×-right-gen
+
+  g×-right-orthog : (m n : ℕ) → ¬ (m ≡ n) →
+    BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-right-gen m) (g×-right-gen n) ≡
+    BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  g×-right-orthog m n m≠n =
+    let i = encode× (⊎.inr m)
+        j = encode× (⊎.inr n)
+        i≠j : ¬ (i ≡ j)
+        i≠j = λ eq → m≠n (encode×-inr-injective m n eq)
+    in g×-orthog-helper i j i≠j
+    where
+    -- Direct proof of orthogonality when i < j
+    g×-orthog-helper-base : (i j : ℕ) → i < j →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog-helper-base i j i<j =
+      let k = cantorPair i (j ∸ suc i)
+          rel-eq : relB∞×B∞ k ≡ gen i · gen j
+          rel-eq = cong relB∞×B∞-from-pair (cantorUnpair-pair i (j ∸ suc i))
+                 ∙ cong (λ x → gen i · gen x) (i+suc[j∸suc-i]≡j i j i<j)
+      in sym (IsCommRingHom.pres· (snd π×) (gen i) (gen j))
+         ∙ cong (fst π×) (sym rel-eq)
+         ∙ QB.zeroOnImage k
+
+    g×-orthog-helper : (i j : ℕ) → ¬ (i ≡ j) →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog-helper i j i≠j with Cubical.Data.Nat.Order.<Dec i j
+    ... | yes i<j = g×-orthog-helper-base i j i<j
+    ... | no ¬i<j with Cubical.Data.Nat.Order.<Dec j i
+    ...   | yes j<i =
+            BooleanRingStr.·Comm (snd B∞×B∞-quotient) (g× i) (g× j)
+            ∙ g×-orthog-helper-base j i j<i
+    ...   | no ¬j<i =
+            ex-falso (i≠j (≤-antisym (≮→≥ ¬j<i) (≮→≥ ¬i<j)))
+
+  ψ-right-respects-relB∞ : (k : ℕ) → fst ψ-right-free (relB∞ k) ≡ BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  ψ-right-respects-relB∞ k =
+    let (m , d) = cantorUnpair k
+        n = m +ℕ suc d
+        m≠n = m≠m+suc-d m d
+    in fst ψ-right-free (gen m · gen n)
+         ≡⟨ IsCommRingHom.pres· (snd ψ-right-free) (gen m) (gen n) ⟩
+       BooleanRingStr._·_ (snd B∞×B∞-quotient) (fst ψ-right-free (gen m)) (fst ψ-right-free (gen n))
+         ≡⟨ cong₂ (BooleanRingStr._·_ (snd B∞×B∞-quotient))
+                  (funExt⁻ ψ-right-free-on-gen m) (funExt⁻ ψ-right-free-on-gen n) ⟩
+       BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-right-gen m) (g×-right-gen n)
+         ≡⟨ g×-right-orthog m n m≠n ⟩
+       BooleanRingStr.𝟘 (snd B∞×B∞-quotient) ∎
+
+  ψ-right : BoolHom B∞ B∞×B∞-quotient
+  ψ-right = QB.inducedHom B∞×B∞-quotient ψ-right-free ψ-right-respects-relB∞
+
+  -- Step 6: Combine ψ-left and ψ-right to get ψ : B∞×B∞ → B∞×B∞-quotient
+  -- ψ(x, y) = ψ-left(x) + ψ-right(y)
+  -- This works because the image of ψ-left and ψ-right are orthogonal
+  -- (left and right generators are orthogonal in B∞×B∞-quotient)
+
+  -- The full proof of B∞×B∞≃quotient requires:
+  -- 1. Show ψ is a ring homomorphism (uses orthogonality of factors)
+  -- 2. Show φ ∘ ψ ≡ id (generators map correctly)
+  -- 3. Show ψ ∘ φ ≡ id (generators map correctly)
+  -- These involve careful equational reasoning with the quotient structure.
+  -- For now, we keep the postulate documenting significant progress:
+  -- - φ : B∞×B∞-quotient → B∞×B∞: PROVED
+  -- - ψ-left : B∞ → B∞×B∞-quotient: PROVED
+  -- - ψ-right : B∞ → B∞×B∞-quotient: PROVED
   postulate
     B∞×B∞≃quotient : BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
 
