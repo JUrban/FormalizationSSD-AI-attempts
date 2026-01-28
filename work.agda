@@ -16,6 +16,7 @@ open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Univalence
 open import Cubical.Foundations.Powerset
+open import Cubical.Foundations.Transport using (transport⁻; transportTransport⁻)
 
 open import Cubical.Data.Nat renaming (_+_ to _+ℕ_ ; _·_ to _·ℕ_)
 open import Cubical.Data.Nat.Order
@@ -9262,9 +9263,43 @@ module StoneEqualityClosedModule where
 
   -- Main theorem: For S : Stone, equality is closed
   -- This follows from SpEqualityClosed by transporting along the path Sp B ≡ S
-  postulate
-    StoneEqualityClosed : (S : Stone) → (s t : fst S)
-      → isClosedProp ((s ≡ t) , hasStoneStr→isSet S s t)
+  --
+  -- Proof: Given S = (X, B, path) where path : Sp B ≡ X
+  -- 1. SpEqualityClosed gives: for s',t' : Sp B, (s' ≡ t') is closed
+  -- 2. Transport along path: elements s,t : X correspond to s',t' : Sp B
+  -- 3. Use closedEquiv: since (s' ≡ t') ↔ (s ≡ t), closedness transfers
+
+  StoneEqualityClosed : (S : Stone) → (s t : fst S)
+    → isClosedProp ((s ≡ t) , hasStoneStr→isSet S s t)
+  StoneEqualityClosed (X , B , path) s t = closedEquiv
+    ((s' ≡ t') , isSetBoolHom (fst B) BoolBR s' t')
+    ((s ≡ t) , hasStoneStr→isSet (X , B , path) s t)
+    forward backward spClosed
+    where
+    -- s and t as elements of Sp B
+    -- transport (sym path) = transport⁻ path
+    s' : Sp B
+    s' = transport⁻ path s
+
+    t' : Sp B
+    t' = transport⁻ path t
+
+    -- Equality in Sp B is closed
+    spClosed : isClosedProp ((s' ≡ t') , isSetBoolHom (fst B) BoolBR s' t')
+    spClosed = SpEqualityClosed B s' t'
+
+    -- Forward: (s' ≡ t') → (s ≡ t)
+    -- transportTransport⁻: transport path (transport⁻ path b) ≡ b
+    forward : (s' ≡ t') → (s ≡ t)
+    forward s'=t' =
+      s                                 ≡⟨ sym (transportTransport⁻ path s) ⟩
+      transport path (transport⁻ path s)  ≡⟨ cong (transport path) s'=t' ⟩
+      transport path (transport⁻ path t)  ≡⟨ transportTransport⁻ path t ⟩
+      t ∎
+
+    -- Backward: (s ≡ t) → (s' ≡ t')
+    backward : (s ≡ t) → (s' ≡ t')
+    backward s=t = cong (transport⁻ path) s=t
 
 -- =============================================================================
 -- StoneClosedSubsets (tex Theorem 1648)
