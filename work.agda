@@ -2998,8 +2998,12 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 --    The main axiom: evaluation map B → 2^{Sp B} is equivalence for B : Booleω
 --
 -- 2. quotientPreservesBooleω : (α : binarySequence) → ∥ has-Boole-ω' (BoolBR QB./Im α) ∥₁
---    Technical: quotients of Booleω by ℕ-indexed relations stay in Booleω
---    Proof strategy documented (uses BoolQuotientEquiv + ℕ ⊎ ℕ ≅ ℕ)
+--    PARTIALLY PROVEN: Construction is complete, only equivToPresentation postulated
+--    Proof structure:
+--      - h : ℕ → ⟨ freeBA ℕ ⟩ is constructed from f₀ (from is-cp-2) and g (from α)
+--      - h = ⊎.rec f₀ g ∘ decode where decode : ℕ → ℕ ⊎ ℕ
+--    Remaining local postulate: equivToPresentation : BooleanRingEquiv (BoolBR /Im α) (freeBA ℕ /Im h)
+--    This follows by composing three equivalences (documented in proof)
 --
 -- 3. llpo : LLPO
 --    Requires B_∞ construction (Boolean algebra with at-most-once generators)
