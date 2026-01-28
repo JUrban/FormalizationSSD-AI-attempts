@@ -5879,10 +5879,44 @@ meet-meetNegForm ns ms = meetNegForm (ns ++ ms)
 -- We need to extend it to quotients, which requires showing that homomorphisms
 -- out of quotients are determined by their values on generators of the original.
 
--- For now, we postulate this and note the proof approach:
--- postulate
---   SpB∞-to-ℕ∞-injective : (h₁ h₂ : Sp B∞-Booleω) →
---     SpB∞-to-ℕ∞ h₁ ≡ SpB∞-to-ℕ∞ h₂ → h₁ ≡ h₂
+-- The proof uses equalityFromEqualityOnGenerators from freeBATerms.agda
+open import BooleanRing.FreeBooleanRing.freeBATerms using (equalityFromEqualityOnGenerators)
+
+-- Homomorphisms out of B∞ are determined by their values on generators
+-- This extends equalityFromEqualityOnGenerators to the quotient B∞
+SpB∞-to-ℕ∞-injective : (h₁ h₂ : Sp B∞-Booleω) →
+  SpB∞-to-ℕ∞ h₁ ≡ SpB∞-to-ℕ∞ h₂ → h₁ ≡ h₂
+SpB∞-to-ℕ∞-injective h₁ h₂ seq-eq = B∞-hom-eq
+  where
+  -- The sequences are equal, so h₁ and h₂ agree on all generators g∞ n
+  seq-eq-pointwise : (n : ℕ) → h₁ $cr (g∞ n) ≡ h₂ $cr (g∞ n)
+  seq-eq-pointwise n = funExt⁻ (cong fst seq-eq) n
+
+  -- Compose with π∞ : freeBA ℕ → B∞ to get homomorphisms from freeBA ℕ
+  h₁-free h₂-free : BoolHom (freeBA ℕ) BoolBR
+  h₁-free = h₁ ∘cr π∞
+  h₂-free = h₂ ∘cr π∞
+
+  -- These agree on generators: (h ∘ π∞)(generator n) = h(g∞ n)
+  -- Note: g∞ n = fst π∞ (gen n) = fst π∞ (generator n) by definition
+  agree-on-gens : (n : ℕ) → h₁-free $cr (generator n) ≡ h₂-free $cr (generator n)
+  agree-on-gens n = seq-eq-pointwise n
+
+  -- By equalityFromEqualityOnGenerators, h₁-free = h₂-free
+  free-hom-eq : h₁-free ≡ h₂-free
+  free-hom-eq = equalityFromEqualityOnGenerators BoolBR h₁-free h₂-free agree-on-gens
+
+  -- Since π∞ is epi (as a quotient map), h₁ = h₂
+  -- We use that h₁ ∘ π∞ = h₂ ∘ π∞ implies h₁ = h₂ when π∞ is epi
+  -- quotientImageHomEpi gives us equality of underlying functions
+  fst-hom-eq : fst h₁ ≡ fst h₂
+  fst-hom-eq = QB.quotientImageHomEpi {B = freeBA ℕ} {f = relB∞}
+    (⟨ BoolBR ⟩ , BooleanRingStr.is-set (snd BoolBR))
+    (cong fst free-hom-eq)
+
+  -- Lift to equality of homomorphisms using CommRingHom≡
+  B∞-hom-eq : h₁ ≡ h₂
+  B∞-hom-eq = CommRingHom≡ fst-hom-eq
 
 -- With SpB∞-to-ℕ∞-injective, we get:
 -- SpB∞-to-ℕ∞ is a bijection (using SpB∞-roundtrip), so Sp B∞ ≅ ℕ∞
