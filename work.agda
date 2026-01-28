@@ -6226,9 +6226,53 @@ ns △L ms = (ns ++ ms) ∖L (ns ∩L ms)
 --                       = (a + b + ab) + a·ab + b·ab + ab²
 --                       = (a + b + ab) + ab + ab + ab  (using x² = x)
 --                       = a + b  (using 4ab = 0 in char 2)
---
--- NOTE: Direct proof has projection mismatch with library's ·DistL+.
--- This is postulated and marked for resolution (the math is correct).
+
+-- Helper: a·(a·b) = a·b  (using associativity and idempotence)
+·-absorb-left : (a b : ⟨ B∞ ⟩) → a ·∞ (a ·∞ b) ≡ a ·∞ b
+·-absorb-left a b =
+  a ·∞ (a ·∞ b)
+    ≡⟨ BooleanRingStr.·Assoc (snd B∞) a a b ⟩
+  (a ·∞ a) ·∞ b
+    ≡⟨ cong (_·∞ b) (BooleanRingStr.·Idem (snd B∞) a) ⟩
+  a ·∞ b ∎
+
+-- Helper: b·(a·b) = a·b  (using commutativity, associativity and idempotence)
+·-absorb-right : (a b : ⟨ B∞ ⟩) → b ·∞ (a ·∞ b) ≡ a ·∞ b
+·-absorb-right a b =
+  b ·∞ (a ·∞ b)
+    ≡⟨ BooleanRingStr.·Comm (snd B∞) b (a ·∞ b) ⟩
+  (a ·∞ b) ·∞ b
+    ≡⟨ sym (BooleanRingStr.·Assoc (snd B∞) a b b) ⟩
+  a ·∞ (b ·∞ b)
+    ≡⟨ cong (a ·∞_) (BooleanRingStr.·Idem (snd B∞) b) ⟩
+  a ·∞ b ∎
+
+-- Helper: (a·b)·(a·b) = a·b (idempotence of product)
+·-prod-idem : (a b : ⟨ B∞ ⟩) → (a ·∞ b) ·∞ (a ·∞ b) ≡ a ·∞ b
+·-prod-idem a b = BooleanRingStr.·Idem (snd B∞) (a ·∞ b)
+
+-- Note: We avoid using +Assoc with complex expressions due to projection mismatch.
+-- Instead, we work with associativity implicitly by structuring the proof differently.
+
+-- Helper: x + x = 0 in char 2 (already have char2-B∞)
+-- char2-B∞ : (x : ⟨ B∞ ⟩) → x +∞ x ≡ 𝟘∞
+
+-- Helper: 4x = 0 in char 2
+quad-cancel : (x : ⟨ B∞ ⟩) → x +∞ x +∞ x +∞ x ≡ 𝟘∞
+quad-cancel x =
+  x +∞ x +∞ x +∞ x
+    ≡⟨ cong (λ t → t +∞ x +∞ x) (char2-B∞ x) ⟩
+  𝟘∞ +∞ x +∞ x
+    ≡⟨ cong (_+∞ x) (BooleanRingStr.+IdL (snd B∞) x) ⟩
+  x +∞ x
+    ≡⟨ char2-B∞ x ⟩
+  𝟘∞ ∎
+
+-- Main theorem: a + b = (a ∨ b) ∧ ¬(a ∧ b)
+-- NOTE: Direct proof hits projection mismatch with library's ·DistR+.
+-- The math is correct but Agda's projection system doesn't unify _+∞_ with
+-- the internal _+_ in certain nested contexts.
+-- We postulate this and mark it for resolution.
 postulate
   xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
 
