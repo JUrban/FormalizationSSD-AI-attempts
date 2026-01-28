@@ -5740,11 +5740,12 @@ neg-nf (meetNegForm ns) = joinForm ns
 -- So ¬(a ∨ b) = ¬a ∧ ¬b ✓
 
 -- De Morgan law: ¬(a ∨ b) = ¬a ∧ ¬b
--- We need to prove this using ring axioms. The key is to show both sides
--- equal 1 + (a + b + ab) when expanded.
--- Postulate for now - this is purely algebraic and follows from ring axioms
-postulate
-  neg-distrib-join : (a b : ⟨ B∞ ⟩) → ¬∞ (a ∨∞ b) ≡ (¬∞ a) ∧∞ (¬∞ b)
+-- Using the library's BooleanAlgebraStr module which has DeMorgan¬∨
+-- Our definitions of ∨∞, ∧∞, ¬∞ are definitionally equal to the library's
+module B∞-BoolAlg = BooleanAlgebraStr B∞
+
+neg-distrib-join : (a b : ⟨ B∞ ⟩) → ¬∞ (a ∨∞ b) ≡ (¬∞ a) ∧∞ (¬∞ b)
+neg-distrib-join a b = B∞-BoolAlg.DeMorgan¬∨ {x = a} {y = b}
 
 -- De Morgan for finite joins: ¬(g_1 ∨ ... ∨ g_n) = ¬g_1 ∧ ... ∧ ¬g_n
 -- This is: ¬(finJoin∞ ns) = finMeetNeg∞ ns
@@ -5762,10 +5763,15 @@ neg-finJoin (n ∷ ns) =
   finMeetNeg∞ (n ∷ ns) ∎
 
 -- For the other direction, we need: ¬(¬a ∧ ¬b) = a ∨ b
--- In Boolean rings: ¬(¬a ∧ ¬b) = 1 + (1+a)(1+b) = 1 + 1 + a + b + ab = a + b + ab = a ∨ b
--- Since characteristic 2: 1 + 1 = 0
-postulate
-  neg-distrib-meet : (a b : ⟨ B∞ ⟩) → ¬∞ ((¬∞ a) ∧∞ (¬∞ b)) ≡ a ∨∞ b
+-- Using DeMorgan¬∧ and ¬Invol from the library:
+-- ¬(¬a ∧ ¬b) = ¬(¬a) ∨ ¬(¬b) = a ∨ b
+neg-distrib-meet : (a b : ⟨ B∞ ⟩) → ¬∞ ((¬∞ a) ∧∞ (¬∞ b)) ≡ a ∨∞ b
+neg-distrib-meet a b =
+  ¬∞ ((¬∞ a) ∧∞ (¬∞ b))
+    ≡⟨ B∞-BoolAlg.DeMorgan¬∧ {x = ¬∞ a} {y = ¬∞ b} ⟩
+  (¬∞ (¬∞ a)) ∨∞ (¬∞ (¬∞ b))
+    ≡⟨ cong₂ _∨∞_ (B∞-BoolAlg.¬Invol {x = a}) (B∞-BoolAlg.¬Invol {x = b}) ⟩
+  a ∨∞ b ∎
 
 -- De Morgan for finite meets of negations: ¬(¬g_1 ∧ ... ∧ ¬g_n) = g_1 ∨ ... ∨ g_n
 neg-finMeetNeg : (ns : List ℕ) → ¬∞ (finMeetNeg∞ ns) ≡ finJoin∞ ns
