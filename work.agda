@@ -5199,6 +5199,179 @@ finMeetNeg∞-nonzero ns meet=0 = contradiction
   contradiction = true≢false (sym h₀-meet=true ∙ h₀-meet=false)
 
 -- =============================================================================
+-- f-injective from normalFormExists
+-- =============================================================================
+
+-- Helper: characteristic 2 for B∞ (x + x = 0)
+-- Using BooleanAlgebraStr.characteristic2 which has implicit x argument
+private
+  module BA∞ = BooleanAlgebraStr B∞
+  char2-B∞ : (x : ⟨ B∞ ⟩) → x +∞ x ≡ 𝟘∞
+  char2-B∞ x = BA∞.characteristic2 {x}
+
+  char2-B∞×B∞ : (z : ⟨ B∞×B∞ ⟩) → z +× z ≡ (𝟘∞ , 𝟘∞)
+  char2-B∞×B∞ (a , b) = cong₂ _,_ (char2-B∞ a) (char2-B∞ b)
+
+-- Helper for splitByParity to get component projections
+splitByParity-evens : List ℕ → List ℕ
+splitByParity-evens ns = fst (splitByParity ns)
+
+splitByParity-odds : List ℕ → List ℕ
+splitByParity-odds ns = snd (splitByParity ns)
+
+-- When isEven n = true, the evens list gets half n prepended
+splitByParity-cons-even : (n : ℕ) (ns : List ℕ) → isEven n ≡ true →
+  splitByParity-evens (n ∷ ns) ≡ half n ∷ splitByParity-evens ns
+splitByParity-cons-even n ns even-n with isEven n | splitByParity ns
+... | true  | (evens , odds) = refl
+... | false | (evens , odds) = ex-falso (false≢true even-n)
+
+-- When isEven n = false, the odds list gets half n prepended
+splitByParity-cons-odd : (n : ℕ) (ns : List ℕ) → isEven n ≡ false →
+  splitByParity-odds (n ∷ ns) ≡ half n ∷ splitByParity-odds ns
+splitByParity-cons-odd n ns odd-n with isEven n | splitByParity ns
+... | false | (evens , odds) = refl
+... | true  | (evens , odds) = ex-falso (true≢false odd-n)
+
+-- Key lemma: if both parity components are empty after splitByParity, then ns = []
+-- Proof: each element goes to either evens or odds, so non-empty ns has non-empty split
+splitByParity-nonempty : (ns : List ℕ) →
+  let (evens , odds) = splitByParity ns
+  in evens ≡ [] → odds ≡ [] → ns ≡ []
+splitByParity-nonempty [] _ _ = refl
+splitByParity-nonempty (n ∷ ns) evens=[] odds=[] = splitByParity-nonempty-aux (isEven n) refl
+  where
+  splitByParity-nonempty-aux : (b : Bool) → isEven n ≡ b → (n ∷ ns) ≡ []
+  splitByParity-nonempty-aux true parity =
+    -- When isEven n = true, evens list starts with half n, so can't be []
+    let evens-eq = splitByParity-cons-even n ns parity
+        contradiction : half n ∷ splitByParity-evens ns ≡ []
+        contradiction = sym evens-eq ∙ evens=[]
+    in ex-falso (¬cons≡nil contradiction)
+  splitByParity-nonempty-aux false parity =
+    -- When isEven n = false, odds list starts with half n, so can't be []
+    let odds-eq = splitByParity-cons-odd n ns parity
+        contradiction : half n ∷ splitByParity-odds ns ≡ []
+        contradiction = sym odds-eq ∙ odds=[]
+    in ex-falso (¬cons≡nil contradiction)
+
+-- Contrapositive: non-empty ns gives non-empty evens or odds
+splitByParity-ns-nonempty : (ns : List ℕ) → ¬ (ns ≡ []) →
+  let (evens , odds) = splitByParity ns
+  in ¬ ((evens ≡ []) × (odds ≡ []))
+splitByParity-ns-nonempty ns ns≠[] (evens=[] , odds=[]) =
+  ns≠[] (splitByParity-nonempty ns evens=[] odds=[])
+
+-- f-kernel on joinForm: if f(finJoin∞ ns) = (0, 0), then ns = []
+f-kernel-joinForm : (ns : List ℕ) →
+  let (evens , odds) = splitByParity ns
+  in fst f (finJoin∞ ns) ≡ (𝟘∞ , 𝟘∞) → ns ≡ []
+f-kernel-joinForm ns fx=0 =
+  let evens = splitByParity-evens ns
+      odds = splitByParity-odds ns
+
+      -- f(finJoin∞ ns) = (finJoin∞ evens, finJoin∞ odds)
+      f-eq : fst f (finJoin∞ ns) ≡ (finJoin∞ evens , finJoin∞ odds)
+      f-eq = f-on-finJoin ns
+
+      f-split : (finJoin∞ evens , finJoin∞ odds) ≡ (𝟘∞ , 𝟘∞)
+      f-split = sym f-eq ∙ fx=0
+
+      -- Extract component equalities
+      evens-join=0 : finJoin∞ evens ≡ 𝟘∞
+      evens-join=0 = cong fst f-split
+
+      odds-join=0 : finJoin∞ odds ≡ 𝟘∞
+      odds-join=0 = cong snd f-split
+
+      -- Both lists are empty
+      evens=[] : evens ≡ []
+      evens=[] = finJoin∞-zero→empty evens evens-join=0
+
+      odds=[] : odds ≡ []
+      odds=[] = finJoin∞-zero→empty odds odds-join=0
+
+  in splitByParity-nonempty ns evens=[] odds=[]
+
+-- f-kernel on normal forms: proves kernel is trivial for normal form elements
+f-kernel-normalForm : (nf : B∞-NormalForm) → fst f ⟦ nf ⟧nf ≡ (𝟘∞ , 𝟘∞) → ⟦ nf ⟧nf ≡ 𝟘∞
+f-kernel-normalForm (joinForm ns) fx=0 =
+  let ns=[] : ns ≡ []
+      ns=[] = f-kernel-joinForm ns fx=0
+  in cong finJoin∞ ns=[]  -- finJoin∞ [] = 𝟘∞
+f-kernel-normalForm (meetNegForm ns) fx=0 =
+  -- finMeetNeg∞ ns ≠ 0 always, so f(finMeetNeg∞ ns) ≠ (0, 0) for any reasonable f
+  -- But if f(x) = 0, then we need to show x = 0
+  -- Actually: we need to show f(finMeetNeg∞ ns) ≠ (0, 0)
+  -- This is NOT immediate from finMeetNeg∞-nonzero alone...
+  -- We need: finMeetNeg∞ ns ≠ 0 AND f is a nonzero-preserving map on this element
+  -- Actually, we need f(finMeetNeg∞ ns) ≠ 0, which requires more infrastructure.
+  -- For now, we note this case is blocked pending additional analysis.
+  ex-falso (meetNegCase-needs-more-work ns fx=0)
+  where
+  postulate
+    meetNegCase-needs-more-work : (ns : List ℕ) → fst f (finMeetNeg∞ ns) ≡ (𝟘∞ , 𝟘∞) → ⊥
+
+-- f-injective derived from normalFormExists
+-- NOTE: This uses normalFormExists which is still postulated
+f-injective-from-normalForm : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+f-injective-from-normalForm x y fx=fy =
+  let -- Get normal forms
+      (nf-x , nf-x-eq) = normalFormExists x
+      (nf-y , nf-y-eq) = normalFormExists y
+
+      -- f is a ring homomorphism, so f(x - y) = f(x) - f(y) = 0
+      -- In Boolean rings, x - y = x + y (since -x = x)
+      xy-diff : ⟨ B∞ ⟩
+      xy-diff = x +∞ y
+
+      f-xy-diff : fst f xy-diff ≡ (𝟘∞ , 𝟘∞)
+      f-xy-diff =
+        fst f (x +∞ y)
+          ≡⟨ f-pres+ x y ⟩
+        (fst f x) +× (fst f y)
+          ≡⟨ cong (_+× (fst f y)) fx=fy ⟩
+        (fst f y) +× (fst f y)
+          ≡⟨ char2-B∞×B∞ (fst f y) ⟩
+        (𝟘∞ , 𝟘∞) ∎
+
+      -- Get normal form of x + y
+      (nf-diff , nf-diff-eq) = normalFormExists xy-diff
+
+      -- f(⟦nf-diff⟧) = f(x + y) = 0
+      f-nf-diff=0 : fst f ⟦ nf-diff ⟧nf ≡ (𝟘∞ , 𝟘∞)
+      f-nf-diff=0 = cong (fst f) nf-diff-eq ∙ f-xy-diff
+
+      -- So ⟦nf-diff⟧ = 0
+      nf-diff=0 : ⟦ nf-diff ⟧nf ≡ 𝟘∞
+      nf-diff=0 = f-kernel-normalForm nf-diff f-nf-diff=0
+
+      -- x + y = 0
+      xy=0 : x +∞ y ≡ 𝟘∞
+      xy=0 = sym nf-diff-eq ∙ nf-diff=0
+
+      -- In Boolean rings, x + y = 0 implies x = y
+      -- (since x + y + y = x + 0 = x, and y + y = 0, so x + y + y = x)
+      x=y : x ≡ y
+      x=y = BooleanRing-xor-eq-to-eq x y xy=0
+
+  in x=y
+  where
+  BooleanRing-xor-eq-to-eq : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ 𝟘∞ → a ≡ b
+  BooleanRing-xor-eq-to-eq a b a+b=0 =
+    a
+      ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) a) ⟩
+    a +∞ 𝟘∞
+      ≡⟨ sym (cong (a +∞_) (char2-B∞ b)) ⟩
+    a +∞ (b +∞ b)
+      ≡⟨ BooleanRingStr.+Assoc (snd B∞) a b b ⟩
+    (a +∞ b) +∞ b
+      ≡⟨ cong (_+∞ b) a+b=0 ⟩
+    𝟘∞ +∞ b
+      ≡⟨ BooleanRingStr.+IdL (snd B∞) b ⟩
+    b ∎
+
+-- =============================================================================
 -- LLPO derivation from Stone Duality
 -- =============================================================================
 
