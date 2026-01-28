@@ -4182,16 +4182,70 @@ postulate
 -- If h' gives inr(h-right), then for all k:
 --   h(f(g_{2k})) = h-right(0) = 0   (since f(g_{2k}) = (g_k, 0))
 
+-- f applied to generators: fst f (g∞ n) = f-on-gen n
+-- This follows from f = QB.inducedHom which satisfies f ∘ π∞ = f-free
+opaque
+  unfolding QB.inducedHom
+  unfolding QB.quotientImageHom
+  f-eval : f ∘cr π∞ ≡ f-free
+  f-eval = QB.evalInduce {B = freeBA ℕ} {f = relB∞}
+             B∞×B∞ {g = f-free} {gfx=0 = f-free-on-relB∞}
+
+-- Key lemma: f on generators equals f-on-gen
+f-on-gen-eq : (n : ℕ) → fst f (g∞ n) ≡ f-on-gen n
+f-on-gen-eq n =
+  fst f (g∞ n)                        ≡⟨ refl ⟩
+  fst f (fst π∞ (gen n))              ≡⟨ funExt⁻ (cong fst f-eval) (gen n) ⟩
+  fst f-free (gen n)                  ≡⟨ funExt⁻ f-free-on-gen n ⟩
+  f-on-gen n ∎
+
+-- Helper: 2 ·ℕ k = k +ℕ k (multiplication computes this way)
+2·-is-double : (k : ℕ) → 2 ·ℕ k ≡ k +ℕ k
+2·-is-double k = cong (k +ℕ_) (+-zero k)
+
 -- f applied to odd generators gives right factor
--- Proof: f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since 2k+1 is odd
--- This requires showing that the quotient map π∞ ∘ f-free respects this
-postulate
-  f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
+-- f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since parity(2k+1) = false
+f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
+f-odd-gen k =
+  fst f (g∞ (suc (2 ·ℕ k)))
+    ≡⟨ f-on-gen-eq (suc (2 ·ℕ k)) ⟩
+  f-on-gen (suc (2 ·ℕ k))
+    ≡⟨ f-on-gen-odd k ⟩
+  (𝟘∞ , g∞ k) ∎
+  where
+  -- Show f-on-gen (suc (2k)) computes to (0, g_k)
+  f-on-gen-odd : (k : ℕ) → f-on-gen (suc (2 ·ℕ k)) ≡ (𝟘∞ , g∞ k)
+  f-on-gen-odd k with parity (suc (2 ·ℕ k)) in par-eq
+  ... | false = cong (𝟘∞ ,_) (cong g∞ div2-eq)
+    where
+    div2-eq : div2 (suc (2 ·ℕ k)) ≡ k
+    div2-eq = subst (λ m → div2 (suc m) ≡ k) (sym (2·-is-double k)) (div2-double-suc k)
+  ... | true = ex-falso (false≢true (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (suc (2 ·ℕ k)) ≡ false
+    parity-eq = subst (λ m → parity (suc m) ≡ false) (sym (2·-is-double k)) (parity-double-suc k)
 
 -- f applied to even generators gives left factor
--- Proof: f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since 2k is even
-postulate
-  f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
+-- f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since parity(2k) = true
+f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
+f-even-gen k =
+  fst f (g∞ (2 ·ℕ k))
+    ≡⟨ f-on-gen-eq (2 ·ℕ k) ⟩
+  f-on-gen (2 ·ℕ k)
+    ≡⟨ f-on-gen-even k ⟩
+  (g∞ k , 𝟘∞) ∎
+  where
+  -- Show f-on-gen (2k) computes to (g_k, 0)
+  f-on-gen-even : (k : ℕ) → f-on-gen (2 ·ℕ k) ≡ (g∞ k , 𝟘∞)
+  f-on-gen-even k with parity (2 ·ℕ k) in par-eq
+  ... | true = cong (_, 𝟘∞) (cong g∞ div2-eq)
+    where
+    div2-eq : div2 (2 ·ℕ k) ≡ k
+    div2-eq = subst (λ m → div2 m ≡ k) (sym (2·-is-double k)) (div2-double k)
+  ... | false = ex-falso (true≢false (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (2 ·ℕ k) ≡ true
+    parity-eq = subst (λ m → parity m ≡ true) (sym (2·-is-double k)) (parity-double k)
 
 -- The LLPO derivation:
 -- Given α : ℕ∞ represented as h : Sp B∞-Booleω
