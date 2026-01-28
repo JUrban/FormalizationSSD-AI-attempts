@@ -11169,6 +11169,35 @@ module StoneAsClosedSubsetOfCantorModule where
                 (λ _ → ∣ inr tt ∣₁))))
     (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
 
+  -- Associativity of intersection (closed)
+  closedIntersectionAssoc : (A B C : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A (ClosedSubsetIntersection B C)
+      ≡ ClosedSubsetIntersection (ClosedSubsetIntersection A B) C
+  closedIntersectionAssoc A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (isProp× (snd (fst B x)) (snd (fst C x))))
+                (isProp× (isProp× (snd (fst A x)) (snd (fst B x))) (snd (fst C x)))
+                (λ (a , (b , c)) → (a , b) , c)
+                (λ ((a , b) , c) → a , (b , c)))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Associativity of union (closed)
+  closedUnionAssoc : (A B C : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A (ClosedSubsetUnion B C)
+      ≡ ClosedSubsetUnion (ClosedSubsetUnion A B) C
+  closedUnionAssoc A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ squash₁
+                (PT.rec squash₁ (λ { (inl a) → ∣ inl ∣ inl a ∣₁ ∣₁
+                                   ; (inr bc) → PT.rec squash₁
+                                       (λ { (inl b) → ∣ inl ∣ inr b ∣₁ ∣₁
+                                          ; (inr c) → ∣ inr c ∣₁ }) bc }))
+                (PT.rec squash₁ (λ { (inl ab) → PT.rec squash₁
+                                       (λ { (inl a) → ∣ inl a ∣₁
+                                          ; (inr b) → ∣ inr ∣ inl b ∣₁ ∣₁ }) ab
+                                   ; (inr c) → ∣ inr ∣ inr c ∣₁ ∣₁ })))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
   -- ==========================================================================
   -- Boolean algebra laws for open subsets
   -- ==========================================================================
@@ -11276,6 +11305,35 @@ module StoneAsClosedSubsetOfCantorModule where
       (hPropExt squash₁ (snd ⊤-hProp)
                 (λ _ → tt)
                 (λ _ → ∣ inr tt ∣₁))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Associativity of intersection (open)
+  openIntersectionAssoc : (A B C : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A (OpenSubsetIntersection B C)
+      ≡ OpenSubsetIntersection (OpenSubsetIntersection A B) C
+  openIntersectionAssoc A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) (isProp× (snd (fst B x)) (snd (fst C x))))
+                (isProp× (isProp× (snd (fst A x)) (snd (fst B x))) (snd (fst C x)))
+                (λ (a , (b , c)) → (a , b) , c)
+                (λ ((a , b) , c) → a , (b , c)))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Associativity of union (open)
+  openUnionAssoc : (A B C : OpenSubsetOfCantor)
+    → OpenSubsetUnion A (OpenSubsetUnion B C)
+      ≡ OpenSubsetUnion (OpenSubsetUnion A B) C
+  openUnionAssoc A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt squash₁ squash₁
+                (PT.rec squash₁ (λ { (inl a) → ∣ inl ∣ inl a ∣₁ ∣₁
+                                   ; (inr bc) → PT.rec squash₁
+                                       (λ { (inl b) → ∣ inl ∣ inr b ∣₁ ∣₁
+                                          ; (inr c) → ∣ inr c ∣₁ }) bc }))
+                (PT.rec squash₁ (λ { (inl ab) → PT.rec squash₁
+                                       (λ { (inl a) → ∣ inl a ∣₁
+                                          ; (inr b) → ∣ inr ∣ inl b ∣₁ ∣₁ }) ab
+                                   ; (inr c) → ∣ inr ∣ inr c ∣₁ ∣₁ })))))
     (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
 
 -- =============================================================================
