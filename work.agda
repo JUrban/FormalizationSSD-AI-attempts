@@ -4208,6 +4208,27 @@ data B∞-NormalForm : Type₀ where
 -- The Normal Form Theorem (postulated for now):
 -- Every element of B∞ has a normal form representation
 -- Note: This is the key missing piece for f-injective
+--
+-- PROOF APPROACH for normalFormExists:
+-- B∞ = freeBA ℕ / Im relB∞ where relB∞ enforces g_m · g_n = 0 for m ≠ n
+--
+-- In any Boolean algebra with orthogonal atoms (generators), every element
+-- can be written as either:
+--   - A finite join of atoms: ⋁_{i∈I} g_i
+--   - A finite meet of negated atoms: ⋀_{i∈I} ¬g_i
+--
+-- The proof would require:
+-- 1. Show that freeBA ℕ elements are finite Boolean expressions over generators
+-- 2. Show that the quotient relations collapse products g_i · g_j → 0 for i ≠ j
+-- 3. Show that every Boolean expression simplifies to one of the two forms
+--
+-- This is a standard result in Boolean algebra (CNF/DNF for atom-disjoint case)
+-- but formalizing it requires careful handling of the quotient structure.
+--
+-- Alternative: prove f-injective directly via spectrum argument:
+-- - Stone Duality: f is injective ⟺ Sp(f) is surjective
+-- - We have Sp B∞ ≅ ℕ∞ and Sp(B∞×B∞) ≅ ℕ∞ + ℕ∞
+-- - The surjectivity of Sp(f) follows from the parity decomposition
 postulate
   normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
 
@@ -4394,6 +4415,24 @@ f-on-finJoin (n ∷ ns) with isEven n in parity-eq | splitByParity ns | f-on-fin
 -- If fst f x = (0,0), then using normal form:
 -- - If x = ⋁_I g_i, then both parity-splits are empty, so I = ∅, so x = 0
 -- - If x = ⋀_I ¬g_i, then... (requires separate analysis)
+--
+-- PROOF SKETCH for f-injective (via normalFormExists):
+-- 1. Let x ∈ B∞ with f(x) = (0, 0)
+-- 2. By normalFormExists, x = ⟦ nf ⟧nf for some normal form nf
+-- 3. Case nf = joinForm ns:
+--    - f(⋁_I g_i) = (⋁_{evens} g_k, ⋁_{odds} g_k) by f-on-finJoin
+--    - If this equals (0,0), both components are 0
+--    - For finJoin∞ to be 0, the list must be empty (generators are non-zero)
+--    - So ns = [], and x = finJoin∞ [] = 0
+-- 4. Case nf = meetNegForm ns:
+--    - f(⋀_I ¬g_i) requires showing f preserves negation properly
+--    - ¬g_i = 1 + g_i, so f(¬g_i) = f(1) + f(g_i) = (1,1) + f(g_i)
+--    - This analysis is more complex but follows from homomorphism properties
+--
+-- ALTERNATIVE PROOF via Stone Duality (tex line 295):
+-- - f is injective ⟺ Sp(f) is surjective (Stone Duality axiom)
+-- - Sp-f-surjective would directly give f-injective
+-- - But currently Sp-f-surjective is postulated with dependency on f-injective
 
 -- For now, we postulate f-injective pending the full normal form proof
 postulate
