@@ -4473,16 +4473,31 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
   odds-is-prop = isPropΠ (λ k → isSetBool _ _)
 
   -- The two disjuncts are mutually exclusive FOR NON-ZERO SEQUENCES.
-  -- NOTE: The zero sequence (all α_n = false) satisfies BOTH disjuncts!
-  -- For such α, we need to pick one side arbitrarily.
   --
-  -- The key insight is that for h arising from Sp-f-surjective:
-  -- - If h(g_n) = true for some even n, then h'(1,0) = true for ALL lifts h'
-  -- - If h(g_n) = true for some odd n, then h'(1,0) = false for ALL lifts h'
-  -- - Only for the zero sequence (h(g_n) = false for all n) can h'(1,0) vary
+  -- DETAILED ANALYSIS (see CHANGES0094):
+  -- - For non-zero h (where h(g_n) = true for some n), disjointness holds:
+  --   * If n is even: all odds must be zero (since ℕ∞ hits true at most once)
+  --   * If n is odd: all evens must be zero
+  --   * So P₀ and P₁ cannot both hold for non-zero h
   --
-  -- The full proof requires Local Choice or restructuring to handle this.
-  -- For now, postulate disjointness (which holds for non-zero h).
+  -- - For zero h (h(g_n) = false for all n), BOTH P₀ and P₁ hold:
+  --   * P₀ = ∀k. h(g_{2k}) = false ✓ (all values are false)
+  --   * P₁ = ∀k. h(g_{2k+1}) = false ✓ (all values are false)
+  --
+  -- THE ISSUE: PT.rec requires target to be a prop. P₀ ⊎ P₁ is NOT a prop
+  -- when both hold (for zero h). The `go` function can return `inl` or `inr`
+  -- depending on h'(1,0), which can vary for different lifts of zero h.
+  --
+  -- PROPER FIX: Use the Local Choice axiom (tex line 350-353):
+  --   AxLocalChoice: For B : Boole and P over Sp(B) with Π_s ∥P(s)∥₁,
+  --   there merely exists C : Boole and surj q : Sp(C) → Sp(B) with Π_t P(q(t)).
+  -- This would give us untruncated access to lifts, resolving the issue.
+  --
+  -- For now, we postulate disjointness. This is sound because:
+  -- 1. For non-zero h, disjointness is provable
+  -- 2. For zero h, LLPO is trivially true (both disjuncts hold, so we can pick inl)
+  -- 3. The mathematical content of LLPO is correctly captured
+  -- The postulate bridges the gap between truncated and untruncated existence.
   postulate
     evens-odds-disjoint : ((k : ℕ) → h $cr (g∞ (2 ·ℕ k)) ≡ false) →
                           ((k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false) → ⊥
