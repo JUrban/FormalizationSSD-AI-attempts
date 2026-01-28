@@ -4508,13 +4508,34 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
         false ∎
 
 -- Main LLPO theorem from Stone Duality (using ℕ∞ ↔ Sp B∞ correspondence)
--- The full proof requires:
+-- The full proof uses:
 -- 1. ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞-Booleω (backward map)
 -- 2. SpB∞-roundtrip : (α : ℕ∞) → SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
--- 3. Connect h(g_n) to α_n using the roundtrip
--- For now, we postulate the full theorem
-postulate
-  llpo-from-SD : LLPO
+-- 3. llpo-from-SD-aux : gives LLPO-like statement for h : Sp B∞
+-- 4. SpB∞-to-ℕ∞-seq h n = h $cr (g∞ n) connects h to the sequence
+
+llpo-from-SD : LLPO
+llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
+  where
+  -- Convert α to a homomorphism h
+  h : Sp B∞-Booleω
+  h = ℕ∞-to-SpB∞ α
+
+  -- The roundtrip gives us α = SpB∞-to-ℕ∞ h
+  roundtrip : SpB∞-to-ℕ∞ h ≡ α
+  roundtrip = SpB∞-roundtrip α
+
+  -- The key connection: h $cr (g∞ n) = fst (SpB∞-to-ℕ∞ h) n = fst α n
+  seq-eq : (n : ℕ) → h $cr (g∞ n) ≡ fst α n
+  seq-eq n = funExt⁻ (cong fst roundtrip) n
+
+  -- Transport the llpo-from-SD-aux result to the actual LLPO statement
+  transport-llpo : ((k : ℕ) → h $cr (g∞ (2 ·ℕ k)) ≡ false) ⊎
+                   ((k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false) →
+                   ((k : ℕ) → fst α (2 ·ℕ k) ≡ false) ⊎
+                   ((k : ℕ) → fst α (suc (2 ·ℕ k)) ≡ false)
+  transport-llpo (⊎.inl evens) = ⊎.inl (λ k → sym (seq-eq (2 ·ℕ k)) ∙ evens k)
+  transport-llpo (⊎.inr odds) = ⊎.inr (λ k → sym (seq-eq (suc (2 ·ℕ k))) ∙ odds k)
 
 -- =============================================================================
 -- FUTURE WORK (not yet formalized)
