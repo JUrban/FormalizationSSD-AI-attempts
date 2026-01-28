@@ -6317,9 +6317,23 @@ quad-cancel x =
   𝟘∞ ∎
 
 -- Main theorem: a + b = (a ∨ b) ∧ ¬(a ∧ b)
--- NOTE: Direct proof hits projection mismatch with library's ·DistR+.
--- The math is correct but Agda's projection system doesn't unify _+∞_ with
--- the internal _+_ in certain nested contexts.
+-- Main theorem: a + b = (a ∨ b) ∧ ¬(a ∧ b)
+--
+-- Mathematical proof outline:
+--   (a ∨ b) ∧ ¬(a ∧ b)
+-- = (a + b + ab) · (1 + ab)
+-- = (a + b + ab) + (a + b + ab)·ab   [distributivity]
+-- = (a + b + ab) + (a·ab + b·ab + ab·ab)  [left distributivity]
+-- = (a + b + ab) + (ab + ab + ab)         [absorption: a·ab=ab, b·ab=ab, ab²=ab]
+-- = a + b + ab + ab + ab + ab             [expand]
+-- = a + b + 0                             [4·ab = 0 in char 2]
+-- = a + b
+--
+-- NOTE: Direct proof hits projection mismatch with library's BooleanRingStr.
+-- The renamed operators _+∞_ and _·∞_ opened from BooleanRingStr (snd B∞)
+-- have different projection paths than BooleanRingStr._+_ (snd B∞) when used
+-- in nested contexts within equational reasoning chains.
+-- The math is correct but Agda's projection system doesn't unify them.
 -- We postulate this and mark it for resolution.
 postulate
   xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
