@@ -11950,6 +11950,15 @@ module BrouwerFixedPointTheoremModule where
 -- - Cantor space is Stone (CantorIsStone)
 -- - Stone spaces embed as closed subsets of Cantor (StoneAsClosedSubsetOfCantor)
 --
+-- CLOSED SUBSETS OF CANTOR (StoneAsClosedSubsetOfCantorModule):
+-- - ClosedSubsetOfCantor→Stone, Stone→ClosedWithEquiv: bidirectional correspondence
+-- - ClosedSubsetIntersection, ClosedSubsetUnion: Boolean algebra operations
+-- - ClosedSubsetCountableIntersection: countable meet operation
+-- - EmptyClosedSubset, FullClosedSubset: boundary elements
+-- - CantorFullCorrespondence, EmptyCorrespondence: type correspondences
+-- - ClosedSubsetPreimageCantor: functorial preimage operation
+-- - preimageIntersection, preimageUnion: preimage preserves Boolean ops
+--
 -- INTERVAL TOPOLOGY (tex 2605-2762):
 -- - Unit interval I is CHaus (IntervalIsCHaus)
 -- - Linear order on I (≤I-linear, ≤I-antisym, ≤I-trans, ≤I-refl)
