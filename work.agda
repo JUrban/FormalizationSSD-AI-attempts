@@ -11198,6 +11198,31 @@ module StoneAsClosedSubsetOfCantorModule where
                                    ; (inr c) → ∣ inr ∣ inr c ∣₁ ∣₁ })))))
     (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
 
+  -- Distributivity: A ∩ (B ∪ C) ≡ (A ∩ B) ∪ (A ∩ C) (closed)
+  -- This is the constructively valid direction
+  closedDistributiveIntersection : (A B C : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A (ClosedSubsetUnion B C)
+      ≡ ClosedSubsetUnion (ClosedSubsetIntersection A B) (ClosedSubsetIntersection A C)
+  closedDistributiveIntersection A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) squash₁) squash₁
+                (λ (a , bc) → PT.map (λ { (inl b) → inl (a , b)
+                                        ; (inr c) → inr (a , c) }) bc)
+                (PT.rec (isProp× (snd (fst A x)) squash₁)
+                        (λ { (inl (a , b)) → a , ∣ inl b ∣₁
+                           ; (inr (a , c)) → a , ∣ inr c ∣₁ })))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
+
+  -- Backward direction of dual: (A ∪ B) ∩ (A ∪ C) → A ∪ (B ∩ C) (closed)
+  -- The forward direction requires LLPO (choice between B and C)
+  closedDistributiveUnion-backward : (A B C : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetUnion A (ClosedSubsetIntersection B C)) x)
+    → fst (fst (ClosedSubsetIntersection (ClosedSubsetUnion A B) (ClosedSubsetUnion A C)) x)
+  closedDistributiveUnion-backward A B C x =
+    PT.rec (isProp× squash₁ squash₁)
+           (λ { (inl a) → ∣ inl a ∣₁ , ∣ inl a ∣₁
+              ; (inr (b , c)) → ∣ inr b ∣₁ , ∣ inr c ∣₁ })
+
   -- ==========================================================================
   -- Boolean algebra laws for open subsets
   -- ==========================================================================
@@ -11335,6 +11360,29 @@ module StoneAsClosedSubsetOfCantorModule where
                                           ; (inr b) → ∣ inr ∣ inl b ∣₁ ∣₁ }) ab
                                    ; (inr c) → ∣ inr ∣ inr c ∣₁ ∣₁ })))))
     (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Distributivity: A ∩ (B ∪ C) ≡ (A ∩ B) ∪ (A ∩ C) (open)
+  openDistributiveIntersection : (A B C : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A (OpenSubsetUnion B C)
+      ≡ OpenSubsetUnion (OpenSubsetIntersection A B) (OpenSubsetIntersection A C)
+  openDistributiveIntersection A B C = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp)
+      (hPropExt (isProp× (snd (fst A x)) squash₁) squash₁
+                (λ (a , bc) → PT.map (λ { (inl b) → inl (a , b)
+                                        ; (inr c) → inr (a , c) }) bc)
+                (PT.rec (isProp× (snd (fst A x)) squash₁)
+                        (λ { (inl (a , b)) → a , ∣ inl b ∣₁
+                           ; (inr (a , c)) → a , ∣ inr c ∣₁ })))))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → isPropIsOpenProp _)) _ _)
+
+  -- Backward direction of dual: (A ∪ B) ∩ (A ∪ C) → A ∪ (B ∩ C) (open)
+  openDistributiveUnion-backward : (A B C : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetUnion A (OpenSubsetIntersection B C)) x)
+    → fst (fst (OpenSubsetIntersection (OpenSubsetUnion A B) (OpenSubsetUnion A C)) x)
+  openDistributiveUnion-backward A B C x =
+    PT.rec (isProp× squash₁ squash₁)
+           (λ { (inl a) → ∣ inl a ∣₁ , ∣ inl a ∣₁
+              ; (inr (b , c)) → ∣ inr b ∣₁ , ∣ inr c ∣₁ })
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
