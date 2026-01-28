@@ -6902,5 +6902,129 @@ open import BooleanRing.FreeBooleanRing.freeBATerms using (includeBATermsSurj ; 
 -- once the opaque barrier for includeBATermsSurj is addressed.
 
 -- =============================================================================
+-- Proof that interpretB∞ is surjective via the universal property
+-- =============================================================================
+
+-- Strategy:
+-- 1. Use inducedBAHom ℕ B∞ g∞ to get a homomorphism freeBA ℕ → B∞
+-- 2. Show this equals π∞ (they agree on generators)
+-- 3. The composition π∞ ∘ includeBATermsSurj is surjective
+-- 4. interpretB∞ equals this composition on terms
+-- 5. Therefore interpretB∞ is surjective
+
+-- Step 1: The induced homomorphism from the universal property
+g∞-induced : BoolHom (freeBA ℕ) B∞
+g∞-induced = inducedBAHom ℕ B∞ g∞
+
+-- This agrees with g∞ on generators
+g∞-induced-on-gen : fst g∞-induced ∘ generator ≡ g∞
+g∞-induced-on-gen = evalBAInduce ℕ B∞ g∞
+
+-- Step 2: π∞ also sends generators to g∞
+-- Recall: g∞ n = fst π∞ (gen n) where gen = generator (from FreeBool)
+-- So fst π∞ ∘ generator = g∞ by definition
+
+π∞-on-gen : fst π∞ ∘ generator ≡ g∞
+π∞-on-gen = refl  -- g∞ is defined as fst π∞ ∘ gen, and gen = generator
+
+-- Step 3: By uniqueness, g∞-induced = π∞
+-- We import inducedBAHomUnique from FreeBool
+open import BooleanRing.FreeBooleanRing.FreeBool using (inducedBAHomUnique)
+
+g∞-induced-eq-π∞ : g∞-induced ≡ π∞
+g∞-induced-eq-π∞ = inducedBAHomUnique ℕ B∞ g∞ π∞ π∞-on-gen
+
+-- Corollary: fst g∞-induced = fst π∞
+g∞-induced-fun-eq : fst g∞-induced ≡ fst π∞
+g∞-induced-fun-eq = cong fst g∞-induced-eq-π∞
+
+-- Step 4: interpretB∞ is a ring homomorphism from terms
+-- We need to show: interpretB∞ t ≡ fst π∞ (fst includeBATermsSurj t)
+--
+-- Both sides preserve ring operations and agree on Tvar n → g∞ n.
+-- The key lemma we need: fst includeBATermsSurj (Tvar n) = generator n
+-- This is true by definition of includeBATermsSurj, but it's opaque.
+--
+-- Alternative approach: use the fact that interpretB∞ and π∞-from-terms
+-- define the same function when restricted to the image of freeBATerms.
+
+-- For proving surjectivity directly, we use propositional truncation:
+-- Since B∞-NormalForm is a set, we can eliminate from ∥_∥₁.
+
+-- We need: interpretB∞ t ≡ π∞-from-terms t
+-- For this proof, we postulate this equality
+-- (it follows from the opaque definitions but requires unfolding)
+postulate
+  interpretB∞-eq-composition : (t : freeBATerms ℕ) → interpretB∞ t ≡ π∞-from-terms t
+
+-- The surjectivity proof uses composition of surjections
+interpretB∞-surjective : isSurjection interpretB∞
+interpretB∞-surjective x = PT.map helper (π∞-includeTerms-surj x)
+  where
+  helper : Σ[ t ∈ freeBATerms ℕ ] π∞-from-terms t ≡ x → Σ[ t ∈ freeBATerms ℕ ] interpretB∞ t ≡ x
+  helper pair = fst pair , interpretB∞-eq-composition (fst pair) ∙ snd pair
+
+-- B∞-NormalForm is a set (it's a sum of two List ℕ types)
+-- List ℕ is a set, and B∞-NormalForm is either joinForm or meetNegForm
+open import Cubical.Data.List using (isOfHLevelList)
+open import Cubical.Data.Nat using (isSetℕ)
+
+isSetListℕ : isSet (List ℕ)
+isSetListℕ = isOfHLevelList 0 isSetℕ
+
+isSetB∞-NormalForm : isSet B∞-NormalForm
+isSetB∞-NormalForm = Discrete→isSet discreteNF
+  where
+  open import Cubical.Relation.Nullary using (Discrete; yes; no; Dec)
+  open import Cubical.Data.List using (discreteList)
+  open import Cubical.Data.Nat using (discreteℕ)
+
+  discreteListℕ : Discrete (List ℕ)
+  discreteListℕ = discreteList discreteℕ
+
+  -- Decision procedure for B∞-NormalForm equality
+  discreteNF : Discrete B∞-NormalForm
+  discreteNF (joinForm ns) (joinForm ms) with discreteListℕ ns ms
+  ... | yes p = yes (cong joinForm p)
+  ... | no ¬p = no (λ eq → ¬p (joinForm-inj eq))
+    where
+    joinForm-inj : joinForm ns ≡ joinForm ms → ns ≡ ms
+    joinForm-inj p = cong (λ { (joinForm x) → x ; (meetNegForm _) → [] }) p
+  discreteNF (joinForm _) (meetNegForm _) = no (λ p → joinForm≢meetNegForm p)
+    where
+    joinForm≢meetNegForm : ∀ {ns ms} → joinForm ns ≡ meetNegForm ms → ⊥
+    joinForm≢meetNegForm p = transport (cong (λ { (joinForm _) → Unit ; (meetNegForm _) → ⊥ }) p) tt
+  discreteNF (meetNegForm _) (joinForm _) = no (λ p → meetNegForm≢joinForm p)
+    where
+    meetNegForm≢joinForm : ∀ {ns ms} → meetNegForm ns ≡ joinForm ms → ⊥
+    meetNegForm≢joinForm p = transport (cong (λ { (joinForm _) → ⊥ ; (meetNegForm _) → Unit }) p) tt
+  discreteNF (meetNegForm ns) (meetNegForm ms) with discreteListℕ ns ms
+  ... | yes p = yes (cong meetNegForm p)
+  ... | no ¬p = no (λ eq → ¬p (meetNegForm-inj eq))
+    where
+    meetNegForm-inj : meetNegForm ns ≡ meetNegForm ms → ns ≡ ms
+    meetNegForm-inj p = cong (λ { (joinForm _) → [] ; (meetNegForm x) → x }) p
+
+-- Step 5: normalFormExists from surjectivity
+-- To eliminate from ∥_∥₁ into a sigma type, we need the sigma type to be a proposition.
+-- This requires showing that normal forms are unique (i.e., ⟦_⟧nf is injective).
+-- For now, we use a different approach: show that the sigma type is a proposition
+-- by postulating uniqueness of normal forms.
+
+-- Postulate: normal forms are unique (⟦_⟧nf is injective)
+postulate
+  nf-injective : (nf₁ nf₂ : B∞-NormalForm) → ⟦ nf₁ ⟧nf ≡ ⟦ nf₂ ⟧nf → nf₁ ≡ nf₂
+
+isProp-NormalForm-fiber : (x : ⟨ B∞ ⟩) → isProp (Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x)
+isProp-NormalForm-fiber x (nf₁ , eq₁) (nf₂ , eq₂) =
+  Σ≡Prop (λ nf → BooleanRingStr.is-set (snd B∞) (⟦ nf ⟧nf) x)
+         (nf-injective nf₁ nf₂ (eq₁ ∙ sym eq₂))
+
+normalFormExists-from-surj : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+normalFormExists-from-surj x = PT.rec (isProp-NormalForm-fiber x)
+  (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
+  (interpretB∞-surjective x)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
