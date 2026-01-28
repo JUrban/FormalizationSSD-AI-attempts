@@ -11018,6 +11018,20 @@ module StoneAsClosedSubsetOfCantorModule where
     → OpenSubsetPreimageCantor f FullOpenSubset ≡ FullOpenSubset
   preimageOpenFull f = refl
 
+  -- Preimage preserves countable intersection (for closed subsets)
+  preimageCountableIntersection : (f : CantorSpace → CantorSpace)
+    → (An : ℕ → ClosedSubsetOfCantor)
+    → ClosedSubsetPreimageCantor f (ClosedSubsetCountableIntersection An)
+      ≡ ClosedSubsetCountableIntersection (λ n → ClosedSubsetPreimageCantor f (An n))
+  preimageCountableIntersection f An = refl
+
+  -- Preimage preserves countable union (for open subsets)
+  preimageCountableUnion : (f : CantorSpace → CantorSpace)
+    → (An : ℕ → OpenSubsetOfCantor)
+    → OpenSubsetPreimageCantor f (OpenSubsetCountableUnion An)
+      ≡ OpenSubsetCountableUnion (λ n → OpenSubsetPreimageCantor f (An n))
+  preimageCountableUnion f An = refl
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
@@ -12185,6 +12199,8 @@ module BrouwerFixedPointTheoremModule where
 -- - preimageOpenIntersection, preimageOpenUnion: preimage preserves open ops
 -- - preimageComplementClosed, preimageComplementOpen: preimage commutes with complement
 -- - preimageEmpty, preimageFull, preimageOpenEmpty, preimageOpenFull: boundary preservation
+-- - preimageCountableIntersection: preimage preserves countable ∩ (closed)
+-- - preimageCountableUnion: preimage preserves countable ∪ (open)
 --
 -- INTERVAL TOPOLOGY (tex 2605-2762):
 -- - Unit interval I is CHaus (IntervalIsCHaus)
