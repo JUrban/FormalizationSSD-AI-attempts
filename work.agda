@@ -9595,6 +9595,68 @@ module StoneClosedSubsetsModule where
   -- For now, we postulate this and document the proof strategy.
   -- A full formal proof would follow the same pattern as quotientPreservesBooleω
   -- but generalized to sequences via Cantor pairing.
+
+  -- HELPER: The Sp equivalence part (independent of the Booleω structure)
+  -- This shows that Sp(B/Im d) ≃ {x : Sp B | ∀n. x(d_n) = 0}
+  module SpOfQuotientBySeq (B : BooleanRing ℓ-zero) (d : ℕ → ⟨ B ⟩) where
+    -- The quotient ring
+    B/d : BooleanRing ℓ-zero
+    B/d = B QB./Im d
+
+    -- The quotient map
+    π : BoolHom B B/d
+    π = QB.quotientImageHom
+
+    -- The closed subset type
+    ClosedSubset : Type ℓ-zero
+    ClosedSubset = Σ[ x ∈ BoolHom B BoolBR ] ((n : ℕ) → fst x (d n) ≡ false)
+
+    -- Forward: from quotient spectrum to closed subset
+    Sp-quotient→ClosedSubset : BoolHom B/d BoolBR → ClosedSubset
+    Sp-quotient→ClosedSubset h = h ∘cr π , λ n → zeroOnImage-applied n
+      where
+      -- h(π(d_n)) = h(0) = 0 because d_n is in the ideal
+      zeroOnImage-applied : (n : ℕ) → fst (h ∘cr π) (d n) ≡ false
+      zeroOnImage-applied n =
+        fst (h ∘cr π) (d n)     ≡⟨ refl ⟩
+        fst h (fst π (d n))     ≡⟨ cong (fst h) (QB.zeroOnImage {B = B} {f = d} n) ⟩
+        fst h (BooleanRingStr.𝟘 (snd B/d))  ≡⟨ IsCommRingHom.pres0 (snd h) ⟩
+        false ∎
+
+    -- Backward: from closed subset to quotient spectrum
+    -- Uses inducedHom
+    ClosedSubset→Sp-quotient : ClosedSubset → BoolHom B/d BoolBR
+    ClosedSubset→Sp-quotient (x , allZero) = QB.inducedHom {B = B} {f = d} BoolBR x allZero
+
+    -- Round-trip 1: forward ∘ backward ≡ id
+    -- If we start with (x, allZero), apply inducedHom, then compose with π, we get x back
+    forward∘backward : (cs : ClosedSubset) → Sp-quotient→ClosedSubset (ClosedSubset→Sp-quotient cs) ≡ cs
+    forward∘backward (x , allZero) = Σ≡Prop (λ _ → isPropΠ (λ _ → isSetBool _ _)) path
+      where
+      induced = ClosedSubset→Sp-quotient (x , allZero)
+      path : fst (Sp-quotient→ClosedSubset induced) ≡ x
+      path = QB.evalInduce {B = B} {f = d} BoolBR {x} {allZero}
+
+    -- Round-trip 2: backward ∘ forward ≡ id
+    -- Uses inducedHomUnique: the induced hom is the unique hom factoring through π
+    backward∘forward : (h : BoolHom B/d BoolBR) → ClosedSubset→Sp-quotient (Sp-quotient→ClosedSubset h) ≡ h
+    backward∘forward h = QB.inducedHomUnique BoolBR (h ∘cr π) allZero h refl
+      where
+      allZero : (n : ℕ) → fst (h ∘cr π) (d n) ≡ false
+      allZero = snd (Sp-quotient→ClosedSubset h)
+
+    -- The Iso between Sp(B/d) and ClosedSubset
+    Sp-quotient-Iso : Iso (BoolHom B/d BoolBR) ClosedSubset
+    Iso.fun Sp-quotient-Iso = Sp-quotient→ClosedSubset
+    Iso.inv Sp-quotient-Iso = ClosedSubset→Sp-quotient
+    Iso.sec Sp-quotient-Iso = forward∘backward
+    Iso.ret Sp-quotient-Iso = backward∘forward
+
+    -- The equivalence
+    Sp-quotient-≃ : BoolHom B/d BoolBR ≃ ClosedSubset
+    Sp-quotient-≃ = isoToEquiv Sp-quotient-Iso
+
+  -- The main postulate
   postulate
     quotientBySeqPreservesBooleω : (B : Booleω) (d : ℕ → ⟨ fst B ⟩)
       → ∥ Σ[ C ∈ Booleω ] (Sp C ≃ (Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false))) ∥₁
