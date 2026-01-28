@@ -9555,11 +9555,46 @@ module StoneClosedSubsetsModule where
   -- 1. SDDecToElem (have): DecPred on Sp(B) → element of B
   -- 2. QuotientBySeqPreservesBooleω: B/(dₙ)_{n:ℕ} ∈ Booleω
 
-  -- For now, we postulate the key remaining components
-
   -- Quotient of Booleω by a countable sequence of elements remains Booleω
   -- This generalizes quotientPreservesBooleω from quotient by one element to
   -- quotient by countably many elements.
+  --
+  -- PROOF STRATEGY (detailed):
+  --
+  -- Given B : Booleω with d : ℕ → ⟨ fst B ⟩:
+  -- 1. Untruncate snd B to get (f, equiv) where:
+  --    - f : ℕ → ⟨ freeBA ℕ ⟩
+  --    - equiv : BooleanRingEquiv (fst B) (freeBA ℕ /Im f)
+  --
+  -- 2. Transport d through equiv to get d' : ℕ → ⟨ freeBA ℕ /Im f ⟩
+  --
+  -- 3. Define C = (fst B) /Im d ≅ (freeBA ℕ /Im f) /Im d'
+  --
+  -- 4. For the presentation of C:
+  --    - We need h : ℕ → ⟨ freeBA ℕ ⟩ with C ≅ freeBA ℕ /Im h
+  --    - Key insight: use BoolQuotientEquiv in reverse
+  --      (freeBA ℕ /Im f) /Im (π ∘ g) ≅ freeBA ℕ /Im (⊎.rec f g)
+  --      for g : ℕ → ⟨ freeBA ℕ ⟩ satisfying π ∘ g = d'
+  --
+  -- 5. The challenge is finding such g (lifts of d').
+  --    - Since π is surjective, lifts exist but choosing them requires choice
+  --    - However, we're inside a truncation, so we can:
+  --      a) Use that the result type is truncated (∥ ... ∥₁)
+  --      b) The ideal generated is independent of lift choice
+  --
+  -- 6. For the Sp equivalence:
+  --    Sp(C) = BoolHom C BoolBR
+  --          ≃ {h : BoolHom (fst B) BoolBR | h maps d(n) to 0}
+  --          = {x : Sp B | x(d(n)) = 0 for all n}
+  --
+  -- This proof is complex because it requires:
+  -- - Careful handling of truncated presentations
+  -- - Showing independence of lift choices
+  -- - Constructing the spectrum equivalence
+  --
+  -- For now, we postulate this and document the proof strategy.
+  -- A full formal proof would follow the same pattern as quotientPreservesBooleω
+  -- but generalized to sequences via Cantor pairing.
   postulate
     quotientBySeqPreservesBooleω : (B : Booleω) (d : ℕ → ⟨ fst B ⟩)
       → ∥ Σ[ C ∈ Booleω ] (Sp C ≃ (Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false))) ∥₁
