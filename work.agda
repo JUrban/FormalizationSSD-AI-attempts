@@ -3732,8 +3732,7 @@ SpB∞-seq-atMostOnce h m n hm=true hn=true = m=n
       contradiction = step1 ∙ and-is-false
     in ex-falso (true≢false contradiction)
 
--- TODO: Prove g∞-distinct-mult-zero to eliminate the postulate
--- This requires cantorPair (inverse of cantorUnpair) to encode distinct pairs
+-- Note: g∞-distinct-mult-zero is now fully proven (lines 3657-3680 above)
 
 -- Now we can define the full conversion from Sp(B∞) to ℕ∞
 SpB∞-to-ℕ∞ : Sp B∞-Booleω → ℕ∞
@@ -4088,6 +4087,99 @@ f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
 -- 4. Conclusion: kernel of f is trivial, so f is injective.
 --
 -- TO FORMALIZE: Need normal form theorem for elements of B∞.
+
+-- =============================================================================
+-- Normal Form Infrastructure for B∞ (preparation for f-injective)
+-- =============================================================================
+
+-- In Boolean rings, the "join" of elements is: a ∨ b = a + b + a·b
+-- This is the lattice join in the Boolean algebra structure
+-- For B∞, elements are either:
+--   - Finite joins of generators: ⋁_{i∈I} g_i
+--   - Finite meets of negated generators: ⋀_{i∈I} ¬g_i
+
+-- Boolean ring operations in B∞
+open BooleanRingStr (snd B∞) using () renaming (_+_ to _+∞_ ; -_ to -∞_)
+
+-- Join in a Boolean ring: a ∨ b = a + b + a·b
+_∨∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+a ∨∞ b = a +∞ b +∞ (a ·∞ b)
+
+-- Meet in a Boolean ring: a ∧ b = a · b
+_∧∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+a ∧∞ b = a ·∞ b
+
+-- Negation in a Boolean ring: ¬a = 1 + a
+¬∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+¬∞ a = 𝟙∞ +∞ a
+
+-- Finite join of generators: for a list of indices, compute ⋁_{i∈list} g_i
+-- Using a simple recursive definition for now
+open import Cubical.Data.List hiding (map)
+
+finJoin∞ : List ℕ → ⟨ B∞ ⟩
+finJoin∞ [] = 𝟘∞
+finJoin∞ (n ∷ ns) = g∞ n ∨∞ finJoin∞ ns
+
+-- Finite meet of negated generators: for a list of indices, compute ⋀_{i∈list} ¬g_i
+finMeetNeg∞ : List ℕ → ⟨ B∞ ⟩
+finMeetNeg∞ [] = 𝟙∞
+finMeetNeg∞ (n ∷ ns) = (¬∞ g∞ n) ∧∞ finMeetNeg∞ ns
+
+-- The normal form data type for B∞ elements
+data B∞-NormalForm : Type₀ where
+  joinForm : List ℕ → B∞-NormalForm  -- represents ⋁_{i∈list} g_i
+  meetNegForm : List ℕ → B∞-NormalForm  -- represents ⋀_{i∈list} ¬g_i
+
+-- Interpretation of normal forms as B∞ elements
+⟦_⟧nf : B∞-NormalForm → ⟨ B∞ ⟩
+⟦ joinForm ns ⟧nf = finJoin∞ ns
+⟦ meetNegForm ns ⟧nf = finMeetNeg∞ ns
+
+-- The Normal Form Theorem (postulated for now):
+-- Every element of B∞ has a normal form representation
+-- Note: This is the key missing piece for f-injective
+postulate
+  normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+
+-- Key lemma: f respects the parity split on indices
+-- For a join form: f(⋁_{i∈I} g_i) = (⋁_{k: 2k∈I} g_k, ⋁_{k: 2k+1∈I} g_k)
+-- This uses the fact that f(g_n) = (g_{n/2}, 0) or (0, g_{n/2}) depending on parity
+
+-- Helper to split a list by parity of indices
+-- For each n in the list, put half(n) in evens if n is even, or in odds if n is odd
+-- Note: 'half' is already defined at line 444
+splitByParity : List ℕ → List ℕ × List ℕ
+splitByParity [] = [] , []
+splitByParity (n ∷ ns) with isEven n | splitByParity ns
+... | true  | (evens , odds) = half n ∷ evens , odds    -- n is even
+... | false | (evens , odds) = evens , half n ∷ odds    -- n is odd
+
+-- Key observations about f on generators (connecting to parity):
+-- - f(g_{2k}) = (g_k, 0)   (even generators go to left factor)
+-- - f(g_{2k+1}) = (0, g_k)  (odd generators go to right factor)
+
+-- Since generators in B∞ are orthogonal (g_m · g_n = 0 for m ≠ n),
+-- finite joins decompose nicely:
+-- f(⋁_i g_i) = (⋁_{evens} g_k, ⋁_{odds} g_k)
+
+-- This leads to the key lemma: f respects the parity split
+-- Proof sketch:
+-- 1. f is a ring homomorphism, so it preserves +
+-- 2. In Boolean rings, join = a + b + a·b, and orthogonality gives a·b = 0
+-- 3. So f(a ∨ b) = f(a + b) = f(a) + f(b) when a,b are orthogonal
+-- 4. The parity split ensures we're summing orthogonal elements on each side
+
+-- For empty lists: f(0) = (0,0) and f(1) = (1,1)
+-- f-on-finJoin : (ns : List ℕ) → let (es, os) = splitByParity ns
+--                in fst f (finJoin∞ ns) ≡ (finJoin∞ es , finJoin∞ os)
+
+-- The injectivity of f then follows:
+-- If fst f x = (0,0), then using normal form:
+-- - If x = ⋁_I g_i, then both parity-splits are empty, so I = ∅, so x = 0
+-- - If x = ⋀_I ¬g_i, then... (requires separate analysis)
+
+-- For now, we postulate f-injective pending the full normal form proof
 postulate
   f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
 
@@ -4738,21 +4830,27 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- FUTURE WORK (not yet formalized)
 -- =============================================================================
 --
--- Stone space infrastructure (tex Section 1):
--- TODO: Complete SpB∞ ≅ ℕ∞ equivalence
--- TODO: Construct f : B∞ → B∞ × B∞ and prove it's injective
--- TODO: Postulate/derive SurjectionsAreFormalSurjections from Stone Duality
--- TODO: Derive LLPO from the surjection ℕ∞ + ℕ∞ → ℕ∞
+-- Key completed items:
+-- ✓ SpB∞-to-ℕ∞ and ℕ∞-to-SpB∞ (forward/backward maps)
+-- ✓ SpB∞-roundtrip (proves one direction of equivalence)
+-- ✓ f : B∞ → B∞ × B∞ constructed (lines 4057-4058)
+-- ✓ g∞-distinct-mult-zero proved (generators orthogonal in B∞)
+-- ✓ llpo-from-SD proved (LLPO from Stone Duality)
+-- ✓ restrict-to-left and restrict-to-right (product decomposition)
+--
+-- Remaining to formalize:
+-- 1. normalFormExists: normal form theorem for B∞ elements
+--    (⋁ g_i or ⋀ ¬g_i form) - key to proving f-injective
+-- 2. f-injective: kernel of f is trivial (requires normalFormExists)
+-- 3. Sp-f-surjective: follows from f-injective via Stone duality
+-- 4. BoolQuotientEquiv: broken in QuotientConclusions.agda
+-- 5. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
+--
+-- Further extensions from tex:
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
---
--- Overtly discrete types (tex Section 2):
--- - ODisc: sequential colimits of finite sets
+-- - ODisc: overtly discrete types (sequential colimits of finite sets)
 -- - PropOpenIffOdisc: P open ↔ P overtly discrete (tex 1302)
--- - ODiscEqualityOpen: equality in ODisc is open (tex 1335)
---
--- Compact Hausdorff spaces (tex Section 3):
--- - CHaus: types with closed equality and Stone cover
--- - CompactHausdorffClosed: closed subsets of CHaus (tex 1906)
+-- - CHaus: compact Hausdorff spaces
 -- - Interval I: Cauchy reals as CHaus (tex 2272)
 
 -- =============================================================================
