@@ -9853,9 +9853,27 @@ module StoneClosedSubsetsModule where
       -- B ≃ freeBA ℕ /Im f
       -- So B/d ≃ (freeBA ℕ /Im f) /Im d'
 
-      -- For now, postulate the inner presentation (to be proved)
+      -- REMAINING CHALLENGE: B/d-presentation
+      --
+      -- To complete the proof, we need to show B/d-ring has a countable presentation.
+      -- The plan:
+      --   1. Find g : ℕ → ⟨ freeBA ℕ ⟩ such that π ∘ g = d' (pointwise)
+      --   2. Then B/d ≃ (freeBA ℕ /Im f) /Im d' ≃ freeBA ℕ /Im (⊎.rec f g)
+      --      by BoolQuotientEquiv
+      --   3. Use ℕ⊎ℕ≅ℕ to get h : ℕ → ⟨ freeBA ℕ ⟩ with B/d ≃ freeBA ℕ /Im h
+      --
+      -- The challenge is step 1: constructing g uniformly.
+      -- For each n, d'(n) : ⟨ freeBA ℕ /Im f ⟩ has a preimage (by surjectivity of π),
+      -- but choosing preimages uniformly over ℕ requires:
+      --   - Countable choice (or dependent choice), OR
+      --   - A clever use of LocalChoice applied to an appropriate Stone space, OR
+      --   - Showing the ideal generated is independent of the choice of lifts
+      --
+      -- The tex paper uses AxDependentChoice (tex line 324) for such constructions.
+      -- For now, we postulate this and note the required axiom.
       postulate
         B/d-presentation : has-Boole-ω' B/d-ring
+      -- REQUIRES: Countable/Dependent choice to construct uniform lifts
 
       -- The Booleω
       C : Booleω
