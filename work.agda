@@ -937,10 +937,48 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
     forward-hom : BoolHom (BoolBR QB./Im α) target
     forward-hom = QB.inducedHom target composite-hom composite-sends-α-to-0
 
-    -- For backward direction, we need equiv⁻¹ ∘ π_{α'} ... this is more complex
-    -- because we're composing with the inverse equivalence
+    -- For backward direction:
+    -- We have equiv⁻¹ : freeBA ℕ /Im f₀ → BoolBR
+    -- And π_α : BoolBR → BoolBR /Im α
+    -- We need to show π_α ∘ equiv⁻¹ factors through (freeBA ℕ /Im f₀) /Im α'
 
-    -- For now, postulate the full equivalence (requires more infrastructure)
+    source : BooleanRing ℓ-zero
+    source = BoolBR QB./Im α
+
+    -- The inverse of equiv as a BoolHom
+    equiv⁻¹-hom : BoolHom (freeBA ℕ QB./Im f₀) BoolBR
+    equiv⁻¹-hom = fst (fst (invBooleanRingEquiv BoolBR (freeBA ℕ QB./Im f₀) equiv)) ,
+                  snd (invBooleanRingEquiv BoolBR (freeBA ℕ QB./Im f₀) equiv)
+
+    -- Quotient map π_α : BoolBR → BoolBR /Im α
+    π-α : BoolHom BoolBR source
+    π-α = QB.quotientImageHom
+
+    -- Composite: π_α ∘ equiv⁻¹ : freeBA ℕ /Im f₀ → BoolBR /Im α
+    backward-composite : BoolHom (freeBA ℕ QB./Im f₀) source
+    backward-composite = π-α ∘cr equiv⁻¹-hom
+
+    -- Need: backward-composite (α' n) = 0
+    -- α' n = embBR (α n)
+    -- equiv⁻¹ (embBR (α n)) = α n  (since equiv⁻¹ ∘ embBR = id)
+    -- π_α (α n) = 0 in BoolBR /Im α (by definition of quotient)
+    backward-composite-sends-α'-to-0 : (n : ℕ) → backward-composite $cr (α' n) ≡ BooleanRingStr.𝟘 (snd source)
+    backward-composite-sends-α'-to-0 n =
+      backward-composite $cr (α' n)
+        ≡⟨ refl ⟩
+      π-α $cr (equiv⁻¹-hom $cr (embBR (α n)))
+        ≡⟨ cong (π-α $cr_) (Iso.ret (equivToIso (fst equiv)) (α n)) ⟩
+      π-α $cr (α n)
+        ≡⟨ QB.zeroOnImage {f = α} n ⟩
+      BooleanRingStr.𝟘 (snd source) ∎
+
+    -- Induced hom from (freeBA ℕ /Im f₀) /Im α' → BoolBR /Im α
+    backward-hom : BoolHom target source
+    backward-hom = QB.inducedHom source backward-composite backward-composite-sends-α'-to-0
+
+    -- Now we need to show forward-hom and backward-hom are inverses
+    -- This requires showing the compositions are identity using uniqueness of induced homs
+    -- For now, postulate (the hard part is showing the compositions are identity)
     postulate
       step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
 
