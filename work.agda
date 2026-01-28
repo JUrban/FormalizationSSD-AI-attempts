@@ -10100,6 +10100,38 @@ module IntermediateValueTheoremModule where
   open ZILocalModule
   open InhabitedClosedSubSpaceClosedCHausModule
 
+  -- The sets U₀ and U₁ from the tex proof
+  -- U₀ = {x : I | f(x) < y}
+  -- U₁ = {x : I | y < f(x)}
+  U₀ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type₀
+  U₀ f y x = f x <I y
+
+  U₁ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type₀
+  U₁ f y x = y <I f x
+
+  -- U₀ and U₁ are disjoint (clear from asymmetry of <)
+  -- The asymmetry of <I is: x <I y → y <I x → ⊥
+  postulate
+    <I-asymmetric : (x y : UnitInterval) → x <I y → y <I x → ⊥
+
+  U₀-U₁-disjoint : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → (x : UnitInterval) → U₀ f y x → U₁ f y x → ⊥
+  U₀-U₁-disjoint f y x fx<y y<fx = <I-asymmetric (f x) y fx<y y<fx
+
+  -- tex Proof Structure:
+  -- 1. The proposition ∃_{x:I} f(x) = y is closed by InhabitedClosedSubSpaceClosedCHaus
+  -- 2. Therefore ¬¬-stable, so we can use proof by contradiction
+  -- 3. If ¬∃x. f(x) = y, then ∀x. f(x) ≠ y
+  -- 4. By ≠I-apartness: f(x) ≠ y implies (f(x) < y) ∨ (y < f(x))
+  -- 5. So I = U₀ ∪ U₁ with U₀, U₁ disjoint open sets
+  -- 6. This gives a function I → Bool (characteristic function)
+  -- 7. But Bool-I-local says all maps I → Bool are constant
+  -- 8. Since 0 ∈ U₁ (f(0) ≤ y and f(0) ≠ y implies y < f(0)) [wait, that's wrong direction]
+  --    Actually: f(0) ≤ y and y ≤ f(1) with f(0) ≠ y, f(1) ≠ y
+  --    gives f(0) < y (since f(0) ≤ y ∧ f(0) ≠ y)
+  --    and y < f(1) (since y ≤ f(1) ∧ y ≠ f(1))
+  --    So 0 ∈ U₀ and 1 ∈ U₁, contradiction with Bool-I-local
+
   postulate
     IntermediateValueTheorem : (f : UnitInterval → UnitInterval)
       → 0I ≤I f 0I → f 1I ≤I 1I
