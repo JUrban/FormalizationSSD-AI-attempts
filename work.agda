@@ -6644,18 +6644,68 @@ xor-joinForm-joinForm-correct ns ms =
 -- - ¬a + ¬b = (1+a) + (1+b) = a + b (char 2)
 -- - a + ¬b = 1 + (a + b) = ¬(a + b)
 
-postulate
-  -- XOR of meetNegForms: ¬a + ¬b = a + b in char 2
-  xor-meetNegForm-meetNegForm-correct : (ns ms : List ℕ) →
-    finMeetNeg∞ ns +∞ finMeetNeg∞ ms ≡ finJoin∞ (ns △L ms)
+-- PROVED! XOR of meetNegForms: ¬a + ¬b = a + b in char 2
+-- Proof: finMeetNeg∞ = ¬(finJoin∞), so
+-- ¬(finJoin∞ ns) + ¬(finJoin∞ ms) = (1 + finJoin∞ ns) + (1 + finJoin∞ ms)
+-- = finJoin∞ ns + finJoin∞ ms (since 1+1=0)
+-- = finJoin∞ (ns △L ms)
+xor-meetNegForm-meetNegForm-correct : (ns ms : List ℕ) →
+  finMeetNeg∞ ns +∞ finMeetNeg∞ ms ≡ finJoin∞ (ns △L ms)
+xor-meetNegForm-meetNegForm-correct ns ms =
+  finMeetNeg∞ ns +∞ finMeetNeg∞ ms
+    ≡⟨ cong₂ _+∞_ (sym (neg-finJoin ns)) (sym (neg-finJoin ms)) ⟩
+  ¬∞ (finJoin∞ ns) +∞ ¬∞ (finJoin∞ ms)
+    ≡⟨ refl ⟩  -- ¬x = 1 + x, so this is (1 + a) + (1 + b)
+  (𝟙∞ +∞ finJoin∞ ns) +∞ (𝟙∞ +∞ finJoin∞ ms)
+    ≡⟨ xor-+∞-assoc 𝟙∞ (finJoin∞ ns) (𝟙∞ +∞ finJoin∞ ms) ⟩
+  𝟙∞ +∞ (finJoin∞ ns +∞ (𝟙∞ +∞ finJoin∞ ms))
+    ≡⟨ cong (𝟙∞ +∞_) (sym (xor-+∞-assoc (finJoin∞ ns) 𝟙∞ (finJoin∞ ms))) ⟩
+  𝟙∞ +∞ ((finJoin∞ ns +∞ 𝟙∞) +∞ finJoin∞ ms)
+    ≡⟨ cong (λ t → 𝟙∞ +∞ (t +∞ finJoin∞ ms)) (BooleanRingStr.+Comm (snd B∞) (finJoin∞ ns) 𝟙∞) ⟩
+  𝟙∞ +∞ ((𝟙∞ +∞ finJoin∞ ns) +∞ finJoin∞ ms)
+    ≡⟨ cong (𝟙∞ +∞_) (xor-+∞-assoc 𝟙∞ (finJoin∞ ns) (finJoin∞ ms)) ⟩
+  𝟙∞ +∞ (𝟙∞ +∞ (finJoin∞ ns +∞ finJoin∞ ms))
+    ≡⟨ sym (xor-+∞-assoc 𝟙∞ 𝟙∞ (finJoin∞ ns +∞ finJoin∞ ms)) ⟩
+  (𝟙∞ +∞ 𝟙∞) +∞ (finJoin∞ ns +∞ finJoin∞ ms)
+    ≡⟨ cong (_+∞ (finJoin∞ ns +∞ finJoin∞ ms)) (char2-B∞ 𝟙∞) ⟩
+  𝟘∞ +∞ (finJoin∞ ns +∞ finJoin∞ ms)
+    ≡⟨ xor-+∞-0L (finJoin∞ ns +∞ finJoin∞ ms) ⟩
+  finJoin∞ ns +∞ finJoin∞ ms
+    ≡⟨ xor-joinForm-joinForm-correct ns ms ⟩
+  finJoin∞ (ns △L ms) ∎
 
-  -- XOR of joinForm and meetNegForm: a + ¬b = ¬(a + b)
-  xor-joinForm-meetNegForm-correct : (ns ms : List ℕ) →
-    finJoin∞ ns +∞ finMeetNeg∞ ms ≡ finMeetNeg∞ (ns △L ms)
+-- PROVED! XOR of joinForm and meetNegForm: a + ¬b = ¬(a + b)
+-- Proof: a + ¬b = a + (1+b) = 1 + a + b = 1 + (a+b) = ¬(a+b)
+xor-joinForm-meetNegForm-correct : (ns ms : List ℕ) →
+  finJoin∞ ns +∞ finMeetNeg∞ ms ≡ finMeetNeg∞ (ns △L ms)
+xor-joinForm-meetNegForm-correct ns ms =
+  finJoin∞ ns +∞ finMeetNeg∞ ms
+    ≡⟨ cong (finJoin∞ ns +∞_) (sym (neg-finJoin ms)) ⟩
+  finJoin∞ ns +∞ ¬∞ (finJoin∞ ms)
+    ≡⟨ refl ⟩  -- ¬x = 1 + x
+  finJoin∞ ns +∞ (𝟙∞ +∞ finJoin∞ ms)
+    ≡⟨ sym (xor-+∞-assoc (finJoin∞ ns) 𝟙∞ (finJoin∞ ms)) ⟩
+  (finJoin∞ ns +∞ 𝟙∞) +∞ finJoin∞ ms
+    ≡⟨ cong (_+∞ finJoin∞ ms) (BooleanRingStr.+Comm (snd B∞) (finJoin∞ ns) 𝟙∞) ⟩
+  (𝟙∞ +∞ finJoin∞ ns) +∞ finJoin∞ ms
+    ≡⟨ xor-+∞-assoc 𝟙∞ (finJoin∞ ns) (finJoin∞ ms) ⟩
+  𝟙∞ +∞ (finJoin∞ ns +∞ finJoin∞ ms)
+    ≡⟨ cong (𝟙∞ +∞_) (xor-joinForm-joinForm-correct ns ms) ⟩
+  𝟙∞ +∞ finJoin∞ (ns △L ms)
+    ≡⟨ refl ⟩  -- = ¬(finJoin∞ (ns △L ms))
+  ¬∞ (finJoin∞ (ns △L ms))
+    ≡⟨ neg-finJoin (ns △L ms) ⟩
+  finMeetNeg∞ (ns △L ms) ∎
 
-  -- Symmetric case: meetNegForm + joinForm
-  xor-meetNegForm-joinForm-correct : (ns ms : List ℕ) →
-    finMeetNeg∞ ns +∞ finJoin∞ ms ≡ finMeetNeg∞ (ms △L ns)
+-- PROVED! Symmetric case: meetNegForm + joinForm
+xor-meetNegForm-joinForm-correct : (ns ms : List ℕ) →
+  finMeetNeg∞ ns +∞ finJoin∞ ms ≡ finMeetNeg∞ (ms △L ns)
+xor-meetNegForm-joinForm-correct ns ms =
+  finMeetNeg∞ ns +∞ finJoin∞ ms
+    ≡⟨ BooleanRingStr.+Comm (snd B∞) (finMeetNeg∞ ns) (finJoin∞ ms) ⟩
+  finJoin∞ ms +∞ finMeetNeg∞ ns
+    ≡⟨ xor-joinForm-meetNegForm-correct ms ns ⟩
+  finMeetNeg∞ (ms △L ns) ∎
 
 -- =============================================================================
 -- normalFormExists status
