@@ -6049,6 +6049,34 @@ meet-joinForm-joinForm-correct (n ∷ ns) ms with n ∈? ms | inspect (n ∈?_) 
     ≡⟨ B∞-BoolAlg.∨IdL ⟩
   finJoin∞ (ns ∩L ms) ∎
 
+-- Correctness of join-joinForm: join of two joinForms is their concatenation
+-- ⋁_I g_i ∨ ⋁_J g_j = ⋁_{I++J} g_k
+join-joinForm-correct : (ns ms : List ℕ) →
+  finJoin∞ ns ∨∞ finJoin∞ ms ≡ finJoin∞ (ns ++ ms)
+join-joinForm-correct [] ms =
+  𝟘∞ ∨∞ finJoin∞ ms   ≡⟨ B∞-BoolAlg.∨IdL ⟩
+  finJoin∞ ms ∎
+join-joinForm-correct (n ∷ ns) ms =
+  (g∞ n ∨∞ finJoin∞ ns) ∨∞ finJoin∞ ms
+    ≡⟨ sym B∞-BoolAlg.∨Assoc ⟩
+  g∞ n ∨∞ (finJoin∞ ns ∨∞ finJoin∞ ms)
+    ≡⟨ cong (g∞ n ∨∞_) (join-joinForm-correct ns ms) ⟩
+  g∞ n ∨∞ finJoin∞ (ns ++ ms) ∎
+
+-- Correctness of meet-meetNegForm: meet of two meetNegForms is their concatenation
+-- ⋀_I ¬g_i ∧ ⋀_J ¬g_j = ⋀_{I++J} ¬g_k
+meet-meetNegForm-correct : (ns ms : List ℕ) →
+  finMeetNeg∞ ns ∧∞ finMeetNeg∞ ms ≡ finMeetNeg∞ (ns ++ ms)
+meet-meetNegForm-correct [] ms =
+  𝟙∞ ∧∞ finMeetNeg∞ ms   ≡⟨ B∞-BoolAlg.∧IdL ⟩
+  finMeetNeg∞ ms ∎
+meet-meetNegForm-correct (n ∷ ns) ms =
+  ((¬∞ (g∞ n)) ∧∞ finMeetNeg∞ ns) ∧∞ finMeetNeg∞ ms
+    ≡⟨ sym B∞-BoolAlg.∧Assoc ⟩
+  (¬∞ (g∞ n)) ∧∞ (finMeetNeg∞ ns ∧∞ finMeetNeg∞ ms)
+    ≡⟨ cong ((¬∞ (g∞ n)) ∧∞_) (meet-meetNegForm-correct ns ms) ⟩
+  (¬∞ (g∞ n)) ∧∞ finMeetNeg∞ (ns ++ ms) ∎
+
 -- =============================================================================
 -- normalFormExists status
 -- =============================================================================
