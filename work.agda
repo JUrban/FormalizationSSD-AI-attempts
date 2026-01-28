@@ -13264,12 +13264,35 @@ module CohomologyModule where
             -- cocycle says β(t,u) + β(u,v) = β(t,v)
             cocycle-tu-v : (β x (t x) u AGx.+ β x u v) ≡ β x (t x) v
             cocycle-tu-v = is-cocycle x (t x) u v
-            -- So β(u,v) = β(t,v) - β(t,u)
-        in sym (AGx.+Assoc (β x (t x) v) (AGx.- β x (t x) u) (AGx.0g))
-           ∙ cong (β x (t x) v AGx.+_) (AGx.+InvR (β x (t x) u))
-           ∙ AGx.+IdR (β x (t x) v)
-           -- Actually we need a different approach, let me use the AbGroup laws directly
-           ∙ {!   !}  -- TODO: complete this using abelian group laws
+
+            -- d₀(α)_x(u,v) = α_x(v) - α_x(u) = β(t,v) - β(t,u)
+            -- We need: β(t,v) - β(t,u) = β(u,v)
+
+            -- From cocycle: β(t,u) + β(u,v) = β(t,v)
+            -- Rearranging in abelian group:
+            -- β(u,v) = β(t,v) - β(t,u)
+            -- = β(t,v) + (-β(t,u))
+
+            -- Step 1: β(t,u) + β(u,v) = β(t,v)
+            -- Step 2: β(u,v) = β(t,v) + (-β(t,u))  [add -β(t,u) to both sides and use comm]
+
+            step : β x u v ≡ (β x (t x) v AGx.- β x (t x) u)
+            step = sym (
+              -- Show: β(t,v) - β(t,u) = β(u,v)
+              -- i.e., β(t,v) + (-β(t,u)) = β(u,v)
+              (β x (t x) v AGx.- β x (t x) u)
+                ≡⟨ AGx.+Comm (β x (t x) v) (AGx.- β x (t x) u) ⟩
+              (AGx.- β x (t x) u) AGx.+ β x (t x) v
+                ≡⟨ cong ((AGx.- β x (t x) u) AGx.+_) (sym cocycle-tu-v) ⟩
+              (AGx.- β x (t x) u) AGx.+ (β x (t x) u AGx.+ β x u v)
+                ≡⟨ sym (AGx.+Assoc (AGx.- β x (t x) u) (β x (t x) u) (β x u v)) ⟩
+              ((AGx.- β x (t x) u) AGx.+ β x (t x) u) AGx.+ β x u v
+                ≡⟨ cong (AGx._+ β x u v) (AGx.+InvL (β x (t x) u)) ⟩
+              AGx.0g AGx.+ β x u v
+                ≡⟨ AGx.+IdL (β x u v) ⟩
+              β x u v ∎)
+
+        in sym step
 
   -- =========================================================================
   -- Lemma: canonical-exact-cech-complex (tex Lemma 2815)
