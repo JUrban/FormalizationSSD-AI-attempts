@@ -10618,14 +10618,23 @@ module CompactHausdorffClosedModule where
   -- Note: preimageClosedIsClosed already defined at line ~3321
 
   -- The main characterization of closed subsets in CHaus
-  -- For now, we state this as a postulate (full proof requires infrastructure)
-  postulate
-    -- Forward: if A is closed in CHaus, then A = q(q⁻¹(A)) for closed q⁻¹(A) in S
-    -- Backward: if B is closed in S, then q(B) is closed in X
-    CompactHausdorffClosed-backward : (X : CHaus) (S : Stone)
-      → (q : fst S → fst X) → isSurjection q
-      → (B : fst S → hProp ℓ-zero) → ((s : fst S) → isClosedProp (B s))
-      → (x : fst X) → isClosedProp (∥ Σ[ s ∈ fst S ] fst (B s) × (q s ≡ x) ∥₁ , squash₁)
+  -- Backward direction: if B is closed in S, then q(B) is closed in X
+  -- Proof: For fixed x, A_x(s) = B(s) ∧ (q s ≡ x) is closed in S
+  -- Then ∥ Σ s. A_x(s) ∥₁ is closed by InhabitedClosedSubSpaceClosed
+  CompactHausdorffClosed-backward : (X : CHaus) (S : Stone)
+    → (q : fst S → fst X) → isSurjection q
+    → (B : fst S → hProp ℓ-zero) → ((s : fst S) → isClosedProp (B s))
+    → (x : fst X) → isClosedProp (∥ Σ[ s ∈ fst S ] fst (B s) × (q s ≡ x) ∥₁ , squash₁)
+  CompactHausdorffClosed-backward X S q q-surj B B-closed x = InhabitedClosedSubSpaceClosed S Aₓ Aₓ-closed
+    where
+    open hasCHausStr (snd X)
+    -- For fixed x, define Aₓ(s) = B(s) ∧ (q s ≡ x)
+    Aₓ : fst S → hProp ℓ-zero
+    Aₓ s = (fst (B s) × (q s ≡ x)) , isProp× (snd (B s)) (isSetX (q s) x)
+
+    -- Aₓ(s) is closed: B(s) is closed and (q s ≡ x) is closed in X
+    Aₓ-closed : (s : fst S) → isClosedProp (Aₓ s)
+    Aₓ-closed s = closedAnd (B s) ((q s ≡ x) , isSetX (q s) x) (B-closed s) (equalityClosed (q s) x)
 
 -- =============================================================================
 -- InhabitedClosedSubSpaceClosedCHaus (tex Corollary 1930)
@@ -10637,12 +10646,55 @@ module InhabitedClosedSubSpaceClosedCHausModule where
   open import Axioms.StoneDuality using (Stone; hasStoneStr)
   open CompactHausdorffModule
   open TruncationStoneClosedComplete
+  open InhabitedClosedSubSpaceClosedModule
+  open ClosedInStoneIsStoneModule
+  open StoneEqualityClosedModule using (isPropIsClosedProp)
 
   -- The main theorem: existence of element in closed subset is closed
-  postulate
-    InhabitedClosedSubSpaceClosedCHaus : (X : CHaus)
-      → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
-      → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+  -- Proof:
+  -- 1. CHaus X has a Stone cover S with surjection q : S ↠ X
+  -- 2. Define B(s) = A(q(s)) - closed in S by preimageClosedIsClosed
+  -- 3. ∥ Σ S B ∥₁ is closed by InhabitedClosedSubSpaceClosed
+  -- 4. ∥ Σ S B ∥₁ ↔ ∥ Σ X A ∥₁ by surjectivity of q
+  InhabitedClosedSubSpaceClosedCHaus : (X : CHaus)
+    → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
+    → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+  InhabitedClosedSubSpaceClosedCHaus X A A-closed =
+    PT.rec (isPropIsClosedProp {∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁}) construct (hasCHausStr.stoneCover (snd X))
+    where
+    open hasCHausStr (snd X)
+
+    construct : Σ[ S ∈ Stone ] Σ[ q ∈ (fst S → fst X) ] isSurjection q
+              → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+    construct (S , q , q-surj) = closedEquiv ∥ΣSB∥₁ ∥ΣXA∥₁ forward backward ∥ΣSB∥₁-closed
+      where
+      -- Define B(s) = A(q(s))
+      B : fst S → hProp ℓ-zero
+      B s = A (q s)
+
+      -- B is closed (preimage of closed is closed)
+      B-closed : (s : fst S) → isClosedProp (B s)
+      B-closed s = A-closed (q s)
+
+      -- ∥ Σ S B ∥₁ is closed
+      ∥ΣSB∥₁ : hProp ℓ-zero
+      ∥ΣSB∥₁ = ∥ Σ[ s ∈ fst S ] fst (B s) ∥₁ , squash₁
+
+      ∥ΣSB∥₁-closed : isClosedProp ∥ΣSB∥₁
+      ∥ΣSB∥₁-closed = InhabitedClosedSubSpaceClosed S B B-closed
+
+      -- ∥ Σ X A ∥₁
+      ∥ΣXA∥₁ : hProp ℓ-zero
+      ∥ΣXA∥₁ = ∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁
+
+      -- Forward: ∥ Σ S B ∥₁ → ∥ Σ X A ∥₁
+      forward : fst ∥ΣSB∥₁ → fst ∥ΣXA∥₁
+      forward = PT.map (λ { (s , Bs) → q s , Bs })
+
+      -- Backward: ∥ Σ X A ∥₁ → ∥ Σ S B ∥₁ (using surjectivity)
+      backward : fst ∥ΣXA∥₁ → fst ∥ΣSB∥₁
+      backward = PT.rec squash₁ (λ { (x , Ax) →
+        PT.map (λ { (s , qs≡x) → s , subst (λ y → fst (A y)) (sym qs≡x) Ax }) (q-surj x) })
 
 -- =============================================================================
 -- AllOpenSubspaceOpen (tex Corollary 1967)
