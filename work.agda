@@ -9048,5 +9048,55 @@ module ClosedSigmaClosedDerived where
     P-Stone = fst P , closedProp→hasStoneStr P P-closed
 
 -- =============================================================================
+-- StoneEqualityClosed (tex Lemma 1636)
+-- =============================================================================
+--
+-- For all S:Stone and s,t:S, the proposition s=t is closed.
+--
+-- Proof (from tex):
+-- Suppose S = Sp(B) and let G be a countable set of generators for B.
+-- Then s=t iff s(g) = t(g) for all g:G.
+-- So s=t is a countable conjunction of decidable propositions, hence closed.
+--
+-- For the formalization:
+-- - S = Sp(B) where B : Booleω has presentation freeBA ℕ / f for some f
+-- - The "generators" are the images of ℕ → freeBA ℕ → B
+-- - For homomorphisms s,t : B → Bool, they are equal iff they agree on generators
+-- - Each s(g_n) = t(g_n) is decidable (equality in Bool)
+-- - ∀n. (s(g_n) = t(g_n)) is closed (countable conjunction of decidable props)
+
+module StoneEqualityClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+
+  -- Stone spaces are sets via the embedding into 2^B
+  hasStoneStr→isSet : (S : Stone) → isSet (fst S)
+  hasStoneStr→isSet (X , B , SpB≡X) = subst isSet SpB≡X (isSetBoolHom (fst B) BoolBR)
+
+  -- Core lemma: equality in Sp(B) is closed
+  -- This is the key step requiring the countable presentation
+  --
+  -- Proof idea:
+  -- For s,t : Sp B = BoolHom B Bool:
+  -- - s = t iff ∀b:B. s(b) = t(b)
+  -- - Since B is countably presented by generators g_n, s = t iff ∀n. s(g_n) = t(g_n)
+  -- - Each s(g_n) = t(g_n) is decidable (equality in Bool)
+  -- - A countable ∀ of decidable props is closed
+  --
+  -- For now, we postulate both the core lemma and the main theorem.
+  -- The proof would proceed by extracting generators from the Booleω presentation
+  -- and showing equality is a countable conjunction of decidable propositions.
+
+  -- Core lemma: equality in Sp(B) is closed
+  postulate
+    SpEqualityClosed : (B : Booleω) → (s t : Sp B)
+      → isClosedProp ((s ≡ t) , isSetBoolHom (fst B) BoolBR s t)
+
+  -- Main theorem: For S : Stone, equality is closed
+  -- This follows from SpEqualityClosed by transporting along the path Sp B ≡ S
+  postulate
+    StoneEqualityClosed : (S : Stone) → (s t : fst S)
+      → isClosedProp ((s ≡ t) , hasStoneStr→isSet S s t)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
