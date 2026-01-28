@@ -4449,6 +4449,96 @@ f-on-finJoin (n ∷ ns) with isEven n in parity-eq | splitByParity ns | f-on-fin
     ≡⟨ refl ⟩
   (finJoin∞ evens , finJoin∞ (half n ∷ odds)) ∎
 
+-- =============================================================================
+-- Lemmas for proving f-injective via normalFormExists
+-- =============================================================================
+
+-- Key fact: generators are non-zero in B∞
+-- g∞ n ≠ 0 for all n
+-- This follows from the fact that B∞ has non-trivial spectrum (ℕ∞)
+-- Specifically, the homomorphism that sends g_n ↦ true and all other g_m ↦ false
+-- is a point in Sp(B∞), so g_n cannot be 0.
+
+-- For the joinForm case: if finJoin∞ ns = 0, then ns = []
+-- Proof sketch: if ns = n ∷ rest, then g_n ≤ finJoin∞ ns (in the lattice order)
+-- Since g_n ≠ 0, we have finJoin∞ ns ≠ 0.
+-- The formal proof would require showing g_n ≤ g_n ∨ x for any x.
+
+-- For the meetNegForm case: finMeetNeg∞ ns ≠ 0 always
+-- Proof: The zero homomorphism h ∈ Sp(B∞) (sending all generators to false)
+-- satisfies h(¬g_i) = ¬(h(g_i)) = ¬false = true for all i.
+-- So h(⋀_I ¬g_i) = ⋀_I true = true ≠ false.
+-- Hence finMeetNeg∞ ns ≠ 0.
+
+-- f on negation: f(¬x) = ¬(f(x)) componentwise
+-- Since f is a ring hom and ¬x = 1 + x in Boolean rings:
+-- f(¬x) = f(1 + x) = f(1) + f(x) = (1,1) + f(x) = (1 + fst(f(x)), 1 + snd(f(x)))
+--       = (¬(fst(f(x))), ¬(snd(f(x))))
+
+-- f preserves 1
+f-pres1 : fst f 𝟙∞ ≡ (𝟙∞ , 𝟙∞)
+f-pres1 = IsCommRingHom.pres1 (snd f)
+
+-- f preserves negation: f(¬x) = (¬(fst(f(x))), ¬(snd(f(x))))
+f-pres-neg : (x : ⟨ B∞ ⟩) → fst f (¬∞ x) ≡ (¬∞ (fst (fst f x)) , ¬∞ (snd (fst f x)))
+f-pres-neg x =
+  fst f (¬∞ x)
+    ≡⟨ refl ⟩  -- ¬∞ x = 𝟙∞ +∞ x
+  fst f (𝟙∞ +∞ x)
+    ≡⟨ f-pres+ 𝟙∞ x ⟩
+  (fst f 𝟙∞) +× (fst f x)
+    ≡⟨ cong (_+× (fst f x)) f-pres1 ⟩
+  (𝟙∞ , 𝟙∞) +× (fst f x)
+    ≡⟨ refl ⟩  -- componentwise addition
+  (𝟙∞ +∞ fst (fst f x) , 𝟙∞ +∞ snd (fst f x))
+    ≡⟨ refl ⟩  -- ¬∞ = 𝟙∞ +∞ _
+  (¬∞ (fst (fst f x)) , ¬∞ (snd (fst f x))) ∎
+
+-- Corollary: f on negated generator
+-- f(¬g_n) = (¬(fst(f(g_n))), ¬(snd(f(g_n))))
+-- For even n = 2k: f(g_n) = (g_k, 0), so f(¬g_n) = (¬g_k, ¬0) = (¬g_k, 1)
+-- For odd n = 2k+1: f(g_n) = (0, g_k), so f(¬g_n) = (¬0, ¬g_k) = (1, ¬g_k)
+
+-- =============================================================================
+-- Dirac delta: the ℕ∞ element that hits true exactly at position n
+-- =============================================================================
+
+-- The Dirac sequence at n: true at n, false elsewhere
+δ-seq : ℕ → ℕ → Bool
+δ-seq n m with discreteℕ n m
+... | yes _ = true
+... | no _ = false
+
+-- δ-seq n hits at most once (it hits exactly at n)
+δ-seq-hamo : (n : ℕ) → hitsAtMostOnce (δ-seq n)
+δ-seq-hamo n i j δi=t δj=t with discreteℕ n i | discreteℕ n j
+... | yes n=i | yes n=j = sym n=i ∙ n=j
+... | yes _ | no n≠j = ex-falso (true≢false (sym δj=t))
+... | no n≠i | _ = ex-falso (true≢false (sym δi=t))
+
+-- The Dirac delta as an element of ℕ∞
+δ∞ : ℕ → ℕ∞
+δ∞ n = δ-seq n , δ-seq-hamo n
+
+-- Key property: δ∞ n hits true at position n
+δ∞-hits-n : (n : ℕ) → fst (δ∞ n) n ≡ true
+δ∞-hits-n n with discreteℕ n n
+... | yes _ = refl
+... | no n≠n = ex-falso (n≠n refl)
+
+-- Key property: δ∞ n is false at other positions
+δ∞-misses-m : (n m : ℕ) → ¬ (n ≡ m) → fst (δ∞ n) m ≡ false
+δ∞-misses-m n m n≠m with discreteℕ n m
+... | yes n=m = ex-falso (n≠m n=m)
+... | no _ = refl
+
+-- =============================================================================
+-- Generators are non-zero (proved after ℕ∞-to-SpB∞ is defined at line ~5020)
+-- =============================================================================
+
+-- NOTE: g∞-nonzero : (n : ℕ) → ¬ (g∞ n ≡ 𝟘∞)
+-- is defined later, after ℕ∞-to-SpB∞, using the witness h_n = ℕ∞-to-SpB∞ (δ∞ n)
+
 -- The injectivity of f then follows:
 -- If fst f x = (0,0), then using normal form:
 -- - If x = ⋁_I g_i, then both parity-splits are empty, so I = ∅, so x = 0
@@ -4900,6 +4990,31 @@ SpB∞-roundtrip : (α : ℕ∞) → SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ 
 SpB∞-roundtrip α = Σ≡Prop
   (λ s → isPropHitsAtMostOnce s)
   (funExt (SpB∞-roundtrip-seq α))
+
+-- =============================================================================
+-- Generators are non-zero (using ℕ∞-to-SpB∞)
+-- =============================================================================
+
+-- The homomorphism h_n = ℕ∞-to-SpB∞ (δ∞ n) witnesses that g_n is non-zero
+-- because h_n(g_n) = (δ∞ n)(n) = true ≠ false
+
+-- h_n evaluates g_n to true
+g∞-has-witness : (n : ℕ) → (ℕ∞-to-SpB∞ (δ∞ n)) $cr (g∞ n) ≡ true
+g∞-has-witness n = SpB∞-roundtrip-seq (δ∞ n) n ∙ δ∞-hits-n n
+
+-- Consequence: g∞ n ≠ 0
+-- If g∞ n = 0, then for any h : Sp B∞, h(g∞ n) = h(0) = false
+-- But h_n(g∞ n) = true, contradiction
+g∞-nonzero : (n : ℕ) → ¬ (g∞ n ≡ 𝟘∞)
+g∞-nonzero n gn=0 =
+  let h = ℕ∞-to-SpB∞ (δ∞ n)
+      h-gn=t : h $cr (g∞ n) ≡ true
+      h-gn=t = g∞-has-witness n
+      h-0=f : h $cr 𝟘∞ ≡ false
+      h-0=f = IsCommRingHom.pres0 (snd h)
+      h-gn=f : h $cr (g∞ n) ≡ false
+      h-gn=f = cong (h $cr_) gn=0 ∙ h-0=f
+  in true≢false (sym h-gn=t ∙ h-gn=f)
 
 -- =============================================================================
 -- LLPO derivation from Stone Duality
