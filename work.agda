@@ -5211,17 +5211,75 @@ module B∞×B∞-Presentation where
   --
   -- For now, let me keep the postulate and document this complexity.
 
+  -- Step 7: Show φ hits the generators of B∞×B∞
+  -- φ(g× (encode× (inl m))) = genProd (encode× (inl m)) = (g∞ m, 𝟘∞)
+  -- φ(g× (encode× (inr m))) = genProd (encode× (inr m)) = (𝟘∞, g∞ m)
+
+  φ-hits-left-gen : (m : ℕ) → fst φ (g×-left-gen m) ≡ (g∞ m , 𝟘∞)
+  φ-hits-left-gen m =
+    fst φ (g× (encode× (⊎.inl m)))
+      ≡⟨ φ-on-g× (encode× (⊎.inl m)) ⟩
+    genProd (encode× (⊎.inl m))
+      ≡⟨ cong genProd⊎ (decode×∘encode× (⊎.inl m)) ⟩
+    genProd⊎ (⊎.inl m)
+      ≡⟨ refl ⟩
+    (g∞ m , 𝟘∞) ∎
+
+  φ-hits-right-gen : (m : ℕ) → fst φ (g×-right-gen m) ≡ (𝟘∞ , g∞ m)
+  φ-hits-right-gen m =
+    fst φ (g× (encode× (⊎.inr m)))
+      ≡⟨ φ-on-g× (encode× (⊎.inr m)) ⟩
+    genProd (encode× (⊎.inr m))
+      ≡⟨ cong genProd⊎ (decode×∘encode× (⊎.inr m)) ⟩
+    genProd⊎ (⊎.inr m)
+      ≡⟨ refl ⟩
+    (𝟘∞ , g∞ m) ∎
+
+  -- Step 8: Show ψ-left and ψ-right compose correctly with φ
+  -- ψ-left(g∞ m) = g×-left-gen m, and φ(g×-left-gen m) = (g∞ m, 𝟘∞)
+  -- ψ-right(g∞ m) = g×-right-gen m, and φ(g×-right-gen m) = (𝟘∞, g∞ m)
+
+  ψ-left-on-gen : (m : ℕ) → fst ψ-left (g∞ m) ≡ g×-left-gen m
+  ψ-left-on-gen m =
+    fst ψ-left (g∞ m)
+      ≡⟨ funExt⁻ (cong fst (QB.evalInduce B∞×B∞-quotient)) (gen m) ⟩
+    fst ψ-left-free (gen m)
+      ≡⟨ funExt⁻ ψ-left-free-on-gen m ⟩
+    g×-left-gen m ∎
+
+  ψ-right-on-gen : (m : ℕ) → fst ψ-right (g∞ m) ≡ g×-right-gen m
+  ψ-right-on-gen m =
+    fst ψ-right (g∞ m)
+      ≡⟨ funExt⁻ (cong fst (QB.evalInduce B∞×B∞-quotient)) (gen m) ⟩
+    fst ψ-right-free (gen m)
+      ≡⟨ funExt⁻ ψ-right-free-on-gen m ⟩
+    g×-right-gen m ∎
+
+  -- Composition φ ∘ ψ-left and φ ∘ ψ-right on generators
+  φ∘ψ-left-on-gen : (m : ℕ) → fst φ (fst ψ-left (g∞ m)) ≡ (g∞ m , 𝟘∞)
+  φ∘ψ-left-on-gen m = cong (fst φ) (ψ-left-on-gen m) ∙ φ-hits-left-gen m
+
+  φ∘ψ-right-on-gen : (m : ℕ) → fst φ (fst ψ-right (g∞ m)) ≡ (𝟘∞ , g∞ m)
+  φ∘ψ-right-on-gen m = cong (fst φ) (ψ-right-on-gen m) ∙ φ-hits-right-gen m
+
   -- The full proof of B∞×B∞≃quotient requires:
   -- 1. Show ψ is a ring homomorphism (uses orthogonality of factors)
   -- 2. Show φ ∘ ψ ≡ id (generators map correctly)
   -- 3. Show ψ ∘ φ ≡ id (generators map correctly)
   -- These involve careful equational reasoning with the quotient structure.
   -- The main difficulty is building ψ as a ring hom from a product.
-  -- For now, we keep the postulate documenting significant progress:
+  --
+  -- PROGRESS:
   -- - φ : B∞×B∞-quotient → B∞×B∞: PROVED
+  -- - φ-hits-left-gen: φ sends left generators to (g∞ m, 0): PROVED
+  -- - φ-hits-right-gen: φ sends right generators to (0, g∞ m): PROVED
   -- - ψ-left : B∞ → B∞×B∞-quotient: PROVED
   -- - ψ-right : B∞ → B∞×B∞-quotient: PROVED
   -- - Cross-orthogonality: g×-left-gen m · g×-right-gen n = 0: PROVED
+  -- - φ ∘ ψ-left on generators: PROVED
+  -- - φ ∘ ψ-right on generators: PROVED
+  --
+  -- Remaining: Combine ψ-left and ψ-right into ψ, and show inverse properties.
   postulate
     B∞×B∞≃quotient : BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
 
