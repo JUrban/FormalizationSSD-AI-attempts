@@ -8085,5 +8085,108 @@ f-injective-verified = f-injective-from-trunc
 -- None of these depend on the postulated f-injective, so the proof is valid.
 
 -- =============================================================================
+-- ClosedPropAsSpectrum (tex Lemma 251)
+-- =============================================================================
+--
+-- Given α : 2^ℕ, we have:
+-- (∀ n : ℕ, α n = false) ↔ Sp(2/(αn)_{n:ℕ})
+--
+-- Proof:
+-- - There is only one Boolean morphism 2 → 2 (the identity)
+-- - It satisfies x(αn) = 0 for all n iff αn = 0 for all n
+--
+-- In our formalization:
+-- - BoolBR is the Boolean ring 2 = {true, false}
+-- - BoolBR /Im α is the quotient by the image of α : ℕ → Bool
+-- - Sp(BoolBR /Im α) = BoolHom (BoolBR /Im α) BoolBR
+--
+-- Key insight:
+-- - If any αn = true, then true ∈ Im(α), so [true] = 0 in quotient
+-- - But [true] = 1r in quotient, so 0 = 1 in quotient → trivial → Sp = ∅
+-- - If all αn = false, then Im(α) = {false = 0r}, so quotient ≅ BoolBR
+-- - Sp(BoolBR) = {id} has one element
+--
+-- Therefore: Sp(BoolBR /Im α) is inhabited iff ∀n. αn = false
+
+-- Forward direction: (∀n. αn = false) → Sp(BoolBR /Im α)
+-- If all αn = false, then the quotient map π : BoolBR → BoolBR /Im α
+-- has a section (identity works since Im(α) = {0})
+-- This gives us a ring hom BoolBR /Im α → BoolBR
+module ClosedPropAsSpectrum where
+  open import Cubical.Algebra.CommRing.Quotient.ImageQuotient as IQ
+
+  -- The quotient ring BoolBR /Im α
+  BoolBR-quotient : binarySequence → BooleanRing ℓ-zero
+  BoolBR-quotient α = BoolBR QB./Im α
+
+  -- If all αn = false, then Im(α) is trivial (only contains 0)
+  -- So the quotient BoolBR /Im α is isomorphic to BoolBR
+  -- and we have a spectrum element (the induced homomorphism)
+
+  -- Forward: all false → spectrum is inhabited
+  all-false→Sp : (α : binarySequence) → ((n : ℕ) → α n ≡ false)
+               → BoolHom (BoolBR-quotient α) BoolBR
+  all-false→Sp α all-false = QB.inducedHom {B = BoolBR} {f = α} BoolBR id-hom α-to-0
+    where
+    open import CountablyPresentedBooleanRings.PresentedBoole using (idBoolHom)
+
+    id-hom : BoolHom BoolBR BoolBR
+    id-hom = idBoolHom BoolBR
+
+    α-to-0 : (n : ℕ) → id-hom $cr (α n) ≡ BooleanRingStr.𝟘 (snd BoolBR)
+    α-to-0 n = all-false n
+
+  -- Backward: spectrum inhabited → all false
+  -- If we have a ring hom h : BoolBR /Im α → BoolBR,
+  -- then h([αn]) = 0 in BoolBR for all n
+  -- But [αn] = [αn] in quotient, and h preserves ring structure
+  -- h([true]) = true, h([false]) = false
+  -- So if αn = true, then h([αn]) = h([true]) = true ≠ false = 0
+  -- This is a contradiction, so all αn must be false
+
+  Sp→all-false : (α : binarySequence) → BoolHom (BoolBR-quotient α) BoolBR
+               → ((n : ℕ) → α n ≡ false)
+  Sp→all-false α h n = αn-is-false (α n) refl
+    where
+    open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1)
+
+    -- The quotient map π : BoolBR → BoolBR /Im α
+    π : ⟨ BoolBR ⟩ → ⟨ BoolBR-quotient α ⟩
+    π = fst QB.quotientImageHom
+
+    -- h(π(αn)) = 0 because αn ∈ Im(α)
+    h-π-αn≡0 : fst h (π (α n)) ≡ false
+    h-π-αn≡0 = cong (fst h) (QB.zeroOnImage {B = BoolBR} {f = α} n) ∙ h-pres0
+
+    -- If αn = true, then π(αn) = π(true) = [1r]
+    -- h([1r]) = 1 = true (by h-pres1)
+    -- But h(π(αn)) = 0 = false (by above)
+    -- So true = false, contradiction
+
+    -- If αn = false, then this is what we wanted to prove
+
+    αn-is-false : (b : Bool) → α n ≡ b → b ≡ false
+    αn-is-false false _ = refl
+    αn-is-false true αn≡true = ex-falso (true≢false contradiction)
+      where
+      open IsCommRingHom (snd QB.quotientImageHom) renaming (pres1 to π-pres1)
+
+      -- π(true) = π(1r) = 1r in the quotient
+      -- h(1r_quotient) = true by h-pres1
+      -- So h(π(true)) = h(1r_quotient) = true
+      h-π-αn≡true : fst h (π (α n)) ≡ true
+      h-π-αn≡true = cong (λ x → fst h (π x)) αn≡true
+                  ∙ cong (fst h) π-pres1
+                  ∙ h-pres1
+
+      contradiction : true ≡ false
+      contradiction = sym h-π-αn≡true ∙ h-π-αn≡0
+
+  -- The equivalence: (∀n. αn = false) ↔ Sp(BoolBR /Im α)
+  closedPropAsSpectrum : (α : binarySequence)
+                       → ((n : ℕ) → α n ≡ false) ↔ BoolHom (BoolBR-quotient α) BoolBR
+  closedPropAsSpectrum α = all-false→Sp α , Sp→all-false α
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
