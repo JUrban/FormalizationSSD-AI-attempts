@@ -3573,8 +3573,84 @@ SpB∞-to-ℕ∞-seq h n = h $cr (g∞ n)
 -- requires showing that g∞ m ·∞ g∞ n = 0∞ in B∞
 -- which comes from the quotient structure
 
--- TODO: Complete the SpB∞ ≅ ℕ∞ equivalence
--- For now, we document the structure
+-- Key lemma: The product of distinct generators in B∞ is zero
+-- g∞ m ·∞ g∞ n = 0∞ when m ≠ n
+--
+-- Proof outline:
+-- The quotient map π∞ is a ring homomorphism, so:
+--   g∞ m ·∞ g∞ n = π∞(gen m) ·∞ π∞(gen n) = π∞(gen m · gen n)
+-- We need to show gen m · gen n is in the ideal, i.e., equals relB∞ k for some k
+-- By construction, relB∞ maps k to gen a · gen (a + suc d) where (a, d) = cantorUnpair k
+-- For m < n, take a = m and d = n - m - 1, then gen m · gen n is in the ideal
+
+-- To prove the homomorphism property, we need:
+-- 1. g∞ m ·∞ g∞ n = 0∞ for distinct m, n (follows from quotient structure)
+-- 2. h preserves multiplication (h is a BoolHom)
+-- 3. Derive contradiction from h(g∞ m) = h(g∞ n) = true
+
+-- Postulate the key property: distinct generators multiply to zero in B∞
+-- This requires showing the ideal contains all products gen m · gen n for m ≠ n
+-- The full proof needs cantorPair to find k with cantorUnpair k = (m, n-m-1)
+postulate
+  g∞-distinct-mult-zero : (m n : ℕ) → ¬ (m ≡ n) →
+    BooleanRingStr._·_ (snd B∞) (g∞ m) (g∞ n) ≡ BooleanRingStr.𝟘 (snd B∞)
+
+-- The homomorphism property shows the sequence hits at most once
+SpB∞-seq-atMostOnce : (h : Sp B∞-Booleω) → hitsAtMostOnce (SpB∞-to-ℕ∞-seq h)
+SpB∞-seq-atMostOnce h m n hm=true hn=true = m=n
+  where
+  open BooleanRingStr (snd B∞) renaming (_·_ to _·∞_ ; 𝟘 to 𝟘∞)
+  open IsCommRingHom (snd h)
+
+  -- h preserves multiplication
+  h-pres· : (a b : ⟨ B∞ ⟩) → h $cr (a ·∞ b) ≡ (h $cr a) and (h $cr b)
+  h-pres· = pres·
+
+  -- If m ≠ n, then g∞ m ·∞ g∞ n = 0∞
+  -- So h(g∞ m ·∞ g∞ n) = h(0∞) = false
+  -- But h preserves multiplication, so h(g∞ m) and h(g∞ n) = false
+  -- This contradicts hm=true and hn=true (since true and true = true ≠ false)
+
+  m=n : m ≡ n
+  m=n with discreteℕ m n
+  ... | yes p = p
+  ... | no m≠n =
+    let
+      -- g∞ m ·∞ g∞ n = 0∞ (by g∞-distinct-mult-zero)
+      mult-zero : g∞ m ·∞ g∞ n ≡ 𝟘∞
+      mult-zero = g∞-distinct-mult-zero m n m≠n
+
+      -- h(g∞ m ·∞ g∞ n) = h(0∞) = false (h preserves 0)
+      h-mult : h $cr (g∞ m ·∞ g∞ n) ≡ false
+      h-mult = cong (h $cr_) mult-zero ∙ pres0
+
+      -- h(g∞ m) and h(g∞ n) = h(g∞ m ·∞ g∞ n) (h preserves ·)
+      h-and-eq : (h $cr (g∞ m)) and (h $cr (g∞ n)) ≡ h $cr (g∞ m ·∞ g∞ n)
+      h-and-eq = sym (h-pres· (g∞ m) (g∞ n))
+
+      -- Combined: (h $cr g∞ m) and (h $cr g∞ n) = false
+      and-is-false : (h $cr (g∞ m)) and (h $cr (g∞ n)) ≡ false
+      and-is-false = h-and-eq ∙ h-mult
+
+      -- But hm=true and hn=true, so true and true should be true
+      -- Build: true = true and true = (h $cr g∞ m) and (h $cr g∞ n) = false
+      step1 : true and true ≡ (h $cr (g∞ m)) and (h $cr (g∞ n))
+      step1 = cong₂ _and_ (sym hm=true) (sym hn=true)
+
+      contradiction : true ≡ false
+      contradiction = step1 ∙ and-is-false
+    in ex-falso (true≢false contradiction)
+
+-- TODO: Prove g∞-distinct-mult-zero to eliminate the postulate
+-- This requires cantorPair (inverse of cantorUnpair) to encode distinct pairs
+
+-- Now we can define the full conversion from Sp(B∞) to ℕ∞
+SpB∞-to-ℕ∞ : Sp B∞-Booleω → ℕ∞
+SpB∞-to-ℕ∞ h = SpB∞-to-ℕ∞-seq h , SpB∞-seq-atMostOnce h
+
+-- This gives us the forward direction of Sp(B∞) ≅ ℕ∞
+-- The backward direction would construct a BoolHom B∞ BoolBR from α : ℕ∞
+-- This uses the universal property of quotients
 
 -- =============================================================================
 -- The map f : B∞ → B∞ × B∞ for LLPO
