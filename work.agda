@@ -10736,6 +10736,51 @@ module StoneAsClosedSubsetOfCantorModule where
   FullClosedSubset : ClosedSubsetOfCantor
   FullClosedSubset = (λ _ → ⊤-hProp) , (λ x → ⊤-isClosed)
 
+  -- Union of two closed subsets of Cantor is closed (uses LLPO via closedOr)
+  ClosedSubsetUnion : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetUnion (Apred , Aclosed) (Bpred , Bclosed) =
+    (λ x → (∥ fst (Apred x) ⊎ fst (Bpred x) ∥₁) , squash₁) ,
+    closedSubsetUnion Apred Bpred Aclosed Bclosed
+
+  -- Countable intersection of closed subsets of Cantor is closed
+  ClosedSubsetCountableIntersection : (An : ℕ → ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetCountableIntersection An =
+    (λ x → ((n : ℕ) → fst (fst (An n) x)) , isPropΠ (λ n → snd (fst (An n) x))) ,
+    closedSubsetCountableIntersection (λ n → fst (An n)) (λ n → snd (An n))
+
+  -- The closed subset corresponding to Cantor space as Stone:
+  -- CantorStone and FullClosedSubset give the same Stone space
+  CantorFullCorrespondence : fst (ClosedSubsetOfCantor→Stone FullClosedSubset) ≡ CantorSpace
+  CantorFullCorrespondence = isoToPath (iso fwd bwd sec ret)
+    where
+    fwd : closedSubsetType FullClosedSubset → CantorSpace
+    fwd (x , _) = x
+
+    bwd : CantorSpace → closedSubsetType FullClosedSubset
+    bwd x = x , tt
+
+    sec : (x : CantorSpace) → fwd (bwd x) ≡ x
+    sec x = refl
+
+    ret : (xa : closedSubsetType FullClosedSubset) → bwd (fwd xa) ≡ xa
+    ret (x , _) = refl  -- Unit is a proposition, so (x , tt) ≡ (x , _)
+
+  -- The empty closed subset gives the empty type
+  EmptyCorrespondence : closedSubsetType EmptyClosedSubset ≡ ⊥
+  EmptyCorrespondence = isoToPath (iso fwd bwd sec ret)
+    where
+    fwd : closedSubsetType EmptyClosedSubset → ⊥
+    fwd (_ , ())
+
+    bwd : ⊥ → closedSubsetType EmptyClosedSubset
+    bwd ()
+
+    sec : (x : ⊥) → fwd (bwd x) ≡ x
+    sec ()
+
+    ret : (xa : closedSubsetType EmptyClosedSubset) → bwd (fwd xa) ≡ xa
+    ret (_ , ())
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
