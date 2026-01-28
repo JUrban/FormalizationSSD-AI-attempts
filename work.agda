@@ -10047,14 +10047,46 @@ module IntervalTopologyModule where
   <I-implies-≢ x y x<y x=y = <I-irrefl y (subst (_<I y) x=y x<y)
 
   -- Derived: x < y and y < z implies x < z
-  -- (We need this as a postulate since <I might not be defined compositionally)
-  postulate
-    <I-trans : (x y z : UnitInterval) → x <I y → y <I z → x <I z
+  -- Proof: x < y implies x ≤ y; y < z implies y ≤ z; so x ≤ z by ≤I-trans.
+  -- Also x ≠ z: if x = z, then y < z = x and x < y, contradicting asymmetry.
+  <I-trans : (x y z : UnitInterval) → x <I y → y <I z → x <I z
+  <I-trans x y z x<y y<z =
+    let x≤y : x ≤I y
+        x≤y = ≤-from-<I x y x<y
+        y≤z : y ≤I z
+        y≤z = ≤-from-<I y z y<z
+        x≤z : x ≤I z
+        x≤z = ≤I-trans x y z x≤y y≤z
+        x≢z : x ≡ z → ⊥
+        x≢z x=z = <I-asymmetric x y x<y (subst (y <I_) (sym x=z) y<z)
+    in <I-from-≤-≢ x z x≤z x≢z
 
   -- Derived: < is compatible with ≤ (x < y and y ≤ z implies x < z)
-  postulate
-    <I-≤I-trans : (x y z : UnitInterval) → x <I y → y ≤I z → x <I z
-    ≤I-<I-trans : (x y z : UnitInterval) → x ≤I y → y <I z → x <I z
+  <I-≤I-trans : (x y z : UnitInterval) → x <I y → y ≤I z → x <I z
+  <I-≤I-trans x y z x<y y≤z =
+    let x≤y : x ≤I y
+        x≤y = ≤-from-<I x y x<y
+        x≤z : x ≤I z
+        x≤z = ≤I-trans x y z x≤y y≤z
+        x≢z : x ≡ z → ⊥
+        x≢z x=z = <I-implies-≢ x y x<y (≤I-antisym x y x≤y (subst (y ≤I_) (sym x=z) y≤z))
+    in <I-from-≤-≢ x z x≤z x≢z
+
+  ≤I-<I-trans : (x y z : UnitInterval) → x ≤I y → y <I z → x <I z
+  ≤I-<I-trans x y z x≤y y<z =
+    let y≤z : y ≤I z
+        y≤z = ≤-from-<I y z y<z
+        x≤z : x ≤I z
+        x≤z = ≤I-trans x y z x≤y y≤z
+        x≢z : x ≡ z → ⊥
+        -- If x = z, then z ≤ y (from x ≤ y) and y < z, contradiction with asymmetry-like property
+        x≢z x=z =
+          let z≤y : z ≤I y
+              z≤y = subst (_≤I y) x=z x≤y
+              y=z : y ≡ z
+              y=z = ≤I-antisym y z y≤z z≤y
+          in <I-implies-≢ y z y<z y=z
+    in <I-from-≤-≢ x z x≤z x≢z
 
   -- Closed interval [a,b]
   ClosedInterval : (a b : UnitInterval) → Type₀
