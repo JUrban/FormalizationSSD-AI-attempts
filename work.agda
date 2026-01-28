@@ -8442,5 +8442,69 @@ module ClosedPropIffStone where
   closedProp→Stone P Pclosed = fst P , closedProp→hasStoneStr P Pclosed
 
 -- =============================================================================
+-- TruncationStoneClosed (tex Corollary 1613)
+-- =============================================================================
+--
+-- For all S : Stone, the proposition ||S|| is closed.
+--
+-- Proof outline:
+-- 1. By SpectrumEmptyIff01Equal: ¬S ↔ 0=1 in the Boolean algebra B where S = Sp(B)
+-- 2. 0=1 is open (because B is overtly discrete - tex BooleIsODisc)
+-- 3. Therefore ¬¬S is closed
+-- 4. By LemSurjectionsFormalToCompleteness: ||S|| ↔ ¬¬S for Stone spaces
+--
+-- For the formalization, we need to show that equality in a Booleω is open.
+-- This requires the ODisc infrastructure which is substantial.
+-- For now, we add the key steps and mark what needs to be proved.
+
+module TruncationStoneClosed where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; SpGeneralBooleanRing)
+
+  -- 0=1 implies spectrum is empty (direct proof)
+  -- If 0=1 in B, then any ring hom h : B → 2 satisfies h(0) = h(1), i.e., false = true
+  0=1→¬Sp : (B : Booleω) → BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B))
+           → ¬ Sp B
+  0=1→¬Sp B 0≡1 h = true≢false (sym h-pres1 ∙ cong (fst h) (sym 0≡1) ∙ h-pres0)
+    where
+    open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1)
+
+  -- SpectrumEmptyIff01Equal: ¬Sp(B) ↔ 0=1 in B
+  -- Forward: If ¬Sp(B), then by Stone Duality (Sp is an equivalence), 0=1 in B
+  -- Backward: If 0=1 in B, then any h : B → 2 gives false = true (above)
+  --
+  -- The forward direction uses Stone Duality which we have as an axiom.
+  -- Combined, this gives: ¬Sp(B) ↔ 0=1 in B
+
+  -- For now, we note that TruncationStoneClosed requires:
+  -- 1. ODisc structure for Booleω algebras (0=1 is open)
+  -- 2. LemSurjectionsFormalToCompleteness (¬¬S → ||S|| for Stone)
+  --
+  -- We can still prove useful partial results:
+
+  -- If 0=1 in a Boole algebra, the spectrum is empty
+  spectrumEmptyFrom0=1 : (B : Booleω)
+    → BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B))
+    → Sp B → ⊥
+  spectrumEmptyFrom0=1 = 0=1→¬Sp
+
+  -- Conversely, if spectrum is empty and Stone Duality holds, 0=1
+  -- (This is SpectrumEmptyImpliesTrivial)
+
+-- =============================================================================
+-- Stone→closedProp (reverse direction of PropositionsClosedIffStone)
+-- =============================================================================
+--
+-- If P is Stone (as a proposition), then P is closed.
+--
+-- Proof:
+-- 1. P is Stone means P ≃ Sp(B) for some B : Booleω
+-- 2. Since P is a prop, ||P|| = P
+-- 3. By TruncationStoneClosed (when available): ||Sp(B)|| is closed
+-- 4. Therefore P is closed
+--
+-- Note: This direction requires TruncationStoneClosed which requires ODisc.
+-- For now, we add the module structure and mark it as requiring infrastructure.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
