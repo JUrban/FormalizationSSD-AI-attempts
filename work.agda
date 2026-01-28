@@ -4437,15 +4437,75 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
   -- If true: odd indices are 0 (h'(0,y) = false when h'(1,0) = true)
   -- If false: even indices are 0 (h'(x,0) = false when h'(0,1) = true)
   -- These proofs require careful type-level bookkeeping between B∞×B∞ and the Booleω version
-  go (h' , Sp-f-h'≡h) with h' $cr unit-left
-  ... | true = ⊎.inr odds-zero-case
+  go (h' , Sp-f-h'≡h) = go' (h' $cr unit-left) refl
     where
-    postulate
+    -- We pattern match on h' $cr unit-left with explicit equality witness
+    go' : (b : Bool) → h' $cr unit-left ≡ b →
+          ((k : ℕ) → h $cr (g∞ (2 ·ℕ k)) ≡ false) ⊎
+          ((k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false)
+    go' true h'-left-true = ⊎.inr odds-zero-case
+      where
+      -- When h'(1,0) = true, odd indices in h are 0
+      -- Proof: h(g_{2k+1}) = (h' ∘ f)(g_{2k+1}) = h'(f(g_{2k+1})) = h'(0, g_k) = false
       odds-zero-case : (k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false
-  ... | false = ⊎.inl evens-zero-case
-    where
-    postulate
+      odds-zero-case k =
+        h $cr (g∞ (suc (2 ·ℕ k)))
+          ≡⟨ sym (funExt⁻ (cong fst Sp-f-h'≡h) (g∞ (suc (2 ·ℕ k)))) ⟩
+        h' $cr (fst f (g∞ (suc (2 ·ℕ k))))
+          ≡⟨ cong (h' $cr_) (f-odd-gen k) ⟩
+        h' $cr (𝟘∞ , g∞ k)
+          ≡⟨ h'-left-true→right-false h' h'-left-true (g∞ k) ⟩
+        false ∎
+    go' false h'-left-false = ⊎.inl evens-zero-case
+      where
+      open BooleanRingStr (snd B∞) using () renaming (𝟙 to 𝟙B∞ ; _+_ to _+B∞_)
+      open BooleanRingStr (snd B∞×B∞) using () renaming (_+_ to _+×_)
+      open BooleanRingStr (snd BoolBR) using () renaming (_+_ to _⊕Bool_)
+
+      -- When h'(1,0) = false, we need h'(0,1) = true to show even indices are 0
+      -- h'(1,1) = true (pres1)
+      h'-pres1 : h' $cr (𝟙B∞ , 𝟙B∞) ≡ true
+      h'-pres1 = IsCommRingHom.pres1 (snd h')
+
+      -- Get identity laws from the underlying CommRing structure
+      open CommRingStr (snd (BooleanRing→CommRing B∞)) using () renaming (+IdL to +left-unit ; +IdR to +right-unit)
+
+      unit-sum' : (𝟙B∞ , 𝟘∞) +× (𝟘∞ , 𝟙B∞) ≡ (𝟙B∞ , 𝟙B∞)
+      unit-sum' = cong₂ _,_ (+right-unit 𝟙B∞) (+left-unit 𝟙B∞)
+
+      -- h' preserves +: h'(a+b) = h'(a) ⊕Bool h'(b)
+      h'-pres+ : (a b : ⟨ B∞×B∞ ⟩) → h' $cr (a +× b) ≡ (h' $cr a) ⊕Bool (h' $cr b)
+      h'-pres+ = IsCommRingHom.pres+ (snd h')
+
+      -- false ⊕Bool b = b (identity for ⊕Bool)
+      false-⊕-id : (b : Bool) → false ⊕Bool b ≡ b
+      false-⊕-id = CommRingStr.+IdL (snd (BooleanRing→CommRing BoolBR))
+
+      -- Derive h'(0,1) = true from h'(1,0) = false and h'(1,1) = true
+      h'-right-true : h' $cr unit-right ≡ true
+      h'-right-true =
+        h' $cr unit-right
+          ≡⟨ sym (false-⊕-id (h' $cr unit-right)) ⟩
+        false ⊕Bool (h' $cr unit-right)
+          ≡⟨ cong (λ b → b ⊕Bool (h' $cr unit-right)) (sym h'-left-false) ⟩
+        (h' $cr unit-left) ⊕Bool (h' $cr unit-right)
+          ≡⟨ sym (h'-pres+ unit-left unit-right) ⟩
+        h' $cr (unit-left +× unit-right)
+          ≡⟨ cong (h' $cr_) unit-sum' ⟩
+        h' $cr (𝟙B∞ , 𝟙B∞)
+          ≡⟨ h'-pres1 ⟩
+        true ∎
+
+      -- Now we can prove even indices are 0
       evens-zero-case : (k : ℕ) → h $cr (g∞ (2 ·ℕ k)) ≡ false
+      evens-zero-case k =
+        h $cr (g∞ (2 ·ℕ k))
+          ≡⟨ sym (funExt⁻ (cong fst Sp-f-h'≡h) (g∞ (2 ·ℕ k))) ⟩
+        h' $cr (fst f (g∞ (2 ·ℕ k)))
+          ≡⟨ cong (h' $cr_) (f-even-gen k) ⟩
+        h' $cr (g∞ k , 𝟘∞)
+          ≡⟨ h'-right-true→left-false h' h'-right-true (g∞ k) ⟩
+        false ∎
 
 -- Main LLPO theorem from Stone Duality (using ℕ∞ ↔ Sp B∞ correspondence)
 -- The full proof requires:
