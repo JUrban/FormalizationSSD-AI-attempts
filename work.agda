@@ -41,7 +41,7 @@ open import Axioms.StoneDuality using (StoneDualityAxiom; Sp; Booleω; SpEmbeddi
 import OmnisciencePrinciples.Markov as MarkovLib
 
 -- Imports for quotientPreservesBooleω
-open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv)
+open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv; idBoolEquiv)
 open import CountablyPresentedBooleanRings.Examples.Bool using (is-cp-2)
 open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA)
 open import BooleanRing.BooleanRingQuotients.QuotientConclusions using (BoolQuotientEquiv)
@@ -3537,14 +3537,79 @@ module B∞-construction where
   -- The product in B∞ comes from the quotient ring structure
   open BooleanRingStr (snd B∞) renaming (_·_ to _·∞_ ; 𝟘 to 𝟘∞ ; 𝟙 to 𝟙∞)
 
+-- B∞ is in Booleω (it's a quotient of freeBA ℕ)
+-- has-Boole-ω' B∞ holds because relB∞ : ℕ → ⟨ freeBA ℕ ⟩ is the presentation
+
+open B∞-construction
+
+-- The presentation witness for B∞
+B∞-has-Boole-ω' : has-Boole-ω' B∞
+B∞-has-Boole-ω' = relB∞ , idBoolEquiv B∞
+
+B∞-Booleω : Booleω
+B∞-Booleω = B∞ , ∣ B∞-has-Boole-ω' ∣₁
+
+-- =============================================================================
+-- Section 20: Spectrum of B∞ and LLPO proof structure
+-- =============================================================================
+
+-- Sp(B∞) = BoolHom B∞ BoolBR
+-- A homomorphism h : B∞ → 2 is determined by h(g∞ n) for each n
+-- The relations g∞ m ·∞ g∞ n = 0∞ for m ≠ n mean:
+--   h(g∞ m) · h(g∞ n) = 0, i.e., both can't be 1 simultaneously
+-- So h corresponds to a sequence hitting 1 at most once, i.e., an element of ℕ∞
+
+-- The key insight: Sp(B∞) ≅ ℕ∞ is a fundamental property of B∞
+
+-- Forward direction: BoolHom B∞ BoolBR → ℕ∞
+-- Given h : B∞ → 2, the sequence (h(g∞ n))_n hits 1 at most once
+SpB∞-to-ℕ∞-seq : Sp B∞-Booleω → binarySequence
+SpB∞-to-ℕ∞-seq h n = h $cr (g∞ n)
+
+-- We need to show this sequence hits at most once
+-- This follows from h preserving multiplication and the relations in B∞
+
+-- The proof that h(g∞ m) and h(g∞ n) can't both be true for m ≠ n
+-- requires showing that g∞ m ·∞ g∞ n = 0∞ in B∞
+-- which comes from the quotient structure
+
+-- TODO: Complete the SpB∞ ≅ ℕ∞ equivalence
+-- For now, we document the structure
+
+-- =============================================================================
+-- The map f : B∞ → B∞ × B∞ for LLPO
+-- =============================================================================
+
+-- tex definition (line 554-559):
+-- f(g_n) = (g_k, 0) if n = 2k
+-- f(g_n) = (0, g_k) if n = 2k+1
+
+-- This induces a homomorphism by the universal property of freeBA ℕ
+-- and respects the relations because:
+-- - For distinct n, m: f(g_n) ∧ f(g_m) = 0 (case analysis on parities)
+
+-- The key theorem we need (SurjectionsAreFormalSurjections, tex line 294):
+-- For g : B → C in Booleω: g is injective ↔ Sp(g) is surjective
+
+-- This is part of the Stone Duality axiom and would give us:
+-- f injective → Sp(f) : Sp(B∞ × B∞) → Sp(B∞) surjective
+-- Since Sp(B∞ × B∞) ≅ ℕ∞ + ℕ∞ and Sp(B∞) ≅ ℕ∞,
+-- we get a surjection ℕ∞ + ℕ∞ → ℕ∞
+
+-- For any α : ℕ∞, there exists x : ℕ∞ + ℕ∞ with Sp(f)(x) = α
+-- If x = inl(β), then α_{2k+1} = 0 for all k
+-- If x = inr(β), then α_{2k} = 0 for all k
+-- This is exactly LLPO!
+
 -- =============================================================================
 -- FUTURE WORK (not yet formalized)
 -- =============================================================================
 --
 -- Stone space infrastructure (tex Section 1):
--- TODO: Show Sp(B_∞) ≅ ℕ∞
--- TODO: Construct f : B_∞ → B_∞ × B_∞ and prove it's injective
--- TODO: Use Stone Duality to derive LLPO from injective f
+-- TODO: Complete SpB∞ ≅ ℕ∞ equivalence
+-- TODO: Construct f : B∞ → B∞ × B∞ and prove it's injective
+-- TODO: Postulate/derive SurjectionsAreFormalSurjections from Stone Duality
+-- TODO: Derive LLPO from the surjection ℕ∞ + ℕ∞ → ℕ∞
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
 --
 -- Overtly discrete types (tex Section 2):
