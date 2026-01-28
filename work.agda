@@ -10834,9 +10834,66 @@ module StoneAsClosedSubsetOfCantorModule where
              (doubleNegClosedIsClosed mp (A x) (Aclosed x))
              (λ ax ¬ax → ¬ax ax)
 
+  -- Operations on open subsets of Cantor
+
+  -- Intersection of two open subsets of Cantor is open
+  OpenSubsetIntersection : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
+  OpenSubsetIntersection (Apred , Aopen) (Bpred , Bopen) =
+    (λ x → (fst (Apred x) × fst (Bpred x)) , isProp× (snd (Apred x)) (snd (Bpred x))) ,
+    openSubsetIntersection Apred Bpred Aopen Bopen
+
+  -- Union of two open subsets of Cantor is open
+  OpenSubsetUnion : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
+  OpenSubsetUnion (Apred , Aopen) (Bpred , Bopen) =
+    (λ x → (∥ fst (Apred x) ⊎ fst (Bpred x) ∥₁) , squash₁) ,
+    openSubsetUnion Apred Bpred Aopen Bopen
+
+  -- Empty open subset of Cantor
+  EmptyOpenSubset : OpenSubsetOfCantor
+  EmptyOpenSubset = (λ _ → ⊥-hProp) , emptySubsetOpen
+
+  -- Full open subset of Cantor
+  FullOpenSubset : OpenSubsetOfCantor
+  FullOpenSubset = (λ _ → ⊤-hProp) , fullSubsetOpen
+
+  -- Countable union of open subsets of Cantor is open
+  OpenSubsetCountableUnion : (An : ℕ → OpenSubsetOfCantor) → OpenSubsetOfCantor
+  OpenSubsetCountableUnion An =
+    (λ x → (∥ Σ[ n ∈ ℕ ] fst (fst (An n) x) ∥₁) , squash₁) ,
+    openSubsetCountableUnion (λ n → fst (An n)) (λ n → snd (An n))
+
   -- De Morgan laws connect intersection and union via complement
-  -- ¬(A ∩ B) ≡ ¬A ∪ ¬B (for closed → open)
-  -- This is De Morgan for closed, which uses LLPO
+  -- These laws relate closed/open subset operations via complementation
+
+  -- De Morgan 1: ¬(A ∩ B) → ¬A ∨ ¬B (closed → open)
+  -- The full equivalence ¬(A ∧ B) ↔ ¬A ∨ ¬B requires LLPO in the forward direction
+  -- (constructively we only get ¬A ∨ ¬B → ¬(A ∧ B))
+  -- The backward direction is constructive:
+  deMorganClosedIntersection-backward : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
+  deMorganClosedIntersection-backward (Apred , _) (Bpred , _) x =
+    PT.rec isProp⊥ (λ { (inl ¬a) (a , b) → ¬a a ; (inr ¬b) (a , b) → ¬b b })
+
+  -- De Morgan 2: ¬(A ∪ B) ≡ ¬A ∩ ¬B (closed → open)
+  -- The complement of a union is the intersection of complements
+  deMorganClosedUnion : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
+      ≡ fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+  deMorganClosedUnion (Apred , Aclosed) (Bpred , Bclosed) x =
+    hPropExt
+      (snd (¬hProp ((∥ fst (Apred x) ⊎ fst (Bpred x) ∥₁) , squash₁)))
+      (isProp× (snd (¬hProp (Apred x))) (snd (¬hProp (Bpred x))))
+      (λ ¬aub → (λ a → ¬aub ∣ inl a ∣₁) , (λ b → ¬aub ∣ inr b ∣₁))
+      (λ (¬a , ¬b) → PT.rec isProp⊥ (λ { (inl a) → ¬a a ; (inr b) → ¬b b }))
+
+  -- Complement is an involution for closed subsets (already proved pointwise above as doubleComplementClosed)
+  -- This states the full path equality
+  complementInvolution : (A : ClosedSubsetOfCantor)
+    → OpenSubsetComplement (ClosedSubsetComplement A) ≡ A
+  complementInvolution A = ΣPathP
+    (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp) (doubleComplementClosed A x)))
+    (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
@@ -11987,6 +12044,15 @@ module BrouwerFixedPointTheoremModule where
 -- - CantorFullCorrespondence, EmptyCorrespondence: type correspondences
 -- - ClosedSubsetPreimageCantor: functorial preimage operation
 -- - preimageIntersection, preimageUnion: preimage preserves Boolean ops
+-- - OpenSubsetOfCantor: dual type for open subsets
+-- - ClosedSubsetComplement, OpenSubsetComplement: complementation operations
+-- - doubleComplementClosed: ¬¬A = A for closed subsets (pointwise)
+-- - OpenSubsetIntersection, OpenSubsetUnion: open subset operations
+-- - EmptyOpenSubset, FullOpenSubset: boundary elements for open subsets
+-- - OpenSubsetCountableUnion: countable join for open subsets
+-- - deMorganClosedUnion: ¬(A ∪ B) ≡ ¬A ∩ ¬B (full path equivalence)
+-- - deMorganClosedIntersection-backward: ¬A ∨ ¬B → ¬(A ∧ B) (constructive direction)
+-- - complementInvolution: OpenSubsetComplement ∘ ClosedSubsetComplement ≡ id
 --
 -- INTERVAL TOPOLOGY (tex 2605-2762):
 -- - Unit interval I is CHaus (IntervalIsCHaus)
