@@ -860,9 +860,31 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
       step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
 
     -- α' = π₀ ∘ g : both map n to 𝟙 if α n = true, else 𝟘
-    -- This needs to be proven using that equiv and π₀ preserve 𝟘 and 𝟙
-    postulate
-      α'≡π₀∘g : α' ≡ π₀ ∘ g
+    -- Proof uses that embBR and π₀ are ring homomorphisms
+    open IsCommRingHom
+
+    -- embBR preserves 𝟘 and 𝟙 (from being a ring hom via equiv)
+    embBR-pres0 : embBR false ≡ BooleanRingStr.𝟘 (snd (freeBA ℕ QB./Im f₀))
+    embBR-pres0 = pres0 (snd equiv)
+
+    embBR-pres1 : embBR true ≡ BooleanRingStr.𝟙 (snd (freeBA ℕ QB./Im f₀))
+    embBR-pres1 = pres1 (snd equiv)
+
+    -- π₀ preserves 𝟘 and 𝟙 (from being the quotient map)
+    π₀-pres0 : π₀ 𝟘 ≡ BooleanRingStr.𝟘 (snd (freeBA ℕ QB./Im f₀))
+    π₀-pres0 = pres0 (snd QB.quotientImageHom)
+
+    π₀-pres1 : π₀ 𝟙 ≡ BooleanRingStr.𝟙 (snd (freeBA ℕ QB./Im f₀))
+    π₀-pres1 = pres1 (snd QB.quotientImageHom)
+
+    -- Pointwise proof: α' n = π₀ (g n)
+    α'≡π₀∘g-pointwise : (n : ℕ) → α' n ≡ π₀ (g n)
+    α'≡π₀∘g-pointwise n with α n
+    ... | true  = embBR-pres1 ∙ sym π₀-pres1   -- embBR true = 𝟙 = π₀ 𝟙
+    ... | false = embBR-pres0 ∙ sym π₀-pres0   -- embBR false = 𝟘 = π₀ 𝟘
+
+    α'≡π₀∘g : α' ≡ π₀ ∘ g
+    α'≡π₀∘g = funExt α'≡π₀∘g-pointwise
 
     -- Transport step1-equiv along the equality α' = π₀ ∘ g
     step1-equiv' : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g))
