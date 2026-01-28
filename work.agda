@@ -4170,9 +4170,70 @@ splitByParity (n ∷ ns) with isEven n | splitByParity ns
 -- 3. So f(a ∨ b) = f(a + b) = f(a) + f(b) when a,b are orthogonal
 -- 4. The parity split ensures we're summing orthogonal elements on each side
 
--- For empty lists: f(0) = (0,0) and f(1) = (1,1)
--- f-on-finJoin : (ns : List ℕ) → let (es, os) = splitByParity ns
---                in fst f (finJoin∞ ns) ≡ (finJoin∞ es , finJoin∞ os)
+-- Key lemma: for orthogonal elements a · b = 0, we have a ∨ b = a + b
+orthogonal→join-is-sum : (a b : ⟨ B∞ ⟩) → a ·∞ b ≡ 𝟘∞ → a ∨∞ b ≡ a +∞ b
+orthogonal→join-is-sum a b a·b=0 =
+  a ∨∞ b                    ≡⟨ refl ⟩
+  a +∞ b +∞ (a ·∞ b)        ≡⟨ cong (a +∞ b +∞_) a·b=0 ⟩
+  a +∞ b +∞ 𝟘∞              ≡⟨ +B∞-IdR (a +∞ b) ⟩
+  a +∞ b ∎
+  where
+  open BooleanRingStr (snd B∞) using () renaming (+IdR to +B∞-IdR)
+
+-- Generators are orthogonal: g_m · g_n = 0 for m ≠ n
+gen-orthogonal : (m n : ℕ) → ¬ (m ≡ n) → g∞ m ·∞ g∞ n ≡ 𝟘∞
+gen-orthogonal = g∞-distinct-mult-zero
+
+-- Product operations in B∞×B∞
+open BooleanRingStr (snd B∞×B∞) using () renaming (_+_ to _+×_ ; _·_ to _·×'_ ; 𝟘 to 𝟘× ; 𝟙 to 𝟙×)
+
+-- Join in B∞×B∞: componentwise
+_∨×_ : ⟨ B∞×B∞ ⟩ → ⟨ B∞×B∞ ⟩ → ⟨ B∞×B∞ ⟩
+(a₁ , a₂) ∨× (b₁ , b₂) = (a₁ ∨∞ b₁ , a₂ ∨∞ b₂)
+
+-- f preserves addition
+f-pres+ : (a b : ⟨ B∞ ⟩) → fst f (a +∞ b) ≡ (fst f a) +× (fst f b)
+f-pres+ a b = IsCommRingHom.pres+ (snd f) a b
+
+-- f preserves multiplication
+f-pres·' : (a b : ⟨ B∞ ⟩) → fst f (a ·∞ b) ≡ (fst f a) ·×' (fst f b)
+f-pres·' a b = IsCommRingHom.pres· (snd f) a b
+
+-- Key lemma: f respects joins
+-- f(a ∨ b) = f(a) ∨ f(b)  (since f is a ring homomorphism)
+-- Note: a ∨ b = a + b + a·b in Boolean rings
+f-pres-join : (a b : ⟨ B∞ ⟩) → fst f (a ∨∞ b) ≡ ((fst f a) ∨× (fst f b))
+f-pres-join a b = step1 ∙ step2 ∙ step3
+  where
+  step1 : fst f (a ∨∞ b) ≡ ((fst f (a +∞ b)) +× (fst f (a ·∞ b)))
+  step1 = f-pres+ (a +∞ b) (a ·∞ b)
+
+  step2 : ((fst f (a +∞ b)) +× (fst f (a ·∞ b))) ≡ (((fst f a) +× (fst f b)) +× ((fst f a) ·×' (fst f b)))
+  step2 = cong₂ _+×_ (f-pres+ a b) (f-pres·' a b)
+
+  step3 : (((fst f a) +× (fst f b)) +× ((fst f a) ·×' (fst f b))) ≡ ((fst f a) ∨× (fst f b))
+  step3 = refl
+
+-- Product join unfolds to component joins
+∨×-eq : (a b : ⟨ B∞×B∞ ⟩) →
+  let (a₁ , a₂) = a ; (b₁ , b₂) = b
+  in a ∨× b ≡ (a₁ ∨∞ b₁ , a₂ ∨∞ b₂)
+∨×-eq (a₁ , a₂) (b₁ , b₂) = refl
+
+-- finJoin∞ for the product B∞×B∞ (componentwise)
+finJoin× : List ℕ → List ℕ → ⟨ B∞×B∞ ⟩
+finJoin× evens odds = (finJoin∞ evens , finJoin∞ odds)
+
+-- The main theorem about f on finite joins:
+-- f(finJoin∞ ns) = finJoin× (evens) (odds) where (evens, odds) = splitByParity ns
+--
+-- We prove this by induction on the list ns
+
+-- First, f(0) = (0, 0)
+f-on-zero : fst f 𝟘∞ ≡ (𝟘∞ , 𝟘∞)
+f-on-zero = IsCommRingHom.pres0 (snd f)
+
+-- Next, we need to show f(g_n ∨ x) = f(g_n) ∨ f(x) and then use the parity of n
 
 -- The injectivity of f then follows:
 -- If fst f x = (0,0), then using normal form:
@@ -4748,7 +4809,7 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
     go' false h'-left-false = ⊎.inl evens-zero-case
       where
       open BooleanRingStr (snd B∞) using () renaming (𝟙 to 𝟙B∞ ; _+_ to _+B∞_)
-      open BooleanRingStr (snd B∞×B∞) using () renaming (_+_ to _+×_)
+      open BooleanRingStr (snd B∞×B∞) using () renaming (_+_ to _+×local_)
       open BooleanRingStr (snd BoolBR) using () renaming (_+_ to _⊕Bool_)
 
       -- When h'(1,0) = false, we need h'(0,1) = true to show even indices are 0
@@ -4759,11 +4820,11 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
       -- Get identity laws from the underlying CommRing structure
       open CommRingStr (snd (BooleanRing→CommRing B∞)) using () renaming (+IdL to +left-unit ; +IdR to +right-unit)
 
-      unit-sum' : (𝟙B∞ , 𝟘∞) +× (𝟘∞ , 𝟙B∞) ≡ (𝟙B∞ , 𝟙B∞)
+      unit-sum' : (𝟙B∞ , 𝟘∞) +×local (𝟘∞ , 𝟙B∞) ≡ (𝟙B∞ , 𝟙B∞)
       unit-sum' = cong₂ _,_ (+right-unit 𝟙B∞) (+left-unit 𝟙B∞)
 
       -- h' preserves +: h'(a+b) = h'(a) ⊕Bool h'(b)
-      h'-pres+ : (a b : ⟨ B∞×B∞ ⟩) → h' $cr (a +× b) ≡ (h' $cr a) ⊕Bool (h' $cr b)
+      h'-pres+ : (a b : ⟨ B∞×B∞ ⟩) → h' $cr (a +×local b) ≡ (h' $cr a) ⊕Bool (h' $cr b)
       h'-pres+ = IsCommRingHom.pres+ (snd h')
 
       -- false ⊕Bool b = b (identity for ⊕Bool)
