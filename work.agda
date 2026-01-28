@@ -10155,6 +10155,47 @@ module IntermediateValueTheoremModule where
   --    and y < f(1) (since y ≤ f(1) ∧ y ≠ f(1))
   --    So 0 ∈ U₀ and 1 ∈ U₁, contradiction with Bool-I-local
 
+  -- Helper: if ∀x. f(x) ≠ y, then every x is in U₀ or U₁
+  cover-when-no-solution : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → ((x : UnitInterval) → (f x ≡ y → ⊥))
+    → (x : UnitInterval) → U₀ f y x ⊎ U₁ f y x
+  cover-when-no-solution f y no-sol x = fst (≠I-apartness (f x) y) (no-sol x)
+
+  -- Helper: f(0) ∈ U₀ when f(0) ≤ y and f(0) ≠ y
+  0-in-U₀ : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → f 0I ≤I y → (f 0I ≡ y → ⊥) → U₀ f y 0I
+  0-in-U₀ f y f0≤y f0≠y = <I-from-≤-≢ (f 0I) y f0≤y f0≠y
+
+  -- Helper: f(1) ∈ U₁ when y ≤ f(1) and y ≠ f(1)
+  1-in-U₁ : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → y ≤I f 1I → (y ≡ f 1I → ⊥) → U₁ f y 1I
+  1-in-U₁ f y y≤f1 y≠f1 = <I-from-≤-≢ y (f 1I) y≤f1 y≠f1
+
+  -- The characteristic function: sends x to inl if f(x) < y, to inr if y < f(x)
+  -- This is defined when ∀x. f(x) ≠ y
+  IVT-char-fun : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → ((x : UnitInterval) → (f x ≡ y → ⊥))
+    → UnitInterval → Bool
+  IVT-char-fun f y no-sol x with cover-when-no-solution f y no-sol x
+  ... | ⊎.inl _ = false  -- x ∈ U₀
+  ... | ⊎.inr _ = true   -- x ∈ U₁
+
+  -- The key contradiction: char-fun(0) = false but char-fun(1) = true
+  -- But Bool-I-local says char-fun must be constant!
+  IVT-char-fun-at-0 : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → (no-sol : (x : UnitInterval) → (f x ≡ y → ⊥))
+    → (f0≤y : f 0I ≤I y)
+    → IVT-char-fun f y no-sol 0I ≡ false
+  IVT-char-fun-at-0 f y no-sol f0≤y with cover-when-no-solution f y no-sol 0I
+  ... | ⊎.inl _ = refl
+  ... | ⊎.inr y<f0 =
+    -- y<f0 contradicts f0≤y (when combined with f0≠y which we get from no-sol)
+    -- Since f0 ≤ y and y < f0 would mean f0 < f0 (by transitivity), contradiction
+    let f0≠y = no-sol 0I
+        f0<y = 0-in-U₀ f y f0≤y f0≠y
+        -- Now we have f0 < y and y < f0, contradicting asymmetry
+    in ex-falso (<I-asymmetric (f 0I) y f0<y y<f0)
+
   postulate
     IntermediateValueTheorem : (f : UnitInterval → UnitInterval)
       → 0I ≤I f 0I → f 1I ≤I 1I
