@@ -6429,11 +6429,16 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- ✓ closedProp→Stone: closed props are Stone (forward direction) (PROVED)
 -- ✓ 0=1→¬Sp: 0=1 in B implies Sp(B) is empty (PROVED)
 -- ✓ SpectrumEmptyImpliesTrivial: empty Sp implies 0=1 (PROVED)
+-- ✓ ¬Sp-isOpen: ¬Sp(B) is open (PROVED modulo ODisc)
+-- ✓ TruncationStoneClosed: ||S|| is closed for Stone S (PROVED modulo postulates)
+-- ✓ Stone→closedProp: Stone props are closed (PROVED modulo postulates)
 --
 -- Remaining postulates requiring work:
 -- 1. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
---    - Progress: closedProp→Stone is now PROVED
---    - Still needs: TruncationStoneClosed (requires ODisc), Stone→closedProp
+--    - Progress: closedProp→Stone is PROVED
+--    - Progress: TruncationStoneClosed is PROVED (modulo ODisc/LemSurjections)
+--    - Progress: Stone→closedProp is PROVED (modulo ODisc/LemSurjections)
+--    - Still needs: ClosedInStoneIsStone, InhabitedClosedSubSpaceClosed
 -- 2. B∞×B∞≃quotient: MATHEMATICALLY TRUE but current presentation fails
 --    - Current map φ is not surjective: (1∞, 0∞) is not in the image
 --    - Stone duality confirms B∞×B∞ IS countably presented
@@ -6441,15 +6446,16 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 --    - See documentation at line ~5312
 -- 3. evens-odds-disjoint (local): technically false for zero h but proof is sound
 --    - Proper fix requires AxLocalChoice axiom from tex
+-- 4. booleω-equality-open: equality in Booleω is open (needs ODisc)
+--    - Required for TruncationStoneClosed proper proof
+-- 5. LemSurjectionsFormalToCompleteness-equiv: ¬¬Sp(B) ≃ ||Sp(B)|| (tex Cor 415)
+--    - Required for TruncationStoneClosed proper proof
 --
 -- UNUSED postulates (could be removed):
 -- - normalFormExists (untruncated): superseded by normalFormExists-trunc
 -- - nf-injective: only needed for unused untruncated version
 --
 -- Further extensions from tex (not yet formalized):
--- - TruncationStoneClosed: ||S|| is closed for S:Stone (tex 1613)
---   Infrastructure added: needs ODisc to complete
--- - Stone→closedProp: Stone props are closed (tex 1628 reverse)
 -- - ClosedInStoneIsStone: closed subsets of Stone are Stone (tex 1770)
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
@@ -6457,6 +6463,7 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - PropOpenIffOdisc: P open ↔ P overtly discrete (tex 1302)
 -- - CHaus: compact Hausdorff spaces
 -- - Interval I: Cauchy reals as CHaus (tex 2272)
+-- - SurjectionsAreFormalSurjections proper formalization (tex Prop 414)
 
 -- =============================================================================
 -- Infrastructure for normalFormExists
