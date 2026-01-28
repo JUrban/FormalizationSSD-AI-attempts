@@ -9559,10 +9559,57 @@ module AllOpenSubspaceOpenModule where
   open CompactHausdorffModule
   open InhabitedClosedSubSpaceClosedCHausModule
 
-  postulate
-    AllOpenSubspaceOpen : (X : CHaus)
-      → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
-      → isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+  -- Proved using the proof from tex:
+  -- 1. ¬U(x) is closed for each x (since U(x) is open)
+  -- 2. ∃_{x:X} ¬U(x) is closed (by InhabitedClosedSubSpaceClosedCHaus)
+  -- 3. ¬(∃_{x:X} ¬U(x)) is open (by negClosedIsOpen)
+  -- 4. ¬(∃_{x:X} ¬U(x)) ↔ ∀_{x:X} ¬¬U(x) ↔ ∀_{x:X} U(x) (since open props are ¬¬-stable)
+  AllOpenSubspaceOpen : (X : CHaus)
+    → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+    → isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+  AllOpenSubspaceOpen X U Uopen = proof
+    where
+    -- ¬U(x) is closed for each x
+    ¬U : fst X → hProp ℓ-zero
+    ¬U x = ¬hProp (U x)
+
+    ¬Uclosed : (x : fst X) → isClosedProp (¬U x)
+    ¬Uclosed x = negOpenIsClosed (U x) (Uopen x)
+
+    -- ∃_{x:X} ¬U(x) is closed
+    exists-¬U : hProp ℓ-zero
+    exists-¬U = ∥ Σ[ x ∈ fst X ] (¬ fst (U x)) ∥₁ , squash₁
+
+    exists-¬U-closed : isClosedProp exists-¬U
+    exists-¬U-closed = InhabitedClosedSubSpaceClosedCHaus X ¬U ¬Uclosed
+
+    -- ¬(∃_{x:X} ¬U(x)) is open
+    ¬exists-¬U : hProp ℓ-zero
+    ¬exists-¬U = ¬hProp exists-¬U
+
+    ¬exists-¬U-open : isOpenProp ¬exists-¬U
+    ¬exists-¬U-open = negClosedIsOpen mp exists-¬U exists-¬U-closed
+
+    -- Now show ∀x.U(x) ↔ ¬(∃x.¬U(x))
+    -- Forward: ∀x.U(x) → ¬(∃x.¬U(x))
+    forward : ((x : fst X) → fst (U x)) → fst ¬exists-¬U
+    forward all-U exists-¬U' = PT.rec isProp⊥ (λ { (x , ¬Ux) → ¬Ux (all-U x) }) exists-¬U'
+
+    -- Backward: ¬(∃x.¬U(x)) → ∀x.U(x)
+    -- Need ¬(∃x.¬U(x)) → ∀x.U(x)
+    -- Since U(x) is open, it is ¬¬-stable (U(x) ↔ ¬¬U(x))
+    backward : fst ¬exists-¬U → (x : fst X) → fst (U x)
+    backward ¬∃¬U x = openIsStable mp (U x) (Uopen x) (¬∀→¬¬ x)
+      where
+      -- From ¬(∃x.¬U(x)), derive ¬¬U(x)
+      ¬∀→¬¬ : (x : fst X) → ¬ ¬ fst (U x)
+      ¬∀→¬¬ x ¬Ux = ¬∃¬U ∣ x , ¬Ux ∣₁
+
+    -- The proposition ∀x.U(x) is equivalent to ¬(∃x.¬U(x))
+    -- Use openEquiv to transfer openness
+    proof : isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+    proof = openEquiv ¬exists-¬U (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+              backward forward ¬exists-¬U-open
 
 -- =============================================================================
 -- CHausFiniteIntersectionProperty (tex Lemma 1981)
