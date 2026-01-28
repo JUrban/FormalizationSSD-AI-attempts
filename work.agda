@@ -9093,8 +9093,8 @@ module StoneEqualityClosedModule where
   --   Each s(g_n) = t(g_n) is decidable (equality in Bool)
   --   A countable ∀ of decidable props is closed (by closedCountableIntersection)
 
-  open import BooleanRing.FreeBooleanRing.FreeBool using (generator; freeBA-universal-property)
-  open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; BooleanRingEquiv)
+  open import BooleanRing.FreeBooleanRing.FreeBool using (generator; freeBA-universal-property; inducedBAHomUnique)
+  open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; BooleanRingEquiv; BooleanEquivToHomInv; BooleanEquivLeftInv; idBoolHom)
   import QuotientBool as QB
 
   -- Helper: Bool equality is decidable
@@ -9224,10 +9224,173 @@ module StoneEqualityClosedModule where
     -- Since π is surjective, s ∘ φ⁻¹ = t ∘ φ⁻¹ on Q.
     -- Since φ⁻¹ is bijective, s = t on B.
 
-    -- For the formal proof, we postulate the backward direction for now
-    -- (the full proof requires more infrastructure about free algebras)
-    postulate
-      ∀P→s=t : ((n : ℕ) → fst (P n)) → s ≡ t
+    -- Now we prove ∀P→s=t using the universal property of free algebras
+    -- The key idea:
+    -- 1. Form s-on-free = s ∘ presEquiv⁻¹-hom ∘ π : BoolHom (freeBA ℕ) BoolBR
+    -- 2. Similarly for t
+    -- 3. Show they agree on generators (by hypothesis)
+    -- 4. By universal property, s-on-free = t-on-free
+    -- 5. Use the equivalence to derive s = t
+
+    -- The inverse of the equivalence as a BoolHom
+    presEquiv⁻¹-hom : BoolHom Q B
+    presEquiv⁻¹-hom = BooleanEquivToHomInv B Q equiv
+
+    -- Compositions with π to get homomorphisms from freeBA ℕ
+    s-on-free : BoolHom (freeBA ℕ) BoolBR
+    s-on-free = s ∘cr presEquiv⁻¹-hom ∘cr π
+
+    t-on-free : BoolHom (freeBA ℕ) BoolBR
+    t-on-free = t ∘cr presEquiv⁻¹-hom ∘cr π
+
+    -- Key: s-on-free and t-on-free agree on generators
+    -- s-on-free(generator n) = s(presEquiv⁻¹(π(generator n))) = s(gen-in-B n)
+    -- t-on-free(generator n) = t(presEquiv⁻¹(π(generator n))) = t(gen-in-B n)
+    -- And by hypothesis, these are equal for all n
+
+    s-on-free-on-gen : (n : ℕ) → fst s-on-free (generator n) ≡ s $cr (gen-in-B n)
+    s-on-free-on-gen n = refl
+
+    t-on-free-on-gen : (n : ℕ) → fst t-on-free (generator n) ≡ t $cr (gen-in-B n)
+    t-on-free-on-gen n = refl
+
+    agree-on-free-gen : ((n : ℕ) → fst (P n))
+      → (fst s-on-free ∘ generator ≡ fst t-on-free ∘ generator)
+    agree-on-free-gen allP = funExt (λ n → allP n)
+
+    -- By universal property (inducedBAHomUnique): two homomorphisms from freeBA A to B
+    -- that agree on generators are equal
+    -- freeBA-universal-property gives us an Iso, and the rightInv uses inducedBAHomUnique
+    s-on-free=t-on-free : ((n : ℕ) → fst (P n)) → s-on-free ≡ t-on-free
+    s-on-free=t-on-free allP =
+      let -- Both s-on-free and t-on-free are induced by their restriction to generators
+          s-restr : ℕ → Bool
+          s-restr = fst s-on-free ∘ generator
+          t-restr : ℕ → Bool
+          t-restr = fst t-on-free ∘ generator
+          -- The induced hom from s-restr
+          induced-s : BoolHom (freeBA ℕ) BoolBR
+          induced-s = Iso.fun (freeBA-universal-property ℕ BoolBR) s-restr
+          induced-t : BoolHom (freeBA ℕ) BoolBR
+          induced-t = Iso.fun (freeBA-universal-property ℕ BoolBR) t-restr
+          -- By Iso.sec, induced-s = s-on-free and induced-t = t-on-free
+          s-on-free=induced : induced-s ≡ s-on-free
+          s-on-free=induced = Iso.sec (freeBA-universal-property ℕ BoolBR) s-on-free
+          t-on-free=induced : induced-t ≡ t-on-free
+          t-on-free=induced = Iso.sec (freeBA-universal-property ℕ BoolBR) t-on-free
+          -- s-restr = t-restr by hypothesis
+          s-restr=t-restr : s-restr ≡ t-restr
+          s-restr=t-restr = agree-on-free-gen allP
+          -- Therefore induced-s = induced-t
+          induced-s=induced-t : induced-s ≡ induced-t
+          induced-s=induced-t = cong (Iso.fun (freeBA-universal-property ℕ BoolBR)) s-restr=t-restr
+      in sym s-on-free=induced ∙ induced-s=induced-t ∙ t-on-free=induced
+
+    -- Now derive s = t from s-on-free = t-on-free
+    -- Key insight: for any b : B, we can show s(b) = t(b) by using the equivalence
+    -- presEquiv-hom(b) : Q, and there exists x : freeBA ℕ with π(x) = presEquiv-hom(b)
+    -- Actually, we don't need surjectivity of π because we can compose differently.
+    --
+    -- Let's use: s = s ∘ presEquiv⁻¹-hom ∘ presEquiv-hom
+    -- By BooleanEquivLeftInv: presEquiv⁻¹-hom ∘ presEquiv-hom = id
+    -- So s = s ∘ id = s, as expected.
+    --
+    -- The key is that any q : Q can be written as π(x) for some x : freeBA ℕ
+    -- (this is how quotients work). Then:
+    -- s(presEquiv⁻¹(q)) = s(presEquiv⁻¹(π(x))) = s-on-free(x)
+    -- t(presEquiv⁻¹(q)) = t(presEquiv⁻¹(π(x))) = t-on-free(x)
+    -- Since s-on-free = t-on-free, we have s-on-free(x) = t-on-free(x)
+    -- Therefore s(presEquiv⁻¹(q)) = t(presEquiv⁻¹(q)) for all q : Q
+    -- Since presEquiv is bijective, this means s = t on B.
+    --
+    -- Actually, the simpler approach: use the fact that two homomorphisms
+    -- s, t : B → Bool give homomorphisms s ∘ presEquiv⁻¹-hom, t ∘ presEquiv⁻¹-hom : Q → Bool
+    -- These factor through π (since they send Im f to 0).
+    --
+    -- Even simpler: we show s(b) = t(b) for all b : B
+    -- Let q = presEquiv(b), then b = presEquiv⁻¹(q) = presEquiv⁻¹-hom(q)
+    -- s(b) = s(presEquiv⁻¹-hom(q))
+    -- t(b) = t(presEquiv⁻¹-hom(q))
+    -- We need to show these are equal for all q : Q
+    -- This is (s ∘ presEquiv⁻¹-hom)(q) = (t ∘ presEquiv⁻¹-hom)(q)
+    -- Which follows from s ∘ presEquiv⁻¹-hom = t ∘ presEquiv⁻¹-hom as BoolHom Q BoolBR
+
+    -- So we need: s ∘cr presEquiv⁻¹-hom = t ∘cr presEquiv⁻¹-hom
+    -- Both are BoolHom Q BoolBR
+    s-on-Q : BoolHom Q BoolBR
+    s-on-Q = s ∘cr presEquiv⁻¹-hom
+
+    t-on-Q : BoolHom Q BoolBR
+    t-on-Q = t ∘cr presEquiv⁻¹-hom
+
+    -- Note: s-on-free = s-on-Q ∘cr π and t-on-free = t-on-Q ∘cr π
+    -- So s-on-free = t-on-free implies (s-on-Q ∘ π)(x) = (t-on-Q ∘ π)(x) for all x : freeBA ℕ
+    -- Since π is surjective (every q : Q is π(x) for some x), this implies s-on-Q = t-on-Q
+
+    -- Actually, we can use the quotient elimination principle more directly.
+    -- The quotient Q = freeBA ℕ / Im f has the property that
+    -- for any h : Q → C, h is determined by h ∘ π : freeBA ℕ → C
+    -- This is because elements of Q are equivalence classes [x] where π(x) = [x]
+
+    -- Use quotientImageHomEpi: if two functions from Q agree on the image of π, they are equal
+    -- s-on-Q ∘ π = s-on-free and t-on-Q ∘ π = t-on-free (by associativity)
+    -- Since s-on-free = t-on-free, we get s-on-Q ∘ π = t-on-Q ∘ π
+    -- By quotientImageHomEpi, fst s-on-Q = fst t-on-Q
+
+    s-on-Q∘π=s-on-free : fst s-on-Q ∘ fst π ≡ fst s-on-free
+    s-on-Q∘π=s-on-free = refl
+
+    t-on-Q∘π=t-on-free : fst t-on-Q ∘ fst π ≡ fst t-on-free
+    t-on-Q∘π=t-on-free = refl
+
+    s-on-Q=t-on-Q-fst : ((n : ℕ) → fst (P n)) → fst s-on-Q ≡ fst t-on-Q
+    s-on-Q=t-on-Q-fst allP =
+      let s-free=t-free : s-on-free ≡ t-on-free
+          s-free=t-free = s-on-free=t-on-free allP
+          -- fst s-on-Q ∘ fst π = fst s-on-free = fst t-on-free = fst t-on-Q ∘ fst π
+          eq-on-π : fst s-on-Q ∘ fst π ≡ fst t-on-Q ∘ fst π
+          eq-on-π = s-on-Q∘π=s-on-free ∙ cong fst s-free=t-free ∙ sym t-on-Q∘π=t-on-free
+      in QB.quotientImageHomEpi (Bool , isSetBool) eq-on-π
+
+    s-on-Q=t-on-Q : ((n : ℕ) → fst (P n)) → s-on-Q ≡ t-on-Q
+    s-on-Q=t-on-Q allP = BoolHom-ext {Q} {BoolBR} s-on-Q t-on-Q (λ q → funExt⁻ (s-on-Q=t-on-Q-fst allP) q)
+
+    -- Finally, derive s = t from s-on-Q = t-on-Q
+    -- s = s ∘ id = s ∘ (presEquiv⁻¹-hom ∘ presEquiv-hom) = (s ∘ presEquiv⁻¹-hom) ∘ presEquiv-hom
+    --   = s-on-Q ∘ presEquiv-hom = t-on-Q ∘ presEquiv-hom
+    --   = (t ∘ presEquiv⁻¹-hom) ∘ presEquiv-hom = t ∘ (presEquiv⁻¹-hom ∘ presEquiv-hom) = t ∘ id = t
+
+    -- Need: presEquiv⁻¹-hom ∘cr presEquiv-hom = idBoolHom B
+    leftInv : presEquiv⁻¹-hom ∘cr presEquiv-hom ≡ idBoolHom B
+    leftInv = BooleanEquivLeftInv B Q equiv
+
+    ∀P→s=t : ((n : ℕ) → fst (P n)) → s ≡ t
+    ∀P→s=t allP =
+      let s-on-Q=t-on-Q' : s-on-Q ≡ t-on-Q
+          s-on-Q=t-on-Q' = s-on-Q=t-on-Q allP
+          -- s = s ∘cr idBoolHom B
+          s=s∘id : s ≡ s ∘cr idBoolHom B
+          s=s∘id = BoolHom-ext {B} {BoolBR} s (s ∘cr idBoolHom B) (λ _ → refl)
+          -- t = t ∘cr idBoolHom B
+          t=t∘id : t ≡ t ∘cr idBoolHom B
+          t=t∘id = BoolHom-ext {B} {BoolBR} t (t ∘cr idBoolHom B) (λ _ → refl)
+          -- s ∘cr idBoolHom B = s ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)
+          step1 : s ∘cr idBoolHom B ≡ s ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)
+          step1 = cong (s ∘cr_) (sym leftInv)
+          -- s ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom) = (s ∘cr presEquiv⁻¹-hom) ∘cr presEquiv-hom
+          -- Associativity holds definitionally on the underlying functions
+          step2 : s ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom) ≡ s-on-Q ∘cr presEquiv-hom
+          step2 = BoolHom-ext {B} {BoolBR} (s ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)) (s-on-Q ∘cr presEquiv-hom) (λ _ → refl)
+          -- s-on-Q ∘cr presEquiv-hom = t-on-Q ∘cr presEquiv-hom
+          step3 : s-on-Q ∘cr presEquiv-hom ≡ t-on-Q ∘cr presEquiv-hom
+          step3 = cong (_∘cr presEquiv-hom) s-on-Q=t-on-Q'
+          -- t-on-Q ∘cr presEquiv-hom = t ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)
+          step4 : t-on-Q ∘cr presEquiv-hom ≡ t ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)
+          step4 = BoolHom-ext {B} {BoolBR} (t-on-Q ∘cr presEquiv-hom) (t ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom)) (λ _ → refl)
+          -- t ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom) = t ∘cr idBoolHom B
+          step5 : t ∘cr (presEquiv⁻¹-hom ∘cr presEquiv-hom) ≡ t ∘cr idBoolHom B
+          step5 = cong (t ∘cr_) leftInv
+      in s=s∘id ∙ step1 ∙ step2 ∙ step3 ∙ step4 ∙ step5 ∙ sym t=t∘id
 
     βFalse→s=t : ((k : ℕ) → β k ≡ false) → s ≡ t
     βFalse→s=t = λ h → ∀P→s=t (snd (snd ∀P-closed) h)
