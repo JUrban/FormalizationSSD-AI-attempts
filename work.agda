@@ -4267,6 +4267,22 @@ data B∞-NormalForm : Type₀ where
 -- - Stone Duality: f is injective ⟺ Sp(f) is surjective
 -- - We have Sp B∞ ≅ ℕ∞ and Sp(B∞×B∞) ≅ ℕ∞ + ℕ∞
 -- - The surjectivity of Sp(f) follows from the parity decomposition
+--
+-- SPECTRUM-BASED APPROACH (alternative to normalFormExists):
+-- 1. We have SpB∞-to-ℕ∞ : Sp B∞ → ℕ∞ (line ~3776)
+-- 2. We have ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞ (line ~4954)
+-- 3. SpB∞-roundtrip shows ℕ∞-to-SpB∞ is a section (line ~4989)
+-- 4. If SpB∞-to-ℕ∞ is injective, then Sp B∞ ≅ ℕ∞
+-- 5. Similarly, Sp(B∞×B∞) ≅ Sp B∞ + Sp B∞ ≅ ℕ∞ + ℕ∞
+-- 6. Under these identifications, Sp(f) maps (left α, right β) → merge α β
+--    where merge uses parity: evens from α, odds from β
+-- 7. Sp(f) surjectivity follows from: given γ : ℕ∞,
+--    take α with seq(α)(n) = seq(γ)(2n) and β with seq(β)(n) = seq(γ)(2n+1)
+-- 8. By surj-formal-axiom, Sp(f) surjective ⟹ f injective
+--
+-- The key missing piece: showing SpB∞-to-ℕ∞ is injective requires that
+-- homomorphisms B∞ → Bool are determined by their values on generators.
+-- This is essentially equivalent to normalFormExists.
 postulate
   normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
 
