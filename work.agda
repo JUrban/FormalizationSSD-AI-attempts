@@ -9289,5 +9289,99 @@ module StoneSeparatedModule where
   closedComplementIsOpen (A , Aclosed) x = negClosedIsOpen mp (A x) (Aclosed x)
 
 -- =============================================================================
+-- StoneAsClosedSubsetOfCantor (tex Lemma 2082)
+-- =============================================================================
+--
+-- A type X is Stone if and only if it is merely a closed subset of 2^ℕ.
+--
+-- Proof (from tex):
+-- By BooleAsCQuotient, any B : Boole can be written as 2[ℕ]/(rₙ)_{n:ℕ}.
+-- By BooleEpiMono, the quotient map induces an embedding Sp(B) ↪ Sp(2[ℕ]) = 2^ℕ.
+-- This embedding is closed by StoneClosedSubsets.
+--
+-- The reverse direction: any closed subset of 2^ℕ is Stone because:
+-- - 2^ℕ is Stone (it's Sp(2[ℕ]) where 2[ℕ] = freeBA ℕ is Booleω)
+-- - Closed subsets of Stone are Stone (ClosedInStoneIsStone)
+
+module StoneAsClosedSubsetOfCantorModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open ClosedInStoneIsStoneModule
+  open StoneClosedSubsetsModule
+
+  -- Note: CantorSpace = ℕ → Bool is already defined at the top level (line 74)
+  -- We use the global definition here.
+
+  -- 2^ℕ is a Stone space: it's the spectrum of the free BA on ℕ
+  -- Sp(freeBA ℕ) = BoolHom (freeBA ℕ) BoolBR ≃ (ℕ → Bool) = 2^ℕ
+  -- (This uses the universal property of free Boolean algebras)
+  postulate
+    CantorIsStone : hasStoneStr CantorSpace
+
+  CantorStone : Stone
+  CantorStone = CantorSpace , CantorIsStone
+
+  -- A closed subset of Cantor space
+  ClosedSubsetOfCantor : Type₁
+  ClosedSubsetOfCantor = Σ[ A ∈ (CantorSpace → hProp ℓ-zero) ] ((x : CantorSpace) → isClosedProp (A x))
+
+  -- Main theorem: Stone spaces are precisely closed subsets of 2^ℕ
+  --
+  -- Forward: Stone → closed subset of 2^ℕ
+  -- For S = Sp(B) where B : Booleω, by BooleAsCQuotient we have B ≅ 2[ℕ]/I
+  -- for some ideal I. The quotient map 2[ℕ] → B induces
+  -- Sp(B) ↪ Sp(2[ℕ]) = 2^ℕ as a closed embedding.
+  --
+  -- Backward: closed subset of 2^ℕ → Stone
+  -- By ClosedInStoneIsStone, closed subsets of CantorStone are Stone.
+  postulate
+    -- Any Stone space is (merely) a closed subset of 2^ℕ
+    Stone→ClosedInCantor : (S : Stone)
+      → ∥ Σ[ A ∈ ClosedSubsetOfCantor ] (fst S ≃ (Σ[ x ∈ CantorSpace ] fst (fst A x))) ∥₁
+
+  -- Converse: closed subset of 2^ℕ is Stone
+  -- This follows from ClosedInStoneIsStone applied to CantorStone
+  ClosedInCantor→Stone : (A : ClosedSubsetOfCantor)
+    → hasStoneStr (Σ[ x ∈ CantorSpace ] (fst (fst A x)))
+  ClosedInCantor→Stone (A , Aclosed) = ClosedInStoneIsStone CantorStone A Aclosed
+
+  -- The type of Stone spaces is equivalent to the type of merely closed subsets of 2^ℕ
+  -- (This is a structural characterization of Stone spaces)
+
+-- =============================================================================
+-- BooleEpiMono (tex Remark 1475)
+-- =============================================================================
+--
+-- Any morphism g : B → C in Boole has an overtly discrete kernel.
+-- As a consequence:
+-- 1. Ker(g) is enumerable
+-- 2. B/Ker(g) is in Boole
+-- 3. The factorization B ↠ B/Ker(g) ↪ C corresponds to
+--    Sp(C) ↠ Sp(B/Ker(g)) ↪ Sp(B)
+--
+-- This means quotient maps in Boole correspond to closed embeddings of spectra.
+
+module BooleEpiMonoModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+
+  -- Morphisms in Boole: BoolHom (fst B) (fst C)
+  -- The key facts about epi-mono factorization in Boole:
+  -- 1. Any g : B → C has an overtly discrete kernel
+  -- 2. Ker(g) is enumerable (countable)
+  -- 3. B/Ker(g) is in Boole
+  -- 4. Factorization B ↠ B/Ker(g) ↪ C corresponds to
+  --    Sp(C) ↠ Sp(B/Ker(g)) ↪ Sp(B)
+  -- 5. Surjections in Boole ↔ closed embeddings of spectra
+
+  -- The main result we need: surjections in Boole give closed embeddings of spectra
+  -- This is stated more precisely with explicit type arguments to avoid inference issues.
+  postulate
+    -- For surjective g : B → C, the induced Sp(C) → Sp(B) is a closed embedding
+    -- This means: the image of Sp(C) in Sp(B) is a closed subset
+    SurjInBoole→ClosedImage : (B C : Booleω)
+      → (g : BoolHom (fst B) (fst C))
+      → ((c : ⟨ fst C ⟩) → ∥ Σ[ b ∈ ⟨ fst B ⟩ ] fst g b ≡ c ∥₁)  -- g is surjective
+      → (x : Sp B) → isClosedProp (∥ Σ[ y ∈ Sp C ] y ∘cr g ≡ x ∥₁ , squash₁)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
