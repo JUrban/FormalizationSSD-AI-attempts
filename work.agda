@@ -6550,6 +6550,11 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- Further extensions from tex (partial progress):
 -- - ClosedInStoneIsStone: PROVED! (tex 1770) - see ClosedInStoneIsStoneProof module
 -- - StoneEqualityClosed: PROVED (tex 1636) - see StoneEqualityClosedModule
+-- - StoneAsClosedSubsetOfCantor: PROVED (tex Lemma 2082)
+--     * Stone→ClosedInCantor: Stone → ∥ClosedSubsetOfCantor∥₁ (PROVED)
+--     * ClosedInCantor→Stone: ClosedSubsetOfCantor → Stone (PROVED)
+--     * ClosedSubsetOfCantor→Stone: explicit function from closed subset to Stone
+--     * Stone spaces are PRECISELY the closed subsets of 2^ℕ
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
 --     * Partial infrastructure in ODiscInfrastructure module
 --     * booleω-equality-open postulated
@@ -10715,6 +10720,21 @@ module StoneAsClosedSubsetOfCantorModule where
   ClosedSubset-roundtrip : (A : ClosedSubsetOfCantor)
     → fst (ClosedSubsetOfCantor→Stone A) ≡ closedSubsetType A
   ClosedSubset-roundtrip A = refl
+
+  -- Intersection of two closed subsets of Cantor is closed
+  -- Uses the general closedSubsetIntersection defined earlier
+  ClosedSubsetIntersection : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetIntersection (Apred , Aclosed) (Bpred , Bclosed) =
+    (λ x → (fst (Apred x) × fst (Bpred x)) , isProp× (snd (Apred x)) (snd (Bpred x))) ,
+    closedSubsetIntersection Apred Bpred Aclosed Bclosed
+
+  -- The empty closed subset of Cantor (corresponds to spectrum of trivial ring)
+  EmptyClosedSubset : ClosedSubsetOfCantor
+  EmptyClosedSubset = (λ _ → ⊥-hProp) , (λ x → ⊥-isClosed)
+
+  -- The full Cantor space as a closed subset (trivially closed)
+  FullClosedSubset : ClosedSubsetOfCantor
+  FullClosedSubset = (λ _ → ⊤-hProp) , (λ x → ⊤-isClosed)
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
