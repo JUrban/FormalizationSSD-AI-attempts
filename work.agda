@@ -6423,10 +6423,17 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- ✓ f-injective: PROVED as f-injective-from-trunc (line ~7965)
 -- ✓ Sp-f-surjective: PROVED (follows from f-injective)
 -- ✓ BoolQuotientEquiv: PROVED in QuotientConclusions.agda
+-- ✓ quotientPreservesBooleω: BoolBR /Im α is in Booleω (PROVED)
+-- ✓ ClosedPropAsSpectrum: (∀n. αn=false) ↔ Sp(BoolBR /Im α) (PROVED)
+-- ✓ closedProp→hasStoneStr: closed props have Stone structure (PROVED)
+-- ✓ closedProp→Stone: closed props are Stone (forward direction) (PROVED)
+-- ✓ 0=1→¬Sp: 0=1 in B implies Sp(B) is empty (PROVED)
+-- ✓ SpectrumEmptyImpliesTrivial: empty Sp implies 0=1 (PROVED)
 --
 -- Remaining postulates requiring work:
 -- 1. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
---    - Requires: PropositionsClosedIffStone, ClosedInStoneIsStone, TruncationStoneClosed
+--    - Progress: closedProp→Stone is now PROVED
+--    - Still needs: TruncationStoneClosed (requires ODisc), Stone→closedProp
 -- 2. B∞×B∞≃quotient: MATHEMATICALLY TRUE but current presentation fails
 --    - Current map φ is not surjective: (1∞, 0∞) is not in the image
 --    - Stone duality confirms B∞×B∞ IS countably presented
@@ -6440,8 +6447,13 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - nf-injective: only needed for unused untruncated version
 --
 -- Further extensions from tex (not yet formalized):
+-- - TruncationStoneClosed: ||S|| is closed for S:Stone (tex 1613)
+--   Infrastructure added: needs ODisc to complete
+-- - Stone→closedProp: Stone props are closed (tex 1628 reverse)
+-- - ClosedInStoneIsStone: closed subsets of Stone are Stone (tex 1770)
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
+-- - BooleIsODisc: every Boole algebra is ODisc (tex 1396)
 -- - PropOpenIffOdisc: P open ↔ P overtly discrete (tex 1302)
 -- - CHaus: compact Hausdorff spaces
 -- - Interval I: Cauchy reals as CHaus (tex 2272)
