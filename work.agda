@@ -5017,6 +5017,81 @@ g∞-nonzero n gn=0 =
   in true≢false (sym h-gn=t ∙ h-gn=f)
 
 -- =============================================================================
+-- Join-zero lemma: finJoin∞ ns = 0 implies ns = []
+-- =============================================================================
+
+-- Boolean OR in terms of XOR and AND: a ∨ b = a ⊕ b ⊕ (a ∧ b)
+-- This is the join in the Boolean ring Bool
+_orBool_ : Bool → Bool → Bool
+false orBool b = b
+true orBool _ = true
+
+-- Key: a ⊕ b ⊕ (a and b) = a orBool b
+xor-and-is-or : (a b : Bool) → (a ⊕ b) ⊕ (a and b) ≡ a orBool b
+xor-and-is-or false false = refl
+xor-and-is-or false true = refl
+xor-and-is-or true false = refl
+xor-and-is-or true true = refl
+
+-- Homomorphism preserves join: h(a ∨ b) = h(a) orBool h(b)
+h-pres-join-Bool : (h : Sp B∞-Booleω) (a b : ⟨ B∞ ⟩) →
+  h $cr (a ∨∞ b) ≡ (h $cr a) orBool (h $cr b)
+h-pres-join-Bool h a b =
+  let open IsCommRingHom (snd h) renaming (pres+ to h-pres+ ; pres· to h-pres·)
+  in h $cr (a ∨∞ b)
+       ≡⟨ refl ⟩  -- ∨∞ = + + ·
+     h $cr (a +∞ b +∞ (a ·∞ b))
+       ≡⟨ h-pres+ (a +∞ b) (a ·∞ b) ⟩
+     (h $cr (a +∞ b)) ⊕ (h $cr (a ·∞ b))
+       ≡⟨ cong₂ _⊕_ (h-pres+ a b) (h-pres· a b) ⟩
+     ((h $cr a) ⊕ (h $cr b)) ⊕ ((h $cr a) and (h $cr b))
+       ≡⟨ xor-and-is-or (h $cr a) (h $cr b) ⟩
+     (h $cr a) orBool (h $cr b) ∎
+
+-- Key lemma: if h(a) = true, then h(a ∨ b) = true
+h-join-monotone : (h : Sp B∞-Booleω) (a b : ⟨ B∞ ⟩) →
+  h $cr a ≡ true → h $cr (a ∨∞ b) ≡ true
+h-join-monotone h a b ha=t =
+  h $cr (a ∨∞ b)
+    ≡⟨ h-pres-join-Bool h a b ⟩
+  (h $cr a) orBool (h $cr b)
+    ≡⟨ cong (_orBool (h $cr b)) ha=t ⟩
+  true orBool (h $cr b)
+    ≡⟨ refl ⟩
+  true ∎
+
+-- Main lemma: if finJoin∞ ns = 0, then ns = []
+-- Proof: for non-empty ns = n ∷ rest, we have a witness h with h(g∞ n) = true
+-- Since h(finJoin∞ ns) = h(g∞ n ∨ rest) ≥ h(g∞ n) = true in the Boolean lattice
+-- But h(0) = false, contradiction.
+finJoin∞-zero→empty : (ns : List ℕ) → finJoin∞ ns ≡ 𝟘∞ → ns ≡ []
+finJoin∞-zero→empty [] _ = refl
+finJoin∞-zero→empty (n ∷ rest) join=0 = ex-falso contradiction
+  where
+  -- Witness homomorphism: h_n(g_n) = true
+  h : Sp B∞-Booleω
+  h = ℕ∞-to-SpB∞ (δ∞ n)
+
+  -- h evaluates g∞ n to true
+  h-gn=true : h $cr (g∞ n) ≡ true
+  h-gn=true = g∞-has-witness n
+
+  -- h evaluates the join to true (by monotonicity)
+  h-join=true : h $cr (finJoin∞ (n ∷ rest)) ≡ true
+  h-join=true = h-join-monotone h (g∞ n) (finJoin∞ rest) h-gn=true
+
+  -- But h(0) = false
+  h-0=false : h $cr 𝟘∞ ≡ false
+  h-0=false = IsCommRingHom.pres0 (snd h)
+
+  -- h(finJoin∞ (n ∷ rest)) = h(0) = false
+  h-join=false : h $cr (finJoin∞ (n ∷ rest)) ≡ false
+  h-join=false = cong (h $cr_) join=0 ∙ h-0=false
+
+  contradiction : ⊥
+  contradiction = true≢false (sym h-join=true ∙ h-join=false)
+
+-- =============================================================================
 -- LLPO derivation from Stone Duality
 -- =============================================================================
 
