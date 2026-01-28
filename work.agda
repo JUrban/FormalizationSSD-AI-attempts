@@ -9564,5 +9564,258 @@ module AllOpenSubspaceOpenModule where
       → isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
 
 -- =============================================================================
+-- CHausFiniteIntersectionProperty (tex Lemma 1981)
+-- =============================================================================
+--
+-- Given X:CHaus and C_n:X→Closed closed subsets such that ⋂_{n:ℕ} C_n = ∅,
+-- there is some k:ℕ with ⋂_{n≤k} C_n = ∅.
+--
+-- Proof sketch:
+-- 1. Reduce to Stone case by CompactHausdorffClosed
+-- 2. Assume X=Sp(B) and c_n:B such that C_n = {x:B→2 | x(c_n) = 0}
+-- 3. Sp(B/(c_n)_{n:ℕ}) ≃ ⋂_{n:ℕ} C_n = ∅
+-- 4. So 0=1 in B/(c_n)_{n:ℕ}, thus ∃k. ⋁_{n≤k} c_n = 1
+-- 5. Hence ⋂_{n≤k} C_n = ∅
+
+module CHausFiniteIntersectionPropertyModule where
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedCHausModule
+  open StoneClosedSubsetsModule
+
+  -- Finite intersection of closed subsets
+  finiteIntersectionClosed : {X : Type₀}
+    → (C : ℕ → (X → hProp ℓ-zero))
+    → (n : ℕ)
+    → X → hProp ℓ-zero
+  finiteIntersectionClosed C zero x = C zero x
+  finiteIntersectionClosed C (suc n) x =
+    (fst (C (suc n) x) × fst (finiteIntersectionClosed C n x)) ,
+    isProp× (snd (C (suc n) x)) (snd (finiteIntersectionClosed C n x))
+
+  -- Countable intersection of closed subsets
+  countableIntersectionClosed : {X : Type₀}
+    → (C : ℕ → (X → hProp ℓ-zero))
+    → X → hProp ℓ-zero
+  countableIntersectionClosed C x =
+    ((n : ℕ) → fst (C n x)) , isPropΠ (λ n → snd (C n x))
+
+  -- Main theorem (postulated)
+  postulate
+    CHausFiniteIntersectionProperty : (X : CHaus)
+      → (C : ℕ → (fst X → hProp ℓ-zero))
+      → ((n : ℕ) → (x : fst X) → isClosedProp (C n x))
+      → ((x : fst X) → ¬ fst (countableIntersectionClosed C x))
+      → ∥ Σ[ k ∈ ℕ ] ((x : fst X) → ¬ fst (finiteIntersectionClosed C k x)) ∥₁
+
+-- =============================================================================
+-- ChausMapsPreserveIntersectionOfClosed (tex Corollary 2003)
+-- =============================================================================
+--
+-- Let X,Y:CHaus and f:X → Y.
+-- Suppose (G_n)_{n:ℕ} is a decreasing sequence of closed subsets of X.
+-- Then f(⋂_{n:ℕ} G_n) = ⋂_{n:ℕ} f(G_n).
+--
+-- Proof:
+-- - f(⋂_{n:ℕ} G_n) ⊆ ⋂_{n:ℕ} f(G_n) always holds
+-- - For converse: if y ∈ f(G_n) for all n, define F = f⁻¹(y)
+-- - Then F ∩ G_n is non-empty for all n
+-- - By CHausFiniteIntersectionProperty, ⋂_{n:ℕ} (F ∩ G_n) ≠ ∅
+-- - By InhabitedClosedSubSpaceClosedCHaus, this is merely inhabited
+-- - Thus y ∈ f(⋂_{n:ℕ} G_n)
+
+module ChausMapsPreserveIntersectionOfClosedModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open InhabitedClosedSubSpaceClosedCHausModule
+
+  -- Image of a subset under a function
+  imageSubset : {X Y : Type₀} → (f : X → Y)
+    → (A : X → hProp ℓ-zero) → Y → hProp ℓ-zero
+  imageSubset f A y = ∥ Σ[ x ∈ _ ] fst (A x) × (f x ≡ y) ∥₁ , squash₁
+
+  -- Preimage of a point
+  preimagePoint : {X Y : Type₀} → (f : X → Y) → (y : Y)
+    → isSet Y → X → hProp ℓ-zero
+  preimagePoint f y isSetY x = (f x ≡ y) , isSetY (f x) y
+
+  -- Decreasing sequence of closed subsets
+  isDecreasingSeq : {X : Type₀}
+    → (G : ℕ → (X → hProp ℓ-zero)) → Type₀
+  isDecreasingSeq {X} G = (n : ℕ) → (x : X) → fst (G (suc n) x) → fst (G n x)
+
+  -- Main theorem (postulated)
+  postulate
+    ChausMapsPreserveIntersectionOfClosed : (X Y : CHaus)
+      → (f : fst X → fst Y)
+      → (G : ℕ → (fst X → hProp ℓ-zero))
+      → ((n : ℕ) → (x : fst X) → isClosedProp (G n x))
+      → isDecreasingSeq G
+      → (y : fst Y)
+      → fst (imageSubset f (countableIntersectionClosed G) y)
+        ≡ fst (countableIntersectionClosed (λ n → imageSubset f (G n)) y)
+
+-- =============================================================================
+-- CompactHausdorffTopology (tex Corollary 2019)
+-- =============================================================================
+--
+-- Let A ⊆ X be a subset of a compact Hausdorff space and p:S↠X a surjection
+-- with S:Stone. Then:
+-- - A is closed iff A = ⋂_{n:ℕ} p(D_n) for decidable D_n ⊆ S
+-- - A is open iff A = ⋃_{n:ℕ} ¬p(D_n) for decidable D_n ⊆ S
+--
+-- Uses: StoneClosedSubsets, CompactHausdorffClosed, ChausMapsPreserveIntersectionOfClosed
+
+module CompactHausdorffTopologyModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open ChausMapsPreserveIntersectionOfClosedModule
+  open StoneClosedSubsetsModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Decidable subset of Stone space
+  DecSubset : Stone → Type₀
+  DecSubset S = fst S → Bool
+
+  -- Image of decidable subset
+  imageDecSubset : {S : Stone} {X : Type₀}
+    → (p : fst S → X) → DecSubset S → X → hProp ℓ-zero
+  imageDecSubset p D x = ∥ Σ[ s ∈ _ ] (D s ≡ true) × (p s ≡ x) ∥₁ , squash₁
+
+  -- Complement of image
+  complementImage : {X : Type₀}
+    → (A : X → hProp ℓ-zero) → X → hProp ℓ-zero
+  complementImage A x = (fst (A x) → ⊥) , isProp→ isProp⊥
+
+  -- Countable union
+  countableUnion : {X : Type₀}
+    → (A : ℕ → (X → hProp ℓ-zero)) → X → hProp ℓ-zero
+  countableUnion A x = ∥ Σ[ n ∈ ℕ ] fst (A n x) ∥₁ , squash₁
+
+  -- Main theorem (postulated)
+  postulate
+    CompactHausdorffTopology-closed : (X : CHaus) (S : Stone)
+      → (p : fst S → fst X) → isSurjection p
+      → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
+      → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
+          ((x : fst X) → fst (A x) ≡ fst (countableIntersectionClosed (λ n → imageDecSubset {S} {fst X} p (D n)) x)) ∥₁
+
+    CompactHausdorffTopology-open : (X : CHaus) (S : Stone)
+      → (p : fst S → fst X) → isSurjection p
+      → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+      → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
+          ((x : fst X) → fst (U x) ≡ fst (countableUnion (λ n → complementImage (imageDecSubset {S} {fst X} p (D n))) x)) ∥₁
+
+-- =============================================================================
+-- CHausSeperationOfClosedByOpens (tex Lemma 2058)
+-- =============================================================================
+--
+-- CHaus spaces are normal: given X:CHaus and A,B ⊆ X closed with A∩B=∅,
+-- there exist U,V ⊆ X open such that A ⊆ U, B ⊆ V and U∩V=∅.
+--
+-- Proof sketch:
+-- 1. Let q:S↠X be surjective with S:Stone
+-- 2. q⁻¹(A) and q⁻¹(B) are closed in S
+-- 3. By StoneSeparated, ∃D:S→2 with q⁻¹(A) ⊆ D and q⁻¹(B) ⊆ ¬D
+-- 4. q(D) and q(¬D) are closed by CompactHausdorffClosed
+-- 5. Define U = ¬q(¬D) and V = ¬q(D)
+-- 6. Then A ⊆ U, B ⊆ V, and U∩V=∅
+
+module CHausSeperationOfClosedByOpensModule where
+  open CompactHausdorffModule
+  open CompactHausdorffClosedModule
+  open StoneSeparatedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Two subsets are disjoint
+  areDisjoint : {X : Type₀}
+    → (A B : X → hProp ℓ-zero) → Type₀
+  areDisjoint {X} A B = (x : X) → ¬ (fst (A x) × fst (B x))
+
+  -- Subset containment
+  subsetOf : {X : Type₀}
+    → (A B : X → hProp ℓ-zero) → Type₀
+  subsetOf {X} A B = (x : X) → fst (A x) → fst (B x)
+
+  -- Main theorem (postulated)
+  postulate
+    CHausSeperationOfClosedByOpens : (X : CHaus)
+      → (A B : fst X → hProp ℓ-zero)
+      → ((x : fst X) → isClosedProp (A x))
+      → ((x : fst X) → isClosedProp (B x))
+      → areDisjoint A B
+      → ∥ Σ[ U ∈ (fst X → hProp ℓ-zero) ] Σ[ V ∈ (fst X → hProp ℓ-zero) ]
+          ((x : fst X) → isOpenProp (U x)) ×
+          ((x : fst X) → isOpenProp (V x)) ×
+          subsetOf A U × subsetOf B V × areDisjoint U V ∥₁
+
+-- =============================================================================
+-- SigmaCompactHausdorff (tex Lemma 2098)
+-- =============================================================================
+--
+-- Compact Hausdorff spaces are stable under Σ-types.
+-- If X:CHaus and Y:X→CHaus, then Σ_{x:X} Y(x) is compact Hausdorff.
+--
+-- Proof sketch:
+-- 1. By ClosedDependentSums, identity types in Σ_{x:X}Y(x) are closed
+-- 2. By StoneAsClosedSubsetOfCantor, for any x:X there merely exists
+--    closed C⊆2^ℕ with surjection Σ_{α:2^ℕ}C(α) ↠ Y(x)
+-- 3. By local choice, we merely get S:Stone with p:S↠X such that
+--    for all s:S we have C_s⊆2^ℕ closed with surjection Σ_{2^ℕ}C_s↠Y(p(s))
+-- 4. This gives surjection Σ_{s:S,α:2^ℕ}C_s(α) ↠ Σ_{x:X}Y_x
+-- 5. The source is Stone by StoneClosedUnderPullback and ClosedInStoneIsStone
+
+module SigmaCompactHausdorffModule where
+  open CompactHausdorffModule
+  open StoneAsClosedSubsetOfCantorModule
+  -- Uses localChoice-axiom for the proof
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Sigma type of CHaus family
+  SigmaCHausType : (X : CHaus) → (Y : fst X → CHaus) → Type₀
+  SigmaCHausType X Y = Σ[ x ∈ fst X ] fst (Y x)
+
+  -- Main theorem (postulated)
+  postulate
+    SigmaCompactHausdorff : (X : CHaus) (Y : fst X → CHaus)
+      → hasCHausStr (SigmaCHausType X Y)
+
+  -- Derived: Sigma of CHaus is CHaus
+  CHausΣ : (X : CHaus) → (Y : fst X → CHaus) → CHaus
+  CHausΣ X Y = SigmaCHausType X Y , SigmaCompactHausdorff X Y
+
+-- =============================================================================
+-- AlgebraCompactHausdorffCountablyPresented (tex Lemma 2112)
+-- =============================================================================
+--
+-- For X:CHaus, 2^X is countably presented.
+--
+-- Proof:
+-- 1. There is surjection q:S↠X with S:Stone
+-- 2. This induces injection 2^X ↪ 2^S
+-- 3. a:S→2 lies in 2^X iff ∀s,t:S, q(s)=_X q(t) → a(s)=a(t)
+-- 4. Since equality in X is closed and equality in 2 is decidable,
+--    the implication is open for every s,t:S
+-- 5. By AllOpenSubspaceOpen, 2^X is an open subalgebra of 2^S
+-- 6. Therefore 2^X is in ODisc and thus countably presented
+
+module AlgebraCompactHausdorffCountablyPresentedModule where
+  open CompactHausdorffModule
+  open AllOpenSubspaceOpenModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Boolean algebra of functions X → Bool
+  BoolAlgOfCHaus : CHaus → Type₀
+  BoolAlgOfCHaus X = fst X → Bool
+
+  -- Main theorem (postulated)
+  postulate
+    AlgebraCompactHausdorffCountablyPresented : (X : CHaus)
+      → ∥ Σ[ B ∈ Booleω ] ⟨ fst B ⟩ ≡ BoolAlgOfCHaus X ∥₁
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
