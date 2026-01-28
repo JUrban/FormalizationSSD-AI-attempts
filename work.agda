@@ -9098,5 +9098,112 @@ module StoneEqualityClosedModule where
       → isClosedProp ((s ≡ t) , hasStoneStr→isSet S s t)
 
 -- =============================================================================
+-- StoneClosedSubsets (tex Theorem 1648)
+-- =============================================================================
+--
+-- Let A ⊆ S be a subset of a Stone space. The following are equivalent:
+-- (i) There exists α : S → 2^ℕ such that A(x) ↔ ∀n. αₓₙ = 0
+-- (ii) A = ⋂_{n:ℕ} Dₙ for decidable Dₙ
+-- (iii) There exists T : Stone and embedding T → S with image A
+-- (iv) There exists T : Stone and map T → S with image A
+-- (v) A is closed
+--
+-- The key directions:
+-- (i) ↔ (ii): Immediate from D_n(x) ↔ αₓₙ = 0
+-- (ii) → (iii): For S = Sp(B), by SD we have dₙ ∈ B with Dₙ(x) ↔ x(dₙ) = 0.
+--               Let C = B/(dₙ). Then Sp(C) → S is an embedding with image A.
+-- (iii) → (iv): Trivial (embeddings are maps)
+-- (iv) → (ii): For f : T → S with T = Sp(C), the image is Sp(B/Ker(g)) where
+--              g : B → C is the corresponding map, and Ker(g) is countably generated.
+-- (i) → (v): By definition of closed (countable ∀ of decidable is closed)
+-- (v) → (iv): By LocalChoice, lift A : S → Closed through 2^ℕ → Closed
+
+module StoneClosedSubsetsModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+  open SDDecToElemModule
+  open StoneEqualityClosedModule
+
+  -- A subset of a Stone space given by a map α : S → 2^ℕ
+  -- A(x) ↔ ∀n. α(x)(n) = false
+  record ClosedBySequence (S : Stone) : Type₁ where
+    field
+      α : fst S → (ℕ → Bool)
+      -- The subset A(x) is defined as ∀n. α(x)(n) = false
+
+  -- A subset given by countable intersection of decidable subsets
+  record ClosedByCountableIntersection (S : Stone) : Type₁ where
+    field
+      D : ℕ → fst S → Bool  -- Dₙ(x) is decidable
+      -- A(x) = ∀n. D(n)(x) = true (or false, depending on convention)
+
+  -- (i) ↔ (ii): The equivalence between sequence and decidable intersection forms
+  -- This is immediate: D_n(x) ↔ α(x)(n) = 0
+
+  -- seq→decIntersection : Given α : S → 2^ℕ, define Dₙ(x) = (α(x)(n) = 0)
+  seq→decIntersection : (S : Stone) → ClosedBySequence S → ClosedByCountableIntersection S
+  seq→decIntersection S seqForm = record
+    { D = λ n x → not (ClosedBySequence.α seqForm x n) }
+    -- A(x) = ∀n. α(x)(n) = 0 ↔ ∀n. not(α(x)(n)) = true ↔ ∀n. D(n)(x) = true
+
+  -- decIntersection→seq : Given Dₙ, define α(x)(n) = not(Dₙ(x))
+  decIntersection→seq : (S : Stone) → ClosedByCountableIntersection S → ClosedBySequence S
+  decIntersection→seq S decForm = record
+    { α = λ x n → not (ClosedByCountableIntersection.D decForm n x) }
+
+  -- The subset predicate from a sequence characterization
+  subsetFromSeq : (S : Stone) → ClosedBySequence S → (fst S → hProp ℓ-zero)
+  subsetFromSeq S seqForm x = ((n : ℕ) → ClosedBySequence.α seqForm x n ≡ false) ,
+                              isPropΠ (λ n → isSetBool _ _)
+
+  -- The subset predicate is closed (countable ∀ of decidable is closed)
+  subsetFromSeq-isClosed : (S : Stone) (seqForm : ClosedBySequence S)
+    → (x : fst S) → isClosedProp (subsetFromSeq S seqForm x)
+  subsetFromSeq-isClosed S seqForm x =
+    closedCountableIntersection
+      (λ n → (ClosedBySequence.α seqForm x n ≡ false) , isSetBool _ _)
+      (λ n → Bool-eq-false-isClosed (ClosedBySequence.α seqForm x n))
+    where
+    -- Helper: equality with false in Bool is closed (because it's decidable)
+    Bool-eq-false-isClosed : (b : Bool) → isClosedProp ((b ≡ false) , isSetBool _ _)
+    Bool-eq-false-isClosed b = decIsClosed ((b ≡ false) , isSetBool b false) (Bool-equality-decidable b false)
+
+  -- (i) → (v): A subset given by a sequence is closed
+  -- This follows from the fact that ∀n.(αₓₙ = 0) is closed
+  -- (countable conjunction of decidable props is closed)
+  seqForm→closed : (S : Stone) (seqForm : ClosedBySequence S)
+    → isClosedSubset (subsetFromSeq S seqForm)
+  seqForm→closed S seqForm x = subsetFromSeq-isClosed S seqForm x
+
+  -- Direction (ii) → (iii) requires Stone Duality infrastructure:
+  -- For S = Sp(B), given decidable Dₙ, by SD we have dₙ ∈ B with Dₙ(x) ↔ x(dₙ) = 0.
+  -- Let C = B/(dₙ)_{n:ℕ}. Then Sp(C) embeds into S with image = ⋂Dₙ.
+  --
+  -- This requires:
+  -- 1. SDDecToElem (have): DecPred on Sp(B) → element of B
+  -- 2. QuotientBySeqPreservesBooleω: B/(dₙ)_{n:ℕ} ∈ Booleω
+
+  -- For now, we postulate the key remaining components
+
+  -- Quotient of Booleω by a countable sequence of elements remains Booleω
+  -- This generalizes quotientPreservesBooleω from quotient by one element to
+  -- quotient by countably many elements.
+  postulate
+    quotientBySeqPreservesBooleω : (B : Booleω) (d : ℕ → ⟨ fst B ⟩)
+      → ∥ Σ[ C ∈ Booleω ] (Sp C ≃ (Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false))) ∥₁
+
+  -- Image characterization: closed subsets of Stone spaces are images of Stone maps
+  -- This is direction (v) → (iv) from the theorem.
+  -- Requires LocalChoice axiom.
+  postulate
+    closedSubset→StoneImage : (S : Stone) (A : fst S → hProp ℓ-zero)
+      → ((x : fst S) → isClosedProp (A x))
+      → ∥ Σ[ T ∈ Stone ] Σ[ f ∈ (fst T → fst S) ]
+          ((x : fst S) → fst (A x) ≃ ∥ Σ[ t ∈ fst T ] f t ≡ x ∥₁) ∥₁
+
+  -- Combined: ClosedInStoneIsStone follows from the equivalences
+  -- A closed ⊆ S is Stone because:
+  -- (v) A closed → (iv) A is image of T : Stone → (ii) A = ⋂Dₙ → (iii) A ≃ Sp(B/dₙ)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
