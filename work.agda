@@ -4068,6 +4068,26 @@ f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
 
 -- For now, we postulate this as the proof requires detailed analysis of
 -- the structure of elements in B∞ as set quotients
+--
+-- PROOF OUTLINE (from tex lines 567-583):
+-- 1. Any x ∈ B∞ can be written uniquely as:
+--    - ⋁_{i∈I} g_i (join of generators) for finite I, OR
+--    - ⋀_{i∈I} ¬g_i (meet of negated generators) for finite I
+--    (This is the "normal form" or "conjunctive normal form" for B∞)
+--
+-- 2. For x = ⋁_{i∈I} g_i:
+--    f(x) = (⋁_{k: 2k∈I} g_k, ⋁_{k: 2k+1∈I} g_k)
+--    If f(x) = 0, then both I₀ = {k | 2k ∈ I} and I₁ = {k | 2k+1 ∈ I} are empty
+--    Therefore I = ∅ and x = 0.
+--
+-- 3. For x = ⋀_{i∈I} ¬g_i:
+--    f(x) = (⋀_{k: 2k∈I} ¬g_k, ⋀_{k: 2k+1∈I} ¬g_k)
+--    Since each component is either 1 (if corresponding I_j = ∅) or a non-zero
+--    meet of negated generators, f(x) ≠ 0.
+--
+-- 4. Conclusion: kernel of f is trivial, so f is injective.
+--
+-- TO FORMALIZE: Need normal form theorem for elements of B∞.
 postulate
   f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
 
@@ -4113,8 +4133,20 @@ open B∞×B∞-Units
 -- First, we need to show B∞×B∞ has a presentation
 -- B∞×B∞ is countably presented since B∞ is, and products preserve countable presentation
 -- The generators are pairs (g_n, 0) and (0, g_n), and relations are inherited
-
--- For now, postulate this infrastructure
+--
+-- PROOF OUTLINE:
+-- has-Boole-ω' B∞×B∞ means B∞×B∞ ≅ freeBA ℕ /Im h for some h : ℕ → ⟨ freeBA ℕ ⟩
+--
+-- Construction:
+-- 1. B∞ = freeBA ℕ /Im relB∞ where relB∞ n = gen n · gen m for relations
+-- 2. B∞×B∞ = B∞ ×BR B∞
+-- 3. Can present B∞×B∞ using generators from ℕ⊎ℕ ≅ ℕ:
+--    - Left factor generators: inl(n) ↦ (g_n, 0)
+--    - Right factor generators: inr(n) ↦ (0, g_n)
+-- 4. Relations are products of relations from both factors
+-- 5. Using BoolQuotientEquiv: freeBA ℕ /Im (rec relL relR) ≅ (freeBA ℕ /Im relL) × (freeBA ℕ /Im relR)
+--
+-- DEPENDENCIES: BoolQuotientEquiv (currently broken in QuotientConclusions.agda)
 postulate
   B∞×B∞-has-Boole-ω' : has-Boole-ω' B∞×B∞
 
@@ -4137,6 +4169,14 @@ Sp-prod-to-sum h with h $cr unit-left
     h-on-left x = h' $cr (x , 𝟘∞)
 
     -- Need to show this is a ring homomorphism
+    -- Proof: h-on-left x = h'(x, 0) where h' is a homomorphism.
+    -- For any homomorphism h' : B∞×B∞ → 2, its restriction to left factor
+    -- via x ↦ h'(x, 0) is also a homomorphism because:
+    -- - pres0: h'(0, 0) = 0 by h' being a hom
+    -- - pres1: h'(1, 0) = true by assumption (h' $cr unit-left = true)
+    -- - pres+: h'(x+y, 0) = h'((x,0) + (y,0)) = h'(x,0) + h'(y,0)
+    -- - pres·: h'(x·y, 0) = h'((x,0) · (y,0)) = h'(x,0) · h'(y,0)
+    -- - pres-: h'(-x, 0) = h'(-(x,0)) = -h'(x,0) = h'(x,0) (in Bool ring)
     postulate
       h-on-left-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-left (snd (BooleanRing→CommRing BoolBR))
 ... | false = ⊎.inr (h-right h)
@@ -4150,6 +4190,9 @@ Sp-prod-to-sum h with h $cr unit-left
     h-on-right x = h' $cr (𝟘∞ , x)
 
     -- Need to show this is a ring homomorphism
+    -- Proof: h-on-right x = h'(0, x) where h' is a homomorphism.
+    -- For any homomorphism h' : B∞×B∞ → 2, its restriction to right factor
+    -- via x ↦ h'(0, x) is also a homomorphism (similar to h-on-left).
     postulate
       h-on-right-is-hom : IsCommRingHom (snd (BooleanRing→CommRing B∞)) h-on-right (snd (BooleanRing→CommRing BoolBR))
 
@@ -4168,7 +4211,16 @@ Sp-f h = h ∘cr f
 -- The key axiom: injective homomorphisms induce surjective spectrum maps
 -- (tex line 294-297: SurjectionsAreFormalSurjections)
 -- For g : B → C in Booleω: g is injective ↔ (-) ∘ g : Sp(C) → Sp(B) is surjective
--- We postulate this axiom for our specific case
+--
+-- PROOF OUTLINE:
+-- This is a consequence of Stone Duality (SurjectionsAreFormalSurjections).
+-- Since f : B∞ → B∞×B∞ is injective (f-injective above),
+-- the induced map Sp(f) : Sp(B∞×B∞) → Sp(B∞) is surjective.
+--
+-- The proof goes through propositional completeness and requires showing
+-- that the Stone Duality axiom implies surjectivity for injective morphisms.
+--
+-- DEPENDENCIES: f-injective, sd-axiom
 postulate
   Sp-f-surjective : (h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁
 
