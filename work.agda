@@ -10809,6 +10809,35 @@ module StoneAsClosedSubsetOfCantorModule where
       ≡ ClosedSubsetUnion (ClosedSubsetPreimageCantor f A) (ClosedSubsetPreimageCantor f B)
   preimageUnion f A B = refl
 
+  -- Open subsets of Cantor space (dual to closed subsets)
+  -- An open subset A ⊆ 2^ℕ is a predicate where each A(x) is an open proposition
+  OpenSubsetOfCantor : Type₁
+  OpenSubsetOfCantor = Σ[ A ∈ (CantorSpace → hProp ℓ-zero) ] ((x : CantorSpace) → isOpenProp (A x))
+
+  -- Complement: closed → open (uses MP via negClosedIsOpen)
+  ClosedSubsetComplement : ClosedSubsetOfCantor → OpenSubsetOfCantor
+  ClosedSubsetComplement (A , Aclosed) =
+    (λ x → ¬hProp (A x)) , (λ x → negClosedIsOpen mp (A x) (Aclosed x))
+
+  -- Complement: open → closed
+  OpenSubsetComplement : OpenSubsetOfCantor → ClosedSubsetOfCantor
+  OpenSubsetComplement (A , Aopen) =
+    (λ x → ¬hProp (A x)) , (λ x → negOpenIsClosed (A x) (Aopen x))
+
+  -- Double complement is identity (for closed subsets)
+  -- This follows from the characterization of closed props
+  doubleComplementClosed : (A : ClosedSubsetOfCantor)
+    → (x : CantorSpace)
+    → fst (fst (OpenSubsetComplement (ClosedSubsetComplement A)) x) ≡ fst (fst A x)
+  doubleComplementClosed (A , Aclosed) x =
+    hPropExt (snd (¬hProp (¬hProp (A x)))) (snd (A x))
+             (doubleNegClosedIsClosed mp (A x) (Aclosed x))
+             (λ ax ¬ax → ¬ax ax)
+
+  -- De Morgan laws connect intersection and union via complement
+  -- ¬(A ∩ B) ≡ ¬A ∪ ¬B (for closed → open)
+  -- This is De Morgan for closed, which uses LLPO
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
