@@ -5279,7 +5279,30 @@ module B∞×B∞-Presentation where
   -- - φ ∘ ψ-left on generators: PROVED
   -- - φ ∘ ψ-right on generators: PROVED
   --
-  -- Remaining: Combine ψ-left and ψ-right into ψ, and show inverse properties.
+  -- IMPORTANT ISSUE DISCOVERED:
+  -- The map φ : B∞×B∞-quotient → B∞×B∞ is NOT surjective!
+  --
+  -- Proof: The element (1∞, 0∞) ∈ B∞×B∞ is NOT in the image of φ.
+  --
+  -- Argument:
+  -- - For φ(z) = (1∞, 0∞), z must have second component mapping to 0∞
+  -- - This means z can only use "left" generators (which have 0 second component)
+  -- - The first component of z is then a Boolean combination of {g∞ m} in B∞
+  -- - But 1∞ ∈ B∞ is the top element, NOT reachable from finitely many atoms
+  -- - Since B∞ has infinitely many orthogonal atoms {g∞ m}, their finite Boolean
+  --   combinations form a proper subalgebra that doesn't contain 1∞
+  --
+  -- This means B∞×B∞-quotient ≇ B∞×B∞ with the current presentation!
+  --
+  -- To fix this, we need a DIFFERENT presentation of B∞×B∞ that includes
+  -- the projection idempotent e_L = (1∞, 0∞) as a generator with relations:
+  -- - e_L · e_L = e_L (idempotent)
+  -- - e_L · g×-left-gen m = g×-left-gen m (identity on left factor)
+  -- - e_L · g×-right-gen n = 0 (annihilates right factor)
+  -- - e_L + (1 + e_L) = 1 (complement is right projection)
+  --
+  -- For now, this postulate is kept to maintain compatibility with downstream code.
+  -- TODO: Replace with correct presentation or alternative proof strategy.
   postulate
     B∞×B∞≃quotient : BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
 
