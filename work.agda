@@ -20,6 +20,7 @@ open import Cubical.Foundations.Powerset
 open import Cubical.Data.Nat renaming (_+_ to _+ℕ_ ; _·_ to _·ℕ_)
 open import Cubical.Data.Nat.Order
 open import Cubical.Data.Nat.Properties using (discreteℕ)
+open import Cubical.Data.Fin using (Fin)
 import Cubical.Induction.WellFounded as WF
 open import Cubical.Data.Bool hiding (_≤_ ; _≥_) renaming (_≟_ to _=B_)
 open import Cubical.Data.Empty renaming (rec to ex-falso)
@@ -9987,6 +9988,29 @@ module IntervalTopologyModule where
     0I : UnitInterval
     1I : UnitInterval
 
+  -- hProp versions
+  ≤I-hProp : UnitInterval → UnitInterval → hProp ℓ-zero
+  ≤I-hProp x y = (x ≤I y) , ≤I-isProp x y
+
+  <I-hProp : UnitInterval → UnitInterval → hProp ℓ-zero
+  <I-hProp x y = (x <I y) , <I-isProp x y
+
+  -- tex Remark 2610: x<y is an open proposition
+  -- This follows from the definition using cs sequences
+  postulate
+    <I-isOpen : (x y : UnitInterval) → isOpenProp (<I-hProp x y)
+
+  -- tex Remark 2610: x≤y is a closed proposition
+  -- Since x<y is open and ≤ is ¬< plus antisymmetry
+  postulate
+    ≤I-isClosed : (x y : UnitInterval) → isClosedProp (≤I-hProp x y)
+
+  -- tex Remark 2610: x≠y is equivalent to (x<y) ∨ (y<x)
+  -- This is the apartness characterization
+  postulate
+    ≠I-apartness : (x y : UnitInterval)
+      → (x ≡ y → ⊥) ↔ ((x <I y) ⊎ (y <I x))
+
   -- Closed interval [a,b]
   ClosedInterval : (a b : UnitInterval) → Type₀
   ClosedInterval a b = Σ[ x ∈ UnitInterval ] (a ≤I x) × (x ≤I b)
@@ -9994,6 +10018,42 @@ module IntervalTopologyModule where
   -- Open interval (a,b)
   OpenInterval : (a b : UnitInterval) → Type₀
   OpenInterval a b = Σ[ x ∈ UnitInterval ] (a <I x) × (x <I b)
+
+  -- tex Lemma 2614: Image of a decidable subset under cs is a finite union of closed intervals
+  -- Here we state a simplified version: the image of a decidable D ⊆ 2^ℕ under cs
+  -- is a finite union of closed intervals
+  -- DecSubsetCantor from earlier definition
+  DecSubsetCantor : Type₀
+  DecSubsetCantor = CantorSpace → Bool
+
+  -- Finite union of closed intervals
+  FiniteClosedIntervals : ℕ → Type₀
+  FiniteClosedIntervals n = (i : Fin n) → UnitInterval × UnitInterval
+
+  -- Membership in a finite union of closed intervals
+  inFiniteClosedIntervals : (n : ℕ) → FiniteClosedIntervals n → UnitInterval → Type₀
+  inFiniteClosedIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) ≤I x) × (x ≤I snd (Is i))
+
+  postulate
+    -- tex Lemma 2614: Image of decidable subset is finite union of closed intervals
+    ImageDecidableClosedInterval : (D : DecSubsetCantor)
+      → ∥ Σ[ n ∈ ℕ ] Σ[ Is ∈ FiniteClosedIntervals n ]
+          ((x : UnitInterval) → (Σ[ α ∈ CantorSpace ] (D α ≡ true) × (cs α ≡ x))
+                              ↔ inFiniteClosedIntervals n Is x) ∥₁
+
+  -- tex Lemma 2673: Complement of finite union of closed intervals is finite union of open intervals
+  FiniteOpenIntervals : ℕ → Type₀
+  FiniteOpenIntervals n = (i : Fin n) → UnitInterval × UnitInterval
+
+  inFiniteOpenIntervals : (n : ℕ) → FiniteOpenIntervals n → UnitInterval → Type₀
+  inFiniteOpenIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) <I x) × (x <I snd (Is i))
+
+  postulate
+    -- tex Lemma 2673
+    complementClosedIntervalOpenIntervals : (n : ℕ) → (Is : FiniteClosedIntervals n)
+      → ∥ Σ[ m ∈ ℕ ] Σ[ Os ∈ FiniteOpenIntervals m ]
+          ((x : UnitInterval) → (¬ inFiniteClosedIntervals n Is x)
+                              ↔ inFiniteOpenIntervals m Os x) ∥₁
 
   -- Main theorems (postulated)
   postulate
