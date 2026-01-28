@@ -3453,13 +3453,12 @@ binarySeqToOpen-surjective (P , α , forward , backward) =
 -- 1. sd-axiom : StoneDualityAxiom
 --    The main axiom: evaluation map B → 2^{Sp B} is equivalence for B : Booleω
 --
--- 2. quotientPreservesBooleω : (α : binarySequence) → ∥ has-Boole-ω' (BoolBR QB./Im α) ∥₁
---    PARTIALLY PROVEN: Construction is complete, only equivToPresentation postulated
---    Proof structure:
---      - h : ℕ → ⟨ freeBA ℕ ⟩ is constructed from f₀ (from is-cp-2) and g (from α)
---      - h = ⊎.rec f₀ g ∘ decode where decode : ℕ → ℕ ⊎ ℕ
---    Remaining local postulate: equivToPresentation : BooleanRingEquiv (BoolBR /Im α) (freeBA ℕ /Im h)
---    This follows by composing three equivalences (documented in proof)
+-- 2. quotientPreservesBooleω : FULLY PROVEN (no local postulates)
+--    Proof constructs: BoolBR /Im α ≅ freeBA ℕ /Im h
+--    via three composed equivalences:
+--      - step1-equiv: BoolBR /Im α ≅ (freeBA ℕ /Im f₀) /Im α' (quotient lifting through embBR)
+--      - step2-equiv: (freeBA ℕ /Im f₀) /Im (π₀ ∘ g) ≅ freeBA ℕ /Im (⊎.rec f₀ g) (BoolQuotientEquiv)
+--      - step3-equiv: freeBA ℕ /Im h ≅ freeBA ℕ /Im (⊎.rec f₀ g) (bijection reparametrization)
 --
 -- 3. llpo : LLPO
 --    Requires B_∞ construction (Boolean algebra with at-most-once generators)
