@@ -6450,13 +6450,112 @@ open import BooleanRing.FreeBooleanRing.freeBATerms using (freeBATerms; includeB
 
 -- Normalize a term to a normal form
 -- This maps each term constructor to the appropriate normal form operation
+--
+-- IMPORTANT: -T is ring negation (additive inverse), NOT Boolean negation.
+-- In Boolean rings, -x = x (since x + x = 0, the additive inverse is identity).
+-- Boolean negation ¬x = 1 + x is different and not part of the term language.
 normalizeTerm : freeBATerms ℕ → B∞-NormalForm
 normalizeTerm (Tvar n) = joinForm (n ∷ [])  -- generator g_n
 normalizeTerm (Tconst false) = joinForm []  -- 0
 normalizeTerm (Tconst true) = meetNegForm []  -- 1
 normalizeTerm (t +T s) = xor-nf (normalizeTerm t) (normalizeTerm s)
-normalizeTerm (-T t) = neg-nf (normalizeTerm t)
+normalizeTerm (-T t) = normalizeTerm t  -- ring negation is identity in Boolean rings
 normalizeTerm (t ·T s) = meet-nf (normalizeTerm t) (normalizeTerm s)
+
+-- =============================================================================
+-- normalizeTerm correctness proof
+-- =============================================================================
+
+-- The interpretation of terms into B∞ is:
+-- interpretTerm : freeBATerms ℕ → ⟨ B∞ ⟩
+-- interpretTerm t = fst π∞ (fst includeBATermsSurj t)
+
+-- First, we need a direct interpretation into B∞
+-- This avoids the opaque includeBATermsSurj
+interpretB∞ : freeBATerms ℕ → ⟨ B∞ ⟩
+interpretB∞ (Tvar n) = g∞ n
+interpretB∞ (Tconst false) = 𝟘∞
+interpretB∞ (Tconst true) = 𝟙∞
+interpretB∞ (t +T s) = interpretB∞ t +∞ interpretB∞ s
+interpretB∞ (-T t) = -∞ interpretB∞ t  -- ring negation (= identity in Boolean rings)
+interpretB∞ (t ·T s) = interpretB∞ t ·∞ interpretB∞ s
+
+-- Note: In Boolean rings, -x = x (additive inverse is identity)
+-- This is because x + x = 0, so -x = x.
+negation-is-id-B∞ : (x : ⟨ B∞ ⟩) → -∞ x ≡ x
+negation-is-id-B∞ x =
+  -∞ x
+    ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) (-∞ x)) ⟩
+  -∞ x +∞ 𝟘∞
+    ≡⟨ cong (-∞ x +∞_) (sym (char2-B∞ x)) ⟩
+  -∞ x +∞ (x +∞ x)
+    ≡⟨ BooleanRingStr.+Assoc (snd B∞) (-∞ x) x x ⟩
+  (-∞ x +∞ x) +∞ x
+    ≡⟨ cong (_+∞ x) (BooleanRingStr.+InvL (snd B∞) x) ⟩
+  𝟘∞ +∞ x
+    ≡⟨ BooleanRingStr.+IdL (snd B∞) x ⟩
+  x ∎
+
+-- Simplified interpretation: -T is just identity in Boolean rings
+interpretB∞' : freeBATerms ℕ → ⟨ B∞ ⟩
+interpretB∞' (Tvar n) = g∞ n
+interpretB∞' (Tconst false) = 𝟘∞
+interpretB∞' (Tconst true) = 𝟙∞
+interpretB∞' (t +T s) = interpretB∞' t +∞ interpretB∞' s
+interpretB∞' (-T t) = interpretB∞' t  -- negation is identity
+interpretB∞' (t ·T s) = interpretB∞' t ·∞ interpretB∞' s
+
+-- interpretB∞ ≡ interpretB∞' (they differ only on -T case)
+interpret-eq : (t : freeBATerms ℕ) → interpretB∞ t ≡ interpretB∞' t
+interpret-eq (Tvar n) = refl
+interpret-eq (Tconst false) = refl
+interpret-eq (Tconst true) = refl
+interpret-eq (t +T s) = cong₂ _+∞_ (interpret-eq t) (interpret-eq s)
+interpret-eq (-T t) = negation-is-id-B∞ (interpretB∞ t) ∙ interpret-eq t
+interpret-eq (t ·T s) = cong₂ _·∞_ (interpret-eq t) (interpret-eq s)
+
+-- Main correctness theorem: normalizeTerm is correct
+-- ⟦ normalizeTerm t ⟧nf ≡ interpretB∞ t
+normalizeTerm-correct : (t : freeBATerms ℕ) → ⟦ normalizeTerm t ⟧nf ≡ interpretB∞ t
+normalizeTerm-correct (Tvar n) =
+  -- normalizeTerm (Tvar n) = joinForm [n]
+  -- ⟦ joinForm [n] ⟧nf = finJoin∞ [n] = g∞ n ∨∞ 𝟘∞ = g∞ n
+  finJoin∞ (n ∷ [])
+    ≡⟨ refl ⟩
+  g∞ n ∨∞ finJoin∞ []
+    ≡⟨ zero-join-right (g∞ n) ⟩
+  g∞ n ∎
+normalizeTerm-correct (Tconst false) =
+  -- normalizeTerm (Tconst false) = joinForm []
+  -- ⟦ joinForm [] ⟧nf = finJoin∞ [] = 𝟘∞
+  refl
+normalizeTerm-correct (Tconst true) =
+  -- normalizeTerm (Tconst true) = meetNegForm []
+  -- ⟦ meetNegForm [] ⟧nf = finMeetNeg∞ [] = 𝟙∞
+  refl
+normalizeTerm-correct (t +T s) =
+  -- normalizeTerm (t +T s) = xor-nf (normalizeTerm t) (normalizeTerm s)
+  ⟦ xor-nf (normalizeTerm t) (normalizeTerm s) ⟧nf
+    ≡⟨ xor-nf-correct (normalizeTerm t) (normalizeTerm s) ⟩
+  ⟦ normalizeTerm t ⟧nf +∞ ⟦ normalizeTerm s ⟧nf
+    ≡⟨ cong₂ _+∞_ (normalizeTerm-correct t) (normalizeTerm-correct s) ⟩
+  interpretB∞ t +∞ interpretB∞ s ∎
+normalizeTerm-correct (-T t) =
+  -- normalizeTerm (-T t) = normalizeTerm t (since -x = x in Boolean rings)
+  -- interpretB∞ (-T t) = -(interpretB∞ t) = interpretB∞ t (since -x = x)
+  ⟦ normalizeTerm t ⟧nf
+    ≡⟨ normalizeTerm-correct t ⟩
+  interpretB∞ t
+    ≡⟨ sym (negation-is-id-B∞ (interpretB∞ t)) ⟩
+  -∞ interpretB∞ t ∎
+normalizeTerm-correct (t ·T s) =
+  ⟦ meet-nf (normalizeTerm t) (normalizeTerm s) ⟧nf
+    ≡⟨ meet-nf-correct (normalizeTerm t) (normalizeTerm s) ⟩
+  ⟦ normalizeTerm t ⟧nf ∧∞ ⟦ normalizeTerm s ⟧nf
+    ≡⟨ cong₂ _∧∞_ (normalizeTerm-correct t) (normalizeTerm-correct s) ⟩
+  interpretB∞ t ∧∞ interpretB∞ s
+    ≡⟨ refl ⟩
+  interpretB∞ t ·∞ interpretB∞ s ∎
 
 -- =============================================================================
 -- End of current formalization
