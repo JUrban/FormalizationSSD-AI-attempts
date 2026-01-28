@@ -1322,6 +1322,44 @@ mp-from-SD SD α α≠0 = MarkovLib.extract' α (MarkovLib.∃αn α true-in-ide
 postulate
   sd-axiom : StoneDualityAxiom
 
+-- =============================================================================
+-- SurjectionsAreFormalSurjections axiom (tex line 294-297)
+-- =============================================================================
+-- For all morphism g : B → C in Booleω, g is injective iff Sp(g) is surjective.
+-- This is a key axiom connecting algebraic injectivity to topological surjectivity.
+
+-- First, define what it means for a BoolHom to be injective
+isInjectiveBoolHom : (B C : Booleω) → BoolHom (fst B) (fst C) → Type ℓ-zero
+isInjectiveBoolHom B C g = (x y : ⟨ fst B ⟩) → fst g x ≡ fst g y → x ≡ y
+
+-- Sp(g) is the map induced on spectra by precomposition with g
+Sp-hom : (B C : Booleω) → BoolHom (fst B) (fst C) → Sp C → Sp B
+Sp-hom B C g h = h ∘cr g
+
+-- Surjectivity of Sp(g) (truncated)
+isSurjectiveSpHom : (B C : Booleω) → BoolHom (fst B) (fst C) → Type ℓ-zero
+isSurjectiveSpHom B C g = (h : Sp B) → ∥ Σ[ h' ∈ Sp C ] Sp-hom B C g h' ≡ h ∥₁
+
+-- The axiom: injective ⟺ Sp-surjective
+-- We state both directions separately for flexibility
+SurjectionsAreFormalSurjectionsAxiom : Type (ℓ-suc ℓ-zero)
+SurjectionsAreFormalSurjectionsAxiom = (B C : Booleω) (g : BoolHom (fst B) (fst C)) →
+  isInjectiveBoolHom B C g ↔ isSurjectiveSpHom B C g
+
+-- Postulate this axiom (from tex)
+postulate
+  surj-formal-axiom : SurjectionsAreFormalSurjectionsAxiom
+
+-- Convenience: if g is injective, then Sp(g) is surjective
+injective→Sp-surjective : (B C : Booleω) (g : BoolHom (fst B) (fst C)) →
+  isInjectiveBoolHom B C g → isSurjectiveSpHom B C g
+injective→Sp-surjective B C g = fst (surj-formal-axiom B C g)
+
+-- Convenience: if Sp(g) is surjective, then g is injective
+Sp-surjective→injective : (B C : Booleω) (g : BoolHom (fst B) (fst C)) →
+  isSurjectiveSpHom B C g → isInjectiveBoolHom B C g
+Sp-surjective→injective B C g = snd (surj-formal-axiom B C g)
+
 mp : MarkovPrinciple
 mp = mp-from-SD sd-axiom
 
@@ -4628,17 +4666,23 @@ Sp-f h = h ∘cr f
 -- (tex line 294-297: SurjectionsAreFormalSurjections)
 -- For g : B → C in Booleω: g is injective ↔ (-) ∘ g : Sp(C) → Sp(B) is surjective
 --
--- PROOF OUTLINE:
--- This is a consequence of Stone Duality (SurjectionsAreFormalSurjections).
--- Since f : B∞ → B∞×B∞ is injective (f-injective above),
--- the induced map Sp(f) : Sp(B∞×B∞) → Sp(B∞) is surjective.
---
--- The proof goes through propositional completeness and requires showing
--- that the Stone Duality axiom implies surjectivity for injective morphisms.
---
--- DEPENDENCIES: f-injective, sd-axiom
-postulate
-  Sp-f-surjective : (h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁
+-- PROOF:
+-- By SurjectionsAreFormalSurjections axiom:
+-- f injective ⟺ Sp(f) surjective
+-- We have f-injective, so Sp(f) is surjective.
+
+-- First, we need to show that f-injective matches the isInjectiveBoolHom type
+f-is-injective-hom : isInjectiveBoolHom B∞-Booleω B∞×B∞-Booleω f
+f-is-injective-hom = f-injective
+
+-- Apply the SurjectionsAreFormalSurjections axiom
+Sp-f-surjective' : isSurjectiveSpHom B∞-Booleω B∞×B∞-Booleω f
+Sp-f-surjective' = injective→Sp-surjective B∞-Booleω B∞×B∞-Booleω f f-is-injective-hom
+
+-- Sp-hom B∞-Booleω B∞×B∞-Booleω f h' = h' ∘cr f = Sp-f h'
+-- So the types match directly
+Sp-f-surjective : (h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁
+Sp-f-surjective = Sp-f-surjective'
 
 -- Connection to ℕ∞: Sp(B∞) ≅ ℕ∞
 -- We already have SpB∞-to-ℕ∞ : Sp B∞-Booleω → ℕ∞
