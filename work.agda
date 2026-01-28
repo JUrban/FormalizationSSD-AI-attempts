@@ -3252,12 +3252,7 @@ openSigmaOpen P (α , P→∃ , ∃→P) Q Qopen = result
 -- Proof from tex: Closed propositions are Stone (as propositions), and
 -- the Σ of Stone spaces is Stone, so Σ P Q is Stone hence closed.
 --
--- TODO: This requires Stone space infrastructure (tex Cor 1629: closed props are Stone,
--- tex Cor 1776-1782: Σ of Stone over Stone is Stone, tex 1613-1619: truncation of Stone is closed).
--- The key difficulty: we cannot define the witness β : binarySequence without having
--- a concrete element of P, but isClosedProp requires exhibiting β uniformly.
--- The tex proof uses that closed propositions are Stone spaces, allowing this construction.
--- NOTE: This postulate is NOW PROVED via ClosedSigmaClosedDerived.closedSigmaClosed-derived
+-- This postulate is NOW PROVED via ClosedSigmaClosedDerived.closedSigmaClosed-derived
 -- defined at the end of this file (~line 8980). The postulate is kept here for now to avoid
 -- forward reference issues, but it is no longer a gap in the formalization.
 -- The proof uses: closedProp→hasStoneStr and InhabitedClosedSubSpaceClosed.
