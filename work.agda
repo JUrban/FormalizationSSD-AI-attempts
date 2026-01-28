@@ -11384,6 +11384,26 @@ module StoneAsClosedSubsetOfCantorModule where
            (λ { (inl a) → ∣ inl a ∣₁ , ∣ inl a ∣₁
               ; (inr (b , c)) → ∣ inr b ∣₁ , ∣ inr c ∣₁ })
 
+  -- ==========================================================================
+  -- Complement laws for closed subsets
+  -- ==========================================================================
+
+  -- A ∩ ¬A = Empty (law of non-contradiction)
+  -- Note: For closed A, ¬A = ClosedSubsetComplement A is open
+  -- So A ∩ ¬A means: closed A intersected with (closed complement of (open complement of A))
+  closedIntersectionComplement : (A : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetIntersection A (OpenSubsetComplement (ClosedSubsetComplement A))) x) → ⊥
+  closedIntersectionComplement A x (a , ¬¬a→⊥) = ¬¬a→⊥ (λ ¬a → ¬a a)
+
+  -- ==========================================================================
+  -- Complement laws for open subsets
+  -- ==========================================================================
+
+  -- A ∩ ¬A = Empty (law of non-contradiction for open)
+  openIntersectionComplement : (A : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetIntersection A (ClosedSubsetComplement (OpenSubsetComplement A))) x) → ⊥
+  openIntersectionComplement A x (a , ¬a) = ¬a a
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
