@@ -1363,6 +1363,38 @@ Sp-surjective→injective : (B C : Booleω) (g : BoolHom (fst B) (fst C)) →
   isSurjectiveSpHom B C g → isInjectiveBoolHom B C g
 Sp-surjective→injective B C g = snd (surj-formal-axiom B C g)
 
+-- =============================================================================
+-- Local Choice axiom (tex line 348-353, AxLocalChoice)
+-- =============================================================================
+-- For all B:Boole and type family P over Sp(B) such that Π_{s:Sp(B)} ||P(s)||,
+-- there merely exists some C:Boole and surjection q:Sp(C)→Sp(B) such that
+-- Π_{t:Sp(C)} P(q(t)).
+--
+-- This axiom allows us to "pull back" along a surjection to get untruncated
+-- witnesses. It is used for:
+-- 1. evens-odds-disjoint: to eliminate truncation in LLPO proof
+-- 2. ClosedInStoneIsStone: to extract decidable sequence from closed subset
+-- 3. Various other places where we need to eliminate propositional truncation
+
+-- Type family over a spectrum
+SpTypeFamily : Booleω → Type (ℓ-suc ℓ-zero)
+SpTypeFamily B = Sp B → Type ℓ-zero
+
+-- Surjectivity of a map between spectra (truncated)
+isSurjectiveSpMap : {B C : Booleω} → (Sp C → Sp B) → Type ℓ-zero
+isSurjectiveSpMap {B} {C} q = (h : Sp B) → ∥ Σ[ h' ∈ Sp C ] q h' ≡ h ∥₁
+
+-- The Local Choice axiom: given pointwise truncated inhabitants, there merely exists
+-- a covering Stone space where we have actual (untruncated) witnesses
+LocalChoiceAxiom : Type (ℓ-suc ℓ-zero)
+LocalChoiceAxiom = (B : Booleω) (P : SpTypeFamily B)
+  → ((s : Sp B) → ∥ P s ∥₁)
+  → ∥ Σ[ C ∈ Booleω ] Σ[ q ∈ (Sp C → Sp B) ]
+      (isSurjectiveSpMap {B} {C} q × ((t : Sp C) → P (q t))) ∥₁
+
+postulate
+  localChoice-axiom : LocalChoiceAxiom
+
 mp : MarkovPrinciple
 mp = mp-from-SD sd-axiom
 
@@ -6279,10 +6311,11 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
   -- when both hold (for zero h). The `go` function can return `inl` or `inr`
   -- depending on h'(1,0), which can vary for different lifts of zero h.
   --
-  -- PROPER FIX: Use the Local Choice axiom (tex line 350-353):
-  --   AxLocalChoice: For B : Boole and P over Sp(B) with Π_s ∥P(s)∥₁,
+  -- PROPER FIX: Use the Local Choice axiom (tex line 348-353, localChoice-axiom):
+  --   For B : Boole and P over Sp(B) with Π_s ∥P(s)∥₁,
   --   there merely exists C : Boole and surj q : Sp(C) → Sp(B) with Π_t P(q(t)).
   -- This would give us untruncated access to lifts, resolving the issue.
+  -- The axiom is now defined as localChoice-axiom (line ~1391).
   --
   -- For now, we postulate disjointness. This is sound because:
   -- 1. For non-zero h, disjointness is provable
@@ -8828,7 +8861,14 @@ module ClosedInStoneIsStoneModule where
 
   -- For S : Stone and A ⊆ S closed, the Σ-type Σ_{x:S} A(x) is Stone.
   -- This is a consequence of StoneClosedSubsets (tex 1648).
-  -- For now, we postulate this as it requires StoneClosedSubsets infrastructure.
+  --
+  -- The proof requires localChoice-axiom (tex 348) to extract a decidable
+  -- sequence from the closed subset:
+  -- 1. A closed means ∀x. ||∃β. (∀n. βn=0 ↔ A(x))||
+  -- 2. By localChoice-axiom, we can cover Sp(B) by Sp(C) and get actual witnesses
+  -- 3. This gives us the decidable sequence (dₙ) needed for the quotient
+  --
+  -- For now, we postulate this as it requires the full infrastructure.
   postulate
     ClosedInStoneIsStone : (S : Stone) → (A : fst S → hProp ℓ-zero)
                          → ((x : fst S) → isClosedProp (A x))
