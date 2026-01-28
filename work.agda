@@ -5977,6 +5977,78 @@ _∩L_ : List ℕ → List ℕ → List ℕ
 meet-joinForm-joinForm : List ℕ → List ℕ → B∞-NormalForm
 meet-joinForm-joinForm ns ms = joinForm (ns ∩L ms)
 
+-- Correctness proof for meet-joinForm-joinForm:
+-- We need: finJoin∞ ns ∧∞ finJoin∞ ms ≡ finJoin∞ (ns ∩L ms)
+
+-- Lemma: g_n ∧ (finite join ms) = g_n if n in ms, else 0
+-- We prove two cases separately to avoid issues with pattern matching
+
+g∞-meet-finJoin-in : (n : ℕ) (ms : List ℕ) → n ∈? ms ≡ true →
+  g∞ n ∧∞ finJoin∞ ms ≡ g∞ n
+g∞-meet-finJoin-in n [] p = ex-falso (true≢false (sym p))  -- n ∈? [] ≡ false ≠ true
+g∞-meet-finJoin-in n (m ∷ ms) p with discreteℕ n m
+... | yes n=m =
+  g∞ n ∧∞ (g∞ m ∨∞ finJoin∞ ms)
+    ≡⟨ B∞-BoolAlg.∧DistR∨ ⟩
+  (g∞ n ∧∞ g∞ m) ∨∞ (g∞ n ∧∞ finJoin∞ ms)
+    ≡⟨ cong₂ _∨∞_ (cong (g∞ n ∧∞_) (cong g∞ (sym n=m))) refl ⟩
+  (g∞ n ∧∞ g∞ n) ∨∞ (g∞ n ∧∞ finJoin∞ ms)
+    ≡⟨ cong (_∨∞ (g∞ n ∧∞ finJoin∞ ms)) B∞-BoolAlg.∧Idem ⟩
+  g∞ n ∨∞ (g∞ n ∧∞ finJoin∞ ms)
+    ≡⟨ B∞-BoolAlg.∨AbsorbL∧ ⟩
+  g∞ n ∎
+... | no n≠m =
+  -- n ≠ m, so p says n ∈? ms ≡ true (since first check failed, must be in rest)
+  g∞ n ∧∞ (g∞ m ∨∞ finJoin∞ ms)
+    ≡⟨ B∞-BoolAlg.∧DistR∨ ⟩
+  (g∞ n ∧∞ g∞ m) ∨∞ (g∞ n ∧∞ finJoin∞ ms)
+    ≡⟨ cong₂ _∨∞_ (gen-orthogonal n m n≠m) (g∞-meet-finJoin-in n ms p) ⟩
+  𝟘∞ ∨∞ g∞ n
+    ≡⟨ B∞-BoolAlg.∨IdL ⟩
+  g∞ n ∎
+
+g∞-meet-finJoin-notin : (n : ℕ) (ms : List ℕ) → n ∈? ms ≡ false →
+  g∞ n ∧∞ finJoin∞ ms ≡ 𝟘∞
+g∞-meet-finJoin-notin n [] _ =
+  g∞ n ∧∞ 𝟘∞         ≡⟨ B∞-BoolAlg.∧AnnihilR ⟩
+  𝟘∞ ∎
+g∞-meet-finJoin-notin n (m ∷ ms) p with discreteℕ n m
+... | yes n=m =
+  -- contradiction: if n = m, then n ∈? (m ∷ ms) reduces to true, but p says it's false
+  -- So p : true ≡ false, which is absurd
+  ex-falso (true≢false p)
+... | no n≠m =
+  -- n ≠ m and n ∈? ms ≡ false (from p)
+  g∞ n ∧∞ (g∞ m ∨∞ finJoin∞ ms)
+    ≡⟨ B∞-BoolAlg.∧DistR∨ ⟩
+  (g∞ n ∧∞ g∞ m) ∨∞ (g∞ n ∧∞ finJoin∞ ms)
+    ≡⟨ cong₂ _∨∞_ (gen-orthogonal n m n≠m) (g∞-meet-finJoin-notin n ms p) ⟩
+  𝟘∞ ∨∞ 𝟘∞
+    ≡⟨ B∞-BoolAlg.∨IdR ⟩
+  𝟘∞ ∎
+
+-- Main correctness lemma: finite join meet finite join = intersection join
+meet-joinForm-joinForm-correct : (ns ms : List ℕ) →
+  finJoin∞ ns ∧∞ finJoin∞ ms ≡ finJoin∞ (ns ∩L ms)
+meet-joinForm-joinForm-correct [] ms =
+  𝟘∞ ∧∞ finJoin∞ ms     ≡⟨ B∞-BoolAlg.∧AnnihilL ⟩
+  𝟘∞ ∎
+meet-joinForm-joinForm-correct (n ∷ ns) ms with n ∈? ms | inspect (n ∈?_) ms
+... | true | [ n∈ms ] =
+  (g∞ n ∨∞ finJoin∞ ns) ∧∞ finJoin∞ ms
+    ≡⟨ B∞-BoolAlg.∧DistL∨ ⟩
+  (g∞ n ∧∞ finJoin∞ ms) ∨∞ (finJoin∞ ns ∧∞ finJoin∞ ms)
+    ≡⟨ cong₂ _∨∞_ (g∞-meet-finJoin-in n ms n∈ms) (meet-joinForm-joinForm-correct ns ms) ⟩
+  g∞ n ∨∞ finJoin∞ (ns ∩L ms) ∎
+... | false | [ n∉ms ] =
+  (g∞ n ∨∞ finJoin∞ ns) ∧∞ finJoin∞ ms
+    ≡⟨ B∞-BoolAlg.∧DistL∨ ⟩
+  (g∞ n ∧∞ finJoin∞ ms) ∨∞ (finJoin∞ ns ∧∞ finJoin∞ ms)
+    ≡⟨ cong₂ _∨∞_ (g∞-meet-finJoin-notin n ms n∉ms) (meet-joinForm-joinForm-correct ns ms) ⟩
+  𝟘∞ ∨∞ finJoin∞ (ns ∩L ms)
+    ≡⟨ B∞-BoolAlg.∨IdL ⟩
+  finJoin∞ (ns ∩L ms) ∎
+
 -- =============================================================================
 -- normalFormExists status
 -- =============================================================================
