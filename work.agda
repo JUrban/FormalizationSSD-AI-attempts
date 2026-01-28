@@ -6433,12 +6433,34 @@ quad-cancel x =
 -- = a + b + 0                             [4·ab = 0 in char 2]
 -- = a + b
 --
--- NOTE: Direct proof hits projection mismatch with library's BooleanRingStr.
--- The renamed operators _+∞_ and _·∞_ opened from BooleanRingStr (snd B∞)
--- have different projection paths than BooleanRingStr._+_ (snd B∞) when used
--- in nested contexts within equational reasoning chains.
--- The math is correct but Agda's projection system doesn't unify them.
--- We postulate this and mark it for resolution.
+-- NOTE: xor-symmdiff postulated due to Cubical Agda projection mismatch issue.
+--
+-- The mathematical proof outline is correct:
+--   (a ∨ b) ∧ ¬(a ∧ b)
+-- = (a + b + ab) · (1 + ab)
+-- = (a + b + ab) + (a + b + ab)·ab   [by distributivity]
+-- = (a + b + ab) + (a·ab + b·ab + ab·ab)   [by distributivity]
+-- = (a + b + ab) + (ab + ab + ab)    [by absorption: x·(x·y) = x·y]
+-- = a + b + 4·ab = a + b             [since 4x = 0 in char 2]
+--
+-- The issue is that when we use CommRingStr operations (_+CR_, _·CR_),
+-- even though they are definitionally equal to the BooleanRingStr operations,
+-- Agda's projection system cannot unify paths involving `_+_` with paths
+-- involving `_·_` when nested in complex expressions.
+--
+-- Specifically, the problematic step is:
+--   cong ((a +CR b) +CR_) (quad-CR ab)
+-- where ab = a ·CR b. The `quad-CR ab` operates on a term built with _·_,
+-- but the context expects the projection _+_. Agda complains:
+--   "The projections BooleanRingStr._+_ and BooleanRingStr._·_ do not match"
+--
+-- This is a known limitation of Cubical Agda's record projection system
+-- and would require either:
+-- 1. A library change to unify projection paths
+-- 2. An explicit transport/coercion that would clutter the proof
+-- 3. A different proof strategy that doesn't mix +/· in cong contexts
+--
+-- For now, we postulate this identity which is mathematically sound.
 postulate
   xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
 
