@@ -9817,5 +9817,152 @@ module AlgebraCompactHausdorffCountablyPresentedModule where
       → ∥ Σ[ B ∈ Booleω ] ⟨ fst B ⟩ ≡ BoolAlgOfCHaus X ∥₁
 
 -- =============================================================================
+-- ConnectedComponentModule (tex 2138-2171)
+-- =============================================================================
+--
+-- For X:CHaus and x:X, define Q_x as the connected component of x:
+-- the intersection of all decidable D ⊆ X with x ∈ D.
+--
+-- Lemma 2144: Q_x is a countable intersection of decidable subsets
+-- Lemma 2156: If Q_x ⊆ U open, then exists decidable E with x ∈ E ⊆ U
+
+module ConnectedComponentModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open AlgebraCompactHausdorffCountablyPresentedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+
+  -- Decidable subset of CHaus
+  DecSubsetCHaus : CHaus → Type₀
+  DecSubsetCHaus X = fst X → Bool
+
+  -- Membership in decidable subset (parameterized by CHaus)
+  inDec : (X : CHaus) → fst X → DecSubsetCHaus X → Type₀
+  inDec X x D = D x ≡ true
+
+  -- Connected component of a point
+  -- Q_x = ∩ { D decidable | x ∈ D }
+  ConnectedComponent : (X : CHaus) → fst X → fst X → hProp ℓ-zero
+  ConnectedComponent X x y =
+    ((D : DecSubsetCHaus X) → inDec X x D → inDec X y D) ,
+    isPropΠ (λ D → isPropΠ (λ _ → isSetBool (D y) true))
+
+  -- Q_x is countable intersection of decidable subsets
+  -- Uses AlgebraCompactHausdorffCountablyPresented to enumerate 2^X
+  postulate
+    ConnectedComponentClosedInCompactHausdorff : (X : CHaus) (x : fst X)
+      → ∥ Σ[ D ∈ (ℕ → DecSubsetCHaus X) ]
+          ((y : fst X) → fst (ConnectedComponent X x y)
+            ≡ ((n : ℕ) → inDec X y (D n))) ∥₁
+
+  -- If Q_x ⊆ U (open), then exists decidable E with x ∈ E ⊆ U
+  postulate
+    ConnectedComponentSubOpenHasDecidableInbetween : (X : CHaus) (x : fst X)
+      → (U : fst X → hProp ℓ-zero) → ((y : fst X) → isOpenProp (U y))
+      → ((y : fst X) → fst (ConnectedComponent X x y) → fst (U y))
+      → ∥ Σ[ E ∈ DecSubsetCHaus X ] inDec X x E × ((y : fst X) → inDec X y E → fst (U y)) ∥₁
+
+-- =============================================================================
+-- ConnectedComponentConnectedModule (tex Lemma 2173)
+-- =============================================================================
+--
+-- For X:CHaus with x:X, any map Q_x → 2 is constant.
+
+module ConnectedComponentConnectedModule where
+  open CompactHausdorffModule
+  open ConnectedComponentModule
+  open CHausSeperationOfClosedByOpensModule
+
+  postulate
+    ConnectedComponentConnected : (X : CHaus) (x : fst X)
+      → (f : (Σ[ y ∈ fst X ] fst (ConnectedComponent X x y)) → Bool)
+      → (y z : Σ[ y ∈ fst X ] fst (ConnectedComponent X x y))
+      → f y ≡ f z
+
+-- =============================================================================
+-- StoneCompactHausdorffTotallyDisconnectedModule (tex Lemma 2186)
+-- =============================================================================
+--
+-- X:CHaus is Stone iff ∀x:X, Q_x = {x}
+
+module StoneCompactHausdorffTotallyDisconnectedModule where
+  open CompactHausdorffModule
+  open ConnectedComponentModule
+  open AlgebraCompactHausdorffCountablyPresentedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+
+  -- Q_x is singleton (totally disconnected)
+  isTotallyDisconnected : CHaus → Type₀
+  isTotallyDisconnected X =
+    (x : fst X) → (y : fst X) → fst (ConnectedComponent X x y) → x ≡ y
+
+  -- Stone iff totally disconnected CHaus
+  postulate
+    StoneCompactHausdorffTotallyDisconnected-forward : (S : Stone)
+      → isTotallyDisconnected (Stone→CHaus S)
+
+    StoneCompactHausdorffTotallyDisconnected-backward : (X : CHaus)
+      → isTotallyDisconnected X
+      → hasStoneStr (fst X)
+
+-- =============================================================================
+-- StoneSigmaClosedModule (tex Theorem 2214)
+-- =============================================================================
+--
+-- If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
+
+module StoneSigmaClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open SigmaCompactHausdorffModule
+  open StoneCompactHausdorffTotallyDisconnectedModule
+  open ConnectedComponentModule
+  open ConnectedComponentConnectedModule
+
+  -- Sigma type of Stone family
+  SigmaStoneType : (S : Stone) → (T : fst S → Stone) → Type₀
+  SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x)
+
+  -- Main theorem
+  postulate
+    StoneSigmaClosed : (S : Stone) (T : fst S → Stone)
+      → hasStoneStr (SigmaStoneType S T)
+
+  -- Derived: Sigma of Stone is Stone
+  StoneΣ : (S : Stone) → (T : fst S → Stone) → Stone
+  StoneΣ S T = SigmaStoneType S T , StoneSigmaClosed S T
+
+-- =============================================================================
+-- IntervalIsCHausModule (tex Theorem 2272)
+-- =============================================================================
+--
+-- The unit interval I = [0,1] is a compact Hausdorff space.
+-- Proof: cs : 2^ℕ → I is surjective (by LLPO)
+-- Equality cs(α) = cs(β) iff ∀n, |cs_n(α) - cs_n(β)| ≤ 1/2^n
+-- which is a countable conjunction of decidable props, hence closed.
+
+module IntervalIsCHausModule where
+  open CompactHausdorffModule
+  open CantorIsStoneModule
+
+  -- The unit interval (abstract, to be connected to Cubical.Data.Rationals or similar)
+  postulate
+    UnitInterval : Type₀
+    isSetUnitInterval : isSet UnitInterval
+
+  -- Cantor sum function cs : 2^ℕ → I
+  -- cs(α) = Σ_{n:ℕ} α(n) / 2^(n+1)
+  postulate
+    cs : CantorSpace → UnitInterval
+    cs-surjective : (x : UnitInterval) → ∥ Σ[ α ∈ CantorSpace ] cs α ≡ x ∥₁
+
+  -- Main theorem
+  postulate
+    IntervalIsCHaus : hasCHausStr UnitInterval
+
+  -- Derived: I as CHaus
+  IntervalCHaus : CHaus
+  IntervalCHaus = UnitInterval , IntervalIsCHaus
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
