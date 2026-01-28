@@ -7944,5 +7944,74 @@ f-injective-from-trunc x y fx=fy =
     b ∎
 
 -- =============================================================================
+-- POSTULATE STATUS SUMMARY
+-- =============================================================================
+--
+-- This section documents the status of all postulates in work.agda.
+--
+-- EXPECTED AXIOMS (from tex file - intended to be axioms):
+-- ---------------------------------------------------------
+-- 1. sd-axiom (line 1326): Stone Duality axiom - fundamental axiom
+-- 2. surj-formal-axiom (line 1354): Surjections are formal surjections - fundamental axiom
+-- 3. llpo (line 1601): LLPO axiom - this is the goal we are trying to prove
+--
+-- PROVED BUT KEPT AS POSTULATES (due to forward reference issues):
+-- -----------------------------------------------------------------
+-- 4. f-injective (line 4617): PROVED as f-injective-from-trunc (line 7905)
+--    - The proof uses truncated normal forms and does not require the untruncated version
+--    - See verification below
+--
+-- 5. BoolQuotientEquiv (line 61): PROVED in QuotientConclusions.agda
+--    - Postulated here only to avoid slow compilation (5+ minutes)
+--
+-- IDENTIFIED AS FALSE (needs different presentation):
+-- ----------------------------------------------------
+-- 6. B∞×B∞≃quotient (line 5307): FALSE with current presentation
+--    - The map φ : B∞×B∞-quotient → B∞×B∞ is NOT surjective
+--    - The element (1∞, 0∞) is not in the image of φ
+--    - Fix requires adding projection idempotent as generator
+--    - See documentation at line ~5280
+--
+-- REQUIRES ADDITIONAL INFRASTRUCTURE:
+-- ------------------------------------
+-- 7. closedSigmaClosed (line 3188): Requires Stone space infrastructure
+--
+-- PROVABLE WITH CANONICAL REPRESENTATIONS:
+-- -----------------------------------------
+-- 8. normalFormExists (line 4311): Uses untruncated sigma, needs nf-injective
+--    - normalFormExists-trunc (line 7849) is PROVED
+--    - For key theorems like f-injective, the truncated version suffices
+--
+-- 9. nf-injective (line 7875): Requires canonical list representation
+--    - Only needed for untruncated normalFormExists
+--    - Not needed for f-injective (uses truncated version)
+--
+-- LOCAL POSTULATES (within proof blocks):
+-- ----------------------------------------
+-- 10. evens-odds-disjoint (line 6246): Local to llpo-from-SD proof
+--     - This is a consequence of LLPO and the specific homomorphism h
+--
+-- =============================================================================
+-- Verification: f-injective equals f-injective-from-trunc
+-- =============================================================================
+--
+-- The postulated f-injective (line 4617) has the same type as the proved
+-- f-injective-from-trunc (line 7905). We verify this by showing they agree:
+
+f-injective-verified : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+f-injective-verified = f-injective-from-trunc
+
+-- This shows that f-injective could be replaced by f-injective-from-trunc
+-- if the file were reorganized to move the proof earlier.
+--
+-- The proof chain for f-injective-from-trunc:
+-- 1. interpretB∞-surjective (line 7794): interpretB∞ is surjective
+-- 2. normalFormExists-trunc (line 7849): truncated normal form existence
+-- 3. f-kernel-from-trunc (line 7896): kernel of f is trivial (using truncation)
+-- 4. f-injective-from-trunc (line 7905): final injectivity proof
+--
+-- None of these depend on the postulated f-injective, so the proof is valid.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
