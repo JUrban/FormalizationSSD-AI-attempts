@@ -4057,6 +4057,75 @@ f : BoolHom B∞ B∞×B∞
 f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
 
 -- =============================================================================
+-- f applied to generators (needed for f-on-finJoin)
+-- =============================================================================
+
+-- f applied to generators: fst f (g∞ n) = f-on-gen n
+-- This follows from f = QB.inducedHom which satisfies f ∘ π∞ = f-free
+opaque
+  unfolding QB.inducedHom
+  unfolding QB.quotientImageHom
+  f-eval : f ∘cr π∞ ≡ f-free
+  f-eval = QB.evalInduce {B = freeBA ℕ} {f = relB∞}
+             B∞×B∞ {g = f-free} {gfx=0 = f-free-on-relB∞}
+
+-- Key lemma: f on generators equals f-on-gen
+f-on-gen-eq : (n : ℕ) → fst f (g∞ n) ≡ f-on-gen n
+f-on-gen-eq n =
+  fst f (g∞ n)                        ≡⟨ refl ⟩
+  fst f (fst π∞ (gen n))              ≡⟨ funExt⁻ (cong fst f-eval) (gen n) ⟩
+  fst f-free (gen n)                  ≡⟨ funExt⁻ f-free-on-gen n ⟩
+  f-on-gen n ∎
+
+-- Helper: 2 ·ℕ k = k +ℕ k (multiplication computes this way)
+2·-is-double : (k : ℕ) → 2 ·ℕ k ≡ k +ℕ k
+2·-is-double k = cong (k +ℕ_) (+-zero k)
+
+-- f applied to odd generators gives right factor
+-- f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since parity(2k+1) = false
+f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
+f-odd-gen k =
+  fst f (g∞ (suc (2 ·ℕ k)))
+    ≡⟨ f-on-gen-eq (suc (2 ·ℕ k)) ⟩
+  f-on-gen (suc (2 ·ℕ k))
+    ≡⟨ f-on-gen-odd k ⟩
+  (𝟘∞ , g∞ k) ∎
+  where
+  -- Show f-on-gen (suc (2k)) computes to (0, g_k)
+  f-on-gen-odd : (k : ℕ) → f-on-gen (suc (2 ·ℕ k)) ≡ (𝟘∞ , g∞ k)
+  f-on-gen-odd k with parity (suc (2 ·ℕ k)) in par-eq
+  ... | false = cong (𝟘∞ ,_) (cong g∞ div2-eq)
+    where
+    div2-eq : div2 (suc (2 ·ℕ k)) ≡ k
+    div2-eq = subst (λ m → div2 (suc m) ≡ k) (sym (2·-is-double k)) (div2-double-suc k)
+  ... | true = ex-falso (false≢true (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (suc (2 ·ℕ k)) ≡ false
+    parity-eq = subst (λ m → parity (suc m) ≡ false) (sym (2·-is-double k)) (parity-double-suc k)
+
+-- f applied to even generators gives left factor
+-- f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since parity(2k) = true
+f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
+f-even-gen k =
+  fst f (g∞ (2 ·ℕ k))
+    ≡⟨ f-on-gen-eq (2 ·ℕ k) ⟩
+  f-on-gen (2 ·ℕ k)
+    ≡⟨ f-on-gen-even k ⟩
+  (g∞ k , 𝟘∞) ∎
+  where
+  -- Show f-on-gen (2k) computes to (g_k, 0)
+  f-on-gen-even : (k : ℕ) → f-on-gen (2 ·ℕ k) ≡ (g∞ k , 𝟘∞)
+  f-on-gen-even k with parity (2 ·ℕ k) in par-eq
+  ... | true = cong (_, 𝟘∞) (cong g∞ div2-eq)
+    where
+    div2-eq : div2 (2 ·ℕ k) ≡ k
+    div2-eq = subst (λ m → div2 m ≡ k) (sym (2·-is-double k)) (div2-double k)
+  ... | false = ex-falso (true≢false (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (2 ·ℕ k) ≡ true
+    parity-eq = subst (λ m → parity m ≡ true) (sym (2·-is-double k)) (parity-double k)
+
+-- =============================================================================
 -- Injectivity of f (tex line 567-583)
 -- =============================================================================
 
@@ -4254,12 +4323,72 @@ zero-join-right x =
   x ∎
 
 -- The key induction: f(finJoin∞ ns) = (finJoin∞ evens, finJoin∞ odds)
--- This requires f-even-gen and f-odd-gen which are defined later in the file.
--- We postulate it for now and will prove it after those lemmas.
-postulate
-  f-on-finJoin : (ns : List ℕ) →
-    let (evens , odds) = splitByParity ns
-    in fst f (finJoin∞ ns) ≡ (finJoin∞ evens , finJoin∞ odds)
+-- This uses f-even-gen and f-odd-gen which are now in scope.
+
+-- First, prove that isEven (from Cubical.Data.Nat) equals isEvenB (local definition)
+-- isEven uses mutual recursion: isEven zero = true, isEven (suc n) = isOdd n
+-- isEvenB uses direct recursion: isEvenB zero = true, isEvenB (suc zero) = false, isEvenB (suc (suc n)) = isEvenB n
+isEven≡isEvenB : (n : ℕ) → isEven n ≡ isEvenB n
+isEven≡isEvenB zero = refl
+isEven≡isEvenB (suc zero) = refl
+isEven≡isEvenB (suc (suc n)) = isEven≡isEvenB n
+
+-- Helper: relate isEven to 2· form for even case
+-- When isEven n = true, we have n = 2 · (half n)
+isEven→even : (n : ℕ) → isEven n ≡ true → 2 ·ℕ (half n) ≡ n
+isEven→even n prf = 2·half-even n (sym (isEven≡isEvenB n) ∙ prf)
+
+-- Helper: relate isEven to 2· form for odd case
+-- When isEven n = false, we have n = suc (2 · (half n))
+isEven→odd : (n : ℕ) → isEven n ≡ false → suc (2 ·ℕ (half n)) ≡ n
+isEven→odd n prf = suc-2·half-odd n (sym (isEven≡isEvenB n) ∙ prf)
+
+-- Helper: f on generator when even
+f-on-gen-even : (n : ℕ) → isEven n ≡ true → fst f (g∞ n) ≡ (g∞ (half n) , 𝟘∞)
+f-on-gen-even n even-prf =
+  fst f (g∞ n)                    ≡⟨ cong (λ m → fst f (g∞ m)) (sym (isEven→even n even-prf)) ⟩
+  fst f (g∞ (2 ·ℕ (half n)))      ≡⟨ f-even-gen (half n) ⟩
+  (g∞ (half n) , 𝟘∞) ∎
+
+-- Helper: f on generator when odd
+f-on-gen-odd : (n : ℕ) → isEven n ≡ false → fst f (g∞ n) ≡ (𝟘∞ , g∞ (half n))
+f-on-gen-odd n odd-prf =
+  fst f (g∞ n)                         ≡⟨ cong (λ m → fst f (g∞ m)) (sym (isEven→odd n odd-prf)) ⟩
+  fst f (g∞ (suc (2 ·ℕ (half n))))     ≡⟨ f-odd-gen (half n) ⟩
+  (𝟘∞ , g∞ (half n)) ∎
+
+-- Main theorem: f on finite join splits by parity
+f-on-finJoin : (ns : List ℕ) →
+  let (evens , odds) = splitByParity ns
+  in fst f (finJoin∞ ns) ≡ (finJoin∞ evens , finJoin∞ odds)
+f-on-finJoin [] = f-on-zero
+f-on-finJoin (n ∷ ns) with isEven n in parity-eq | splitByParity ns | f-on-finJoin ns
+... | true  | (evens , odds) | ih =
+  -- n is even: f(g_n ∨ rest) = f(g_n) ∨ f(rest) = (g_{half n}, 0) ∨ (evens', odds')
+  fst f (g∞ n ∨∞ finJoin∞ ns)
+    ≡⟨ f-pres-join (g∞ n) (finJoin∞ ns) ⟩
+  (fst f (g∞ n)) ∨× (fst f (finJoin∞ ns))
+    ≡⟨ cong₂ _∨×_ (f-on-gen-even n (builtin→Path-Bool parity-eq)) ih ⟩
+  (g∞ (half n) , 𝟘∞) ∨× (finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (g∞ (half n) ∨∞ finJoin∞ evens , 𝟘∞ ∨∞ finJoin∞ odds)
+    ≡⟨ cong (g∞ (half n) ∨∞ finJoin∞ evens ,_) (zero-join-left (finJoin∞ odds)) ⟩
+  (g∞ (half n) ∨∞ finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (finJoin∞ (half n ∷ evens) , finJoin∞ odds) ∎
+... | false | (evens , odds) | ih =
+  -- n is odd: f(g_n ∨ rest) = f(g_n) ∨ f(rest) = (0, g_{half n}) ∨ (evens', odds')
+  fst f (g∞ n ∨∞ finJoin∞ ns)
+    ≡⟨ f-pres-join (g∞ n) (finJoin∞ ns) ⟩
+  (fst f (g∞ n)) ∨× (fst f (finJoin∞ ns))
+    ≡⟨ cong₂ _∨×_ (f-on-gen-odd n (builtin→Path-Bool parity-eq)) ih ⟩
+  (𝟘∞ , g∞ (half n)) ∨× (finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (𝟘∞ ∨∞ finJoin∞ evens , g∞ (half n) ∨∞ finJoin∞ odds)
+    ≡⟨ cong (_, g∞ (half n) ∨∞ finJoin∞ odds) (zero-join-left (finJoin∞ evens)) ⟩
+  (finJoin∞ evens , g∞ (half n) ∨∞ finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (finJoin∞ evens , finJoin∞ (half n ∷ odds)) ∎
 
 -- The injectivity of f then follows:
 -- If fst f x = (0,0), then using normal form:
@@ -4481,71 +4610,6 @@ postulate
 --   h(f(g_{2k+1})) = h-left(0) = 0  (since f(g_{2k+1}) = (0, g_k))
 -- If h' gives inr(h-right), then for all k:
 --   h(f(g_{2k})) = h-right(0) = 0   (since f(g_{2k}) = (g_k, 0))
-
--- f applied to generators: fst f (g∞ n) = f-on-gen n
--- This follows from f = QB.inducedHom which satisfies f ∘ π∞ = f-free
-opaque
-  unfolding QB.inducedHom
-  unfolding QB.quotientImageHom
-  f-eval : f ∘cr π∞ ≡ f-free
-  f-eval = QB.evalInduce {B = freeBA ℕ} {f = relB∞}
-             B∞×B∞ {g = f-free} {gfx=0 = f-free-on-relB∞}
-
--- Key lemma: f on generators equals f-on-gen
-f-on-gen-eq : (n : ℕ) → fst f (g∞ n) ≡ f-on-gen n
-f-on-gen-eq n =
-  fst f (g∞ n)                        ≡⟨ refl ⟩
-  fst f (fst π∞ (gen n))              ≡⟨ funExt⁻ (cong fst f-eval) (gen n) ⟩
-  fst f-free (gen n)                  ≡⟨ funExt⁻ f-free-on-gen n ⟩
-  f-on-gen n ∎
-
--- Helper: 2 ·ℕ k = k +ℕ k (multiplication computes this way)
-2·-is-double : (k : ℕ) → 2 ·ℕ k ≡ k +ℕ k
-2·-is-double k = cong (k +ℕ_) (+-zero k)
-
--- f applied to odd generators gives right factor
--- f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since parity(2k+1) = false
-f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
-f-odd-gen k =
-  fst f (g∞ (suc (2 ·ℕ k)))
-    ≡⟨ f-on-gen-eq (suc (2 ·ℕ k)) ⟩
-  f-on-gen (suc (2 ·ℕ k))
-    ≡⟨ f-on-gen-odd k ⟩
-  (𝟘∞ , g∞ k) ∎
-  where
-  -- Show f-on-gen (suc (2k)) computes to (0, g_k)
-  f-on-gen-odd : (k : ℕ) → f-on-gen (suc (2 ·ℕ k)) ≡ (𝟘∞ , g∞ k)
-  f-on-gen-odd k with parity (suc (2 ·ℕ k)) in par-eq
-  ... | false = cong (𝟘∞ ,_) (cong g∞ div2-eq)
-    where
-    div2-eq : div2 (suc (2 ·ℕ k)) ≡ k
-    div2-eq = subst (λ m → div2 (suc m) ≡ k) (sym (2·-is-double k)) (div2-double-suc k)
-  ... | true = ex-falso (false≢true (sym parity-eq ∙ builtin→Path-Bool par-eq))
-    where
-    parity-eq : parity (suc (2 ·ℕ k)) ≡ false
-    parity-eq = subst (λ m → parity (suc m) ≡ false) (sym (2·-is-double k)) (parity-double-suc k)
-
--- f applied to even generators gives left factor
--- f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since parity(2k) = true
-f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
-f-even-gen k =
-  fst f (g∞ (2 ·ℕ k))
-    ≡⟨ f-on-gen-eq (2 ·ℕ k) ⟩
-  f-on-gen (2 ·ℕ k)
-    ≡⟨ f-on-gen-even k ⟩
-  (g∞ k , 𝟘∞) ∎
-  where
-  -- Show f-on-gen (2k) computes to (g_k, 0)
-  f-on-gen-even : (k : ℕ) → f-on-gen (2 ·ℕ k) ≡ (g∞ k , 𝟘∞)
-  f-on-gen-even k with parity (2 ·ℕ k) in par-eq
-  ... | true = cong (_, 𝟘∞) (cong g∞ div2-eq)
-    where
-    div2-eq : div2 (2 ·ℕ k) ≡ k
-    div2-eq = subst (λ m → div2 m ≡ k) (sym (2·-is-double k)) (div2-double k)
-  ... | false = ex-falso (true≢false (sym parity-eq ∙ builtin→Path-Bool par-eq))
-    where
-    parity-eq : parity (2 ·ℕ k) ≡ true
-    parity-eq = subst (λ m → parity m ≡ true) (sym (2·-is-double k)) (parity-double k)
 
 -- The LLPO derivation:
 -- Given α : ℕ∞ represented as h : Sp B∞-Booleω
