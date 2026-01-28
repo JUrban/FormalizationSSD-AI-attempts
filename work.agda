@@ -6851,7 +6851,7 @@ normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
 
 -- Import surjection composition from the Cubical library
 open import Cubical.Functions.Surjection using (isSurjection ; compSurjection ; _↠_)
-open import BooleanRing.FreeBooleanRing.freeBATerms using (includeBATermsSurj ; equalityFromEqualityOnGenerators)
+open import BooleanRing.FreeBooleanRing.freeBATerms using (includeBATermsSurj ; equalityFromEqualityOnGenerators ; includeBATerms-Tvar)
 
 -- The quotient map π∞ is surjective
 π∞-surj : isSurjection (fst π∞)
@@ -6952,10 +6952,42 @@ g∞-induced-fun-eq = cong fst g∞-induced-eq-π∞
 -- Since B∞-NormalForm is a set, we can eliminate from ∥_∥₁.
 
 -- We need: interpretB∞ t ≡ π∞-from-terms t
--- For this proof, we postulate this equality
--- (it follows from the opaque definitions but requires unfolding)
-postulate
-  interpretB∞-eq-composition : (t : freeBATerms ℕ) → interpretB∞ t ≡ π∞-from-terms t
+-- This follows by induction on terms, using:
+-- 1. includeBATerms-Tvar: fst includeBATermsSurj (Tvar n) ≡ generator n (proved in freeBATerms.agda)
+-- 2. Both interpretB∞ and π∞-from-terms preserve ring operations
+--
+-- The Tvar case is now proven using includeBATerms-Tvar.
+-- The inductive cases (constants, +, -, ·) require showing that fst includeBATermsSurj
+-- preserves ring operations, which follows from its definition as quotientHom ∘ includeTerm.
+-- For now, these cases are postulated; they can be proved by adding export lemmas to
+-- freeBATerms.agda similar to includeBATerms-Tvar.
+
+-- The equality proof by induction
+interpretB∞-eq-composition : (t : freeBATerms ℕ) → interpretB∞ t ≡ π∞-from-terms t
+interpretB∞-eq-composition (Tvar n) =
+  -- interpretB∞ (Tvar n) = g∞ n = fst π∞ (generator n) = fst π∞ (fst includeBATermsSurj (Tvar n))
+  -- Key: g∞ n = fst π∞ (generator n) by definition
+  -- Key: generator n = fst includeBATermsSurj (Tvar n) by includeBATerms-Tvar
+  g∞ n
+    ≡⟨ refl ⟩  -- g∞ n = fst π∞ (generator n) by definition
+  fst π∞ (generator n)
+    ≡⟨ cong (fst π∞) (sym (includeBATerms-Tvar n)) ⟩
+  fst π∞ (fst includeBATermsSurj (Tvar n)) ∎
+-- The remaining cases follow by induction using that both sides preserve operations.
+-- For now, we postulate them:
+interpretB∞-eq-composition (Tconst false) = interpretB∞-eq-Tconst-false
+  where postulate interpretB∞-eq-Tconst-false : 𝟘∞ ≡ π∞-from-terms (Tconst false)
+interpretB∞-eq-composition (Tconst true) = interpretB∞-eq-Tconst-true
+  where postulate interpretB∞-eq-Tconst-true : 𝟙∞ ≡ π∞-from-terms (Tconst true)
+interpretB∞-eq-composition (t +T s) =
+  cong₂ _+∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ∙ interpretB∞-eq-plus t s
+  where postulate interpretB∞-eq-plus : (t s : freeBATerms ℕ) → π∞-from-terms t +∞ π∞-from-terms s ≡ π∞-from-terms (t +T s)
+interpretB∞-eq-composition (-T t) =
+  cong -∞_ (interpretB∞-eq-composition t) ∙ interpretB∞-eq-neg t
+  where postulate interpretB∞-eq-neg : (t : freeBATerms ℕ) → -∞ π∞-from-terms t ≡ π∞-from-terms (-T t)
+interpretB∞-eq-composition (t ·T s) =
+  cong₂ _·∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ∙ interpretB∞-eq-times t s
+  where postulate interpretB∞-eq-times : (t s : freeBATerms ℕ) → π∞-from-terms t ·∞ π∞-from-terms s ≡ π∞-from-terms (t ·T s)
 
 -- The surjectivity proof uses composition of surjections
 interpretB∞-surjective : isSurjection interpretB∞
