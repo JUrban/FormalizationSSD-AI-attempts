@@ -10895,6 +10895,57 @@ module StoneAsClosedSubsetOfCantorModule where
     (funExt (λ x → Σ≡Prop (λ _ → isPropIsProp) (doubleComplementClosed A x)))
     (isProp→PathP (λ _ → isPropΠ (λ _ → StoneEqualityClosedModule.isPropIsClosedProp)) _ _)
 
+  -- Preimage of an open subset under a Cantor → Cantor map
+  OpenSubsetPreimageCantor : (f : CantorSpace → CantorSpace)
+    → OpenSubsetOfCantor → OpenSubsetOfCantor
+  OpenSubsetPreimageCantor f (A , Aopen) =
+    (λ x → A (f x)) , (λ x → Aopen (f x))
+
+  -- Preimage preserves open intersection
+  preimageOpenIntersection : (f : CantorSpace → CantorSpace)
+    → (A B : OpenSubsetOfCantor)
+    → OpenSubsetPreimageCantor f (OpenSubsetIntersection A B)
+      ≡ OpenSubsetIntersection (OpenSubsetPreimageCantor f A) (OpenSubsetPreimageCantor f B)
+  preimageOpenIntersection f A B = refl
+
+  -- Preimage preserves open union
+  preimageOpenUnion : (f : CantorSpace → CantorSpace)
+    → (A B : OpenSubsetOfCantor)
+    → OpenSubsetPreimageCantor f (OpenSubsetUnion A B)
+      ≡ OpenSubsetUnion (OpenSubsetPreimageCantor f A) (OpenSubsetPreimageCantor f B)
+  preimageOpenUnion f A B = refl
+
+  -- Preimage commutes with complement (closed to open)
+  preimageComplementClosed : (f : CantorSpace → CantorSpace)
+    → (A : ClosedSubsetOfCantor)
+    → OpenSubsetPreimageCantor f (ClosedSubsetComplement A)
+      ≡ ClosedSubsetComplement (ClosedSubsetPreimageCantor f A)
+  preimageComplementClosed f A = refl
+
+  -- Preimage commutes with complement (open to closed)
+  preimageComplementOpen : (f : CantorSpace → CantorSpace)
+    → (A : OpenSubsetOfCantor)
+    → ClosedSubsetPreimageCantor f (OpenSubsetComplement A)
+      ≡ OpenSubsetComplement (OpenSubsetPreimageCantor f A)
+  preimageComplementOpen f A = refl
+
+  -- Empty and full subsets are preserved by preimage (trivially)
+  preimageEmpty : (f : CantorSpace → CantorSpace)
+    → ClosedSubsetPreimageCantor f EmptyClosedSubset ≡ EmptyClosedSubset
+  preimageEmpty f = refl
+
+  preimageFull : (f : CantorSpace → CantorSpace)
+    → ClosedSubsetPreimageCantor f FullClosedSubset ≡ FullClosedSubset
+  preimageFull f = refl
+
+  preimageOpenEmpty : (f : CantorSpace → CantorSpace)
+    → OpenSubsetPreimageCantor f EmptyOpenSubset ≡ EmptyOpenSubset
+  preimageOpenEmpty f = refl
+
+  preimageOpenFull : (f : CantorSpace → CantorSpace)
+    → OpenSubsetPreimageCantor f FullOpenSubset ≡ FullOpenSubset
+  preimageOpenFull f = refl
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
@@ -12053,6 +12104,10 @@ module BrouwerFixedPointTheoremModule where
 -- - deMorganClosedUnion: ¬(A ∪ B) ≡ ¬A ∩ ¬B (full path equivalence)
 -- - deMorganClosedIntersection-backward: ¬A ∨ ¬B → ¬(A ∧ B) (constructive direction)
 -- - complementInvolution: OpenSubsetComplement ∘ ClosedSubsetComplement ≡ id
+-- - OpenSubsetPreimageCantor: functorial preimage for open subsets
+-- - preimageOpenIntersection, preimageOpenUnion: preimage preserves open ops
+-- - preimageComplementClosed, preimageComplementOpen: preimage commutes with complement
+-- - preimageEmpty, preimageFull, preimageOpenEmpty, preimageOpenFull: boundary preservation
 --
 -- INTERVAL TOPOLOGY (tex 2605-2762):
 -- - Unit interval I is CHaus (IntervalIsCHaus)
