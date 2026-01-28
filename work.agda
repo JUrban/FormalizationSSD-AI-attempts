@@ -6390,5 +6390,74 @@ postulate
 -- from the spectrum approach using sd-axiom and surj-formal-axiom.
 
 -- =============================================================================
+-- Normal Form Operations for normalizeTerm
+-- =============================================================================
+
+-- Symmetric case: meet of meetNegForm with joinForm
+-- Uses commutativity of meet: finMeetNeg∞ ns ∧ finJoin∞ ms = finJoin∞ ms ∧ finMeetNeg∞ ns
+meet-meetNegForm-joinForm-correct : (ns ms : List ℕ) →
+  finMeetNeg∞ ns ∧∞ finJoin∞ ms ≡ finJoin∞ (ms ∖L ns)
+meet-meetNegForm-joinForm-correct ns ms =
+  finMeetNeg∞ ns ∧∞ finJoin∞ ms
+    ≡⟨ BooleanRingStr.·Comm (snd B∞) (finMeetNeg∞ ns) (finJoin∞ ms) ⟩
+  finJoin∞ ms ∧∞ finMeetNeg∞ ns
+    ≡⟨ meet-joinForm-meetNegForm-correct ms ns ⟩
+  finJoin∞ (ms ∖L ns) ∎
+
+-- =============================================================================
+-- XOR operation on normal forms
+-- =============================================================================
+
+-- XOR of two normal forms: returns a normal form
+xor-nf : B∞-NormalForm → B∞-NormalForm → B∞-NormalForm
+xor-nf (joinForm ns) (joinForm ms) = joinForm (ns △L ms)
+xor-nf (joinForm ns) (meetNegForm ms) = meetNegForm (ns △L ms)
+xor-nf (meetNegForm ns) (joinForm ms) = meetNegForm (ms △L ns)
+xor-nf (meetNegForm ns) (meetNegForm ms) = joinForm (ns △L ms)
+
+-- Correctness of xor-nf
+xor-nf-correct : (nf1 nf2 : B∞-NormalForm) → ⟦ xor-nf nf1 nf2 ⟧nf ≡ ⟦ nf1 ⟧nf +∞ ⟦ nf2 ⟧nf
+xor-nf-correct (joinForm ns) (joinForm ms) = sym (xor-joinForm-joinForm-correct ns ms)
+xor-nf-correct (joinForm ns) (meetNegForm ms) = sym (xor-joinForm-meetNegForm-correct ns ms)
+xor-nf-correct (meetNegForm ns) (joinForm ms) = sym (xor-meetNegForm-joinForm-correct ns ms)
+xor-nf-correct (meetNegForm ns) (meetNegForm ms) = sym (xor-meetNegForm-meetNegForm-correct ns ms)
+
+-- =============================================================================
+-- MEET operation on normal forms
+-- =============================================================================
+
+-- Meet of two normal forms: returns a normal form
+meet-nf : B∞-NormalForm → B∞-NormalForm → B∞-NormalForm
+meet-nf (joinForm ns) (joinForm ms) = joinForm (ns ∩L ms)
+meet-nf (joinForm ns) (meetNegForm ms) = joinForm (ns ∖L ms)
+meet-nf (meetNegForm ns) (joinForm ms) = joinForm (ms ∖L ns)
+meet-nf (meetNegForm ns) (meetNegForm ms) = meetNegForm (ns ++ ms)
+
+-- Correctness of meet-nf
+meet-nf-correct : (nf1 nf2 : B∞-NormalForm) → ⟦ meet-nf nf1 nf2 ⟧nf ≡ ⟦ nf1 ⟧nf ∧∞ ⟦ nf2 ⟧nf
+meet-nf-correct (joinForm ns) (joinForm ms) = sym (meet-joinForm-joinForm-correct ns ms)
+meet-nf-correct (joinForm ns) (meetNegForm ms) = sym (meet-joinForm-meetNegForm-correct ns ms)
+meet-nf-correct (meetNegForm ns) (joinForm ms) = sym (meet-meetNegForm-joinForm-correct ns ms)
+meet-nf-correct (meetNegForm ns) (meetNegForm ms) = sym (meet-meetNegForm-correct ns ms)
+
+-- =============================================================================
+-- normalizeTerm function
+-- =============================================================================
+
+-- Import the term type and surjection
+open import BooleanRing.FreeBooleanRing.SurjectiveTerms using (TermsOf_[_]; Tvar; Tconst; _+T_; -T_; _·T_; includeTerm)
+open import BooleanRing.FreeBooleanRing.freeBATerms using (freeBATerms; includeBATermsSurj)
+
+-- Normalize a term to a normal form
+-- This maps each term constructor to the appropriate normal form operation
+normalizeTerm : freeBATerms ℕ → B∞-NormalForm
+normalizeTerm (Tvar n) = joinForm (n ∷ [])  -- generator g_n
+normalizeTerm (Tconst false) = joinForm []  -- 0
+normalizeTerm (Tconst true) = meetNegForm []  -- 1
+normalizeTerm (t +T s) = xor-nf (normalizeTerm t) (normalizeTerm s)
+normalizeTerm (-T t) = neg-nf (normalizeTerm t)
+normalizeTerm (t ·T s) = meet-nf (normalizeTerm t) (normalizeTerm s)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
