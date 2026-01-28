@@ -884,16 +884,134 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
     decode∘encode : (x : ℕ ⊎ ℕ) → decode (encode x) ≡ x
     decode∘encode = Iso.ret ℕ⊎ℕ≅ℕ
 
-    -- To prove the ideals are equal, we show that membership is equivalent
-    -- Forward: h n is in the ideal iff (⊎.rec f₀ g) (decode n) is
-    --   since h n = (⊎.rec f₀ g) (decode n), and decode n : ℕ ⊎ ℕ
-    -- Backward: (⊎.rec f₀ g) x is in the ideal iff h (encode x) is
-    --   since (⊎.rec f₀ g) x = (⊎.rec f₀ g) (decode (encode x)) = h (encode x)
+    -- To prove the ideals are equal, we construct an equivalence via the universal property
+    -- Key: h = (⊎.rec f₀ g) ∘ decode, so:
+    -- - h n ≡ (⊎.rec f₀ g) (decode n), means h n is 0 in the rec-quotient
+    -- - (⊎.rec f₀ g) x ≡ h (encode x), means rec x is 0 in the h-quotient
 
-    -- For now, we use a postulate since proving ideal equality requires
-    -- induction on the generatedIdeal HIT constructors
-    postulate
-      step3-h-eq : freeBA ℕ QB./Im h ≡ freeBA ℕ QB./Im (⊎.rec f₀ g)
+    -- The quotient ring freeBA ℕ /Im rec
+    rec-quotient : BooleanRing ℓ-zero
+    rec-quotient = freeBA ℕ QB./Im (⊎.rec f₀ g)
+
+    -- The quotient ring freeBA ℕ /Im h
+    h-quotient : BooleanRing ℓ-zero
+    h-quotient = freeBA ℕ QB./Im h
+
+    -- Quotient maps
+    π-rec : BoolHom (freeBA ℕ) rec-quotient
+    π-rec = QB.quotientImageHom
+
+    π-h : BoolHom (freeBA ℕ) h-quotient
+    π-h = QB.quotientImageHom
+
+    -- Forward direction: freeBA ℕ /Im h → freeBA ℕ /Im rec
+    -- π-rec (h n) = π-rec ((⊎.rec f₀ g) (decode n)) = 0
+    π-rec-sends-h-to-0 : (n : ℕ) → π-rec $cr (h n) ≡ BooleanRingStr.𝟘 (snd rec-quotient)
+    π-rec-sends-h-to-0 n =
+      π-rec $cr (h n)
+        ≡⟨ cong (π-rec $cr_) (sym (rec-of-decode n)) ⟩
+      π-rec $cr ((⊎.rec f₀ g) (decode n))
+        ≡⟨ QB.zeroOnImage {B = freeBA ℕ} {f = ⊎.rec f₀ g} (decode n) ⟩
+      BooleanRingStr.𝟘 (snd rec-quotient) ∎
+
+    step3-forward-hom : BoolHom h-quotient rec-quotient
+    step3-forward-hom = QB.inducedHom {B = freeBA ℕ} {f = h} rec-quotient π-rec π-rec-sends-h-to-0
+
+    -- Backward direction: freeBA ℕ /Im rec → freeBA ℕ /Im h
+    -- π-h ((⊎.rec f₀ g) x) = π-h (h (encode x)) = 0
+    -- Need: (⊎.rec f₀ g) x ≡ h (encode x)
+    rec-eq-h-encode : (x : ℕ ⊎ ℕ) → (⊎.rec f₀ g) x ≡ h (encode x)
+    rec-eq-h-encode x =
+      (⊎.rec f₀ g) x
+        ≡⟨ cong (⊎.rec f₀ g) (sym (decode∘encode x)) ⟩
+      (⊎.rec f₀ g) (decode (encode x))
+        ≡⟨ rec-of-decode (encode x) ⟩
+      h (encode x) ∎
+
+    π-h-sends-rec-to-0 : (x : ℕ ⊎ ℕ) → π-h $cr ((⊎.rec f₀ g) x) ≡ BooleanRingStr.𝟘 (snd h-quotient)
+    π-h-sends-rec-to-0 x =
+      π-h $cr ((⊎.rec f₀ g) x)
+        ≡⟨ cong (π-h $cr_) (rec-eq-h-encode x) ⟩
+      π-h $cr (h (encode x))
+        ≡⟨ QB.zeroOnImage {B = freeBA ℕ} {f = h} (encode x) ⟩
+      BooleanRingStr.𝟘 (snd h-quotient) ∎
+
+    step3-backward-hom : BoolHom rec-quotient h-quotient
+    step3-backward-hom = QB.inducedHom {B = freeBA ℕ} {f = ⊎.rec f₀ g} h-quotient π-h π-h-sends-rec-to-0
+
+    -- Functions
+    step3-forward : ⟨ h-quotient ⟩ → ⟨ rec-quotient ⟩
+    step3-forward = fst step3-forward-hom
+
+    step3-backward : ⟨ rec-quotient ⟩ → ⟨ h-quotient ⟩
+    step3-backward = fst step3-backward-hom
+
+    -- Prove inverses using evalInduce and quotientImageHomEpi
+    -- Similar to step1-equiv proofs
+
+    step3-forward-eval : step3-forward-hom ∘cr π-h ≡ π-rec
+    step3-forward-eval = QB.evalInduce {B = freeBA ℕ} {f = h} rec-quotient {π-rec} {π-rec-sends-h-to-0}
+
+    step3-backward-eval : step3-backward-hom ∘cr π-rec ≡ π-h
+    step3-backward-eval = QB.evalInduce {B = freeBA ℕ} {f = ⊎.rec f₀ g} h-quotient {π-h} {π-h-sends-rec-to-0}
+
+    -- For backward∘forward on h-quotient, we need to show (via π-h):
+    -- step3-backward (step3-forward (π-h x)) = π-h x
+    -- step3-backward (π-rec x) = π-h x  (using step3-forward-eval)
+    -- This is step3-backward-eval!
+
+    h-quotient-isSet : isSet ⟨ h-quotient ⟩
+    h-quotient-isSet = BooleanRingStr.is-set (snd h-quotient)
+
+    rec-quotient-isSet : isSet ⟨ rec-quotient ⟩
+    rec-quotient-isSet = BooleanRingStr.is-set (snd rec-quotient)
+
+    step3-backward∘forward-on-π : (x : ⟨ freeBA ℕ ⟩) → step3-backward (step3-forward (fst π-h x)) ≡ fst π-h x
+    step3-backward∘forward-on-π x =
+      step3-backward (step3-forward (fst π-h x))
+        ≡⟨ cong step3-backward (cong (λ f → fst f x) step3-forward-eval) ⟩
+      step3-backward (fst π-rec x)
+        ≡⟨ cong (λ f → fst f x) step3-backward-eval ⟩
+      fst π-h x ∎
+
+    step3-backward∘forward-ext : (step3-backward ∘ step3-forward) ∘ fst π-h ≡ (λ x → x) ∘ fst π-h
+    step3-backward∘forward-ext = funExt step3-backward∘forward-on-π
+
+    step3-backward∘forward : (x : ⟨ h-quotient ⟩) → step3-backward (step3-forward x) ≡ x
+    step3-backward∘forward = funExt⁻ (QB.quotientImageHomEpi {B = freeBA ℕ} {f = h} (⟨ h-quotient ⟩ , h-quotient-isSet) step3-backward∘forward-ext)
+
+    -- Similarly for forward∘backward
+    step3-forward∘backward-on-π : (y : ⟨ freeBA ℕ ⟩) → step3-forward (step3-backward (fst π-rec y)) ≡ fst π-rec y
+    step3-forward∘backward-on-π y =
+      step3-forward (step3-backward (fst π-rec y))
+        ≡⟨ cong step3-forward (cong (λ f → fst f y) step3-backward-eval) ⟩
+      step3-forward (fst π-h y)
+        ≡⟨ cong (λ f → fst f y) step3-forward-eval ⟩
+      fst π-rec y ∎
+
+    step3-forward∘backward-ext : (step3-forward ∘ step3-backward) ∘ fst π-rec ≡ (λ y → y) ∘ fst π-rec
+    step3-forward∘backward-ext = funExt step3-forward∘backward-on-π
+
+    step3-forward∘backward : (y : ⟨ rec-quotient ⟩) → step3-forward (step3-backward y) ≡ y
+    step3-forward∘backward = funExt⁻ (QB.quotientImageHomEpi {B = freeBA ℕ} {f = ⊎.rec f₀ g} (⟨ rec-quotient ⟩ , rec-quotient-isSet) step3-forward∘backward-ext)
+
+    -- Build the Iso
+    step3-iso : Iso ⟨ h-quotient ⟩ ⟨ rec-quotient ⟩
+    Iso.fun step3-iso = step3-forward
+    Iso.inv step3-iso = step3-backward
+    Iso.sec step3-iso = step3-forward∘backward
+    Iso.ret step3-iso = step3-backward∘forward
+
+    -- Build BooleanRingEquiv
+    step3-equiv-fun : ⟨ h-quotient ⟩ ≃ ⟨ rec-quotient ⟩
+    step3-equiv-fun = isoToEquiv step3-iso
+
+    step3-equiv' : BooleanRingEquiv h-quotient rec-quotient
+    step3-equiv' = step3-equiv-fun , snd step3-forward-hom
+
+    -- Convert to path via BoolRingPath
+    step3-h-eq : freeBA ℕ QB./Im h ≡ freeBA ℕ QB./Im (⊎.rec f₀ g)
+    step3-h-eq = equivFun (BoolRingPath h-quotient rec-quotient) step3-equiv'
 
     step3-equiv : BooleanRingEquiv (freeBA ℕ QB./Im h) (freeBA ℕ QB./Im (⊎.rec f₀ g))
     step3-equiv = invEq (BoolRingPath _ _) step3-h-eq
