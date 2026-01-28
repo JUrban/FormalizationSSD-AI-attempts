@@ -7084,10 +7084,36 @@ isSetB∞-NormalForm = Discrete→isSet discreteNF
 -- Step 5: normalFormExists from surjectivity
 -- To eliminate from ∥_∥₁ into a sigma type, we need the sigma type to be a proposition.
 -- This requires showing that normal forms are unique (i.e., ⟦_⟧nf is injective).
--- For now, we use a different approach: show that the sigma type is a proposition
--- by postulating uniqueness of normal forms.
+--
+-- ALTERNATIVE APPROACH: Use truncated normal forms.
+-- For uses like f-injective, the target is a proposition, so we can use PT.rec.
 
--- Postulate: normal forms are unique (⟦_⟧nf is injective)
+-- Truncated version: every element has some normal form (truncated)
+normalFormExists-trunc : (x : ⟨ B∞ ⟩) → ∥ Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x ∥₁
+normalFormExists-trunc x = PT.map
+  (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
+  (interpretB∞-surjective x)
+
+-- For the untruncated version, we need nf-injective.
+-- This says that ⟦_⟧nf is injective: if two normal forms have the same interpretation,
+-- they must be equal as normal forms.
+--
+-- PROOF IDEA for nf-injective:
+-- The key is that generators are orthogonal: g_m · g_n = 0 for m ≠ n
+-- This means:
+-- 1. For joinForm ns: finJoin∞ ns determines ns (as a set)
+--    - g_n ∧ finJoin∞ ns = g_n iff n ∈ ns (due to orthogonality)
+-- 2. For meetNegForm ns: finMeetNeg∞ ns determines ns (as a set)
+--    - Similar argument using ¬g_n
+-- 3. joinForm and meetNegForm are distinguishable (except trivial cases)
+--
+-- However, the issue is that List ℕ is not a set representation - different lists
+-- can represent the same set. For true injectivity, we'd need canonical lists.
+--
+-- For now, we postulate this and note that the proof would require either:
+-- (a) Using sorted/canonical lists, or
+-- (b) Quotienting by list permutation/deduplication, or
+-- (c) Using finite subsets (FinSet) instead of lists
 postulate
   nf-injective : (nf₁ nf₂ : B∞-NormalForm) → ⟦ nf₁ ⟧nf ≡ ⟦ nf₂ ⟧nf → nf₁ ≡ nf₂
 
@@ -7100,6 +7126,65 @@ normalFormExists-from-surj : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ]
 normalFormExists-from-surj x = PT.rec (isProp-NormalForm-fiber x)
   (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
   (interpretB∞-surjective x)
+
+-- =============================================================================
+-- f-kernel using truncated normal forms
+-- =============================================================================
+--
+-- KEY INSIGHT: We don't need untruncated normal forms for f-kernel!
+-- The result (x ≡ 𝟘∞) is a proposition, so we can use PT.rec with truncated forms.
+
+-- f-kernel: if f(x) = (0,0), then x = 0
+-- This is the key lemma for f-injective
+f-kernel-from-trunc : (x : ⟨ B∞ ⟩) → fst f x ≡ (𝟘∞ , 𝟘∞) → x ≡ 𝟘∞
+f-kernel-from-trunc x fx=0 = PT.rec (BooleanRingStr.is-set (snd B∞) x 𝟘∞)
+  (λ pair → let nf = fst pair
+                eq = snd pair
+            in sym eq ∙ f-kernel-normalForm nf (cong (fst f) eq ∙ fx=0))
+  (normalFormExists-trunc x)
+
+-- f-injective using the truncated approach
+-- This proves: f(x) = f(y) → x = y
+f-injective-from-trunc : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+f-injective-from-trunc x y fx=fy =
+  let -- f is a ring homomorphism, so f(x - y) = f(x) - f(y) = 0
+      -- In Boolean rings, x - y = x + y (since -x = x)
+      xy-diff : ⟨ B∞ ⟩
+      xy-diff = x +∞ y
+
+      f-xy-diff : fst f xy-diff ≡ (𝟘∞ , 𝟘∞)
+      f-xy-diff =
+        fst f (x +∞ y)
+          ≡⟨ f-pres+ x y ⟩
+        (fst f x) +× (fst f y)
+          ≡⟨ cong (_+× (fst f y)) fx=fy ⟩
+        (fst f y) +× (fst f y)
+          ≡⟨ char2-B∞×B∞ (fst f y) ⟩
+        (𝟘∞ , 𝟘∞) ∎
+
+      -- Using f-kernel-from-trunc: f(x+y) = 0 → x+y = 0
+      xy=0 : xy-diff ≡ 𝟘∞
+      xy=0 = f-kernel-from-trunc xy-diff f-xy-diff
+
+      -- In Boolean rings, x + y = 0 implies x = y
+      x=y : x ≡ y
+      x=y = BooleanRing-xor-eq-to-eq' x y xy=0
+
+  in x=y
+  where
+  BooleanRing-xor-eq-to-eq' : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ 𝟘∞ → a ≡ b
+  BooleanRing-xor-eq-to-eq' a b ab=0 =
+    a
+      ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) a) ⟩
+    a +∞ 𝟘∞
+      ≡⟨ cong (a +∞_) (sym (char2-B∞ b)) ⟩
+    a +∞ (b +∞ b)
+      ≡⟨ BooleanRingStr.+Assoc (snd B∞) a b b ⟩
+    (a +∞ b) +∞ b
+      ≡⟨ cong (_+∞ b) ab=0 ⟩
+    𝟘∞ +∞ b
+      ≡⟨ BooleanRingStr.+IdL (snd B∞) b ⟩
+    b ∎
 
 -- =============================================================================
 -- End of current formalization
