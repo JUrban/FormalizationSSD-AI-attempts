@@ -8188,5 +8188,216 @@ module ClosedPropAsSpectrum where
   closedPropAsSpectrum α = all-false→Sp α , Sp→all-false α
 
 -- =============================================================================
+-- PropositionsClosedIffStone (tex Corollary 1628)
+-- =============================================================================
+--
+-- A proposition P is closed if and only if it is a Stone space.
+--
+-- Forward (closed → Stone):
+-- If P is closed, exhibited by α, then P ↔ (∀n. αn = false)
+-- By ClosedPropAsSpectrum: (∀n. αn = false) ↔ Sp(BoolBR /Im α)
+-- By quotientPreservesBooleω: BoolBR /Im α has has-Boole-ω' structure
+-- Therefore P ↔ Sp(Booleω), so P is Stone
+--
+-- Backward (Stone → closed):
+-- If P is Stone, it equals Sp(B) for some Booleω B.
+-- Since P is a proposition, ||Sp(B)|| = Sp(B) = P.
+-- By TruncationStoneClosed: ||Sp(B)|| is closed (requires more infrastructure).
+-- This direction requires showing that empty spectrum ↔ 0=1 in the ring.
+
+module ClosedPropIffStone where
+  open import Axioms.StoneDuality using (hasStoneStr; Stone; SpGeneralBooleanRing; isSetSp)
+  open ClosedPropAsSpectrum
+
+  -- A closed proposition has Stone structure
+  -- We show that if P ↔ (∀n. αn = false), then P ↔ Sp(BoolBR /Im α)
+  -- and BoolBR /Im α is a Booleω
+
+  closedProp→hasStoneStr : (P : hProp ℓ-zero) → isClosedProp P → hasStoneStr (fst P)
+  closedProp→hasStoneStr P Pclosed = Booleω-P , Sp-eq
+    where
+    -- Extract the witness α from the closed structure
+    α : binarySequence
+    α = fst Pclosed
+
+    -- P ↔ (∀n. αn = false)
+    P→all-false : fst P → ((n : ℕ) → α n ≡ false)
+    P→all-false = fst (snd Pclosed)
+
+    all-false→P : ((n : ℕ) → α n ≡ false) → fst P
+    all-false→P = snd (snd Pclosed)
+
+    -- The quotient ring
+    B-quotient : BooleanRing ℓ-zero
+    B-quotient = BoolBR-quotient α
+
+    -- The spectrum of the quotient
+    Sp-quotient : Type ℓ-zero
+    Sp-quotient = BoolHom B-quotient BoolBR
+
+    -- From ClosedPropAsSpectrum: (∀n. αn = false) ↔ Sp(BoolBR /Im α)
+    all-false↔Sp : ((n : ℕ) → α n ≡ false) ↔ Sp-quotient
+    all-false↔Sp = closedPropAsSpectrum α
+
+    -- P ↔ Sp-quotient (composing the biconditionals)
+    P→Sp : fst P → Sp-quotient
+    P→Sp p = fst all-false↔Sp (P→all-false p)
+
+    Sp→P : Sp-quotient → fst P
+    Sp→P h = all-false→P (snd all-false↔Sp h)
+
+    -- The quotient is a Booleω
+    B-quotient-Booleω : Booleω
+    B-quotient-Booleω = B-quotient , quotientPreservesBooleω α
+
+    -- For hasStoneStr, we need:
+    -- hasStoneStr S = Σ[ B ∈ Booleω ] Sp B ≡ S
+    -- where Sp B = SpGeneralBooleanRing (fst B) = BoolHom (fst B) BoolBR
+
+    -- We need to show: Sp(BoolBR-quotient α) ≡ fst P
+    -- We have: fst P ↔ Sp-quotient via P→Sp, Sp→P
+    -- For a path, we need both types to be hProps/Sets and use propositional extensionality
+
+    -- P is an hProp by assumption
+    isPropP : isProp (fst P)
+    isPropP = snd P
+
+    -- Sp-quotient is an hSet
+    isSetSp-quotient : isSet Sp-quotient
+    isSetSp-quotient = isSetSp B-quotient
+
+    -- For a proposition, having a point ↔ being true
+    -- Since P is a prop and Sp-quotient is a set, the equivalence P ↔ Sp-quotient
+    -- doesn't give us equality directly
+
+    -- The key insight: for P an hProp, P ↔ Q where Q is an hProp gives P ≡ Q
+    -- But Sp-quotient is a set, not necessarily a prop
+
+    -- Actually, for Stone structure we need Sp B ≡ underlying type
+    -- If P is a proposition and Sp(B) ≃ P, then Sp(B) is also a proposition
+    -- (since being a prop is a property preserved by equivalence)
+
+    -- We need to show Sp-quotient is also a proposition
+    -- This is because: if P is a prop and P ↔ Q, then Q is a prop iff the equivalence is unique
+    -- Since the morphisms are from a quotient ring to BoolBR, there should be at most one
+
+    -- For now, construct the path via propositional extensionality applied to truncations
+    -- Actually, we can use that both are types with a biconditional
+
+    -- Use hPropExt for propositions
+    -- First show Sp-quotient is a proposition
+    -- Actually this might not be true in general - there could be multiple spectrum points
+
+    -- Let's use a different approach: use that P embeds into Sp-quotient
+    -- and Sp-quotient projects to P, and both are sections of each other
+
+    -- The cleanest path: since fst P ≃ Sp-quotient (with both directions)
+    -- and we need a path in Type, use univalence
+
+    -- Key insight: Sp-quotient is also a proposition!
+    -- If P is empty, then so is Sp-quotient (no spectrum points)
+    -- If P is inhabited, then (∀n. αn = false), so quotient is non-trivial
+    -- But in either case, Sp-quotient has at most one element because:
+    -- - P is a prop, so (∀n. αn = false) is a prop
+    -- - The biconditional gives P ↔ Sp-quotient with unique maps (by isSet on target)
+    --
+    -- Actually, Sp-quotient might not be a prop in general.
+    -- But we can still build the equivalence by using the fact that
+    -- both sides are equivalent to the intermediate (∀n. αn = false) which IS a prop.
+
+    -- The intermediate type is a proposition
+    all-false-type : Type ℓ-zero
+    all-false-type = (n : ℕ) → α n ≡ false
+
+    isProp-all-false : isProp all-false-type
+    isProp-all-false = isPropΠ (λ n → isSetBool (α n) false)
+
+    -- P ≃ all-false-type (since P is equivalent via biconditional and both are props)
+    P≃all-false : fst P ≃ all-false-type
+    P≃all-false = propBiimpl→Equiv isPropP isProp-all-false P→all-false all-false→P
+
+    -- all-false-type ≃ Sp-quotient
+    -- For this we need Sp-quotient to be a prop, OR we use that the maps factor through
+    -- Actually: Since both types are equivalent to the prop all-false-type,
+    -- and we have maps in both directions, we can compose the equivalences
+
+    -- Alternatively: Since P is a prop and P ↔ Sp-quotient,
+    -- and the composition Sp → P → Sp lands in a set,
+    -- the section is determined by the set property when P is inhabited
+    -- and vacuously true when P is empty
+
+    -- Let's use a direct approach: P is equivalent to all-false which is equivalent to Sp
+    -- For all-false → Sp, the map is all-false→Sp
+    -- For Sp → all-false, the map is Sp→all-false via snd all-false↔Sp
+
+    -- Since all-false is a prop, all-false ≃ Sp requires Sp to be a prop
+    -- OR we use that the round-trip on Sp lands in a set
+
+    -- Key fact: when all αn = false, the quotient BoolBR /Im α ≅ BoolBR
+    -- and Sp(BoolBR) = BoolHom BoolBR BoolBR has exactly one element (idBoolHom)
+    -- So Sp-quotient is either empty (if some αn = true) or a singleton (if all αn = false)
+    -- Therefore Sp-quotient is a proposition!
+
+    -- To prove isProp-Sp-quotient, we need to show that any two spectrum points are equal.
+    -- The key fact: when all αn = false, the quotient BoolBR /Im α ≅ BoolBR
+    -- and there's exactly one BoolHom BoolBR BoolBR (the identity).
+    --
+    -- Proof outline:
+    -- 1. Given h₁, h₂ : Sp-quotient, we have all-f₁, all-f₂ : all-false-type
+    -- 2. Since all-false-type is a prop: all-f₁ ≡ all-f₂
+    -- 3. The round-trip is the identity: for any h, h ≡ all-false→Sp (Sp→all-false h)
+    --    This holds because:
+    --    - Sp→all-false h = (λ n → ...) extracts that αn = false for all n
+    --    - all-false→Sp then constructs the induced hom on the quotient
+    --    - The induced hom is unique by the universal property of quotients
+    --    - So h is the unique such hom, hence equals the induced one
+
+    -- The round-trip identity for Sp-quotient
+    -- When we have h : Sp-quotient, the constructed spectrum point from its "all-false" proof
+    -- should equal h. This follows from the universal property of quotients:
+    -- - h factors through the quotient (it's a hom from the quotient)
+    -- - The induced hom from QB.inducedHom is unique by the UP
+    -- - So h equals the induced hom, which is exactly fst all-false↔Sp (snd all-false↔Sp h)
+    --
+    -- For now, we postulate this round-trip identity.
+    -- The proof would require showing that any two ring homs from a quotient
+    -- that agree on the quotient map are equal. This follows from surjectivity.
+    postulate
+      Sp-roundtrip : (h : Sp-quotient) → fst all-false↔Sp (snd all-false↔Sp h) ≡ h
+
+    isProp-Sp-quotient : isProp Sp-quotient
+    isProp-Sp-quotient h₁ h₂ =
+      let all-f₁ = snd all-false↔Sp h₁
+          all-f₂ = snd all-false↔Sp h₂
+          all-f-eq : all-f₁ ≡ all-f₂
+          all-f-eq = isProp-all-false all-f₁ all-f₂
+      in h₁                                    ≡⟨ sym (Sp-roundtrip h₁) ⟩
+         fst all-false↔Sp all-f₁               ≡⟨ cong (fst all-false↔Sp) all-f-eq ⟩
+         fst all-false↔Sp all-f₂               ≡⟨ Sp-roundtrip h₂ ⟩
+         h₂                                    ∎
+
+    all-false≃Sp : all-false-type ≃ Sp-quotient
+    all-false≃Sp = propBiimpl→Equiv isProp-all-false isProp-Sp-quotient
+                    (fst all-false↔Sp) (snd all-false↔Sp)
+
+    P≃Sp : fst P ≃ Sp-quotient
+    P≃Sp = compEquiv P≃all-false all-false≃Sp
+
+    -- The Booleω witness
+    Booleω-P : Booleω
+    Booleω-P = B-quotient-Booleω
+
+    -- The path Sp(B-quotient) ≡ fst P
+    Sp-eq : Sp Booleω-P ≡ fst P
+    Sp-eq = sym (ua P≃Sp)
+
+  -- hasStoneStr implies "is Stone" (it's the definition)
+  -- Stone = TypeWithStr ℓ-zero hasStoneStr = Σ[ S ∈ Type ℓ-zero ] hasStoneStr S
+
+  -- A closed hProp determines a Stone space
+  closedProp→Stone : (P : hProp ℓ-zero) → isClosedProp P → Stone
+  closedProp→Stone P Pclosed = fst P , closedProp→hasStoneStr P Pclosed
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
