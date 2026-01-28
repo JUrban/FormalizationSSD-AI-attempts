@@ -10278,6 +10278,7 @@ module IntermediateValueTheoremModule where
 module BrouwerFixedPointTheoremModule where
   open InhabitedClosedSubSpaceClosedCHausModule
   open IntervalIsCHausModule
+  open CompactHausdorffModule
 
   -- The 2-disk D² (abstract)
   postulate
@@ -10293,16 +10294,64 @@ module BrouwerFixedPointTheoremModule where
   postulate
     boundary-inclusion : Circle → Disk2
 
-  -- No retraction from D² to S¹ (from cohomology)
+  -- D² is compact Hausdorff (tex: follows from being homeomorphic to I²)
+  postulate
+    Disk2IsCHaus : hasCHausStr Disk2
+
+  -- The CHaus structure on D²
+  Disk2CHaus : CHaus
+  Disk2CHaus = Disk2 , Disk2IsCHaus
+
+  -- No retraction from D² to S¹ (from cohomology, tex Lemma ~3036)
   postulate
     no-retraction : (r : Disk2 → Circle)
       → ((x : Circle) → r (boundary-inclusion x) ≡ x)
       → ⊥
 
-  -- Main theorem
+  -- If ∀x. f(x) ≠ x, then there is a retraction D² → S¹
+  -- This is the geometric construction: for each x, follow the line from f(x) through x
+  -- to its intersection with the boundary S¹
   postulate
-    BrouwerFixedPointTheorem : (f : Disk2 → Disk2)
-      → ∥ Σ[ x ∈ Disk2 ] f x ≡ x ∥₁
+    retraction-from-no-fixpoint : (f : Disk2 → Disk2)
+      → ((x : Disk2) → (f x ≡ x → ⊥))
+      → Σ[ r ∈ (Disk2 → Circle) ] ((x : Circle) → r (boundary-inclusion x) ≡ x)
+
+  -- The contradiction: if ∀x. f(x) ≠ x, then we get a retraction, contradicting no-retraction
+  BFP-contradiction : (f : Disk2 → Disk2)
+    → ((x : Disk2) → (f x ≡ x → ⊥))
+    → ⊥
+  BFP-contradiction f no-fix =
+    let (r , r-is-retract) = retraction-from-no-fixpoint f no-fix
+    in no-retraction r r-is-retract
+
+  -- Main theorem (tex Theorem 3099) - PROVED (modulo the geometric postulates)
+  BrouwerFixedPointTheorem : (f : Disk2 → Disk2)
+    → ∥ Σ[ x ∈ Disk2 ] f x ≡ x ∥₁
+  BrouwerFixedPointTheorem f =
+    let -- The proposition "∃x. f(x) = x"
+        existence-prop : hProp ℓ-zero
+        existence-prop = (∥ Σ[ x ∈ Disk2 ] f x ≡ x ∥₁) , squash₁
+
+        -- For each x, the equation f(x) = x defines a closed proposition
+        A : Disk2 → hProp ℓ-zero
+        A x = (f x ≡ x) , isSetDisk2 (f x) x
+
+        -- A(x) is closed because equality in CHaus is closed
+        A-closed : (x : Disk2) → isClosedProp (A x)
+        A-closed x = hasCHausStr.equalityClosed Disk2IsCHaus (f x) x
+
+        -- By InhabitedClosedSubSpaceClosedCHaus, ∃x.A(x) is closed
+        existence-closed : isClosedProp existence-prop
+        existence-closed = InhabitedClosedSubSpaceClosedCHaus Disk2CHaus A A-closed
+
+        -- Prove ¬¬(∃x. f(x) = x) by showing ¬(∀x. f(x) ≠ x)
+        ¬¬existence : ¬ ¬ ∥ Σ[ x ∈ Disk2 ] f x ≡ x ∥₁
+        ¬¬existence ¬∃ =
+          let no-fix : (x : Disk2) → (f x ≡ x → ⊥)
+              no-fix x fx=x = ¬∃ ∣ x , fx=x ∣₁
+          in BFP-contradiction f no-fix
+
+    in closedIsStable existence-prop existence-closed ¬¬existence
 
 -- =============================================================================
 -- Summary of Main Theorems
@@ -10336,7 +10385,10 @@ module BrouwerFixedPointTheoremModule where
 -- MAIN THEOREMS:
 -- - Intermediate Value Theorem (IntermediateValueTheorem) - PROVED (tex 3082)
 --   Proof structure: ∃x.f(x)=y is closed → ¬¬-stable → contradict with Bool-I-local
--- - Brouwer's Fixed Point Theorem (BrouwerFixedPointTheorem) - postulated
+-- - Brouwer's Fixed Point Theorem (BrouwerFixedPointTheorem) - PROVED (tex 3099)
+--   Proof structure: ∃x.f(x)=x is closed → ¬¬-stable → contradict with no-retraction
+--   Remaining postulates: Disk2, Circle, boundary-inclusion, Disk2IsCHaus,
+--   no-retraction (cohomology), retraction-from-no-fixpoint (geometry)
 --
 -- DERIVED PRINCIPLES:
 -- - ¬WLPO, MP, LLPO follow from Stone Duality
