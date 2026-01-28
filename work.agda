@@ -6851,7 +6851,9 @@ normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
 
 -- Import surjection composition from the Cubical library
 open import Cubical.Functions.Surjection using (isSurjection ; compSurjection ; _↠_)
-open import BooleanRing.FreeBooleanRing.freeBATerms using (includeBATermsSurj ; equalityFromEqualityOnGenerators ; includeBATerms-Tvar)
+open import BooleanRing.FreeBooleanRing.freeBATerms using
+  (includeBATermsSurj ; equalityFromEqualityOnGenerators ; includeBATerms-Tvar ;
+   includeBATerms-+ ; includeBATerms-· ; includeBATerms-- ; includeBATerms-0 ; includeBATerms-1)
 
 -- The quotient map π∞ is surjective
 π∞-surj : isSurjection (fst π∞)
@@ -6957,37 +6959,79 @@ g∞-induced-fun-eq = cong fst g∞-induced-eq-π∞
 -- 2. Both interpretB∞ and π∞-from-terms preserve ring operations
 --
 -- The Tvar case is now proven using includeBATerms-Tvar.
--- The inductive cases (constants, +, -, ·) require showing that fst includeBATermsSurj
--- preserves ring operations, which follows from its definition as quotientHom ∘ includeTerm.
--- For now, these cases are postulated; they can be proved by adding export lemmas to
--- freeBATerms.agda similar to includeBATerms-Tvar.
+-- The inductive cases use the operation preservation lemmas from freeBATerms.agda.
+
+-- Helper: π∞ preservation properties
+-- π∞ is a homomorphism: BoolHom (freeBA ℕ) B∞, so snd π∞ is an IsCommRingHom
+private
+  open module π∞-hom = IsCommRingHom (snd π∞) renaming
+    (pres+ to π∞-+' ; pres· to π∞-·' ; pres- to π∞-neg' ; pres0 to π∞-0' ; pres1 to π∞-1')
+  -- The BooleanRingStr operations are definitionally equal to CommRingStr operations
+  -- so we can use the CommRingStr versions
+  π∞-0 : fst π∞ (BooleanRingStr.𝟘 (snd (freeBA ℕ))) ≡ 𝟘∞
+  π∞-0 = π∞-0'
+  π∞-1 : fst π∞ (BooleanRingStr.𝟙 (snd (freeBA ℕ))) ≡ 𝟙∞
+  π∞-1 = π∞-1'
+  π∞-+ : (x y : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr._+_ (snd (freeBA ℕ)) x y) ≡ fst π∞ x +∞ fst π∞ y
+  π∞-+ = π∞-+'
+  π∞-· : (x y : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr._·_ (snd (freeBA ℕ)) x y) ≡ fst π∞ x ·∞ fst π∞ y
+  π∞-· = π∞-·'
+  π∞-neg : (x : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr.-_ (snd (freeBA ℕ)) x) ≡ -∞ fst π∞ x
+  π∞-neg = π∞-neg'
 
 -- The equality proof by induction
 interpretB∞-eq-composition : (t : freeBATerms ℕ) → interpretB∞ t ≡ π∞-from-terms t
 interpretB∞-eq-composition (Tvar n) =
-  -- interpretB∞ (Tvar n) = g∞ n = fst π∞ (generator n) = fst π∞ (fst includeBATermsSurj (Tvar n))
-  -- Key: g∞ n = fst π∞ (generator n) by definition
-  -- Key: generator n = fst includeBATermsSurj (Tvar n) by includeBATerms-Tvar
+  -- g∞ n = fst π∞ (generator n) = fst π∞ (fst includeBATermsSurj (Tvar n))
   g∞ n
-    ≡⟨ refl ⟩  -- g∞ n = fst π∞ (generator n) by definition
+    ≡⟨ refl ⟩
   fst π∞ (generator n)
     ≡⟨ cong (fst π∞) (sym (includeBATerms-Tvar n)) ⟩
   fst π∞ (fst includeBATermsSurj (Tvar n)) ∎
--- The remaining cases follow by induction using that both sides preserve operations.
--- For now, we postulate them:
-interpretB∞-eq-composition (Tconst false) = interpretB∞-eq-Tconst-false
-  where postulate interpretB∞-eq-Tconst-false : 𝟘∞ ≡ π∞-from-terms (Tconst false)
-interpretB∞-eq-composition (Tconst true) = interpretB∞-eq-Tconst-true
-  where postulate interpretB∞-eq-Tconst-true : 𝟙∞ ≡ π∞-from-terms (Tconst true)
+interpretB∞-eq-composition (Tconst false) =
+  𝟘∞
+    ≡⟨ sym π∞-0 ⟩
+  fst π∞ (BooleanRingStr.𝟘 (snd (freeBA ℕ)))
+    ≡⟨ cong (fst π∞) (sym includeBATerms-0) ⟩
+  fst π∞ (fst includeBATermsSurj (Tconst false)) ∎
+
+-- Tconst true case: 𝟙∞ ≡ π∞-from-terms (Tconst true)
+interpretB∞-eq-composition (Tconst true) =
+  𝟙∞
+    ≡⟨ sym π∞-1 ⟩
+  fst π∞ (BooleanRingStr.𝟙 (snd (freeBA ℕ)))
+    ≡⟨ cong (fst π∞) (sym includeBATerms-1) ⟩
+  fst π∞ (fst includeBATermsSurj (Tconst true)) ∎
+
+-- Addition case: uses IH and operation preservation
 interpretB∞-eq-composition (t +T s) =
-  cong₂ _+∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ∙ interpretB∞-eq-plus t s
-  where postulate interpretB∞-eq-plus : (t s : freeBATerms ℕ) → π∞-from-terms t +∞ π∞-from-terms s ≡ π∞-from-terms (t +T s)
+  interpretB∞ t +∞ interpretB∞ s
+    ≡⟨ cong₂ _+∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ⟩
+  π∞-from-terms t +∞ π∞-from-terms s
+    ≡⟨ sym (π∞-+ (fst includeBATermsSurj t) (fst includeBATermsSurj s)) ⟩
+  fst π∞ (BooleanRingStr._+_ (snd (freeBA ℕ)) (fst includeBATermsSurj t) (fst includeBATermsSurj s))
+    ≡⟨ cong (fst π∞) (sym (includeBATerms-+ t s)) ⟩
+  π∞-from-terms (t +T s) ∎
+
+-- Negation case: uses IH and operation preservation
 interpretB∞-eq-composition (-T t) =
-  cong -∞_ (interpretB∞-eq-composition t) ∙ interpretB∞-eq-neg t
-  where postulate interpretB∞-eq-neg : (t : freeBATerms ℕ) → -∞ π∞-from-terms t ≡ π∞-from-terms (-T t)
+  -∞ interpretB∞ t
+    ≡⟨ cong -∞_ (interpretB∞-eq-composition t) ⟩
+  -∞ π∞-from-terms t
+    ≡⟨ sym (π∞-neg (fst includeBATermsSurj t)) ⟩
+  fst π∞ (BooleanRingStr.-_ (snd (freeBA ℕ)) (fst includeBATermsSurj t))
+    ≡⟨ cong (fst π∞) (sym (includeBATerms-- t)) ⟩
+  π∞-from-terms (-T t) ∎
+
+-- Multiplication case: uses IH and operation preservation
 interpretB∞-eq-composition (t ·T s) =
-  cong₂ _·∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ∙ interpretB∞-eq-times t s
-  where postulate interpretB∞-eq-times : (t s : freeBATerms ℕ) → π∞-from-terms t ·∞ π∞-from-terms s ≡ π∞-from-terms (t ·T s)
+  interpretB∞ t ·∞ interpretB∞ s
+    ≡⟨ cong₂ _·∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ⟩
+  π∞-from-terms t ·∞ π∞-from-terms s
+    ≡⟨ sym (π∞-· (fst includeBATermsSurj t) (fst includeBATermsSurj s)) ⟩
+  fst π∞ (BooleanRingStr._·_ (snd (freeBA ℕ)) (fst includeBATermsSurj t) (fst includeBATermsSurj s))
+    ≡⟨ cong (fst π∞) (sym (includeBATerms-· t s)) ⟩
+  π∞-from-terms (t ·T s) ∎
 
 -- The surjectivity proof uses composition of surjections
 interpretB∞-surjective : isSurjection interpretB∞
