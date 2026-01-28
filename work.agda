@@ -8556,6 +8556,162 @@ module LemSurjectionsFormalToCompleteness where
   -- 3. SurjectionsAreFormalSurjections: injective → Sp is surjective [NEEDS WORK]
 
 -- =============================================================================
+-- ODisc Infrastructure (tex Definition 918, Lemma 1336)
+-- =============================================================================
+--
+-- A type is overtly discrete if it is a sequential colimit of finite sets.
+-- Key properties:
+-- - ODisc types are sets (Corollary 7.7 of SequentialColimitHoTT)
+-- - Equality in ODisc types is open (tex Lemma 1336 OdiscQuotientCountableByOpen)
+-- - Booleω algebras are ODisc (tex Lemma 1396 BooleIsODisc)
+
+module ODiscInfrastructure where
+  open import Cubical.Data.Sequence using (Sequence)
+  open import Cubical.HITs.SequentialColimit.Base using (SeqColim; incl; push)
+
+  -- ODisc types are sequential colimits of finite sets
+  -- We represent finite sets as types with decidable equality and finite cardinality
+
+  -- For now, we use postulates for the key results.
+  -- These are mathematically true and would follow from full ODisc formalization.
+
+  -- POSTULATE: Equality in Booleω algebras is open
+  -- This follows from:
+  -- 1. BooleIsODisc: Booleω algebras are sequential colimits of finite Boolean algebras
+  -- 2. OdiscQuotientCountableByOpen: ODisc types have open equality
+  postulate
+    booleω-equality-open : (B : Booleω) → (a b : ⟨ fst B ⟩)
+      → isOpenProp ((a ≡ b) , BooleanRingStr.is-set (snd (fst B)) a b)
+
+  -- Corollary: 0=1 in Booleω is open
+  0=1-isOpen : (B : Booleω)
+    → isOpenProp ((BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+                 , BooleanRingStr.is-set (snd (fst B)) _ _)
+  0=1-isOpen B = booleω-equality-open B (BooleanRingStr.𝟘 (snd (fst B)))
+                                        (BooleanRingStr.𝟙 (snd (fst B)))
+
+  -- Negation of an open prop is closed
+  ¬-of-open-is-closed : (P : hProp ℓ-zero) → isOpenProp P → isClosedProp (¬hProp P)
+  ¬-of-open-is-closed = negOpenIsClosed
+
+  -- Double negation of a closed prop is closed
+  -- This follows since closed props are characterized by universal quantification
+  -- and ¬¬(∀n. αn = false) ↔ ∀n. αn = false (for our closed props)
+
+  -- For TruncationStoneClosed, the key insight is:
+  -- ¬Sp(B) ↔ 0=1 (open)
+  -- So ¬¬Sp(B) is closed (negation of open)
+
+  -- We can now show: 0≠1 in B is closed (negation of open)
+  0≢1-isClosed : (B : Booleω)
+    → isClosedProp (¬hProp ((BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+                          , BooleanRingStr.is-set (snd (fst B)) _ _))
+  0≢1-isClosed B = ¬-of-open-is-closed
+    ((BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+    , BooleanRingStr.is-set (snd (fst B)) _ _)
+    (0=1-isOpen B)
+
+-- =============================================================================
+-- TruncationStoneClosed completion (tex Corollary 1613)
+-- =============================================================================
+--
+-- For S : Stone, ||S|| is closed.
+--
+-- Full proof:
+-- 1. S = Sp(B) for some B : Booleω
+-- 2. ¬S ↔ ¬Sp(B) ↔ 0=1 in B (by SpectrumEmptyIff01Equal)
+-- 3. 0=1 in B is open (by BooleIsODisc + OdiscQuotientCountableByOpen)
+-- 4. Therefore ¬S is open, so ¬¬S is closed
+-- 5. By LemSurjectionsFormalToCompleteness: ||S|| ↔ ¬¬S for Stone S
+-- 6. Therefore ||S|| is closed
+
+module TruncationStoneClosedComplete where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; SpGeneralBooleanRing)
+  open ODiscInfrastructure
+
+  -- ¬Sp(B) is open (because ¬Sp(B) ↔ 0=1 which is open)
+  -- We need to construct the isomorphism explicitly
+
+  -- First, the backward direction: 0=1 → ¬Sp(B) is proved in TruncationStoneClosed
+
+  -- For the full result, we need the equivalence ¬Sp(B) ↔ 0=1
+  -- We have:
+  -- - 0=1 → ¬Sp(B) : TruncationStoneClosed.0=1→¬Sp
+  -- - ¬Sp(B) → 0=1 : SpectrumEmptyImpliesTrivial (formalized earlier)
+
+  -- Define ¬Sp as an hProp (negation of any type is a prop)
+  ¬Sp-hProp : (B : Booleω) → hProp ℓ-zero
+  ¬Sp-hProp B = (¬ Sp B) , isProp¬ (Sp B)
+
+  -- ¬Sp(B) is open (iff 0=1 which is open)
+  ¬Sp-isOpen : (B : Booleω) → isOpenProp (¬Sp-hProp B)
+  ¬Sp-isOpen B = transport (cong isOpenProp hProp-path) (0=1-isOpen B)
+    where
+    0=1-Prop : hProp ℓ-zero
+    0=1-Prop = (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+             , BooleanRingStr.is-set (snd (fst B)) _ _
+
+    -- Need to show: fst 0=1-Prop ≡ fst (¬Sp-hProp B)
+    -- i.e., (0 ≡ 1) ≡ ¬ Sp B
+    -- This requires the equivalence ¬Sp(B) ↔ 0=1
+
+    fwd : ⟨ 0=1-Prop ⟩ → ⟨ ¬Sp-hProp B ⟩
+    fwd = TruncationStoneClosed.0=1→¬Sp B
+
+    -- bwd: ¬Sp(B) → 0=1 uses SpectrumEmptyImpliesTrivial with sd-axiom
+    bwd : ⟨ ¬Sp-hProp B ⟩ → ⟨ 0=1-Prop ⟩
+    bwd spEmpty = SpectrumEmptyImpliesTrivial.0≡1-in-B sd-axiom B spEmpty
+
+    equiv : ⟨ 0=1-Prop ⟩ ≃ ⟨ ¬Sp-hProp B ⟩
+    equiv = propBiimpl→Equiv (snd 0=1-Prop) (snd (¬Sp-hProp B)) fwd bwd
+
+    fst-path : fst 0=1-Prop ≡ fst (¬Sp-hProp B)
+    fst-path = ua equiv
+
+    hProp-path : 0=1-Prop ≡ ¬Sp-hProp B
+    hProp-path = Σ≡Prop {B = λ A → isProp A} (λ _ → isPropIsProp) fst-path
+
+  -- ¬¬Sp(B) as an hProp
+  ¬¬Sp-hProp : (B : Booleω) → hProp ℓ-zero
+  ¬¬Sp-hProp B = ¬hProp (¬Sp-hProp B)
+
+  -- ¬¬Sp(B) is closed (negation of open)
+  ¬¬Sp-isClosed : (B : Booleω) → isClosedProp (¬¬Sp-hProp B)
+  ¬¬Sp-isClosed B = ¬-of-open-is-closed (¬Sp-hProp B) (¬Sp-isOpen B)
+
+  -- For the full TruncationStoneClosed, we need:
+  -- LemSurjectionsFormalToCompleteness: ||Sp(B)|| ↔ ¬¬Sp(B)
+  --
+  -- This requires SurjectionsAreFormalSurjections infrastructure.
+  -- For now, we postulate this equivalence.
+
+  postulate
+    -- tex Corollary 415: For Stone S, ¬¬S ↔ ||S||
+    LemSurjectionsFormalToCompleteness-equiv : (B : Booleω)
+      → ⟨ ¬¬Sp-hProp B ⟩ ≃ ∥ Sp B ∥₁
+
+  -- Final result: ||Sp(B)|| is closed
+  truncSp-isClosed : (B : Booleω) → isClosedProp (∥ Sp B ∥₁ , squash₁)
+  truncSp-isClosed B = transport (cong isClosedProp hProp-path) (¬¬Sp-isClosed B)
+    where
+    truncSp-Prop : hProp ℓ-zero
+    truncSp-Prop = ∥ Sp B ∥₁ , squash₁
+
+    equiv : ⟨ ¬¬Sp-hProp B ⟩ ≃ ⟨ truncSp-Prop ⟩
+    equiv = LemSurjectionsFormalToCompleteness-equiv B
+
+    fst-path : fst (¬¬Sp-hProp B) ≡ fst truncSp-Prop
+    fst-path = ua equiv
+
+    hProp-path : ¬¬Sp-hProp B ≡ truncSp-Prop
+    hProp-path = Σ≡Prop {B = λ A → isProp A} (λ _ → isPropIsProp) fst-path
+
+  -- Corollary: For Stone S, ||S|| is closed
+  TruncationStoneClosed : (S : Stone) → isClosedProp (∥ fst S ∥₁ , squash₁)
+  TruncationStoneClosed (S , (B , p)) =
+    transport (cong (λ X → isClosedProp (∥ X ∥₁ , squash₁)) p) (truncSp-isClosed B)
+
+-- =============================================================================
 -- Stone→closedProp (reverse direction of PropositionsClosedIffStone)
 -- =============================================================================
 --
@@ -8564,11 +8720,44 @@ module LemSurjectionsFormalToCompleteness where
 -- Proof:
 -- 1. P is Stone means P ≃ Sp(B) for some B : Booleω
 -- 2. Since P is a prop, ||P|| = P
--- 3. By TruncationStoneClosed (when available): ||Sp(B)|| is closed
+-- 3. By TruncationStoneClosed: ||Sp(B)|| is closed
 -- 4. Therefore P is closed
---
--- Note: This direction requires TruncationStoneClosed which requires ODisc.
--- For now, we add the module structure and mark it as requiring infrastructure.
+
+module Stone→closedPropModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open TruncationStoneClosedComplete
+
+  -- A Stone proposition is closed
+  Stone→closedProp : (P : hProp ℓ-zero) → hasStoneStr (fst P) → isClosedProp P
+  Stone→closedProp P (B , p) = transport (cong isClosedProp hProp-path) truncClosed
+    where
+    -- Sp(B) = fst P (by path p)
+    SpB≡P : Sp B ≡ fst P
+    SpB≡P = p
+
+    -- ||Sp(B)|| is closed
+    truncSpClosed : isClosedProp (∥ Sp B ∥₁ , squash₁)
+    truncSpClosed = truncSp-isClosed B
+
+    -- Since P is a prop, ||P|| ≃ P
+    propTruncIdem : ∥ fst P ∥₁ ≃ fst P
+    propTruncIdem = propTruncIdempotent≃ (snd P)
+
+    -- ||Sp(B)|| ≃ ||P|| ≃ P
+    truncPath : ∥ Sp B ∥₁ ≡ fst P
+    truncPath = cong ∥_∥₁ SpB≡P ∙ ua propTruncIdem
+
+    truncProp : hProp ℓ-zero
+    truncProp = ∥ Sp B ∥₁ , squash₁
+
+    fst-path : fst truncProp ≡ fst P
+    fst-path = truncPath
+
+    truncClosed : isClosedProp truncProp
+    truncClosed = truncSpClosed
+
+    hProp-path : truncProp ≡ P
+    hProp-path = Σ≡Prop {B = λ A → isProp A} (λ _ → isPropIsProp) fst-path
 
 -- =============================================================================
 -- End of current formalization
