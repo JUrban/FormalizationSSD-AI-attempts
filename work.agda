@@ -10196,12 +10196,73 @@ module IntermediateValueTheoremModule where
         -- Now we have f0 < y and y < f0, contradicting asymmetry
     in ex-falso (<I-asymmetric (f 0I) y f0<y y<f0)
 
-  postulate
-    IntermediateValueTheorem : (f : UnitInterval → UnitInterval)
-      → 0I ≤I f 0I → f 1I ≤I 1I
-      → (y : UnitInterval)
-      → f 0I ≤I y → y ≤I f 1I
-      → ∥ Σ[ x ∈ UnitInterval ] f x ≡ y ∥₁
+  -- Symmetric: char-fun(1) = true when y ≤ f(1)
+  IVT-char-fun-at-1 : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → (no-sol : (x : UnitInterval) → (f x ≡ y → ⊥))
+    → (y≤f1 : y ≤I f 1I)
+    → IVT-char-fun f y no-sol 1I ≡ true
+  IVT-char-fun-at-1 f y no-sol y≤f1 with cover-when-no-solution f y no-sol 1I
+  ... | ⊎.inr _ = refl
+  ... | ⊎.inl f1<y =
+    -- f1<y contradicts y≤f1 (when combined with y≠f1 which we get from no-sol)
+    let f1≠y = no-sol 1I
+        y<f1 = 1-in-U₁ f y y≤f1 (λ eq → f1≠y (sym eq))
+        -- Now we have f1 < y and y < f1, contradicting asymmetry
+    in ex-falso (<I-asymmetric y (f 1I) y<f1 f1<y)
+
+  -- The contradiction: if Bool-I-local holds and no solution exists,
+  -- we get char-fun(0) = false and char-fun(1) = true, but char-fun should be constant
+  IVT-contradiction : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
+    → (no-sol : (x : UnitInterval) → (f x ≡ y → ⊥))
+    → (f0≤y : f 0I ≤I y) → (y≤f1 : y ≤I f 1I)
+    → ⊥
+  IVT-contradiction f y no-sol f0≤y y≤f1 =
+    let char = IVT-char-fun f y no-sol
+        at0 : char 0I ≡ false
+        at0 = IVT-char-fun-at-0 f y no-sol f0≤y
+        at1 : char 1I ≡ true
+        at1 = IVT-char-fun-at-1 f y no-sol y≤f1
+        -- By Bool-I-local, char is constant, so char(0) = char(1)
+        constant : char 0I ≡ char 1I
+        constant = Bool-I-local char 0I 1I
+        -- But char(0) = false and char(1) = true, contradiction!
+    in false≢true (sym at0 ∙ constant ∙ at1)
+
+  -- The main theorem (tex Theorem 3082)
+  -- For any f : I → I and y : I such that f(0) ≤ y ≤ f(1), there exists x : I with f(x) = y
+  IntermediateValueTheorem : (f : UnitInterval → UnitInterval)
+    → (y : UnitInterval)
+    → f 0I ≤I y → y ≤I f 1I
+    → ∥ Σ[ x ∈ UnitInterval ] f x ≡ y ∥₁
+  IntermediateValueTheorem f y f0≤y y≤f1 =
+    -- Step 1: ∃_{x:I} f(x) = y is closed
+    let existence-prop : hProp ℓ-zero
+        existence-prop = (∥ Σ[ x ∈ UnitInterval ] f x ≡ y ∥₁) , squash₁
+
+        -- The subset A(x) := (f(x) ≡ y) is closed for each x
+        -- because equality in CHaus spaces is closed
+        A : UnitInterval → hProp ℓ-zero
+        A x = (f x ≡ y) , isSetUnitInterval (f x) y
+
+        A-closed : (x : UnitInterval) → isClosedProp (A x)
+        A-closed x = CompactHausdorffModule.hasCHausStr.equalityClosed IntervalIsCHaus (f x) y
+
+        -- By InhabitedClosedSubSpaceClosedCHaus, ∃x.A(x) is closed
+        existence-closed : isClosedProp existence-prop
+        existence-closed = InhabitedClosedSubSpaceClosedCHaus IntervalCHaus A A-closed
+
+        -- Step 2: Closed propositions are ¬¬-stable
+        -- Step 3: Show ¬¬(∃x. f(x) = y)
+        -- This holds because ¬(∃x. f(x) = y) leads to contradiction via IVT-contradiction
+        ¬¬existence : ¬ ¬ ∥ Σ[ x ∈ UnitInterval ] f x ≡ y ∥₁
+        ¬¬existence ¬∃ =
+          -- From ¬∃x. f(x)=y, we get ∀x. f(x)≠y
+          let no-sol : (x : UnitInterval) → (f x ≡ y → ⊥)
+              no-sol x fx=y = ¬∃ ∣ x , fx=y ∣₁
+          in IVT-contradiction f y no-sol f0≤y y≤f1
+
+    -- Step 4: Apply ¬¬-stability
+    in closedIsStable existence-prop existence-closed ¬¬existence
 
 -- =============================================================================
 -- BrouwerFixedPointTheoremModule (tex Theorem 3099)
