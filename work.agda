@@ -10137,6 +10137,17 @@ module IntermediateValueTheoremModule where
   postulate
     <I-asymmetric : (x y : UnitInterval) → x <I y → y <I x → ⊥
 
+  -- Irreflexivity: derived from asymmetry
+  <I-irrefl : (x : UnitInterval) → x <I x → ⊥
+  <I-irrefl x x<x = <I-asymmetric x x x<x x<x
+
+  -- Trichotomy: for any x, y, we have x < y or x = y or y < x
+  -- This follows from ≠I-apartness and ≤I-linear, but proving it cleanly
+  -- requires decidable equality which comes from CHaus properties.
+  -- For now we postulate it.
+  postulate
+    <I-trichotomy : (x y : UnitInterval) → (x <I y) ⊎ ((x ≡ y) ⊎ (y <I x))
+
   U₀-U₁-disjoint : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
     → (x : UnitInterval) → U₀ f y x → U₁ f y x → ⊥
   U₀-U₁-disjoint f y x fx<y y<fx = <I-asymmetric (f x) y fx<y y<fx
