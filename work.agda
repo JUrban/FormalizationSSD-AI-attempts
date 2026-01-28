@@ -6656,5 +6656,69 @@ normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
 -- This would involve case analysis on the quotient construction of B∞.
 
 -- =============================================================================
+-- Proving interpretB∞ is surjective (via quotient surjectivity)
+-- =============================================================================
+
+-- The key insight: interpretB∞ factors through π∞ and includeBATermsSurj.
+--
+-- freeBATerms ℕ --includeBATermsSurj--> freeBA ℕ --π∞--> B∞
+--       |                                                  |
+--       +---------------interpretB∞---------------------+
+--
+-- Both paths send Tvar n to g∞ n = fst π∞ (generator n).
+-- Since both are ring homomorphisms agreeing on generators, they are equal.
+
+-- interpretB∞ equals the composition on the image of includeBATermsSurj
+-- We prove this using the fact that both are ring homomorphisms that
+-- agree on generators.
+
+-- First, we note that interpretB∞ defines a ring homomorphism from terms to B∞.
+-- The composition π∞ ∘ includeBATermsSurj is also such a homomorphism.
+-- They agree on generators: interpretB∞ (Tvar n) = g∞ n = fst π∞ (generator n)
+
+-- For normalFormExists, we use the surjectivity directly:
+-- 1. π∞ is surjective (quotient maps are always surjective)
+-- 2. includeBATermsSurj is surjective (by definition)
+-- 3. Their composition is surjective
+-- 4. interpretB∞ equals the composition (by uniqueness on generators)
+-- 5. Therefore interpretB∞ is surjective
+
+-- Surjectivity of termHom/interpretB∞ follows from the composition
+-- However, the direct proof requires unfolding opaque definitions.
+
+-- Alternative approach using quotient eliminator:
+-- B∞ = freeBA ℕ /Im relB∞ is a set quotient
+-- Every element x : B∞ is in the image of the quotient map π∞
+-- This means: for any x : ⟨ B∞ ⟩, there exists y : ⟨ freeBA ℕ ⟩ with fst π∞ y ≡ x
+
+-- The quotient map π∞ = QB.quotientImageHom is surjective by definition
+-- of quotients: every element of the quotient is the image of some element
+-- from the original ring.
+
+-- Using QB.quotientImageHomEpi with the identity homomorphism doesn't directly
+-- give surjectivity in the sigma form, but the underlying quotient construction
+-- does give it.
+
+-- For a direct proof of normalFormExists:
+-- 1. Given x : ⟨ B∞ ⟩, use the quotient to get y : ⟨ freeBA ℕ ⟩ with π∞ y = x
+-- 2. Use includeBATermsSurj to get t : freeBATerms ℕ with includeBATermsSurj t = y
+-- 3. Then interpretB∞ t = π∞ (includeBATermsSurj t) = π∞ y = x (by the equality)
+-- 4. normalForm-from-term t gives a normal form nf with ⟦ nf ⟧nf = interpretB∞ t = x
+
+-- The challenge is step 3: proving interpretB∞ t = π∞ (fst includeBATermsSurj t)
+-- This follows from equalityFromEqualityOnGenerators applied to the underlying
+-- homomorphisms, but the opaque definition of includeBATermsSurj blocks direct
+-- unfolding.
+
+-- For now, we document the complete approach and note that normalFormExists
+-- follows from the above argument once the opaque barrier is addressed.
+
+-- Summary:
+-- normalFormExists follows from:
+-- - normalizeTerm : freeBATerms ℕ → B∞-NormalForm (already defined)
+-- - normalizeTerm-correct : ⟦ normalizeTerm t ⟧nf ≡ interpretB∞ t (already proved)
+-- - interpretB∞ is surjective (follows from quotient structure)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
