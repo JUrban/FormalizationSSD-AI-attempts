@@ -8503,6 +8503,59 @@ module TruncationStoneClosed where
   -- (This is SpectrumEmptyImpliesTrivial)
 
 -- =============================================================================
+-- LemSurjectionsFormalToCompleteness (tex Corollary 415)
+-- =============================================================================
+--
+-- For S : Stone, we have ¬¬S → ||S||
+--
+-- Proof outline:
+-- 1. Let B : Booleω with S = Sp(B)
+-- 2. If ¬¬Sp(B), then 0≠1 in B (contrapositive of SpectrumEmptyIff01Equal)
+-- 3. The morphism 2 → B (sending true↦1, false↦0) is injective when 0≠1
+-- 4. By SurjectionsAreFormalSurjections (tex Prop 353), Sp(B) → Sp(2) is surjective
+-- 5. Since Sp(2) = {*} is inhabited, Sp(B) is merely inhabited
+--
+-- Key lemma: 0≠1 implies 2 → B is injective
+
+module LemSurjectionsFormalToCompleteness where
+
+  -- If 0≠1 in B, the canonical map 2 → B is injective
+  -- The map sends true ↦ 1, false ↦ 0
+  -- Injectivity: if f(b₁) = f(b₂) then b₁ = b₂
+  -- Case analysis: f(false) = 0, f(true) = 1
+  -- If 0 ≠ 1, then f(false) ≠ f(true), so false ≠ true
+  -- The only cases left are f(false) = f(false) and f(true) = f(true)
+
+  -- The canonical map Bool → B for any Boolean ring B
+  canonicalMap : (B : BooleanRing ℓ-zero) → Bool → ⟨ B ⟩
+  canonicalMap B false = BooleanRingStr.𝟘 (snd B)
+  canonicalMap B true = BooleanRingStr.𝟙 (snd B)
+
+  -- The canonical map is injective when 0 ≠ 1
+  canonicalMapInjective : (B : BooleanRing ℓ-zero)
+    → ¬ (BooleanRingStr.𝟘 (snd B) ≡ BooleanRingStr.𝟙 (snd B))
+    → (b₁ b₂ : Bool) → canonicalMap B b₁ ≡ canonicalMap B b₂ → b₁ ≡ b₂
+  canonicalMapInjective B 0≢1 false false _ = refl
+  canonicalMapInjective B 0≢1 false true p = ex-falso (0≢1 p)
+  canonicalMapInjective B 0≢1 true false p = ex-falso (0≢1 (sym p))
+  canonicalMapInjective B 0≢1 true true _ = refl
+
+  -- ¬¬Sp(B) → 0 ≠ 1 (contrapositive of 0=1→¬Sp)
+  -- If 0=1 then Sp(B) is empty, so ¬¬Sp(B) → ⊥
+  -- Contrapositive: ¬¬Sp(B) → 0 ≠ 1
+  ¬¬Sp→0≢1 : (B : Booleω) → ¬ ¬ Sp B → ¬ (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+  ¬¬Sp→0≢1 B ¬¬SpB 0≡1 = ¬¬SpB (TruncationStoneClosed.0=1→¬Sp B 0≡1)
+
+  -- For the full proof of ¬¬S → ||S||, we need SurjectionsAreFormalSurjections
+  -- which states: if f : B → C is injective, then Sp(f) : Sp(C) → Sp(B) is surjective
+  -- This requires more infrastructure from tex section on formal surjections.
+  --
+  -- For now, we note that the key pieces are in place:
+  -- 1. ¬¬Sp(B) → 0 ≠ 1 [PROVED above]
+  -- 2. 0 ≠ 1 → canonicalMap is injective [PROVED above]
+  -- 3. SurjectionsAreFormalSurjections: injective → Sp is surjective [NEEDS WORK]
+
+-- =============================================================================
 -- Stone→closedProp (reverse direction of PropositionsClosedIffStone)
 -- =============================================================================
 --
