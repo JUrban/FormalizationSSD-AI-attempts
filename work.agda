@@ -9205,5 +9205,89 @@ module StoneClosedSubsetsModule where
   -- (v) A closed → (iv) A is image of T : Stone → (ii) A = ⋂Dₙ → (iii) A ≃ Sp(B/dₙ)
 
 -- =============================================================================
+-- StoneSeparated (tex Lemma 1824)
+-- =============================================================================
+--
+-- Statement: For S : Stone with F, G : S → Closed such that F ∩ G = ∅,
+-- there exists a decidable subset D : S → 2 such that F ⊆ D and G ⊆ ¬D.
+--
+-- Proof sketch (from tex):
+-- 1. Assume S = Sp(B). By StoneClosedSubsets, for all n:ℕ there are fₙ,gₙ:B
+--    such that x ∈ F ↔ ∀n. x(fₙ) = 0 and y ∈ G ↔ ∀n. y(gₙ) = 0
+-- 2. Define hₖ by h_{2k} = fₖ and h_{2k+1} = gₖ
+-- 3. Sp(B/(hₖ)_{k:ℕ}) = F ∩ G = ∅
+-- 4. By SpectrumEmptyIff01Equal, there exist finite I,J ⊆ ℕ such that
+--    1 = (⋁_{i:I} fᵢ) ∨ (⋁_{j:J} gⱼ) in B
+-- 5. Define D(x) = (x(⋁_{j:J} gⱼ) = 1)
+-- 6. If y ∈ F, then y(fᵢ) = 0 for all i:I, so y(⋁_{j:J} gⱼ) = 1
+-- 7. If x ∈ G, then x(gⱼ) = 0 for all j:J, so x(⋁_{j:J} gⱼ) = 0
+-- Therefore F ⊆ D and G ⊆ ¬D
+
+module StoneSeparatedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+  open StoneClosedSubsetsModule
+  open SDDecToElemModule
+
+  -- Type of closed subsets of a Stone space
+  ClosedSubsetOfStone : Stone → Type₁
+  ClosedSubsetOfStone S = Σ[ A ∈ (fst S → hProp ℓ-zero) ] ((x : fst S) → isClosedProp (A x))
+
+  -- Decidable subset of a Stone space
+  DecSubsetOfStone : Stone → Type₀
+  DecSubsetOfStone S = fst S → Bool
+
+  -- Membership in decidable subset (D(x) = true)
+  _∈Dec_ : {S : Stone} → fst S → DecSubsetOfStone S → Type₀
+  x ∈Dec D = D x ≡ true
+
+  -- Membership in closed subset
+  _∈Closed_ : {S : Stone} → fst S → ClosedSubsetOfStone S → Type₀
+  x ∈Closed (A , _) = fst (A x)
+
+  -- Intersection of closed subsets is empty
+  ClosedSubsetsDisjoint : (S : Stone) → ClosedSubsetOfStone S → ClosedSubsetOfStone S → Type₀
+  ClosedSubsetsDisjoint S (F , _) (G , _) = (x : fst S) → fst (F x) → fst (G x) → ⊥
+
+  -- Subset containment for closed in decidable
+  ClosedSubDec : (S : Stone) → ClosedSubsetOfStone S → DecSubsetOfStone S → Type₀
+  ClosedSubDec S (A , _) D = (x : fst S) → fst (A x) → D x ≡ true
+
+  -- Subset containment in complement
+  ClosedSubNotDec : (S : Stone) → ClosedSubsetOfStone S → DecSubsetOfStone S → Type₀
+  ClosedSubNotDec S (A , _) D = (x : fst S) → fst (A x) → D x ≡ false
+
+  -- The main separation theorem
+  -- This is a key property of Stone spaces: disjoint closed subsets can be
+  -- separated by clopen (decidable) subsets.
+  --
+  -- The proof requires:
+  -- 1. Representing F, G as countable intersections of decidable subsets
+  -- 2. Showing their intersection corresponds to a quotient with empty spectrum
+  -- 3. Using SpectrumEmptyIff01Equal to get 1 = ⋁fᵢ ∨ ⋁gⱼ for finite I,J
+  -- 4. Constructing D from the finite join ⋁_{j:J} gⱼ
+  --
+  -- For now, we postulate this as it requires significant infrastructure
+  postulate
+    StoneSeparated : (S : Stone)
+      → (F G : ClosedSubsetOfStone S)
+      → ClosedSubsetsDisjoint S F G
+      → ∥ Σ[ D ∈ DecSubsetOfStone S ] (ClosedSubDec S F D) × (ClosedSubNotDec S G D) ∥₁
+
+  -- A useful consequence: closed subsets of Stone are "separated from points"
+  -- If F is closed and x ∉ F, there exists a clopen D with F ⊆ D and x ∉ D
+  --
+  -- Proof: Apply StoneSeparated with G = {x} (singleton, which is closed)
+  -- This follows from StoneEqualityClosed: {x} = {y | y = x} is closed
+  --
+  -- Note: This requires the singleton subset to be closed, which follows from
+  -- StoneEqualityClosed (equality in Stone spaces is closed).
+
+  -- Complement of a closed subset is open
+  -- This follows from the equivalence: P closed ↔ ¬P open (via closedComplement)
+  closedComplementIsOpen : {S : Stone} → (A : ClosedSubsetOfStone S)
+    → (x : fst S) → isOpenProp (¬hProp (fst A x))
+  closedComplementIsOpen (A , Aclosed) x = negClosedIsOpen mp (A x) (Aclosed x)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
