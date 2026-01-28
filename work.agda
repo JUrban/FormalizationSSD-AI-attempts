@@ -8913,5 +8913,63 @@ module ClosedDependentSumsModule where
     result = transport (cong isClosedProp hProp-path) truncΣ-closed
 
 -- =============================================================================
+-- SDDecToElem: Stone Duality Correspondence (tex AxStoneDuality)
+-- =============================================================================
+--
+-- The Stone duality axiom says that evaluation B → 2^{Sp(B)} is an equivalence.
+-- This gives a bijection between:
+-- - Elements b ∈ B
+-- - Decidable predicates D : Sp(B) → Bool
+--
+-- For ClosedInStoneIsStone, we need the inverse direction:
+-- Given a decidable predicate D on Sp(B), obtain an element d ∈ B
+-- such that D(x) = (x(d) = 0) or equivalently D(x) = (x(d) = true)
+-- (depending on the convention for "decidable subset")
+
+module SDDecToElemModule where
+  open import Axioms.StoneDuality using (evaluationMap; StoneDualityAxiom; SDHomVersion)
+
+  -- Given SD axiom and B : Booleω, we have an equivalence B ≃ 2^{Sp B}
+  -- The inverse gives us: decidable predicate → element of B
+
+  -- The evaluation map sends b ∈ B to the predicate (λ x → x(b))
+  -- where x : Sp B = BoolHom B Bool, so x(b) = fst x b
+
+  -- Note: evaluationMap B b x = fst x b
+  -- So evaluationMap B b is the decidable predicate "apply hom to b"
+
+  -- The inverse says: given any D : Sp B → Bool, there exists unique d ∈ B
+  -- with D = evaluationMap B d, i.e., D(x) = x(d) for all x : Sp B
+
+  DecPredOnSp : (B : Booleω) → Type ℓ-zero
+  DecPredOnSp B = Sp B → Bool
+
+  -- Using SD axiom: the evaluation map is an equivalence
+  -- evaluationMap B : ⟨ fst B ⟩ → DecPredOnSp B
+
+  -- The inverse map: decidable predicate → element
+  elemFromDecPred : StoneDualityAxiom → (B : Booleω) → DecPredOnSp B → ⟨ fst B ⟩
+  elemFromDecPred SD B D = invEq (fst (SDHomVersion SD B)) D
+
+  -- Round-trip: elem to predicate to elem is identity
+  elemFromDecPred-roundtrip : (SD : StoneDualityAxiom) (B : Booleω) (b : ⟨ fst B ⟩)
+    → elemFromDecPred SD B (evaluationMap B b) ≡ b
+  elemFromDecPred-roundtrip SD B b = retEq (fst (SDHomVersion SD B)) b
+
+  -- Round-trip: predicate to elem to predicate is identity
+  decPredFromElem-roundtrip : (SD : StoneDualityAxiom) (B : Booleω) (D : DecPredOnSp B)
+    → evaluationMap B (elemFromDecPred SD B D) ≡ D
+  decPredFromElem-roundtrip SD B D = secEq (fst (SDHomVersion SD B)) D
+
+  -- Key property: for d = elemFromDecPred SD B D, we have x(d) = D(x)
+  -- This follows from decPredFromElem-roundtrip applied pointwise
+  -- Note: evaluationMap B d = (λ x → fst x d) = (λ x → x(d))
+  decPred-elem-correspondence : (SD : StoneDualityAxiom) (B : Booleω) (D : DecPredOnSp B)
+    → let d = elemFromDecPred SD B D
+      in (x : Sp B) → fst x d ≡ D x
+  decPred-elem-correspondence SD B D x =
+    cong (λ f → f x) (decPredFromElem-roundtrip SD B D)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
