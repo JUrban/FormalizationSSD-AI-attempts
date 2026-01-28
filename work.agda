@@ -5858,5 +5858,36 @@ meet-meetNegForm ns ms = meetNegForm (ns ++ ms)
 -- - Normal forms are compatible with the equivalence relation
 
 -- =============================================================================
+-- SpB∞-to-ℕ∞ injectivity (alternative approach to normalFormExists)
+-- =============================================================================
+
+-- The key insight: homomorphisms B∞ → Bool are determined by their values on generators.
+-- This follows from equalityFromEqualityOnGenerators in freeBATerms.agda.
+--
+-- For quotients, homomorphisms B∞ → Bool correspond to homomorphisms freeBA ℕ → Bool
+-- that vanish on the relations. Since generators g∞ n determine elements of freeBA ℕ
+-- (via equalityFromEqualityOnGenerators), they also determine homomorphisms out of B∞.
+--
+-- Thus: if SpB∞-to-ℕ∞ h₁ = SpB∞-to-ℕ∞ h₂ (same sequence), then h₁ = h₂.
+
+-- PROOF SKETCH for SpB∞-to-ℕ∞ injective:
+-- 1. SpB∞-to-ℕ∞ h extracts the sequence (h $cr (g∞ n))ₙ
+-- 2. If two homomorphisms give the same sequence, they agree on all generators
+-- 3. By equalityFromEqualityOnGenerators, they are equal
+--
+-- However, equalityFromEqualityOnGenerators is for freeBA A, not quotients.
+-- We need to extend it to quotients, which requires showing that homomorphisms
+-- out of quotients are determined by their values on generators of the original.
+
+-- For now, we postulate this and note the proof approach:
+-- postulate
+--   SpB∞-to-ℕ∞-injective : (h₁ h₂ : Sp B∞-Booleω) →
+--     SpB∞-to-ℕ∞ h₁ ≡ SpB∞-to-ℕ∞ h₂ → h₁ ≡ h₂
+
+-- With SpB∞-to-ℕ∞-injective, we get:
+-- SpB∞-to-ℕ∞ is a bijection (using SpB∞-roundtrip), so Sp B∞ ≅ ℕ∞
+-- Then f-injective follows from the spectrum argument.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
