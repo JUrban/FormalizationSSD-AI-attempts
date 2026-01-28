@@ -977,10 +977,39 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
     backward-hom = QB.inducedHom source backward-composite backward-composite-sends-α'-to-0
 
     -- Now we need to show forward-hom and backward-hom are inverses
-    -- This requires showing the compositions are identity using uniqueness of induced homs
-    -- For now, postulate (the hard part is showing the compositions are identity)
+    -- The forward function
+    forward-fun : ⟨ source ⟩ → ⟨ target ⟩
+    forward-fun = fst forward-hom
+
+    -- The backward function
+    backward-fun : ⟨ target ⟩ → ⟨ source ⟩
+    backward-fun = fst backward-hom
+
+    -- To show they're inverses, we use that:
+    -- forward-hom ∘ π_α = π-α' ∘ embBR (by definition of induced hom)
+    -- backward-hom ∘ π-α' = π_α ∘ equiv⁻¹ (by definition of induced hom)
+    -- Then backward-fun ∘ forward-fun ∘ π_α = π_α ∘ (equiv⁻¹ ∘ embBR) = π_α ∘ id = π_α
+    -- So backward-fun ∘ forward-fun = id by uniqueness (π_α is epi)
+
+    -- For now, postulate the isomorphism properties (requires evalInduce)
     postulate
-      step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
+      backward∘forward : (x : ⟨ source ⟩) → backward-fun (forward-fun x) ≡ x
+      forward∘backward : (y : ⟨ target ⟩) → forward-fun (backward-fun y) ≡ y
+
+    -- The underlying Iso
+    step1-iso : Iso ⟨ source ⟩ ⟨ target ⟩
+    Iso.fun step1-iso = forward-fun
+    Iso.inv step1-iso = backward-fun
+    Iso.sec step1-iso = forward∘backward
+    Iso.ret step1-iso = backward∘forward
+
+    -- Convert to equivalence
+    step1-equiv-fun : ⟨ source ⟩ ≃ ⟨ target ⟩
+    step1-equiv-fun = isoToEquiv step1-iso
+
+    -- The BooleanRingEquiv
+    step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
+    step1-equiv = step1-equiv-fun , snd forward-hom
 
     -- α' = π₀ ∘ g : both map n to 𝟙 if α n = true, else 𝟘
     -- Proof uses that embBR and π₀ are ring homomorphisms
