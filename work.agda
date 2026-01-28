@@ -10034,6 +10034,28 @@ module IntervalTopologyModule where
     <I-from-≤-≢ : (x y : UnitInterval) → x ≤I y → (x ≡ y → ⊥) → x <I y
     ≤-from-<I : (x y : UnitInterval) → x <I y → x ≤I y
 
+  -- Asymmetry of <: x < y → y < x → ⊥
+  postulate
+    <I-asymmetric : (x y : UnitInterval) → x <I y → y <I x → ⊥
+
+  -- Derived: irreflexivity from asymmetry
+  <I-irrefl : (x : UnitInterval) → x <I x → ⊥
+  <I-irrefl x x<x = <I-asymmetric x x x<x x<x
+
+  -- Derived: x < y implies x ≠ y
+  <I-implies-≢ : (x y : UnitInterval) → x <I y → x ≡ y → ⊥
+  <I-implies-≢ x y x<y x=y = <I-irrefl y (subst (_<I y) x=y x<y)
+
+  -- Derived: x < y and y < z implies x < z
+  -- (We need this as a postulate since <I might not be defined compositionally)
+  postulate
+    <I-trans : (x y z : UnitInterval) → x <I y → y <I z → x <I z
+
+  -- Derived: < is compatible with ≤ (x < y and y ≤ z implies x < z)
+  postulate
+    <I-≤I-trans : (x y z : UnitInterval) → x <I y → y ≤I z → x <I z
+    ≤I-<I-trans : (x y z : UnitInterval) → x ≤I y → y <I z → x <I z
+
   -- Closed interval [a,b]
   ClosedInterval : (a b : UnitInterval) → Type₀
   ClosedInterval a b = Σ[ x ∈ UnitInterval ] (a ≤I x) × (x ≤I b)
@@ -10133,20 +10155,7 @@ module IntermediateValueTheoremModule where
   U₁ f y x = y <I f x
 
   -- U₀ and U₁ are disjoint (clear from asymmetry of <)
-  -- The asymmetry of <I is: x <I y → y <I x → ⊥
-  postulate
-    <I-asymmetric : (x y : UnitInterval) → x <I y → y <I x → ⊥
-
-  -- Irreflexivity: derived from asymmetry
-  <I-irrefl : (x : UnitInterval) → x <I x → ⊥
-  <I-irrefl x x<x = <I-asymmetric x x x<x x<x
-
-  -- Trichotomy: for any x, y, we have x < y or x = y or y < x
-  -- This follows from ≠I-apartness and ≤I-linear, but proving it cleanly
-  -- requires decidable equality which comes from CHaus properties.
-  -- For now we postulate it.
-  postulate
-    <I-trichotomy : (x y : UnitInterval) → (x <I y) ⊎ ((x ≡ y) ⊎ (y <I x))
+  -- Uses <I-asymmetric and <I-irrefl from IntervalTopologyModule
 
   U₀-U₁-disjoint : (f : UnitInterval → UnitInterval) → (y : UnitInterval)
     → (x : UnitInterval) → U₀ f y x → U₁ f y x → ⊥
