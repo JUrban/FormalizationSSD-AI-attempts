@@ -5092,6 +5092,113 @@ finJoin∞-zero→empty (n ∷ rest) join=0 = ex-falso contradiction
   contradiction = true≢false (sym h-join=true ∙ h-join=false)
 
 -- =============================================================================
+-- Meet of negations is non-zero: finMeetNeg∞ ns ≠ 0
+-- =============================================================================
+
+-- The "infinity" element of ℕ∞: the constant-false sequence
+-- This corresponds to the zero homomorphism h₀ that sends all generators to false
+∞-seq : ℕ → Bool
+∞-seq _ = false
+
+∞-hamo : hitsAtMostOnce ∞-seq
+∞-hamo m n ∞m=t _ = ex-falso (false≢true ∞m=t)  -- vacuously true since ∞-seq n = false
+
+ℕ∞-∞ : ℕ∞
+ℕ∞-∞ = ∞-seq , ∞-hamo
+
+-- The zero homomorphism: sends all generators to false
+h₀ : Sp B∞-Booleω
+h₀ = ℕ∞-to-SpB∞ ℕ∞-∞
+
+-- h₀ sends all generators to false
+h₀-on-gen : (n : ℕ) → h₀ $cr (g∞ n) ≡ false
+h₀-on-gen n = SpB∞-roundtrip-seq ℕ∞-∞ n  -- h₀(g_n) = ∞-seq n = false
+
+-- Negation in Bool: ¬b = true ⊕ b
+notBool : Bool → Bool
+notBool false = true
+notBool true = false
+
+-- Key: in Boolean rings sent to Bool, h(¬x) = not(h(x))
+-- Because ¬x = 1 + x, and h(1) = true, h(+) = ⊕
+h-pres-neg-Bool : (h : Sp B∞-Booleω) (x : ⟨ B∞ ⟩) →
+  h $cr (¬∞ x) ≡ notBool (h $cr x)
+h-pres-neg-Bool h x =
+  let open IsCommRingHom (snd h) renaming (pres+ to h-pres+ ; pres1 to h-pres1)
+  in h $cr (¬∞ x)
+       ≡⟨ refl ⟩  -- ¬∞ x = 𝟙∞ +∞ x
+     h $cr (𝟙∞ +∞ x)
+       ≡⟨ h-pres+ 𝟙∞ x ⟩
+     (h $cr 𝟙∞) ⊕ (h $cr x)
+       ≡⟨ cong (_⊕ (h $cr x)) h-pres1 ⟩
+     true ⊕ (h $cr x)
+       ≡⟨ ⊕-comm true (h $cr x) ⟩
+     (h $cr x) ⊕ true
+       ≡⟨ helper (h $cr x) ⟩
+     notBool (h $cr x) ∎
+  where
+  helper : (b : Bool) → b ⊕ true ≡ notBool b
+  helper false = refl
+  helper true = refl
+
+-- h₀ sends negated generators to true
+h₀-on-neg-gen : (n : ℕ) → h₀ $cr (¬∞ (g∞ n)) ≡ true
+h₀-on-neg-gen n =
+  h₀ $cr (¬∞ (g∞ n))
+    ≡⟨ h-pres-neg-Bool h₀ (g∞ n) ⟩
+  notBool (h₀ $cr (g∞ n))
+    ≡⟨ cong notBool (h₀-on-gen n) ⟩
+  notBool false
+    ≡⟨ refl ⟩
+  true ∎
+
+-- Meet in Bool: a ∧ b = a and b
+-- Homomorphism preserves meet: h(a ∧ b) = h(a) and h(b)
+h-pres-meet-Bool : (h : Sp B∞-Booleω) (a b : ⟨ B∞ ⟩) →
+  h $cr (a ∧∞ b) ≡ (h $cr a) and (h $cr b)
+h-pres-meet-Bool h a b = IsCommRingHom.pres· (snd h) a b
+
+-- Key lemma: if h(a) = true and h(b) = true, then h(a ∧ b) = true
+h-meet-preserves-true : (h : Sp B∞-Booleω) (a b : ⟨ B∞ ⟩) →
+  h $cr a ≡ true → h $cr b ≡ true → h $cr (a ∧∞ b) ≡ true
+h-meet-preserves-true h a b ha=t hb=t =
+  h $cr (a ∧∞ b)
+    ≡⟨ h-pres-meet-Bool h a b ⟩
+  (h $cr a) and (h $cr b)
+    ≡⟨ cong₂ _and_ ha=t hb=t ⟩
+  true and true
+    ≡⟨ refl ⟩
+  true ∎
+
+-- h₀ evaluates finMeetNeg∞ to true for any list
+h₀-on-finMeetNeg : (ns : List ℕ) → h₀ $cr (finMeetNeg∞ ns) ≡ true
+h₀-on-finMeetNeg [] = IsCommRingHom.pres1 (snd h₀)  -- h₀(1) = true
+h₀-on-finMeetNeg (n ∷ ns) =
+  h-meet-preserves-true h₀ (¬∞ (g∞ n)) (finMeetNeg∞ ns)
+    (h₀-on-neg-gen n)
+    (h₀-on-finMeetNeg ns)
+
+-- Main theorem: finMeetNeg∞ ns ≠ 0 for any list
+-- Proof: h₀(finMeetNeg∞ ns) = true, but h₀(0) = false
+finMeetNeg∞-nonzero : (ns : List ℕ) → ¬ (finMeetNeg∞ ns ≡ 𝟘∞)
+finMeetNeg∞-nonzero ns meet=0 = contradiction
+  where
+  -- h₀ evaluates finMeetNeg∞ ns to true
+  h₀-meet=true : h₀ $cr (finMeetNeg∞ ns) ≡ true
+  h₀-meet=true = h₀-on-finMeetNeg ns
+
+  -- h₀(0) = false
+  h₀-0=false : h₀ $cr 𝟘∞ ≡ false
+  h₀-0=false = IsCommRingHom.pres0 (snd h₀)
+
+  -- h₀(finMeetNeg∞ ns) = h₀(0) = false
+  h₀-meet=false : h₀ $cr (finMeetNeg∞ ns) ≡ false
+  h₀-meet=false = cong (h₀ $cr_) meet=0 ∙ h₀-0=false
+
+  contradiction : ⊥
+  contradiction = true≢false (sym h₀-meet=true ∙ h₀-meet=false)
+
+-- =============================================================================
 -- LLPO derivation from Stone Duality
 -- =============================================================================
 
