@@ -6078,6 +6078,106 @@ meet-meetNegForm-correct (n ∷ ns) ms =
   (¬∞ (g∞ n)) ∧∞ finMeetNeg∞ (ns ++ ms) ∎
 
 -- =============================================================================
+-- Mixed normal form cases
+-- =============================================================================
+
+-- Helper: if a·b = 0 in a Boolean algebra, then a ∧ ¬b = a
+-- Proof: a ∧ ¬b = a · (1+b) = a + a·b = a + 0 = a
+∧-neg-orthogonal : (a b : ⟨ B∞ ⟩) → a ·∞ b ≡ 𝟘∞ → a ∧∞ (¬∞ b) ≡ a
+∧-neg-orthogonal a b ab=0 =
+  a ∧∞ (¬∞ b)
+    ≡⟨ refl ⟩  -- ∧ is ·, ¬b is 1+b
+  a ·∞ (𝟙∞ +∞ b)
+    ≡⟨ BooleanRingStr.·DistR+ (snd B∞) a 𝟙∞ b ⟩
+  (a ·∞ 𝟙∞) +∞ (a ·∞ b)
+    ≡⟨ cong₂ _+∞_ (BooleanRingStr.·IdR (snd B∞) a) ab=0 ⟩
+  a +∞ 𝟘∞
+    ≡⟨ BooleanRingStr.+IdR (snd B∞) a ⟩
+  a ∎
+
+-- Generator meets negated generator: g_n ∧ ¬g_m = g_n when n ≠ m (orthogonal)
+g∞-meet-neg-g∞-neq : (n m : ℕ) → ¬ (n ≡ m) → (g∞ n) ∧∞ (¬∞ (g∞ m)) ≡ g∞ n
+g∞-meet-neg-g∞-neq n m n≠m = ∧-neg-orthogonal (g∞ n) (g∞ m) (gen-orthogonal n m n≠m)
+
+-- Generator meets negated generator: g_n ∧ ¬g_n = 0 (complement)
+g∞-meet-neg-g∞-eq : (n : ℕ) → (g∞ n) ∧∞ (¬∞ (g∞ n)) ≡ 𝟘∞
+g∞-meet-neg-g∞-eq n = B∞-BoolAlg.¬Cancels∧R
+
+-- Generator meets finite meet of negations: g_n ∧ finMeetNeg∞ ms
+-- Case 1: n ∈ ms → result is 0 (because g_n ∧ ¬g_n = 0)
+-- Case 2: n ∉ ms → result is g_n (because g_n ∧ ¬g_m = g_n for all m ≠ n in ms)
+
+g∞-meet-finMeetNeg-notin : (n : ℕ) (ms : List ℕ) → n ∈? ms ≡ false →
+  (g∞ n) ∧∞ finMeetNeg∞ ms ≡ g∞ n
+g∞-meet-finMeetNeg-notin n [] _ =
+  (g∞ n) ∧∞ 𝟙∞   ≡⟨ B∞-BoolAlg.∧IdR ⟩
+  g∞ n ∎
+g∞-meet-finMeetNeg-notin n (m ∷ ms) p with discreteℕ n m
+... | yes n=m = ex-falso (true≢false p)  -- contradiction: n ∈? (n ∷ ms) = true
+... | no n≠m =
+  (g∞ n) ∧∞ ((¬∞ (g∞ m)) ∧∞ finMeetNeg∞ ms)
+    ≡⟨ BooleanRingStr.·Assoc (snd B∞) (g∞ n) (¬∞ (g∞ m)) (finMeetNeg∞ ms) ⟩
+  ((g∞ n) ∧∞ (¬∞ (g∞ m))) ∧∞ finMeetNeg∞ ms
+    ≡⟨ cong (_∧∞ finMeetNeg∞ ms) (g∞-meet-neg-g∞-neq n m n≠m) ⟩
+  (g∞ n) ∧∞ finMeetNeg∞ ms
+    ≡⟨ g∞-meet-finMeetNeg-notin n ms p ⟩
+  g∞ n ∎
+
+g∞-meet-finMeetNeg-in : (n : ℕ) (ms : List ℕ) → n ∈? ms ≡ true →
+  (g∞ n) ∧∞ finMeetNeg∞ ms ≡ 𝟘∞
+g∞-meet-finMeetNeg-in n [] p = ex-falso (true≢false (sym p))
+g∞-meet-finMeetNeg-in n (m ∷ ms) p with discreteℕ n m
+... | yes n=m =
+  (g∞ n) ∧∞ ((¬∞ (g∞ m)) ∧∞ finMeetNeg∞ ms)
+    ≡⟨ BooleanRingStr.·Assoc (snd B∞) (g∞ n) (¬∞ (g∞ m)) (finMeetNeg∞ ms) ⟩
+  ((g∞ n) ∧∞ (¬∞ (g∞ m))) ∧∞ finMeetNeg∞ ms
+    ≡⟨ cong (_∧∞ finMeetNeg∞ ms) (cong ((g∞ n) ∧∞_) (cong (¬∞_ ∘ g∞) (sym n=m))) ⟩
+  ((g∞ n) ∧∞ (¬∞ (g∞ n))) ∧∞ finMeetNeg∞ ms
+    ≡⟨ cong (_∧∞ finMeetNeg∞ ms) (g∞-meet-neg-g∞-eq n) ⟩
+  𝟘∞ ∧∞ finMeetNeg∞ ms
+    ≡⟨ B∞-BoolAlg.∧AnnihilL ⟩
+  𝟘∞ ∎
+... | no n≠m =
+  (g∞ n) ∧∞ ((¬∞ (g∞ m)) ∧∞ finMeetNeg∞ ms)
+    ≡⟨ BooleanRingStr.·Assoc (snd B∞) (g∞ n) (¬∞ (g∞ m)) (finMeetNeg∞ ms) ⟩
+  ((g∞ n) ∧∞ (¬∞ (g∞ m))) ∧∞ finMeetNeg∞ ms
+    ≡⟨ cong (_∧∞ finMeetNeg∞ ms) (g∞-meet-neg-g∞-neq n m n≠m) ⟩
+  (g∞ n) ∧∞ finMeetNeg∞ ms
+    ≡⟨ g∞-meet-finMeetNeg-in n ms p ⟩
+  𝟘∞ ∎
+
+-- List difference: ns minus elements in ms
+_∖L_ : List ℕ → List ℕ → List ℕ
+[] ∖L ms = []
+(n ∷ ns) ∖L ms with n ∈? ms
+... | true = ns ∖L ms
+... | false = n ∷ (ns ∖L ms)
+
+-- Main correctness theorem for meet of joinForm and meetNegForm:
+-- finJoin∞ ns ∧ finMeetNeg∞ ms = finJoin∞ (ns ∖L ms)
+-- That is: ⋁_I g_i ∧ ⋀_J ¬g_j = ⋁_{I∖J} g_k
+meet-joinForm-meetNegForm-correct : (ns ms : List ℕ) →
+  finJoin∞ ns ∧∞ finMeetNeg∞ ms ≡ finJoin∞ (ns ∖L ms)
+meet-joinForm-meetNegForm-correct [] ms =
+  𝟘∞ ∧∞ finMeetNeg∞ ms   ≡⟨ B∞-BoolAlg.∧AnnihilL ⟩
+  𝟘∞ ∎
+meet-joinForm-meetNegForm-correct (n ∷ ns) ms with n ∈? ms | inspect (n ∈?_) ms
+... | true | [ n∈ms ] =
+  (g∞ n ∨∞ finJoin∞ ns) ∧∞ finMeetNeg∞ ms
+    ≡⟨ B∞-BoolAlg.∧DistL∨ ⟩
+  ((g∞ n) ∧∞ finMeetNeg∞ ms) ∨∞ (finJoin∞ ns ∧∞ finMeetNeg∞ ms)
+    ≡⟨ cong₂ _∨∞_ (g∞-meet-finMeetNeg-in n ms n∈ms) (meet-joinForm-meetNegForm-correct ns ms) ⟩
+  𝟘∞ ∨∞ finJoin∞ (ns ∖L ms)
+    ≡⟨ B∞-BoolAlg.∨IdL ⟩
+  finJoin∞ (ns ∖L ms) ∎
+... | false | [ n∉ms ] =
+  (g∞ n ∨∞ finJoin∞ ns) ∧∞ finMeetNeg∞ ms
+    ≡⟨ B∞-BoolAlg.∧DistL∨ ⟩
+  ((g∞ n) ∧∞ finMeetNeg∞ ms) ∨∞ (finJoin∞ ns ∧∞ finMeetNeg∞ ms)
+    ≡⟨ cong₂ _∨∞_ (g∞-meet-finMeetNeg-notin n ms n∉ms) (meet-joinForm-meetNegForm-correct ns ms) ⟩
+  g∞ n ∨∞ finJoin∞ (ns ∖L ms) ∎
+
+-- =============================================================================
 -- normalFormExists status
 -- =============================================================================
 
