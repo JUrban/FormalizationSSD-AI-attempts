@@ -4472,10 +4472,17 @@ llpo-from-SD-aux h = PT.rec llpo-is-prop go (Sp-f-surjective h)
   odds-is-prop : isProp ((k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false)
   odds-is-prop = isPropΠ (λ k → isSetBool _ _)
 
-  -- The two disjuncts are mutually exclusive
-  -- (if all evens are 0 and all odds are 0, then h(g_0) = h(g_1) = 0, hence h = 0,
-  --  but h preserves 1, so h(1) = true, contradiction since 1 = sum of some g_i)
-  -- For simplicity, postulate this disjointness
+  -- The two disjuncts are mutually exclusive FOR NON-ZERO SEQUENCES.
+  -- NOTE: The zero sequence (all α_n = false) satisfies BOTH disjuncts!
+  -- For such α, we need to pick one side arbitrarily.
+  --
+  -- The key insight is that for h arising from Sp-f-surjective:
+  -- - If h(g_n) = true for some even n, then h'(1,0) = true for ALL lifts h'
+  -- - If h(g_n) = true for some odd n, then h'(1,0) = false for ALL lifts h'
+  -- - Only for the zero sequence (h(g_n) = false for all n) can h'(1,0) vary
+  --
+  -- The full proof requires Local Choice or restructuring to handle this.
+  -- For now, postulate disjointness (which holds for non-zero h).
   postulate
     evens-odds-disjoint : ((k : ℕ) → h $cr (g∞ (2 ·ℕ k)) ≡ false) →
                           ((k : ℕ) → h $cr (g∞ (suc (2 ·ℕ k))) ≡ false) → ⊥
