@@ -985,16 +985,84 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
     backward-fun : ⟨ target ⟩ → ⟨ source ⟩
     backward-fun = fst backward-hom
 
-    -- To show they're inverses, we use that:
-    -- forward-hom ∘ π_α = π-α' ∘ embBR (by definition of induced hom)
-    -- backward-hom ∘ π-α' = π_α ∘ equiv⁻¹ (by definition of induced hom)
+    -- To show they're inverses, we use:
+    -- forward-hom ∘ π_α = composite-hom = π-α' ∘ embBR (by evalInduce)
+    -- backward-hom ∘ π-α' = backward-composite = π_α ∘ equiv⁻¹ (by evalInduce)
     -- Then backward-fun ∘ forward-fun ∘ π_α = π_α ∘ (equiv⁻¹ ∘ embBR) = π_α ∘ id = π_α
-    -- So backward-fun ∘ forward-fun = id by uniqueness (π_α is epi)
+    -- So backward-fun ∘ forward-fun = id by quotientImageHomEpi (π_α is epi)
 
-    -- For now, postulate the isomorphism properties (requires evalInduce)
-    postulate
-      backward∘forward : (x : ⟨ source ⟩) → backward-fun (forward-fun x) ≡ x
-      forward∘backward : (y : ⟨ target ⟩) → forward-fun (backward-fun y) ≡ y
+    -- evalInduce for forward-hom
+    forward-eval : forward-hom ∘cr π-α ≡ composite-hom
+    forward-eval = QB.evalInduce {B = BoolBR} {f = α} target {composite-hom} {composite-sends-α-to-0}
+
+    -- evalInduce for backward-hom
+    backward-eval : backward-hom ∘cr π-α' ≡ backward-composite
+    backward-eval = QB.evalInduce {B = freeBA ℕ QB./Im f₀} {f = α'} source {backward-composite} {backward-composite-sends-α'-to-0}
+
+    -- The retract property: equiv⁻¹ ∘ embBR = id
+    equiv⁻¹∘embBR≡id : (x : Bool) → fst equiv⁻¹-hom (embBR x) ≡ x
+    equiv⁻¹∘embBR≡id = Iso.ret (equivToIso (fst equiv))
+
+    -- Helper: the source is a set
+    source-isSet : isSet ⟨ source ⟩
+    source-isSet = is-set (snd source)
+      where open BooleanRingStr
+
+    -- Helper: the target is a set
+    target-isSet : isSet ⟨ target ⟩
+    target-isSet = is-set (snd target)
+      where open BooleanRingStr
+
+    -- backward∘forward proof using quotientImageHomEpi
+    -- We show: (backward-fun ∘ forward-fun) ∘ (fst π-α) = (fst π-α)
+    -- Then quotientImageHomEpi gives us backward-fun ∘ forward-fun = id
+    backward∘forward-on-π : (x : Bool) → backward-fun (forward-fun (fst π-α x)) ≡ fst π-α x
+    backward∘forward-on-π x =
+      backward-fun (forward-fun (fst π-α x))
+        ≡⟨ cong backward-fun (cong (λ h → fst h x) forward-eval) ⟩
+      backward-fun (fst composite-hom x)
+        ≡⟨ refl ⟩  -- composite-hom = π-α' ∘ embBR-hom
+      backward-fun (fst π-α' (embBR x))
+        ≡⟨ cong (λ h → fst h (embBR x)) backward-eval ⟩
+      fst backward-composite (embBR x)
+        ≡⟨ refl ⟩  -- backward-composite = π-α ∘ equiv⁻¹-hom
+      fst π-α (fst equiv⁻¹-hom (embBR x))
+        ≡⟨ cong (fst π-α) (equiv⁻¹∘embBR≡id x) ⟩
+      fst π-α x ∎
+
+    backward∘forward-ext : (backward-fun ∘ forward-fun) ∘ fst π-α ≡ (λ x → x) ∘ fst π-α
+    backward∘forward-ext = funExt backward∘forward-on-π
+
+    backward∘forward : (x : ⟨ source ⟩) → backward-fun (forward-fun x) ≡ x
+    backward∘forward = funExt⁻ (QB.quotientImageHomEpi {B = BoolBR} {f = α} (⟨ source ⟩ , source-isSet) backward∘forward-ext)
+
+    -- For forward∘backward, similar argument:
+    -- forward-fun ∘ backward-fun ∘ π-α' = forward-fun ∘ (π-α ∘ equiv⁻¹)
+    --                                   = π-α' ∘ embBR ∘ equiv⁻¹
+    --                                   = π-α' ∘ id = π-α'
+    -- The section property: embBR ∘ equiv⁻¹ = id
+    embBR∘equiv⁻¹≡id : (y : ⟨ freeBA ℕ QB./Im f₀ ⟩) → embBR (fst equiv⁻¹-hom y) ≡ y
+    embBR∘equiv⁻¹≡id = Iso.sec (equivToIso (fst equiv))
+
+    forward∘backward-on-π : (y : ⟨ freeBA ℕ QB./Im f₀ ⟩) → forward-fun (backward-fun (fst π-α' y)) ≡ fst π-α' y
+    forward∘backward-on-π y =
+      forward-fun (backward-fun (fst π-α' y))
+        ≡⟨ cong forward-fun (cong (λ h → fst h y) backward-eval) ⟩
+      forward-fun (fst backward-composite y)
+        ≡⟨ refl ⟩  -- backward-composite = π-α ∘ equiv⁻¹-hom
+      forward-fun (fst π-α (fst equiv⁻¹-hom y))
+        ≡⟨ cong (λ h → fst h (fst equiv⁻¹-hom y)) forward-eval ⟩
+      fst composite-hom (fst equiv⁻¹-hom y)
+        ≡⟨ refl ⟩  -- composite-hom = π-α' ∘ embBR-hom
+      fst π-α' (embBR (fst equiv⁻¹-hom y))
+        ≡⟨ cong (fst π-α') (embBR∘equiv⁻¹≡id y) ⟩
+      fst π-α' y ∎
+
+    forward∘backward-ext : (forward-fun ∘ backward-fun) ∘ fst π-α' ≡ (λ y → y) ∘ fst π-α'
+    forward∘backward-ext = funExt forward∘backward-on-π
+
+    forward∘backward : (y : ⟨ target ⟩) → forward-fun (backward-fun y) ≡ y
+    forward∘backward = funExt⁻ (QB.quotientImageHomEpi {B = freeBA ℕ QB./Im f₀} {f = α'} (⟨ target ⟩ , target-isSet) forward∘backward-ext)
 
     -- The underlying Iso
     step1-iso : Iso ⟨ source ⟩ ⟨ target ⟩
