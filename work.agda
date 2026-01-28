@@ -6846,5 +6846,61 @@ normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
 -- - interpretB∞ is surjective (follows from quotient structure)
 
 -- =============================================================================
+-- Proving interpretB∞ surjectivity using equalityFromEqualityOnGenerators
+-- =============================================================================
+
+-- Import surjection composition from the Cubical library
+open import Cubical.Functions.Surjection using (isSurjection ; compSurjection ; _↠_)
+open import BooleanRing.FreeBooleanRing.freeBATerms using (includeBATermsSurj ; equalityFromEqualityOnGenerators)
+
+-- The quotient map π∞ is surjective
+π∞-surj : isSurjection (fst π∞)
+π∞-surj = QB.quotientImageHomSurjective
+
+-- The composition π∞ ∘ includeBATermsSurj is surjective
+π∞-includeTerms-surj : isSurjection (fst π∞ ∘ fst includeBATermsSurj)
+π∞-includeTerms-surj = compSurjection (fst includeBATermsSurj , snd includeBATermsSurj) (fst π∞ , π∞-surj) .snd
+
+-- The key lemma: interpretB∞ equals π∞ ∘ includeBATermsSurj on terms
+-- Both are ring homomorphisms from freeBATerms ℕ that send Tvar n to g∞ n.
+--
+-- Proof strategy:
+-- 1. Define π∞-from-terms : freeBATerms ℕ → ⟨ B∞ ⟩ as fst π∞ ∘ fst includeBATermsSurj
+-- 2. Show both interpretB∞ and π∞-from-terms send Tvar n to g∞ n
+-- 3. Since both preserve ring operations and agree on generators, they are equal
+
+-- Define the composition for clarity
+π∞-from-terms : freeBATerms ℕ → ⟨ B∞ ⟩
+π∞-from-terms t = fst π∞ (fst includeBATermsSurj t)
+
+-- The key observation is that:
+-- interpretB∞ (Tvar n) = g∞ n = fst π∞ (generator n)
+-- π∞-from-terms (Tvar n) = fst π∞ (fst includeBATermsSurj (Tvar n))
+--
+-- If fst includeBATermsSurj (Tvar n) = generator n, then they agree.
+-- This is the definition of includeBATermsSurj.
+
+-- NOTE: The equality interpretB∞ = π∞-from-terms follows from
+-- equalityFromEqualityOnGenerators applied to the underlying ring structure.
+-- However, direct application is blocked by the opaque definition.
+--
+-- ALTERNATIVE: We can prove surjectivity of interpretB∞ using propositional
+-- truncation elimination, since B∞-NormalForm is a set.
+
+-- interpretB∞ is surjective (proof via truncation)
+-- Given x : ⟨ B∞ ⟩, we need to show ∥ Σ[ t ∈ freeBATerms ℕ ] interpretB∞ t ≡ x ∥₁
+--
+-- Approach using quotient structure:
+-- By π∞-surj: ∥ Σ[ y ∈ freeBA ℕ ] fst π∞ y ≡ x ∥₁
+-- By includeBATermsSurj: for that y, ∥ Σ[ t ∈ terms ] fst includeBATermsSurj t ≡ y ∥₁
+-- If interpretB∞ t ≡ π∞-from-terms t, then interpretB∞ t ≡ fst π∞ y ≡ x
+
+-- The challenge: proving interpretB∞ t ≡ π∞-from-terms t requires unfolding opaque.
+--
+-- For now, we note that normalFormExists is equivalent to interpretB∞ being surjective,
+-- and the above analysis shows the surjectivity follows from the quotient structure
+-- once the opaque barrier for includeBATermsSurj is addressed.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
