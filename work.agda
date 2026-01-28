@@ -6480,9 +6480,143 @@ quad-cancel x =
 -- 2. An explicit transport/coercion that would clutter the proof
 -- 3. A different proof strategy that doesn't mix +/· in cong contexts
 --
--- For now, we postulate this identity which is mathematically sound.
-postulate
-  xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
+-- PROVED! (was postulated, now proved via xor-symmdiff-proof defined below)
+-- The key insight is to avoid Cubical Agda's projection mismatch by using
+-- custom helper functions that have explicit types matching our expected usage.
+--
+-- Helper: left distributivity (a + b) · c = a·c + b·c
+xor-·-distL-+ : (a b c : ⟨ B∞ ⟩) → (a +∞ b) ·∞ c ≡ (a ·∞ c) +∞ (b ·∞ c)
+xor-·-distL-+ a b c = BooleanRingStr.·DistL+ (snd B∞) a b c
+
+-- Helper: right distributivity c · (a + b) = c·a + c·b
+xor-·-distR-+ : (c a b : ⟨ B∞ ⟩) → c ·∞ (a +∞ b) ≡ (c ·∞ a) +∞ (c ·∞ b)
+xor-·-distR-+ c a b = BooleanRingStr.·DistR+ (snd B∞) c a b
+
+-- Helper: x · 1 = x
+xor-·-1R : (x : ⟨ B∞ ⟩) → x ·∞ 𝟙∞ ≡ x
+xor-·-1R x = BooleanRingStr.·IdR (snd B∞) x
+
+-- Helper: associativity of + (with correct direction)
+xor-+∞-assoc : (a b c : ⟨ B∞ ⟩) → (a +∞ b) +∞ c ≡ a +∞ (b +∞ c)
+xor-+∞-assoc a b c = sym (BooleanRingStr.+Assoc (snd B∞) a b c)
+
+-- Helper: associativity of · (with correct direction)
+xor-·∞-assoc : (a b c : ⟨ B∞ ⟩) → (a ·∞ b) ·∞ c ≡ a ·∞ (b ·∞ c)
+xor-·∞-assoc a b c = sym (BooleanRingStr.·Assoc (snd B∞) a b c)
+
+-- Helper: commutativity of ·
+xor-·∞-comm : (a b : ⟨ B∞ ⟩) → a ·∞ b ≡ b ·∞ a
+xor-·∞-comm a b = BooleanRingStr.·Comm (snd B∞) a b
+
+-- Helper: idempotence of ·
+xor-·∞-idem : (a : ⟨ B∞ ⟩) → a ·∞ a ≡ a
+xor-·∞-idem a = BooleanRingStr.·Idem (snd B∞) a
+
+-- Helper: 0 + x = x
+xor-+∞-0L : (x : ⟨ B∞ ⟩) → 𝟘∞ +∞ x ≡ x
+xor-+∞-0L x = BooleanRingStr.+IdL (snd B∞) x
+
+-- Helper: x + 0 = x
+xor-+∞-0R : (x : ⟨ B∞ ⟩) → x +∞ 𝟘∞ ≡ x
+xor-+∞-0R x = BooleanRingStr.+IdR (snd B∞) x
+
+-- Key helper: a · (a · b) = a · b
+xor-a·ab=ab : (a b : ⟨ B∞ ⟩) → a ·∞ (a ·∞ b) ≡ a ·∞ b
+xor-a·ab=ab a b =
+  a ·∞ (a ·∞ b)
+    ≡⟨ sym (xor-·∞-assoc a a b) ⟩
+  (a ·∞ a) ·∞ b
+    ≡⟨ cong (_·∞ b) (xor-·∞-idem a) ⟩
+  a ·∞ b ∎
+
+-- Key helper: b · (a · b) = a · b
+xor-b·ab=ab : (a b : ⟨ B∞ ⟩) → b ·∞ (a ·∞ b) ≡ a ·∞ b
+xor-b·ab=ab a b =
+  b ·∞ (a ·∞ b)
+    ≡⟨ xor-·∞-comm b (a ·∞ b) ⟩
+  (a ·∞ b) ·∞ b
+    ≡⟨ xor-·∞-assoc a b b ⟩
+  a ·∞ (b ·∞ b)
+    ≡⟨ cong (a ·∞_) (xor-·∞-idem b) ⟩
+  a ·∞ b ∎
+
+-- Key helper: (x + y + z) · w = x·w + y·w + z·w
+xor-triple-distL : (x y z w : ⟨ B∞ ⟩) → (x +∞ y +∞ z) ·∞ w ≡ (x ·∞ w) +∞ (y ·∞ w) +∞ (z ·∞ w)
+xor-triple-distL x y z w =
+  (x +∞ y +∞ z) ·∞ w
+    ≡⟨ xor-·-distL-+ (x +∞ y) z w ⟩
+  ((x +∞ y) ·∞ w) +∞ (z ·∞ w)
+    ≡⟨ cong (_+∞ (z ·∞ w)) (xor-·-distL-+ x y w) ⟩
+  ((x ·∞ w) +∞ (y ·∞ w)) +∞ (z ·∞ w) ∎
+
+-- Main proof of xor-symmdiff
+xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
+xor-symmdiff a b =
+  let ab = a ·∞ b
+      -- Compute (a + b + ab) · 1 = a + b + ab
+      step1 : (a +∞ b +∞ ab) ·∞ 𝟙∞ ≡ a +∞ b +∞ ab
+      step1 = xor-·-1R (a +∞ b +∞ ab)
+
+      -- (a + b + ab) · ab = a·ab + b·ab + ab·ab = ab + ab + ab
+      step2-dist : (a +∞ b +∞ ab) ·∞ ab ≡ (a ·∞ ab) +∞ (b ·∞ ab) +∞ (ab ·∞ ab)
+      step2-dist = xor-triple-distL a b ab ab
+
+      step2-simplify : (a ·∞ ab) +∞ (b ·∞ ab) +∞ (ab ·∞ ab) ≡ ab +∞ ab +∞ ab
+      step2-simplify =
+        (a ·∞ ab) +∞ (b ·∞ ab) +∞ (ab ·∞ ab)
+          ≡⟨ cong (λ t → t +∞ (b ·∞ ab) +∞ (ab ·∞ ab)) (xor-a·ab=ab a b) ⟩
+        ab +∞ (b ·∞ ab) +∞ (ab ·∞ ab)
+          ≡⟨ cong (λ t → ab +∞ t +∞ (ab ·∞ ab)) (xor-b·ab=ab a b) ⟩
+        ab +∞ ab +∞ (ab ·∞ ab)
+          ≡⟨ cong (λ t → ab +∞ ab +∞ t) (xor-·∞-idem ab) ⟩
+        ab +∞ ab +∞ ab ∎
+
+      step2 : (a +∞ b +∞ ab) ·∞ ab ≡ ab +∞ ab +∞ ab
+      step2 = step2-dist ∙ step2-simplify
+
+      -- Main step: (a + b + ab) · (1 + ab) = (a + b + ab) · 1 + (a + b + ab) · ab
+      main-dist : (a +∞ b +∞ ab) ·∞ (𝟙∞ +∞ ab) ≡ ((a +∞ b +∞ ab) ·∞ 𝟙∞) +∞ ((a +∞ b +∞ ab) ·∞ ab)
+      main-dist = xor-·-distR-+ (a +∞ b +∞ ab) 𝟙∞ ab
+
+      main-simplified : ((a +∞ b +∞ ab) ·∞ 𝟙∞) +∞ ((a +∞ b +∞ ab) ·∞ ab) ≡ (a +∞ b +∞ ab) +∞ (ab +∞ ab +∞ ab)
+      main-simplified =
+        ((a +∞ b +∞ ab) ·∞ 𝟙∞) +∞ ((a +∞ b +∞ ab) ·∞ ab)
+          ≡⟨ cong (_+∞ ((a +∞ b +∞ ab) ·∞ ab)) step1 ⟩
+        (a +∞ b +∞ ab) +∞ ((a +∞ b +∞ ab) ·∞ ab)
+          ≡⟨ cong ((a +∞ b +∞ ab) +∞_) step2 ⟩
+        (a +∞ b +∞ ab) +∞ (ab +∞ ab +∞ ab) ∎
+
+      -- Flatten: (a + b + ab) + (ab + ab + ab) = a + b
+      step-reassoc1 : (a +∞ b +∞ ab) +∞ (ab +∞ ab +∞ ab) ≡ (a +∞ b) +∞ (ab +∞ (ab +∞ ab +∞ ab))
+      step-reassoc1 = xor-+∞-assoc (a +∞ b) ab (ab +∞ ab +∞ ab)
+
+      step-reassoc2 : (a +∞ b) +∞ (ab +∞ (ab +∞ ab +∞ ab)) ≡ (a +∞ b) +∞ ((ab +∞ ab) +∞ (ab +∞ ab))
+      step-reassoc2 = cong ((a +∞ b) +∞_) (
+        ab +∞ (ab +∞ ab +∞ ab)
+          ≡⟨ sym (xor-+∞-assoc ab (ab +∞ ab) ab) ⟩
+        (ab +∞ (ab +∞ ab)) +∞ ab
+          ≡⟨ cong (_+∞ ab) (sym (xor-+∞-assoc ab ab ab)) ⟩
+        ((ab +∞ ab) +∞ ab) +∞ ab
+          ≡⟨ xor-+∞-assoc (ab +∞ ab) ab ab ⟩
+        (ab +∞ ab) +∞ (ab +∞ ab) ∎)
+
+      step-cancel : (a +∞ b) +∞ ((ab +∞ ab) +∞ (ab +∞ ab)) ≡ (a +∞ b) +∞ 𝟘∞
+      step-cancel = cong ((a +∞ b) +∞_) (
+        (ab +∞ ab) +∞ (ab +∞ ab)
+          ≡⟨ cong (_+∞ (ab +∞ ab)) (char2-B∞ ab) ⟩
+        𝟘∞ +∞ (ab +∞ ab)
+          ≡⟨ xor-+∞-0L (ab +∞ ab) ⟩
+        ab +∞ ab
+          ≡⟨ char2-B∞ ab ⟩
+        𝟘∞ ∎)
+
+      flatten : (a +∞ b +∞ ab) +∞ (ab +∞ ab +∞ ab) ≡ a +∞ b
+      flatten = step-reassoc1 ∙ step-reassoc2 ∙ step-cancel ∙ xor-+∞-0R (a +∞ b)
+
+      rhs-expanded : (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b)) ≡ (a +∞ b +∞ ab) ·∞ (𝟙∞ +∞ ab)
+      rhs-expanded = refl
+
+  in sym (rhs-expanded ∙ main-dist ∙ main-simplified ∙ flatten)
 
 -- XOR of two joinForms yields a joinForm with symmetric difference
 -- finJoin∞ ns +∞ finJoin∞ ms = finJoin∞ (ns △L ms)
