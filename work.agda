@@ -4387,11 +4387,12 @@ data B∞-NormalForm : Type₀ where
 -- ANALYSIS: This postulate is UNUSED in the main proof chain!
 -- - The only use is in f-injective-from-normalForm (line ~6144)
 -- - But f-injective-from-normalForm is NEVER USED (superseded by f-injective-from-trunc)
--- - Therefore this postulate could be safely removed without affecting the formalization
+-- - Therefore this postulate has been COMMENTED OUT.
 --
--- Kept for documentation purposes only.
-postulate
-  normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+-- {- COMMENTED OUT - UNUSED CODE:
+-- postulate
+--   normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+-- -}
 
 -- Key lemma: f respects the parity split on indices
 -- For a join form: f(⋁_{i∈I} g_i) = (⋁_{k: 2k∈I} g_k, ⋁_{k: 2k+1∈I} g_k)
@@ -6257,68 +6258,71 @@ f-kernel-normalForm (meetNegForm ns) fx=0 =
     h'-on-f-meetNeg-eq-0 = subst (λ z → h' z ≡ true) f-meetNeg=0 h'-on-f-meetNeg
 
 -- f-injective derived from normalFormExists
--- NOTE: This uses normalFormExists which is still postulated
+-- NOTE: This uses normalFormExists which was postulated
 --
 -- IMPORTANT: This function is REDUNDANT and UNUSED!
 -- The function f-injective-from-trunc (line ~7905) proves the same result
 -- using only truncated normal forms, without requiring the postulated normalFormExists.
--- This function is kept only for documentation/reference purposes.
-f-injective-from-normalForm : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
-f-injective-from-normalForm x y fx=fy =
-  let -- Get normal forms
-      (nf-x , nf-x-eq) = normalFormExists x
-      (nf-y , nf-y-eq) = normalFormExists y
-
-      -- f is a ring homomorphism, so f(x - y) = f(x) - f(y) = 0
-      -- In Boolean rings, x - y = x + y (since -x = x)
-      xy-diff : ⟨ B∞ ⟩
-      xy-diff = x +∞ y
-
-      f-xy-diff : fst f xy-diff ≡ (𝟘∞ , 𝟘∞)
-      f-xy-diff =
-        fst f (x +∞ y)
-          ≡⟨ f-pres+ x y ⟩
-        (fst f x) +× (fst f y)
-          ≡⟨ cong (_+× (fst f y)) fx=fy ⟩
-        (fst f y) +× (fst f y)
-          ≡⟨ char2-B∞×B∞ (fst f y) ⟩
-        (𝟘∞ , 𝟘∞) ∎
-
-      -- Get normal form of x + y
-      (nf-diff , nf-diff-eq) = normalFormExists xy-diff
-
-      -- f(⟦nf-diff⟧) = f(x + y) = 0
-      f-nf-diff=0 : fst f ⟦ nf-diff ⟧nf ≡ (𝟘∞ , 𝟘∞)
-      f-nf-diff=0 = cong (fst f) nf-diff-eq ∙ f-xy-diff
-
-      -- So ⟦nf-diff⟧ = 0
-      nf-diff=0 : ⟦ nf-diff ⟧nf ≡ 𝟘∞
-      nf-diff=0 = f-kernel-normalForm nf-diff f-nf-diff=0
-
-      -- x + y = 0
-      xy=0 : x +∞ y ≡ 𝟘∞
-      xy=0 = sym nf-diff-eq ∙ nf-diff=0
-
-      -- In Boolean rings, x + y = 0 implies x = y
-      -- (since x + y + y = x + 0 = x, and y + y = 0, so x + y + y = x)
-      x=y : x ≡ y
-      x=y = BooleanRing-xor-eq-to-eq x y xy=0
-
-  in x=y
-  where
-  BooleanRing-xor-eq-to-eq : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ 𝟘∞ → a ≡ b
-  BooleanRing-xor-eq-to-eq a b a+b=0 =
-    a
-      ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) a) ⟩
-    a +∞ 𝟘∞
-      ≡⟨ sym (cong (a +∞_) (char2-B∞ b)) ⟩
-    a +∞ (b +∞ b)
-      ≡⟨ BooleanRingStr.+Assoc (snd B∞) a b b ⟩
-    (a +∞ b) +∞ b
-      ≡⟨ cong (_+∞ b) a+b=0 ⟩
-    𝟘∞ +∞ b
-      ≡⟨ BooleanRingStr.+IdL (snd B∞) b ⟩
-    b ∎
+-- This function has been COMMENTED OUT.
+--
+-- {- COMMENTED OUT - UNUSED CODE (depends on normalFormExists postulate):
+-- f-injective-from-normalForm : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+-- f-injective-from-normalForm x y fx=fy =
+--   let -- Get normal forms
+--       (nf-x , nf-x-eq) = normalFormExists x
+--       (nf-y , nf-y-eq) = normalFormExists y
+--
+--       -- f is a ring homomorphism, so f(x - y) = f(x) - f(y) = 0
+--       -- In Boolean rings, x - y = x + y (since -x = x)
+--       xy-diff : ⟨ B∞ ⟩
+--       xy-diff = x +∞ y
+--
+--       f-xy-diff : fst f xy-diff ≡ (𝟘∞ , 𝟘∞)
+--       f-xy-diff =
+--         fst f (x +∞ y)
+--           ≡⟨ f-pres+ x y ⟩
+--         (fst f x) +× (fst f y)
+--           ≡⟨ cong (_+× (fst f y)) fx=fy ⟩
+--         (fst f y) +× (fst f y)
+--           ≡⟨ char2-B∞×B∞ (fst f y) ⟩
+--         (𝟘∞ , 𝟘∞) ∎
+--
+--       -- Get normal form of x + y
+--       (nf-diff , nf-diff-eq) = normalFormExists xy-diff
+--
+--       -- f(⟦nf-diff⟧) = f(x + y) = 0
+--       f-nf-diff=0 : fst f ⟦ nf-diff ⟧nf ≡ (𝟘∞ , 𝟘∞)
+--       f-nf-diff=0 = cong (fst f) nf-diff-eq ∙ f-xy-diff
+--
+--       -- So ⟦nf-diff⟧ = 0
+--       nf-diff=0 : ⟦ nf-diff ⟧nf ≡ 𝟘∞
+--       nf-diff=0 = f-kernel-normalForm nf-diff f-nf-diff=0
+--
+--       -- x + y = 0
+--       xy=0 : x +∞ y ≡ 𝟘∞
+--       xy=0 = sym nf-diff-eq ∙ nf-diff=0
+--
+--       -- In Boolean rings, x + y = 0 implies x = y
+--       -- (since x + y + y = x + 0 = x, and y + y = 0, so x + y + y = x)
+--       x=y : x ≡ y
+--       x=y = BooleanRing-xor-eq-to-eq x y xy=0
+--
+--   in x=y
+--   where
+--   BooleanRing-xor-eq-to-eq : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ 𝟘∞ → a ≡ b
+--   BooleanRing-xor-eq-to-eq a b a+b=0 =
+--     a
+--       ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) a) ⟩
+--     a +∞ 𝟘∞
+--       ≡⟨ sym (cong (a +∞_) (char2-B∞ b)) ⟩
+--     a +∞ (b +∞ b)
+--       ≡⟨ BooleanRingStr.+Assoc (snd B∞) a b b ⟩
+--     (a +∞ b) +∞ b
+--       ≡⟨ cong (_+∞ b) a+b=0 ⟩
+--     𝟘∞ +∞ b
+--       ≡⟨ BooleanRingStr.+IdL (snd B∞) b ⟩
+--     b ∎
+-- -}
 
 -- =============================================================================
 -- LLPO derivation from Stone Duality
@@ -8040,28 +8044,26 @@ normalFormExists-trunc x = PT.map
 -- (b) Quotienting by list permutation/deduplication, or
 -- (c) Using finite subsets (FinSet) instead of lists
 --
--- ANALYSIS: This postulate is UNUSED in the main proof chain!
--- - nf-injective is only used in isProp-NormalForm-fiber (below)
+-- ANALYSIS: The following postulate and functions are UNUSED in the main proof chain!
+-- - nf-injective is only used in isProp-NormalForm-fiber
 -- - isProp-NormalForm-fiber is only used in normalFormExists-from-surj
 -- - normalFormExists-from-surj is NEVER USED (the truncated version suffices)
--- - Therefore this postulate could be safely removed without affecting the formalization
+-- - Therefore these have been COMMENTED OUT to reduce postulate count.
 --
--- Kept for documentation purposes only.
-postulate
-  nf-injective : (nf₁ nf₂ : B∞-NormalForm) → ⟦ nf₁ ⟧nf ≡ ⟦ nf₂ ⟧nf → nf₁ ≡ nf₂
-
--- NOTE: isProp-NormalForm-fiber and normalFormExists-from-surj are UNUSED
--- They demonstrate how to get untruncated normal forms if nf-injective were proved,
--- but the main formalization uses truncated versions instead.
-isProp-NormalForm-fiber : (x : ⟨ B∞ ⟩) → isProp (Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x)
-isProp-NormalForm-fiber x (nf₁ , eq₁) (nf₂ , eq₂) =
-  Σ≡Prop (λ nf → BooleanRingStr.is-set (snd B∞) (⟦ nf ⟧nf) x)
-         (nf-injective nf₁ nf₂ (eq₁ ∙ sym eq₂))
-
-normalFormExists-from-surj : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
-normalFormExists-from-surj x = PT.rec (isProp-NormalForm-fiber x)
-  (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
-  (interpretB∞-surjective x)
+-- {- COMMENTED OUT - UNUSED CODE:
+-- postulate
+--   nf-injective : (nf₁ nf₂ : B∞-NormalForm) → ⟦ nf₁ ⟧nf ≡ ⟦ nf₂ ⟧nf → nf₁ ≡ nf₂
+--
+-- isProp-NormalForm-fiber : (x : ⟨ B∞ ⟩) → isProp (Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x)
+-- isProp-NormalForm-fiber x (nf₁ , eq₁) (nf₂ , eq₂) =
+--   Σ≡Prop (λ nf → BooleanRingStr.is-set (snd B∞) (⟦ nf ⟧nf) x)
+--          (nf-injective nf₁ nf₂ (eq₁ ∙ sym eq₂))
+--
+-- normalFormExists-from-surj : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+-- normalFormExists-from-surj x = PT.rec (isProp-NormalForm-fiber x)
+--   (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
+--   (interpretB∞-surjective x)
+-- -}
 
 -- =============================================================================
 -- f-kernel using truncated normal forms
