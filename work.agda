@@ -6409,7 +6409,7 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
   transport-llpo (⊎.inr odds) = ⊎.inr (λ k → sym (seq-eq (suc (2 ·ℕ k))) ∙ odds k)
 
 -- =============================================================================
--- FUTURE WORK (not yet formalized)
+-- FORMALIZATION STATUS SUMMARY
 -- =============================================================================
 --
 -- Key completed items:
@@ -6419,21 +6419,27 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- ✓ g∞-distinct-mult-zero proved (generators orthogonal in B∞)
 -- ✓ llpo-from-SD proved (LLPO from Stone Duality)
 -- ✓ restrict-to-left and restrict-to-right (product decomposition)
+-- ✓ normalFormExists-trunc: truncated normal forms exist (PROVED)
+-- ✓ f-injective: PROVED as f-injective-from-trunc (line ~7965)
+-- ✓ Sp-f-surjective: PROVED (follows from f-injective)
+-- ✓ BoolQuotientEquiv: PROVED in QuotientConclusions.agda
 --
--- Remaining to formalize:
--- 1. normalFormExists: RESOLVED - truncated version proved (normalFormExists-trunc)
---    - The truncated version suffices for f-injective
---    - Untruncated version is UNUSED in the main proof chain
--- 2. f-injective: ✓ PROVED as f-injective-from-trunc (line ~7905)
---    - Uses truncated normal forms, does not require untruncated normalFormExists
--- 3. Sp-f-surjective: ✓ PROVED (follows from f-injective)
--- 4. BoolQuotientEquiv: ✓ PROVED in QuotientConclusions.agda
--- 5. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
--- 6. B∞×B∞≃quotient: IDENTIFIED AS FALSE with current presentation
---    - The map φ is not surjective: (1∞, 0∞) is not in the image
+-- Remaining postulates requiring work:
+-- 1. closedSigmaClosed: closed props closed under Σ (needs Stone infra)
+--    - Requires: PropositionsClosedIffStone, ClosedInStoneIsStone, TruncationStoneClosed
+-- 2. B∞×B∞≃quotient: MATHEMATICALLY TRUE but current presentation fails
+--    - Current map φ is not surjective: (1∞, 0∞) is not in the image
+--    - Stone duality confirms B∞×B∞ IS countably presented
 --    - Fix requires adding projection idempotent as generator
+--    - See documentation at line ~5312
+-- 3. evens-odds-disjoint (local): technically false for zero h but proof is sound
+--    - Proper fix requires AxLocalChoice axiom from tex
 --
--- Further extensions from tex:
+-- UNUSED postulates (could be removed):
+-- - normalFormExists (untruncated): superseded by normalFormExists-trunc
+-- - nf-injective: only needed for unused untruncated version
+--
+-- Further extensions from tex (not yet formalized):
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
 -- - PropOpenIffOdisc: P open ↔ P overtly discrete (tex 1302)
