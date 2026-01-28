@@ -10781,6 +10781,34 @@ module StoneAsClosedSubsetOfCantorModule where
     ret : (xa : closedSubsetType EmptyClosedSubset) → bwd (fwd xa) ≡ xa
     ret (_ , ())
 
+  -- Preimage of a closed subset under a function is closed
+  -- This is the pullback operation on closed subsets
+  ClosedSubsetPreimage : {X : Type₀} (f : X → CantorSpace)
+    → ClosedSubsetOfCantor → Σ[ B ∈ (X → hProp ℓ-zero) ] ((x : X) → isClosedProp (B x))
+  ClosedSubsetPreimage f (A , Aclosed) =
+    (λ x → A (f x)) , (λ x → Aclosed (f x))
+
+  -- The preimage of a closed subset of Cantor under Cantor → Cantor
+  -- gives another closed subset of Cantor
+  ClosedSubsetPreimageCantor : (f : CantorSpace → CantorSpace)
+    → ClosedSubsetOfCantor → ClosedSubsetOfCantor
+  ClosedSubsetPreimageCantor f (A , Aclosed) =
+    (λ x → A (f x)) , (λ x → Aclosed (f x))
+
+  -- Preimage preserves intersection
+  preimageIntersection : (f : CantorSpace → CantorSpace)
+    → (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetPreimageCantor f (ClosedSubsetIntersection A B)
+      ≡ ClosedSubsetIntersection (ClosedSubsetPreimageCantor f A) (ClosedSubsetPreimageCantor f B)
+  preimageIntersection f A B = refl
+
+  -- Preimage preserves union
+  preimageUnion : (f : CantorSpace → CantorSpace)
+    → (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetPreimageCantor f (ClosedSubsetUnion A B)
+      ≡ ClosedSubsetUnion (ClosedSubsetPreimageCantor f A) (ClosedSubsetPreimageCantor f B)
+  preimageUnion f A B = refl
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
