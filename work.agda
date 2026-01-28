@@ -13302,6 +13302,104 @@ module CohomologyModule where
   --
   -- This is because we can use the "diagonal" section: α_x(u,t) = β_x(t,u,t).
 
+  module CanonicalExactCechComplex {ℓ : Level} (S : Type ℓ) (T : S → Type ℓ) (A : S → AbGroup ℓ) where
+
+    -- The abelian group of functions T_x → A_x at each x
+    -- For each x, the abelian group is (T x → fst (A x)) with pointwise operations
+    A^T : S → AbGroup ℓ
+    A^T x = funAbGroup (T x) (A x)
+      where
+      -- Define pointwise abelian group structure on functions
+      funAbGroup : (I : Type ℓ) → AbGroup ℓ → AbGroup ℓ
+      fst (funAbGroup I G) = I → fst G
+      AbGroupStr.0g (snd (funAbGroup I G)) = λ _ → AbGroupStr.0g (snd G)
+      AbGroupStr._+_ (snd (funAbGroup I G)) f g = λ i → AbGroupStr._+_ (snd G) (f i) (g i)
+      AbGroupStr.- (snd (funAbGroup I G)) f = λ i → AbGroupStr.- (snd G) (f i)
+      AbGroupStr.isAbGroup (snd (funAbGroup I G)) = makeIsAbGroup
+        (isSetΠ (λ _ → AbGroupStr.is-set (snd G)))
+        (λ f g h → funExt (λ i → AbGroupStr.+Assoc (snd G) (f i) (g i) (h i)))
+        (λ f → funExt (λ i → AbGroupStr.+IdR (snd G) (f i)))
+        (λ f → funExt (λ i → AbGroupStr.+InvR (snd G) (f i)))
+        (λ f g → funExt (λ i → AbGroupStr.+Comm (snd G) (f i) (g i)))
+        where
+        open import Cubical.Algebra.AbGroup.Properties using (makeIsAbGroup)
+        open import Cubical.Algebra.AbGroup.Base using (AbGroupStr)
+
+    -- The Čech complex with coefficients in A^T
+    open CechComplex S T A^T
+
+    -- We prove: for any cocycle β in this complex, β is a coboundary
+    -- The key insight from tex: use the diagonal section
+    canonical-exact : Ȟ¹-vanishes
+    canonical-exact β is-cocycle = α , α-eq
+      where
+      open import Cubical.Algebra.AbGroup.Base using (AbGroupStr)
+
+      -- Define α_x(u)(t) = β_x(t,u)(t)
+      -- That is, for each x, u:T_x, we get a function T_x → A_x
+      α : C⁰
+      α x u t = β x t u t
+
+      -- The equation we need: d₀(α)_x(u,v)(t) = β_x(u,v)(t)
+      -- d₀(α)_x(u,v) = α_x(v) - α_x(u)
+      --              = (λ t → β(t,v)(t)) - (λ t → β(t,u)(t))
+      --              = (λ t → β(t,v)(t) - β(t,u)(t))
+      -- We need: β(t,v)(t) - β(t,u)(t) = β(u,v)(t)
+      --
+      -- From cocycle: β(t,u)(t) + β(u,v)(t) = β(t,v)(t)
+      -- So: β(u,v)(t) = β(t,v)(t) - β(t,u)(t)
+
+      -- This follows the same pattern as section-exact
+      α-eq : d₀ α ≡ β
+      α-eq = funExt λ x → funExt λ u → funExt λ v → funExt λ t →
+        let open AGx x
+            -- At each point t, we use the cocycle condition
+            -- cocycle: β(t,u)(t) + β(u,v)(t) = β(t,v)(t)
+            cocycle-at-t : AbGroupStr._+_ (snd (A^T x)) (β x t u) (β x u v)
+                          ≡ β x t v
+            cocycle-at-t = is-cocycle x t u v
+
+            -- Extract the pointwise equation
+            cocycle-t : β x t u t AGx.+ β x u v t ≡ β x t v t
+            cocycle-t = cong (λ f → f t) cocycle-at-t
+
+            -- Same reasoning as section-exact:
+            -- β(u,v)(t) = β(t,v)(t) - β(t,u)(t)
+            step : β x u v t ≡ (β x t v t AGx.- β x t u t)
+            step = sym (
+              (β x t v t AGx.- β x t u t)
+                ≡⟨ AGx.+Comm (β x t v t) (AGx.- β x t u t) ⟩
+              (AGx.- β x t u t) AGx.+ β x t v t
+                ≡⟨ cong ((AGx.- β x t u t) AGx.+_) (sym cocycle-t) ⟩
+              (AGx.- β x t u t) AGx.+ (β x t u t AGx.+ β x u v t)
+                ≡⟨ sym (AGx.+Assoc (AGx.- β x t u t) (β x t u t) (β x u v t)) ⟩
+              ((AGx.- β x t u t) AGx.+ β x t u t) AGx.+ β x u v t
+                ≡⟨ cong (AGx._+ β x u v t) (AGx.+InvL (β x t u t)) ⟩
+              AGx.0g AGx.+ β x u v t
+                ≡⟨ AGx.+IdL (β x u v t) ⟩
+              β x u v t ∎)
+
+        in sym step
+
+  -- =========================================================================
+  -- Lemma: exact-cech-complex-vanishing-cohomology (tex Lemma 2823)
+  -- =========================================================================
+  --
+  -- If Π_{x:S} ∥T_x∥ and Ȟ¹(S,T,A) = 0, then:
+  -- Given α : Π_{x:S} BA_x with β : Π_{x:S} (α(x) = *)^{T_x},
+  -- we can conclude α = *.
+  --
+  -- (We postulate this for now as it requires the path structure of BA)
+
+  postulate
+    exact-cech-complex-vanishing-cohomology : {ℓ : Level} (S : Type ℓ)
+      (T : S → Type ℓ) (A : S → AbGroup ℓ)
+      (inhabited : (x : S) → ∥ T x ∥₁)
+      (exact : CechComplex.Ȟ¹-vanishes S T A)
+      (α : (x : S) → EM (A x) 1)
+      (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
+      → (x : S) → α x ≡ 0ₖ 1
+
   -- =========================================================================
   -- Stone cohomology vanishes (tex Lemma 2887)
   -- =========================================================================
