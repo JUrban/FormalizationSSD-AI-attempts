@@ -8359,11 +8359,54 @@ module ClosedPropIffStone where
     -- - The induced hom from QB.inducedHom is unique by the UP
     -- - So h equals the induced hom, which is exactly fst all-false↔Sp (snd all-false↔Sp h)
     --
-    -- For now, we postulate this round-trip identity.
-    -- The proof would require showing that any two ring homs from a quotient
-    -- that agree on the quotient map are equal. This follows from surjectivity.
-    postulate
-      Sp-roundtrip : (h : Sp-quotient) → fst all-false↔Sp (snd all-false↔Sp h) ≡ h
+    -- The proof uses QB.inducedHomUnique: if g ≡ (h ∘cr quotientImageHom), then inducedHom ≡ h
+
+    Sp-roundtrip : (h : Sp-quotient) → fst all-false↔Sp (snd all-false↔Sp h) ≡ h
+    Sp-roundtrip h = QB.inducedHomUnique {B = BoolBR} {f = α} BoolBR id-hom α-to-0 h h-comp
+      where
+      open import CountablyPresentedBooleanRings.PresentedBoole using (idBoolHom)
+
+      id-hom : BoolHom BoolBR BoolBR
+      id-hom = idBoolHom BoolBR
+
+      -- The proof that all αn = false, extracted from h
+      all-false-from-h : (n : ℕ) → α n ≡ false
+      all-false-from-h = snd all-false↔Sp h
+
+      -- α maps to 0 under id-hom (since all αn = false)
+      α-to-0 : (n : ℕ) → id-hom $cr (α n) ≡ BooleanRingStr.𝟘 (snd BoolBR)
+      α-to-0 n = all-false-from-h n
+
+      -- We need to show id-hom ≡ (h ∘cr QB.quotientImageHom)
+      -- i.e., id on BoolBR = h composed with the quotient map π
+      --
+      -- For any b : Bool, we need (id b) = h(π(b))
+      -- Since π : BoolBR → BoolBR /Im α and h : BoolBR /Im α → BoolBR
+      -- The composition h ∘ π : BoolBR → BoolBR
+      --
+      -- Key: h is a ring hom, so h(π(0)) = 0 and h(π(1)) = 1
+      -- Therefore h ∘ π = id on {false, true} = Bool
+
+      π : ⟨ BoolBR ⟩ → ⟨ B-quotient ⟩
+      π = fst QB.quotientImageHom
+
+      open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1)
+      open IsCommRingHom (snd QB.quotientImageHom) renaming (pres0 to π-pres0 ; pres1 to π-pres1)
+
+      h∘π-on-false : fst h (π false) ≡ false
+      h∘π-on-false = cong (fst h) π-pres0 ∙ h-pres0
+
+      h∘π-on-true : fst h (π true) ≡ true
+      h∘π-on-true = cong (fst h) π-pres1 ∙ h-pres1
+
+      h∘π≡id-pointwise : (b : Bool) → fst h (π b) ≡ b
+      h∘π≡id-pointwise false = h∘π-on-false
+      h∘π≡id-pointwise true = h∘π-on-true
+
+      h-comp : id-hom ≡ (h ∘cr QB.quotientImageHom)
+      h-comp = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing BoolBR)) f
+                                                  (snd (BooleanRing→CommRing BoolBR)))
+                      (sym (funExt h∘π≡id-pointwise))
 
     isProp-Sp-quotient : isProp Sp-quotient
     isProp-Sp-quotient h₁ h₂ =
