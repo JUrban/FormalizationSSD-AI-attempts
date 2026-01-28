@@ -31,6 +31,7 @@ open import Cubical.Relation.Nullary
 open import Cubical.HITs.PropositionalTruncation as PT
 
 open import Cubical.Algebra.CommRing
+open import Cubical.Algebra.CommRing.DirectProd
 open import Cubical.Algebra.BooleanRing
 open import Cubical.Algebra.BooleanRing.Instances.Bool
 
@@ -3735,12 +3736,240 @@ SpB∞-to-ℕ∞ h = SpB∞-to-ℕ∞-seq h , SpB∞-seq-atMostOnce h
 -- This uses the universal property of quotients
 
 -- =============================================================================
+-- Direct Product of Boolean Rings
+-- =============================================================================
+
+-- A direct product of commutative rings is a Boolean ring if both factors are
+module DirectProd-BooleanRing
+  (A : BooleanRing ℓ-zero)
+  (B : BooleanRing ℓ-zero)
+  where
+
+  -- The underlying commutative ring product
+  private
+    A-CR = BooleanRing→CommRing A
+    B-CR = BooleanRing→CommRing B
+    AB-CR = DirectProd-CommRing A-CR B-CR
+
+  -- The key property: idempotence is preserved componentwise
+  ·Idem-prod : (x : ⟨ A ⟩ × ⟨ B ⟩) →
+    CommRingStr._·_ (snd AB-CR) x x ≡ x
+  ·Idem-prod (a , b) =
+    let open BooleanRingStr
+        open CommRingStr (snd AB-CR)
+    in cong₂ _,_ (BooleanRingStr.·Idem (snd A) a) (BooleanRingStr.·Idem (snd B) b)
+
+  -- Convert commutative ring with idempotence to Boolean ring
+  DirectProd-BooleanRing : BooleanRing ℓ-zero
+  DirectProd-BooleanRing = idemCommRing→BR AB-CR ·Idem-prod
+
+-- Convenient notation
+_×BR_ : BooleanRing ℓ-zero → BooleanRing ℓ-zero → BooleanRing ℓ-zero
+A ×BR B = DirectProd-BooleanRing.DirectProd-BooleanRing A B
+
+-- B∞ × B∞ as a Boolean ring
+B∞×B∞ : BooleanRing ℓ-zero
+B∞×B∞ = B∞ ×BR B∞
+
+-- Projections and zero elements for the product
+module B∞×B∞-Operations where
+  open BooleanRingStr (snd B∞×B∞) renaming (_·_ to _·×_ ; 𝟘 to 𝟘× ; 𝟙 to 𝟙×)
+
+  -- Zero element is (0, 0)
+  0×0 : ⟨ B∞×B∞ ⟩
+  0×0 = 𝟘∞ , 𝟘∞
+
+  -- Left injection: x ↦ (x, 0)
+  inl-B∞ : ⟨ B∞ ⟩ → ⟨ B∞×B∞ ⟩
+  inl-B∞ x = x , 𝟘∞
+
+  -- Right injection: x ↦ (0, x)
+  inr-B∞ : ⟨ B∞ ⟩ → ⟨ B∞×B∞ ⟩
+  inr-B∞ x = 𝟘∞ , x
+
+open B∞×B∞-Operations
+
+-- =============================================================================
 -- The map f : B∞ → B∞ × B∞ for LLPO
 -- =============================================================================
 
 -- tex definition (line 554-559):
 -- f(g_n) = (g_k, 0) if n = 2k
 -- f(g_n) = (0, g_k) if n = 2k+1
+
+-- Helper: division by 2 with parity
+div2 : ℕ → ℕ
+div2 zero = zero
+div2 (suc zero) = zero
+div2 (suc (suc n)) = suc (div2 n)
+
+-- Parity check (renamed to avoid clash with Cubical.Data.Nat.Base.isEven)
+parity : ℕ → Bool
+parity zero = true
+parity (suc zero) = false
+parity (suc (suc n)) = parity n
+
+-- The map on generators of freeBA ℕ into B∞ × B∞
+-- f(gen n) = (g∞(n/2), 0) if n is even
+-- f(gen n) = (0, g∞(n/2)) if n is odd
+f-on-gen : ℕ → ⟨ B∞×B∞ ⟩
+f-on-gen n with parity n
+... | true  = g∞ (div2 n) , 𝟘∞   -- n = 2k, map to (g_k, 0)
+... | false = 𝟘∞ , g∞ (div2 n)   -- n = 2k+1, map to (0, g_k)
+
+-- Helper: multiplication in B∞×B∞
+open BooleanRingStr (snd B∞×B∞) using () renaming (_·_ to _·×_ ; 𝟘 to 𝟘×)
+
+-- Key lemma: The product structure in B∞×B∞ is componentwise
+·×-componentwise : (x y : ⟨ B∞×B∞ ⟩) → (x ·× y) ≡ (fst x ·∞ fst y , snd x ·∞ snd y)
+·×-componentwise x y = refl  -- This is definitional by the product construction
+
+-- Zero absorbs multiplication in B∞
+-- Using RingTheory from Cubical.Algebra.Ring.Properties
+open import Cubical.Algebra.Ring.Properties using (module RingTheory)
+
+private
+  B∞-Ring = CommRing→Ring (BooleanRing→CommRing B∞)
+  module B∞-RT = RingTheory B∞-Ring
+
+0∞-absorbs-left : (x : ⟨ B∞ ⟩) → 𝟘∞ ·∞ x ≡ 𝟘∞
+0∞-absorbs-left x = B∞-RT.0LeftAnnihilates x
+
+0∞-absorbs-right : (x : ⟨ B∞ ⟩) → x ·∞ 𝟘∞ ≡ 𝟘∞
+0∞-absorbs-right x = B∞-RT.0RightAnnihilates x
+
+-- Key lemma: (x, 0) · (0, y) = (0, 0)
+inl-inr-mult-zero : (x y : ⟨ B∞ ⟩) → (x , 𝟘∞) ·× (𝟘∞ , y) ≡ (𝟘∞ , 𝟘∞)
+inl-inr-mult-zero x y =
+  (x , 𝟘∞) ·× (𝟘∞ , y) ≡⟨ refl ⟩
+  (x ·∞ 𝟘∞ , 𝟘∞ ·∞ y)  ≡⟨ cong₂ _,_ (0∞-absorbs-right x) (0∞-absorbs-left y) ⟩
+  (𝟘∞ , 𝟘∞) ∎
+
+-- Symmetric case
+inr-inl-mult-zero : (x y : ⟨ B∞ ⟩) → (𝟘∞ , x) ·× (y , 𝟘∞) ≡ (𝟘∞ , 𝟘∞)
+inr-inl-mult-zero x y =
+  (𝟘∞ , x) ·× (y , 𝟘∞) ≡⟨ refl ⟩
+  (𝟘∞ ·∞ y , x ·∞ 𝟘∞)  ≡⟨ cong₂ _,_ (0∞-absorbs-left y) (0∞-absorbs-right x) ⟩
+  (𝟘∞ , 𝟘∞) ∎
+
+-- Helper: parity properties
+parity-double : (k : ℕ) → parity (k +ℕ k) ≡ true
+parity-double zero = refl
+parity-double (suc k) =
+  parity (suc k +ℕ suc k)    ≡⟨ refl ⟩
+  parity (suc (k +ℕ suc k))  ≡⟨ cong (parity ∘ suc) (+-suc k k) ⟩
+  parity (suc (suc (k +ℕ k))) ≡⟨ refl ⟩
+  parity (k +ℕ k)             ≡⟨ parity-double k ⟩
+  true ∎
+
+parity-double-suc : (k : ℕ) → parity (suc (k +ℕ k)) ≡ false
+parity-double-suc zero = refl
+parity-double-suc (suc k) =
+  parity (suc (suc k +ℕ suc k))    ≡⟨ refl ⟩
+  parity (suc (suc (k +ℕ suc k)))  ≡⟨ cong (parity ∘ suc ∘ suc) (+-suc k k) ⟩
+  parity (suc (suc (suc (k +ℕ k)))) ≡⟨ refl ⟩
+  parity (suc (k +ℕ k))             ≡⟨ parity-double-suc k ⟩
+  false ∎
+
+-- div2 properties
+div2-double : (k : ℕ) → div2 (k +ℕ k) ≡ k
+div2-double zero = refl
+div2-double (suc k) =
+  div2 (suc k +ℕ suc k)         ≡⟨ refl ⟩
+  div2 (suc (k +ℕ suc k))       ≡⟨ cong (div2 ∘ suc) (+-suc k k) ⟩
+  div2 (suc (suc (k +ℕ k)))     ≡⟨ refl ⟩
+  suc (div2 (k +ℕ k))           ≡⟨ cong suc (div2-double k) ⟩
+  suc k ∎
+
+div2-double-suc : (k : ℕ) → div2 (suc (k +ℕ k)) ≡ k
+div2-double-suc zero = refl
+div2-double-suc (suc k) =
+  div2 (suc (suc k +ℕ suc k))       ≡⟨ refl ⟩
+  div2 (suc (suc (k +ℕ suc k)))     ≡⟨ cong (div2 ∘ suc ∘ suc) (+-suc k k) ⟩
+  div2 (suc (suc (suc (k +ℕ k))))   ≡⟨ refl ⟩
+  suc (div2 (suc (k +ℕ k)))         ≡⟨ cong suc (div2-double-suc k) ⟩
+  suc k ∎
+
+-- When both indices have the same parity and div2 gives different values,
+-- the product is zero because g∞ (div2 m) ·∞ g∞ (div2 n) = 0
+-- (since div2 m ≠ div2 n means the generators are distinct)
+
+-- Helper: different div2 values implies different generators
+div2-neq→gen-product-zero : (m n : ℕ) → ¬ (div2 m ≡ div2 n) →
+  g∞ (div2 m) ·∞ g∞ (div2 n) ≡ 𝟘∞
+div2-neq→gen-product-zero m n neq = g∞-distinct-mult-zero (div2 m) (div2 n) neq
+
+-- Injectivity of div2 on even/odd numbers
+-- If parity m = parity n = true (both even) and div2 m = div2 n, then m = n
+-- If parity m = parity n = false (both odd) and div2 m = div2 n, then m = n
+-- We prove this by showing: m = 2 * div2 m when parity m = true
+--                           m = 2 * div2 m + 1 when parity m = false
+
+-- Helper: suc a + suc b = suc (suc (a + b))
+-- suc a + b = suc (a + b) and a + suc b = suc (a + b)
+-- so suc a + suc b = suc (a + suc b) = suc (suc (a + b))
+double-div2-even : (n : ℕ) → parity n ≡ true → n ≡ div2 n +ℕ div2 n
+double-div2-even zero _ = refl
+double-div2-even (suc zero) p = ex-falso (true≢false (sym p))  -- parity 1 = false ≠ true
+double-div2-even (suc (suc n)) p =
+  -- div2 (suc (suc n)) = suc (div2 n), so we need:
+  -- suc (suc n) = suc (div2 n) + suc (div2 n)
+  -- suc (div2 n) + suc (div2 n) = suc (div2 n + suc (div2 n))    [by def of +]
+  --                             = suc (suc (div2 n + div2 n))    [by +-suc]
+  suc (suc n) ≡⟨ cong (suc ∘ suc) (double-div2-even n p) ⟩
+  suc (suc (div2 n +ℕ div2 n)) ≡⟨ cong suc (sym (+-suc (div2 n) (div2 n))) ⟩
+  suc (div2 n +ℕ suc (div2 n)) ∎
+  -- Note: suc (div2 n) + suc (div2 n) ≡ suc (div2 n + suc (div2 n)) definitionally
+
+double-div2-odd : (n : ℕ) → parity n ≡ false → n ≡ suc (div2 n +ℕ div2 n)
+double-div2-odd zero p = ex-falso (true≢false p)  -- parity 0 = true ≠ false
+double-div2-odd (suc zero) _ = refl
+double-div2-odd (suc (suc n)) p =
+  -- div2 (suc (suc n)) = suc (div2 n), so we need:
+  -- suc (suc n) = suc (suc (div2 n) + suc (div2 n))
+  -- suc (div2 n) + suc (div2 n) = suc (div2 n + suc (div2 n))    [by def of +]
+  --                             = suc (suc (div2 n + div2 n))    [by +-suc]
+  -- so suc (suc (div2 n) + suc (div2 n)) = suc (suc (suc (div2 n + div2 n)))
+  suc (suc n) ≡⟨ cong (suc ∘ suc) (double-div2-odd n p) ⟩
+  suc (suc (suc (div2 n +ℕ div2 n))) ≡⟨ cong (suc ∘ suc) (sym (+-suc (div2 n) (div2 n))) ⟩
+  suc (suc (div2 n +ℕ suc (div2 n))) ∎
+  -- Note: suc (suc (div2 n)) + suc (div2 n) ≡ suc (suc (div2 n) + suc (div2 n))
+  --                                        ≡ suc (suc (div2 n + suc (div2 n))) definitionally
+
+-- Convert builtin equality to path for Bool
+import Agda.Builtin.Equality as BEq
+builtin→Path-Bool : {a b : Bool} → a BEq.≡ b → a ≡ b
+builtin→Path-Bool BEq.refl = refl
+
+div2-injective-even : (m n : ℕ) → parity m BEq.≡ true → parity n BEq.≡ true →
+  div2 m ≡ div2 n → m ≡ n
+div2-injective-even m n pm pn = λ eq →
+  double-div2-even m (builtin→Path-Bool pm) ∙ cong₂ _+ℕ_ eq eq ∙ sym (double-div2-even n (builtin→Path-Bool pn))
+
+div2-injective-odd : (m n : ℕ) → parity m BEq.≡ false → parity n BEq.≡ false →
+  div2 m ≡ div2 n → m ≡ n
+div2-injective-odd m n pm pn = λ eq →
+  double-div2-odd m (builtin→Path-Bool pm) ∙ cong₂ (λ a b → suc (a +ℕ b)) eq eq ∙ sym (double-div2-odd n (builtin→Path-Bool pn))
+
+-- The key theorem: f-on-gen respects the relations
+-- For distinct m, n: f-on-gen m ·× f-on-gen n = (0, 0)
+f-respects-relations : (m n : ℕ) → ¬ (m ≡ n) →
+  (f-on-gen m) ·× (f-on-gen n) ≡ (𝟘∞ , 𝟘∞)
+f-respects-relations m n m≠n with parity m in pm | parity n in pn
+-- Case 1: both even
+... | true | true = cong₂ _,_ (div2-neq→gen-product-zero m n div2-neq) (0∞-absorbs-left 𝟘∞)
+  where
+    div2-neq : ¬ (div2 m ≡ div2 n)
+    div2-neq = λ eq → m≠n (div2-injective-even m n pm pn eq)
+-- Case 2: both odd
+... | false | false = cong₂ _,_ (0∞-absorbs-left 𝟘∞) (div2-neq→gen-product-zero m n div2-neq)
+  where
+    div2-neq : ¬ (div2 m ≡ div2 n)
+    div2-neq = λ eq → m≠n (div2-injective-odd m n pm pn eq)
+-- Case 3: m even, n odd
+... | true | false = inl-inr-mult-zero (g∞ (div2 m)) (g∞ (div2 n))
+-- Case 4: m odd, n even
+... | false | true = inr-inl-mult-zero (g∞ (div2 m)) (g∞ (div2 n))
 
 -- This induces a homomorphism by the universal property of freeBA ℕ
 -- and respects the relations because:
