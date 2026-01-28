@@ -10523,6 +10523,16 @@ module BrouwerFixedPointTheoremModule where
 -- - ¬WLPO, MP, LLPO follow from Stone Duality
 -- - Markov's principle for closed propositions (ClosedMarkov)
 --
+-- COMPACT HAUSDORFF TOPOLOGY:
+-- - AllOpenSubspaceOpen (tex 1967): PROVED - ∀x.U(x) is open for open U ⊆ CHaus
+--   Proof: ¬(∃x.¬U(x)) is open by negClosedIsOpen + InhabitedClosedSubSpaceClosedCHaus
+--
+-- INTERVAL ORDER THEORY:
+-- - <I-trans, <I-≤I-trans, ≤I-<I-trans: PROVED transitivity of strict/mixed orders
+-- - <I-irrefl, <I-implies-≢: PROVED irreflexivity and non-equality
+-- - ≤I-from-≡, <I-implies-¬≤I: PROVED derived order properties
+-- - <I-trichotomy: postulated (requires decidable equality on I)
+--
 -- =============================================================================
 -- End of current formalization
 -- =============================================================================
