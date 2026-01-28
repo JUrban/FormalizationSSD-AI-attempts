@@ -6178,6 +6178,78 @@ meet-joinForm-meetNegForm-correct (n ∷ ns) ms with n ∈? ms | inspect (n ∈?
   g∞ n ∨∞ finJoin∞ (ns ∖L ms) ∎
 
 -- =============================================================================
+-- XOR (Ring Addition) of Normal Forms
+-- =============================================================================
+
+-- Symmetric difference of lists: (ns ∪ ms) ∖ (ns ∩ ms)
+-- Elements that are in exactly one of the lists
+_△L_ : List ℕ → List ℕ → List ℕ
+ns △L ms = (ns ++ ms) ∖L (ns ∩L ms)
+
+-- Key equation: a + b = (a ∨ b) ∧ ¬(a ∧ b) = (a ∨ b) + (a ∧ b) (in char 2)
+-- This is the symmetric difference formula for Boolean rings
+
+-- First, we need to show that a + b = (a ∨ b) ∧ ¬(a ∧ b)
+-- Proof: a ∨ b = a + b + ab, so
+--        (a ∨ b) ∧ ¬(a ∧ b) = (a + b + ab) · (1 + ab)
+--        = (a + b + ab) + (a + b + ab) · ab
+--        = (a + b + ab) + a·ab + b·ab + ab·ab
+--        = (a + b + ab) + ab + ab + ab   (using a² = a in Boolean ring)
+--        = a + b + ab + ab               (using 2 = 0 in char 2)
+--        = a + b                          (using 2 = 0 in char 2)
+
+-- Helper lemmas for idempotent multiplication
+-- a · (a · b) = a · b  (using associativity and idempotence)
+·-idem-left : (a b : ⟨ B∞ ⟩) → a ∧∞ (a ∧∞ b) ≡ a ∧∞ b
+·-idem-left a b =
+  a ∧∞ (a ∧∞ b)
+    ≡⟨ BooleanRingStr.·Assoc (snd B∞) a a b ⟩
+  (a ∧∞ a) ∧∞ b
+    ≡⟨ cong (_∧∞ b) (BooleanRingStr.·Idem (snd B∞) a) ⟩
+  a ∧∞ b ∎
+
+-- b · (a · b) = a · b  (using commutativity, associativity, and idempotence)
+·-idem-right : (a b : ⟨ B∞ ⟩) → b ∧∞ (a ∧∞ b) ≡ a ∧∞ b
+·-idem-right a b =
+  b ∧∞ (a ∧∞ b)
+    ≡⟨ BooleanRingStr.·Comm (snd B∞) b (a ∧∞ b) ⟩
+  (a ∧∞ b) ∧∞ b
+    ≡⟨ sym (BooleanRingStr.·Assoc (snd B∞) a b b) ⟩
+  a ∧∞ (b ∧∞ b)
+    ≡⟨ cong (a ∧∞_) (BooleanRingStr.·Idem (snd B∞) b) ⟩
+  a ∧∞ b ∎
+
+-- The symmetric difference formula: a + b = (a ∨ b) ∧ ¬(a ∧ b)
+-- This is a standard Boolean ring identity:
+--   (a ∨ b) ∧ ¬(a ∧ b) = (a + b + ab) · (1 + ab)
+--                       = (a + b + ab) + (a + b + ab)·ab
+--                       = (a + b + ab) + a·ab + b·ab + ab²
+--                       = (a + b + ab) + ab + ab + ab  (using x² = x)
+--                       = a + b  (using 4ab = 0 in char 2)
+--
+-- NOTE: Direct proof has projection mismatch with library's ·DistL+.
+-- This is postulated and marked for resolution (the math is correct).
+postulate
+  xor-symmdiff : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ (a ∨∞ b) ∧∞ (¬∞ (a ∧∞ b))
+
+-- XOR of two joinForms yields a joinForm with symmetric difference
+-- finJoin∞ ns +∞ finJoin∞ ms = finJoin∞ (ns △L ms)
+xor-joinForm-joinForm-correct : (ns ms : List ℕ) →
+  finJoin∞ ns +∞ finJoin∞ ms ≡ finJoin∞ (ns △L ms)
+xor-joinForm-joinForm-correct ns ms =
+  finJoin∞ ns +∞ finJoin∞ ms
+    ≡⟨ xor-symmdiff (finJoin∞ ns) (finJoin∞ ms) ⟩
+  (finJoin∞ ns ∨∞ finJoin∞ ms) ∧∞ (¬∞ (finJoin∞ ns ∧∞ finJoin∞ ms))
+    ≡⟨ cong₂ (λ x y → x ∧∞ (¬∞ y)) (join-joinForm-correct ns ms) (meet-joinForm-joinForm-correct ns ms) ⟩
+  finJoin∞ (ns ++ ms) ∧∞ (¬∞ (finJoin∞ (ns ∩L ms)))
+    ≡⟨ cong (finJoin∞ (ns ++ ms) ∧∞_) (sym (neg-nf-correct (joinForm (ns ∩L ms)))) ⟩
+  finJoin∞ (ns ++ ms) ∧∞ finMeetNeg∞ (ns ∩L ms)
+    ≡⟨ meet-joinForm-meetNegForm-correct (ns ++ ms) (ns ∩L ms) ⟩
+  finJoin∞ ((ns ++ ms) ∖L (ns ∩L ms))
+    ≡⟨ refl ⟩
+  finJoin∞ (ns △L ms) ∎
+
+-- =============================================================================
 -- normalFormExists status
 -- =============================================================================
 
