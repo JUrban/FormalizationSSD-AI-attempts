@@ -5010,15 +5010,218 @@ module B∞×B∞-Presentation where
   -- This works because the image of ψ-left and ψ-right are orthogonal
   -- (left and right generators are orthogonal in B∞×B∞-quotient)
 
+  -- Key lemma: inl m and inr n encode to different naturals
+  -- Proof: If encode× (inl m) = encode× (inr n), then decode× gives inl m = inr n,
+  -- but inl and inr are disjoint constructors (Cover (inl _) (inr _) = Lift ⊥).
+  encode×-inl-inr-distinct : (m n : ℕ) → ¬ (encode× (⊎.inl m) ≡ encode× (⊎.inr n))
+  encode×-inl-inr-distinct m n = λ eq →
+    lower (⊎Path.encode (⊎.inl m) (⊎.inr n)
+           (sym (decode×∘encode× (⊎.inl m))
+            ∙ cong decode× eq
+            ∙ decode×∘encode× (⊎.inr n)))
+    where
+    open import Cubical.Data.Sum.Properties using (module ⊎Path)
+
+  -- Cross-orthogonality: g×-left-gen m · g×-right-gen n = 0
+  g×-cross-orthog : (m n : ℕ) →
+    BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-left-gen m) (g×-right-gen n) ≡
+    BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  g×-cross-orthog m n =
+    let i = encode× (⊎.inl m)
+        j = encode× (⊎.inr n)
+        i≠j : ¬ (i ≡ j)
+        i≠j = encode×-inl-inr-distinct m n
+    in g×-orthog i j i≠j
+    where
+    -- Direct proof of orthogonality when i < j
+    g×-orthog-base : (i j : ℕ) → i < j →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog-base i j i<j =
+      let k = cantorPair i (j ∸ suc i)
+          rel-eq : relB∞×B∞ k ≡ gen i · gen j
+          rel-eq = cong relB∞×B∞-from-pair (cantorUnpair-pair i (j ∸ suc i))
+                 ∙ cong (λ x → gen i · gen x) (i+suc[j∸suc-i]≡j i j i<j)
+      in sym (IsCommRingHom.pres· (snd π×) (gen i) (gen j))
+         ∙ cong (fst π×) (sym rel-eq)
+         ∙ QB.zeroOnImage k
+
+    g×-orthog : (i j : ℕ) → ¬ (i ≡ j) →
+      BooleanRingStr._·_ (snd B∞×B∞-quotient) (g× i) (g× j) ≡
+      BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+    g×-orthog i j i≠j with Cubical.Data.Nat.Order.<Dec i j
+    ... | yes i<j = g×-orthog-base i j i<j
+    ... | no ¬i<j with Cubical.Data.Nat.Order.<Dec j i
+    ...   | yes j<i =
+            BooleanRingStr.·Comm (snd B∞×B∞-quotient) (g× i) (g× j)
+            ∙ g×-orthog-base j i j<i
+    ...   | no ¬j<i =
+            ex-falso (i≠j (≤-antisym (≮→≥ ¬j<i) (≮→≥ ¬i<j)))
+
+  -- Symmetric: g×-right-gen n · g×-left-gen m = 0
+  g×-cross-orthog-sym : (m n : ℕ) →
+    BooleanRingStr._·_ (snd B∞×B∞-quotient) (g×-right-gen n) (g×-left-gen m) ≡
+    BooleanRingStr.𝟘 (snd B∞×B∞-quotient)
+  g×-cross-orthog-sym m n =
+    BooleanRingStr.·Comm (snd B∞×B∞-quotient) (g×-right-gen n) (g×-left-gen m)
+    ∙ g×-cross-orthog m n
+
+  -- Now we can build ψ using the fact that ψ-left and ψ-right have orthogonal images
+  -- ψ(x, y) = ψ-left(x) + ψ-right(y)
+  -- For this to be a ring homomorphism, we need the images to be orthogonal
+  -- i.e., ψ-left(x) · ψ-right(y) = 0 for all x, y
+
+  -- Module shorthands for B∞×B∞-quotient operations
+  module Q = BooleanRingStr (snd B∞×B∞-quotient)
+
+  -- The underlying map of ψ
+  ψ-map : ⟨ B∞×B∞ ⟩ → ⟨ B∞×B∞-quotient ⟩
+  ψ-map (x , y) = Q._+_ (fst ψ-left x) (fst ψ-right y)
+
+  -- We need to show ψ-map is a ring homomorphism
+  -- pres0: ψ(0,0) = ψ-left(0) + ψ-right(0) = 0 + 0 = 0
+  ψ-pres0 : ψ-map (𝟘∞ , 𝟘∞) ≡ Q.𝟘
+  ψ-pres0 =
+    Q._+_ (fst ψ-left 𝟘∞) (fst ψ-right 𝟘∞)
+      ≡⟨ cong₂ Q._+_ (IsCommRingHom.pres0 (snd ψ-left)) (IsCommRingHom.pres0 (snd ψ-right)) ⟩
+    Q._+_ Q.𝟘 Q.𝟘
+      ≡⟨ Q.+IdR Q.𝟘 ⟩
+    Q.𝟘 ∎
+
+  -- pres1: ψ(1,1) = ψ-left(1) + ψ-right(1)
+  -- But wait, we need ψ-map (1,0) + ψ-map (0,1) = 1 in the quotient
+  -- Actually, for B∞×B∞, 1 = (1,1)
+  -- ψ(1,1) = ψ-left(1) + ψ-right(1)
+  -- For this to be 1, we need to be more careful...
+  -- Actually, since g×-left and g×-right are indexed differently (via encode×),
+  -- ψ-left(1) + ψ-right(1) should give 1 in the quotient
+
+  -- Let me think about this more carefully:
+  -- ψ-left on generator n sends to g× (encode× (inl n))
+  -- ψ-right on generator n sends to g× (encode× (inr n))
+  -- These are distinct generators in the quotient
+  -- So ψ-left(1) uses generators from the "left" part
+  -- ψ-right(1) uses generators from the "right" part
+  -- But 1 in freeBA is not just generators, it involves all indices...
+
+  -- Actually, let's check: in B∞, 𝟙∞ = [QB]⟦ 𝟙 ⟧ = quotient of 𝟙 from freeBA ℕ
+  -- In freeBA ℕ, 𝟙 is the unit element
+  -- ψ-left(𝟙∞) = fst ψ-left (𝟙∞)
+  -- Since ψ-left = QB.inducedHom, it's defined on the quotient
+  -- and ψ-left-free is defined on the free BA
+
+  -- Actually, both ψ-left and ψ-right preserve 1:
+  -- ψ-left(1∞) = 1 in quotient (since it's a ring hom)
+  -- ψ-right(1∞) = 1 in quotient
+  -- So ψ(1,1) = 1 + 1 in characteristic 2 = 0, which is wrong!
+
+  -- The issue is that the product unit is (1,1), but we want
+  -- ψ(1,1) to map to 1 in the quotient.
+
+  -- Wait, I need to reconsider. In the product B∞×B∞, the unit is (𝟙∞, 𝟙∞).
+  -- The formula ψ(x,y) = ψ-left(x) + ψ-right(y) doesn't give a ring hom!
+  -- Because ψ(1,1) = ψ-left(1) + ψ-right(1) = 1 + 1 = 0 ≠ 1
+
+  -- The correct approach: use ψ(x,y) = ψ-left(x) · ψ-right'(y) where
+  -- ψ-right' maps 1 ↦ 1 and generators to complementary elements?
+
+  -- No wait, the correct formula for products of Boolean algebras is:
+  -- Use the decomposition: (x, y) = (x, 0) + (0, y)
+  -- But in a ring, (x, 0) · (0, y) = (0, 0) always
+
+  -- Let me reconsider the structure of B∞×B∞-quotient.
+  -- It has generators g× n for n : ℕ where the index n encodes
+  -- either (inl m) or (inr m) via the ℕ ⊎ ℕ ≅ ℕ bijection.
+  --
+  -- The generators split into two disjoint classes:
+  -- - "left" generators: g× (encode× (inl m)) for m : ℕ
+  -- - "right" generators: g× (encode× (inr m)) for m : ℕ
+  --
+  -- These are orthogonal to each other (cross-orthogonality proved above).
+  --
+  -- In B∞×B∞, the generators are (g∞ m, 0) and (0, g∞ m).
+  -- The isomorphism should send:
+  -- - left factor: g∞ m ↦ g× (encode× (inl m))
+  -- - right factor: g∞ m ↦ g× (encode× (inr m))
+  --
+  -- For an arbitrary element (x, y), we need to consider how x and y
+  -- are built from their generators.
+  --
+  -- Actually, the decomposition (x, y) = (x, 0) + (0, y) IS the right idea!
+  -- In B∞×B∞, (x, 0) = x times unit-left
+  --            (0, y) = y times unit-right
+  -- where unit-left = (𝟙∞, 𝟘∞) and unit-right = (𝟘∞, 𝟙∞)
+  --
+  -- The mapping is:
+  -- ψ(x, y) = ψ-left(x) · ψ-quot(unit-left) + ψ-right(y) · ψ-quot(unit-right)
+  -- where ψ-quot(unit-left) and ψ-quot(unit-right) are the images of the
+  -- factor projections in the quotient.
+  --
+  -- Actually, the simpler view: in the quotient, let
+  -- e_L = "join of all left generators" (really: complementary element)
+  -- e_R = "join of all right generators"
+  -- with e_L + e_R = 1 and e_L · e_R = 0
+  --
+  -- Then ψ(x, y) = ψ-left(x) · e_L + ψ-right(y) · e_R
+  --
+  -- But building e_L and e_R requires infinite operations...
+  --
+  -- Let me try a different approach: use that the product structure
+  -- is already captured in how generators are indexed.
+  --
+  -- Key insight: genProd n = (a, b) where exactly one of a, b is g∞ m
+  -- and the other is 0.
+  -- - If decode× n = inl m, then genProd n = (g∞ m, 0)
+  -- - If decode× n = inr m, then genProd n = (0, g∞ m)
+  --
+  -- So φ : B∞×B∞-quotient → B∞×B∞ sends g× n to genProd n.
+  -- For inverse ψ, we need ψ : B∞×B∞ → B∞×B∞-quotient such that
+  -- ψ(g∞ m, 0) = g× (encode× (inl m)) = g×-left-gen m
+  -- ψ(0, g∞ m) = g× (encode× (inr m)) = g×-right-gen m
+  --
+  -- Since (g∞ m, 0) + (0, g∞ m') = (g∞ m, g∞ m') generates the product,
+  -- and ψ-left(g∞ m) = g×-left-gen m, ψ-right(g∞ m) = g×-right-gen m,
+  -- the formula ψ(x, y) = ψ-left(x) + ψ-right(y) should work
+  -- IF we use the right interpretation.
+  --
+  -- Wait, but ψ-left(1) = 1 in the quotient, since ψ-left is a ring hom.
+  -- So ψ-left(1) + ψ-right(1) = 1 + 1 = 0, not 1.
+  --
+  -- The issue is: (1, 1) is the unit in B∞×B∞, but
+  -- ψ-left(1) + ψ-right(1) ≠ 1 in the quotient.
+  --
+  -- So the formula ψ(x, y) = ψ-left(x) + ψ-right(y) does NOT give a ring hom!
+  --
+  -- Let me reconsider the structure:
+  -- B∞ ≅ freeBA ℕ / relB∞
+  -- B∞×B∞ ≅ (freeBA ℕ / relB∞) × (freeBA ℕ / relB∞)
+  -- B∞×B∞-quotient = freeBA ℕ / relB∞×B∞
+  --
+  -- The equivalence B∞×B∞ ≅ B∞×B∞-quotient is NOT a simple additive one.
+  -- We need to use the product structure more carefully.
+  --
+  -- Actually, the right approach is:
+  -- 1. Consider the product as a coproduct of Boolean algebras (opposite category)
+  -- 2. The coproduct of free BAs is free BA on disjoint union of generators
+  -- 3. (freeBA ℕ × freeBA ℕ) / (product relation) ≅ freeBA (ℕ ⊎ ℕ) / (combined relation)
+  --
+  -- Hmm, but we're quotienting first then taking product vs taking product of quotients.
+  --
+  -- Let's try yet another approach: show the quotient map factors through.
+  --
+  -- For now, let me keep the postulate and document this complexity.
+
   -- The full proof of B∞×B∞≃quotient requires:
   -- 1. Show ψ is a ring homomorphism (uses orthogonality of factors)
   -- 2. Show φ ∘ ψ ≡ id (generators map correctly)
   -- 3. Show ψ ∘ φ ≡ id (generators map correctly)
   -- These involve careful equational reasoning with the quotient structure.
+  -- The main difficulty is building ψ as a ring hom from a product.
   -- For now, we keep the postulate documenting significant progress:
   -- - φ : B∞×B∞-quotient → B∞×B∞: PROVED
   -- - ψ-left : B∞ → B∞×B∞-quotient: PROVED
   -- - ψ-right : B∞ → B∞×B∞-quotient: PROVED
+  -- - Cross-orthogonality: g×-left-gen m · g×-right-gen n = 0: PROVED
   postulate
     B∞×B∞≃quotient : BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
 
