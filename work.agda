@@ -6434,6 +6434,7 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- ✓ Stone→closedProp: Stone props are closed (PROVED modulo postulates)
 -- ✓ InhabitedClosedSubSpaceClosed: ∃_{x:S} A(x) is closed for A closed in Stone S (PROVED)
 -- ✓ closedSigmaClosed': closed props closed under Σ (PROVED modulo ClosedInStoneIsStone)
+-- ✓ SDDecToElem: Stone duality correspondence for decidable predicates (PROVED)
 --
 -- Remaining postulates requiring work:
 -- 1. ClosedInStoneIsStone: closed subtypes of Stone are Stone (tex 1770)
@@ -6466,6 +6467,8 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - ClosedInStoneIsStone: closed subsets of Stone are Stone (tex 1770)
 --     * Currently POSTULATED - key remaining piece for closedSigmaClosed
 --     * Proof uses StoneClosedSubsets (tex 1648): A⊆S closed ↔ A = Sp(B/(d_n))
+--     * Requires AxLocalChoice to lift pointwise closedness to global decidable intersection
+--     * SDDecToElem module provides correspondence: decidable pred ↔ element of B
 -- - StoneEqualityClosed: equality in Stone spaces is closed (tex 1636)
 -- - ODisc: overtly discrete types (sequential colimits of finite sets)
 --     * Partial infrastructure in ODiscInfrastructure module
