@@ -5922,6 +5922,28 @@ SpB∞-to-ℕ∞-injective h₁ h₂ seq-eq = B∞-hom-eq
 -- SpB∞-to-ℕ∞ is a bijection (using SpB∞-roundtrip), so Sp B∞ ≅ ℕ∞
 -- Then f-injective follows from the spectrum argument.
 
+-- Key fact: injective + has section = iso
+-- SpB∞-to-ℕ∞ is injective (just proved)
+-- ℕ∞-to-SpB∞ is a section: SpB∞-to-ℕ∞ ∘ ℕ∞-to-SpB∞ = id (SpB∞-roundtrip)
+-- Therefore SpB∞-to-ℕ∞ is surjective (every α has preimage ℕ∞-to-SpB∞ α)
+
+-- Retraction: ℕ∞-to-SpB∞ ∘ SpB∞-to-ℕ∞ = id
+-- This follows from injectivity: for h : Sp B∞,
+-- SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ (SpB∞-to-ℕ∞ h)) = SpB∞-to-ℕ∞ h (by SpB∞-roundtrip on SpB∞-to-ℕ∞ h)
+-- By injectivity: ℕ∞-to-SpB∞ (SpB∞-to-ℕ∞ h) = h
+
+SpB∞-retraction : (h : Sp B∞-Booleω) → ℕ∞-to-SpB∞ (SpB∞-to-ℕ∞ h) ≡ h
+SpB∞-retraction h = SpB∞-to-ℕ∞-injective (ℕ∞-to-SpB∞ (SpB∞-to-ℕ∞ h)) h
+  (SpB∞-roundtrip (SpB∞-to-ℕ∞ h))
+
+-- The isomorphism between Sp B∞ and ℕ∞
+SpB∞≅ℕ∞ : Iso (Sp B∞-Booleω) ℕ∞
+SpB∞≅ℕ∞ = iso SpB∞-to-ℕ∞ ℕ∞-to-SpB∞ SpB∞-roundtrip SpB∞-retraction
+
+-- The equivalence
+SpB∞≃ℕ∞ : Sp B∞-Booleω ≃ ℕ∞
+SpB∞≃ℕ∞ = isoToEquiv SpB∞≅ℕ∞
+
 -- =============================================================================
 -- End of current formalization
 -- =============================================================================
