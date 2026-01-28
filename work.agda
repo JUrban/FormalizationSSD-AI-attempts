@@ -41,7 +41,7 @@ open import Axioms.StoneDuality using (StoneDualityAxiom; Sp; Booleω; SpEmbeddi
 import OmnisciencePrinciples.Markov as MarkovLib
 
 -- Imports for quotientPreservesBooleω
-open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv)
+open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv)
 open import CountablyPresentedBooleanRings.Examples.Bool using (is-cp-2)
 open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA)
 open import BooleanRing.BooleanRingQuotients.QuotientConclusions using (BoolQuotientEquiv)
@@ -623,6 +623,40 @@ module SpectrumEmptyImpliesTrivial (SD : StoneDualityAxiom) (B : Booleω) (spEmp
   0≡1-in-B = isContr→isProp B-contr _ _
 
 -- =============================================================================
+-- Helper lemmas for Boolean ring equivalences
+-- =============================================================================
+
+-- Composition of BooleanRing equivalences (adapting CommRingEquiv composition)
+open import Cubical.Algebra.CommRing.Properties using (compCommRingEquiv)
+
+compBoolRingEquiv : (A B C : BooleanRing ℓ-zero)
+                  → BooleanRingEquiv A B → BooleanRingEquiv B C → BooleanRingEquiv A C
+compBoolRingEquiv A B C f g = compCommRingEquiv {A = BooleanRing→CommRing A} {B = BooleanRing→CommRing B} {C = BooleanRing→CommRing C} f g
+
+-- Path from BooleanRing path to CommRing path (since BooleanRing→CommRing preserves paths)
+boolRingPath→commRingPath : {A B : BooleanRing ℓ-zero} → A ≡ B → BooleanRing→CommRing A ≡ BooleanRing→CommRing B
+boolRingPath→commRingPath = cong BooleanRing→CommRing
+
+-- Convert CommRing path to BooleanRingEquiv for quotients
+-- When A and B are BooleanRing quotients (constructed via idemCommRing→BR),
+-- a CommRing path implies a BooleanRing equivalence
+-- This uses the fact that BooleanRingStr is uniquely determined by CommRingStr + idempotency
+open import Cubical.Algebra.CommRing.Univalence using (CommRingPath)
+
+commRingPath→boolRingEquiv : (A B : BooleanRing ℓ-zero)
+  → BooleanRing→CommRing A ≡ BooleanRing→CommRing B
+  → BooleanRingEquiv A B
+commRingPath→boolRingEquiv A B p = commRingEquivToEquiv , snd commRingEquivToEquiv'
+  where
+  -- Convert the path to a CommRing equivalence via CommRingPath
+  commRingEquivToEquiv' : CommRingEquiv (BooleanRing→CommRing A) (BooleanRing→CommRing B)
+  commRingEquivToEquiv' = invEq (CommRingPath _ _) p
+
+  -- Extract the underlying equivalence
+  commRingEquivToEquiv : ⟨ A ⟩ ≃ ⟨ B ⟩
+  commRingEquivToEquiv = fst commRingEquivToEquiv'
+
+-- =============================================================================
 -- Quotients preserve Booleω (key lemma for MP proof)
 -- =============================================================================
 
@@ -799,9 +833,71 @@ quotientPreservesBooleω α = ∣ presentationWitness ∣₁
     -- Step 1 uses that equiv induces an equivalence on quotients.
     -- Step 2 uses BoolQuotientEquiv (inverse direction).
     -- Step 3 uses that decode is a bijection.
+
+    -- Step 2+3: Use BoolQuotientEquiv to get a path between CommRings
+    -- Then convert to BooleanRingEquiv using commRingPath→boolRingEquiv
+    step2-path : BooleanRing→CommRing (freeBA ℕ QB./Im (⊎.rec f₀ g)) ≡
+                 BooleanRing→CommRing ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g))
+    step2-path = BoolQuotientEquiv (freeBA ℕ) f₀ g
+
+    step2-equiv : BooleanRingEquiv (freeBA ℕ QB./Im (⊎.rec f₀ g)) ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g))
+    step2-equiv = commRingPath→boolRingEquiv (freeBA ℕ QB./Im (⊎.rec f₀ g)) ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g)) step2-path
+
+    -- Step 3: h = (⊎.rec f₀ g) ∘ decode and decode is a bijection
+    -- Since decode is surjective, Im h = Im (⊎.rec f₀ g), so the quotients are equal
+    -- For now, postulate this step (it's a straightforward ideal equality)
     postulate
-      equivToPresentation : BooleanRingEquiv (BoolBR QB./Im α) (freeBA ℕ QB./Im h)
-    -- TODO: Prove using the above composition strategy
+      step3-h-eq : freeBA ℕ QB./Im h ≡ freeBA ℕ QB./Im (⊎.rec f₀ g)
+
+    step3-equiv : BooleanRingEquiv (freeBA ℕ QB./Im h) (freeBA ℕ QB./Im (⊎.rec f₀ g))
+    step3-equiv = invEq (BoolRingPath _ _) step3-h-eq
+
+    -- Step 1: Transport quotient through equiv
+    -- BoolBR /Im α ≅ (freeBA ℕ /Im f₀) /Im α'
+    -- This requires showing that the equivalence equiv induces a quotient equivalence
+    -- For now, postulate (requires more infrastructure)
+    postulate
+      step1-equiv : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im α')
+
+    -- α' = π₀ ∘ g : both map n to 𝟙 if α n = true, else 𝟘
+    -- This needs to be proven using that equiv and π₀ preserve 𝟘 and 𝟙
+    postulate
+      α'≡π₀∘g : α' ≡ π₀ ∘ g
+
+    -- Transport step1-equiv along the equality α' = π₀ ∘ g
+    step1-equiv' : BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g))
+    step1-equiv' = subst (λ f → BooleanRingEquiv (BoolBR QB./Im α) ((freeBA ℕ QB./Im f₀) QB./Im f)) α'≡π₀∘g step1-equiv
+
+    -- Combine the steps (composing equivalences)
+    -- Chain: BoolBR /Im α --(step1')--> (freeBA ℕ /Im f₀) /Im (π₀ ∘ g) --(inv step2)--> freeBA ℕ /Im (⊎.rec f₀ g) --(inv step3)--> freeBA ℕ /Im h
+
+    -- Intermediate types for clarity
+    A' : BooleanRing ℓ-zero
+    A' = BoolBR QB./Im α
+
+    B' : BooleanRing ℓ-zero
+    B' = (freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g)
+
+    C' : BooleanRing ℓ-zero
+    C' = freeBA ℕ QB./Im (⊎.rec f₀ g)
+
+    D' : BooleanRing ℓ-zero
+    D' = freeBA ℕ QB./Im h
+
+    -- inv step2 : B' → C'
+    invStep2 : BooleanRingEquiv B' C'
+    invStep2 = invBooleanRingEquiv (freeBA ℕ QB./Im (⊎.rec f₀ g)) ((freeBA ℕ QB./Im f₀) QB./Im (π₀ ∘ g)) step2-equiv
+
+    -- inv step3 : C' → D'
+    invStep3 : BooleanRingEquiv C' D'
+    invStep3 = invBooleanRingEquiv (freeBA ℕ QB./Im h) (freeBA ℕ QB./Im (⊎.rec f₀ g)) step3-equiv
+
+    -- Composition: A' → B' → C' → D'
+    step12 : BooleanRingEquiv A' C'
+    step12 = compBoolRingEquiv A' B' C' step1-equiv' invStep2
+
+    equivToPresentation : BooleanRingEquiv (BoolBR QB./Im α) (freeBA ℕ QB./Im h)
+    equivToPresentation = compBoolRingEquiv A' C' D' step12 invStep3
 
 -- 2/α as a Booleω element
 2/α-Booleω : (α : binarySequence) → Booleω
