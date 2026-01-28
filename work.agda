@@ -4364,8 +4364,41 @@ h'-right-true→left-false h' h'-right-true x =
 ℕ∞-to-SpB∞ α = QB.inducedHom {B = freeBA ℕ} {f = relB∞} BoolBR (ℕ∞-to-SpB∞-free α) (ℕ∞-to-SpB∞-respects-rel α)
 
 -- The round-trip property: SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
-postulate
-  SpB∞-roundtrip : (α : ℕ∞) → SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
+-- Key insight: by QB.evalInduce, (ℕ∞-to-SpB∞ α) ∘cr π∞ = ℕ∞-to-SpB∞-free α
+-- So (ℕ∞-to-SpB∞ α) $cr (g∞ n) = (ℕ∞-to-SpB∞ α) $cr (fst π∞ (gen n))
+--                               = fst (ℕ∞-to-SpB∞-free α) (gen n)
+--                               = ℕ∞-on-gen α n = fst α n
+
+-- First, establish that inducedHom ∘cr quotientImageHom = the original map
+opaque
+  unfolding QB.inducedHom
+  unfolding QB.quotientImageHom
+  ℕ∞-to-SpB∞-eval : (α : ℕ∞) →
+    (ℕ∞-to-SpB∞ α) ∘cr π∞ ≡ ℕ∞-to-SpB∞-free α
+  ℕ∞-to-SpB∞-eval α = QB.evalInduce {B = freeBA ℕ} {f = relB∞}
+                        BoolBR {g = ℕ∞-to-SpB∞-free α} {gfx=0 = ℕ∞-to-SpB∞-respects-rel α}
+
+-- The sequence equality
+SpB∞-roundtrip-seq : (α : ℕ∞) (n : ℕ) →
+  SpB∞-to-ℕ∞-seq (ℕ∞-to-SpB∞ α) n ≡ fst α n
+SpB∞-roundtrip-seq α n =
+  SpB∞-to-ℕ∞-seq (ℕ∞-to-SpB∞ α) n
+    ≡⟨ refl ⟩  -- SpB∞-to-ℕ∞-seq h n = h $cr (g∞ n)
+  (ℕ∞-to-SpB∞ α) $cr (g∞ n)
+    ≡⟨ refl ⟩  -- g∞ n = fst π∞ (gen n)
+  (ℕ∞-to-SpB∞ α) $cr (fst π∞ (gen n))
+    ≡⟨ funExt⁻ (cong fst (ℕ∞-to-SpB∞-eval α)) (gen n) ⟩  -- by evalInduce
+  fst (ℕ∞-to-SpB∞-free α) (gen n)
+    ≡⟨ funExt⁻ (ℕ∞-to-SpB∞-free-on-gen α) n ⟩  -- by evalBAInduce
+  ℕ∞-on-gen α n
+    ≡⟨ refl ⟩  -- by definition of ℕ∞-on-gen
+  fst α n ∎
+
+-- The full roundtrip: equality of ℕ∞ is equality of the sequence (hitsAtMostOnce is a prop)
+SpB∞-roundtrip : (α : ℕ∞) → SpB∞-to-ℕ∞ (ℕ∞-to-SpB∞ α) ≡ α
+SpB∞-roundtrip α = Σ≡Prop
+  (λ s → isPropHitsAtMostOnce s)
+  (funExt (SpB∞-roundtrip-seq α))
 
 -- =============================================================================
 -- LLPO derivation from Stone Duality
