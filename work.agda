@@ -11404,6 +11404,202 @@ module StoneAsClosedSubsetOfCantorModule where
     → fst (fst (OpenSubsetIntersection A (ClosedSubsetComplement (OpenSubsetComplement A))) x) → ⊥
   openIntersectionComplement A x (a , ¬a) = ¬a a
 
+  -- ==========================================================================
+  -- Double complement involution (¬¬A = A) for subsets
+  -- ==========================================================================
+  --
+  -- For closed subsets: ¬(¬A) where the first ¬ is ClosedSubsetComplement
+  -- and the second is OpenSubsetComplement gives back a closed subset
+  -- that is equivalent to A.
+  --
+  -- The chain is: ClosedSubset A
+  --            → ClosedSubsetComplement A (open)
+  --            → OpenSubsetComplement (ClosedSubsetComplement A) (closed)
+  --
+  -- Similarly for open: OpenSubset A
+  --                   → OpenSubsetComplement A (closed)
+  --                   → ClosedSubsetComplement (OpenSubsetComplement A) (open)
+
+  -- Double complement involution for closed subsets (path equality)
+  -- ¬closed(¬open(A)) = A
+  closedDoubleComplementInvolution : (A : ClosedSubsetOfCantor)
+    → OpenSubsetComplement (ClosedSubsetComplement A) ≡ A
+  closedDoubleComplementInvolution A = ΣPathP (funExt pointwise , witness-path)
+    where
+    -- The complement-complement construction
+    ¬¬A : ClosedSubsetOfCantor
+    ¬¬A = OpenSubsetComplement (ClosedSubsetComplement A)
+
+    -- Pointwise: for each x, ¬¬(x ∈ A) ↔ (x ∈ A) because A is closed (¬¬-stable)
+    pointwise : (x : CantorSpace) → fst ¬¬A x ≡ fst A x
+    pointwise x = Σ≡Prop (λ _ → isPropIsProp) (hPropExt ¬¬A-isProp (snd (fst A x)) fwd bwd)
+      where
+      ¬¬A-isProp : isProp (fst (fst ¬¬A x))
+      ¬¬A-isProp = snd (fst ¬¬A x)
+
+      -- Forward: ¬¬(x ∈ A) → (x ∈ A) by closedness of A
+      fwd : fst (fst ¬¬A x) → fst (fst A x)
+      fwd ¬¬a = closedIsStable (fst A x) (snd A x) ¬¬a
+
+      -- Backward: (x ∈ A) → ¬¬(x ∈ A) (trivial)
+      bwd : fst (fst A x) → fst (fst ¬¬A x)
+      bwd a ¬a = ¬a a
+
+    -- The closedness witness
+    witness-path : PathP (λ i → (x : CantorSpace) → isClosedProp (pointwise i x)) (snd ¬¬A) (snd A)
+    witness-path = isProp→PathP (λ i → isPropΠ (λ x → StoneEqualityClosedModule.isPropIsClosedProp (pointwise i x))) (snd ¬¬A) (snd A)
+
+  -- Double complement involution for open subsets (path equality)
+  -- ¬open(¬closed(A)) = A
+  openDoubleComplementInvolution : (A : OpenSubsetOfCantor)
+    → ClosedSubsetComplement (OpenSubsetComplement A) ≡ A
+  openDoubleComplementInvolution A = ΣPathP (funExt pointwise , witness-path)
+    where
+    -- The complement-complement construction
+    ¬¬A : OpenSubsetOfCantor
+    ¬¬A = ClosedSubsetComplement (OpenSubsetComplement A)
+
+    -- Pointwise: for each x, ¬¬(x ∈ A) ↔ (x ∈ A) because A is open (¬¬-stable via MP)
+    pointwise : (x : CantorSpace) → fst ¬¬A x ≡ fst A x
+    pointwise x = Σ≡Prop (λ _ → isPropIsProp) (hPropExt ¬¬A-isProp (snd (fst A x)) fwd bwd)
+      where
+      ¬¬A-isProp : isProp (fst (fst ¬¬A x))
+      ¬¬A-isProp = snd (fst ¬¬A x)
+
+      -- Forward: ¬¬(x ∈ A) → (x ∈ A) by openness of A (requires MP)
+      fwd : fst (fst ¬¬A x) → fst (fst A x)
+      fwd ¬¬a = openIsStable mp (fst A x) (snd A x) ¬¬a
+
+      -- Backward: (x ∈ A) → ¬¬(x ∈ A) (trivial)
+      bwd : fst (fst A x) → fst (fst ¬¬A x)
+      bwd a ¬a = ¬a a
+
+    -- The openness witness
+    witness-path : PathP (λ i → (x : CantorSpace) → isOpenProp (pointwise i x)) (snd ¬¬A) (snd A)
+    witness-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (pointwise i x))) (snd ¬¬A) (snd A)
+
+  -- ==========================================================================
+  -- De Morgan laws for subset complements
+  -- ==========================================================================
+  --
+  -- These show how complement interacts with union and intersection:
+  -- ¬(A ∪ B) = ¬A ∩ ¬B
+  -- ¬(A ∩ B) = ¬A ∪ ¬B
+  --
+  -- For closed/open subsets, we need to track which complement operation
+  -- produces which type of subset.
+
+  -- De Morgan: ¬(closed A ∩ closed B) ↔ ¬A ∪ ¬B
+  -- Note: ¬(A ∩ B) is open (complement of closed intersection)
+  --       ¬A is open, ¬B is open, so ¬A ∪ ¬B is open
+  closedDeMorganIntersection-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
+    → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+  closedDeMorganIntersection-fwd A B x not-a-and-b =
+    PT.rec squash₁
+           (λ p → p)
+           (mp-open-disjunction (ClosedSubsetComplement A) (ClosedSubsetComplement B) x
+              (λ (not-not-a , not-not-b) → not-a-and-b (closedIsStable (fst A x) (snd A x) not-not-a ,
+                                                        closedIsStable (fst B x) (snd B x) not-not-b)))
+    where
+    -- Using MP, we can decide ¬A ∨ ¬B from ¬¬(¬A ∨ ¬B)
+    mp-open-disjunction : (U V : OpenSubsetOfCantor) (y : CantorSpace)
+      → (((fst (fst U y)) → ⊥) × ((fst (fst V y)) → ⊥) → ⊥)
+      → ∥ fst (fst (OpenSubsetUnion U V) y) ∥₁
+    mp-open-disjunction U V y not-not-u-or-v = PT.map (λ z → z)
+      (openIsStable mp (fst (OpenSubsetUnion U V) y) (snd (OpenSubsetUnion U V) y)
+        (λ not-uv → not-not-u-or-v (
+          (λ u → not-uv ∣ inl u ∣₁) ,
+          (λ v → not-uv ∣ inr v ∣₁))))
+
+  closedDeMorganIntersection-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
+  closedDeMorganIntersection-bwd A B x =
+    PT.rec (snd (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x))
+           (λ { (inl ¬a) (a , _) → ¬a a
+              ; (inr ¬b) (_ , b) → ¬b b })
+
+  -- De Morgan: ¬(closed A ∪ closed B) ↔ ¬A ∩ ¬B
+  -- Note: ¬(A ∪ B) is open (complement of closed union)
+  --       ¬A is open, ¬B is open, so ¬A ∩ ¬B is open
+  closedDeMorganUnion-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
+    → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+  closedDeMorganUnion-fwd A B x not-a-or-b =
+    (λ a → not-a-or-b ∣ inl a ∣₁) , (λ b → not-a-or-b ∣ inr b ∣₁)
+
+  closedDeMorganUnion-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
+  closedDeMorganUnion-bwd A B x (not-a , not-b) =
+    PT.rec isProp⊥ (λ { (inl a) → not-a a ; (inr b) → not-b b })
+
+  -- De Morgan: ¬(open A ∩ open B) ↔ ¬A ∪ ¬B
+  -- Note: ¬(A ∩ B) is closed (complement of open intersection)
+  --       ¬A is closed, ¬B is closed, so ¬A ∪ ¬B is closed
+  --
+  -- The forward direction requires LLPO-style reasoning:
+  -- From ¬(A ∧ B) we need to conclude ¬A ∨ ¬B.
+  -- Classically this is obvious, but constructively it requires
+  -- the fact that ¬A ∨ ¬B is a closed proposition (being a union of
+  -- closed subsets), hence ¬¬-stable.
+  openDeMorganIntersection-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
+    → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+  openDeMorganIntersection-fwd A B x not-a-and-b = ∣ decide-not-a-or-not-b ∣₁
+    where
+    -- Helper for the disjunction type
+    _⊔hProp_ : hProp ℓ-zero → hProp ℓ-zero → hProp ℓ-zero
+    P ⊔hProp Q = (∥ fst P ⊎ fst Q ∥₁) , squash₁
+
+    -- The disjunction ¬A ⊎ ¬B as a type
+    disjType : Type ℓ-zero
+    disjType = fst (fst (OpenSubsetComplement A) x) ⊎ fst (fst (OpenSubsetComplement B) x)
+
+    -- isProp for the disjunction (disjoint by not-(A ∧ B))
+    disjIsProp : isProp disjType
+    disjIsProp = isProp⊎ (snd (fst (OpenSubsetComplement A) x))
+                         (snd (fst (OpenSubsetComplement B) x))
+                         (λ not-a not-b → not-a-and-b (openIsStable mp (fst A x) (snd A x) (λ z → z not-a) ,
+                                                       openIsStable mp (fst B x) (snd B x) (λ z → z not-b)))
+
+    -- The disjunction is closed (union of closed propositions)
+    disjClosed : isClosedProp (disjType , disjIsProp)
+    disjClosed = negOpenIsClosed (fst A x ⊔hProp fst B x)
+                   (openOr (fst A x) (fst B x) (snd A x) (snd B x))
+
+    -- Double negation of the disjunction
+    not-not-disj : (disjType → ⊥) → ⊥
+    not-not-disj not-disj = not-a-and-b
+      (openIsStable mp (fst A x) (snd A x) (λ not-a → not-disj (inl not-a)) ,
+       openIsStable mp (fst B x) (snd B x) (λ not-b → not-disj (inr not-b)))
+
+    -- Use closedness (¬¬-stability) to get the disjunction
+    decide-not-a-or-not-b : disjType
+    decide-not-a-or-not-b = closedIsStable (disjType , disjIsProp) disjClosed not-not-disj
+
+  openDeMorganIntersection-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+    → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
+  openDeMorganIntersection-bwd A B x =
+    PT.rec (snd (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x))
+           (λ { (inl not-a) (a , _) → not-a a
+              ; (inr not-b) (_ , b) → not-b b })
+
+  -- De Morgan: ¬(open A ∪ open B) ↔ ¬A ∩ ¬B
+  openDeMorganUnion-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
+    → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+  openDeMorganUnion-fwd A B x not-a-or-b =
+    (λ a → not-a-or-b ∣ inl a ∣₁) , (λ b → not-a-or-b ∣ inr b ∣₁)
+
+  openDeMorganUnion-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+    → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
+  openDeMorganUnion-bwd A B x (not-a , not-b) =
+    PT.rec isProp⊥ (λ { (inl a) → not-a a ; (inr b) → not-b b })
+
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
 -- =============================================================================
