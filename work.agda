@@ -23781,6 +23781,7 @@ module FormalizationStatusTC where
   -- 15. CHausSeperationOfClosedByOpensTC - CHaus normality (tex 2058)
   -- 16. StonePropertiesTC - foundational Stone lemmas (tex 251, 1636, 1628, 1613, 1770, 1906, 1930)
   -- 17. CHausStructuralTC - CHaus closure properties (tex 2003, 2019, 2098)
+  -- 18. FoundationalAxiomsTC - 5 foundational axioms (tex 257, 294, 324, 348)
 
 -- =============================================================================
 -- Module: OmnisciencePrinciplesTC
@@ -24379,6 +24380,126 @@ module CHausStructuralTC where
   -- - Building the interval I as a CHaus space
   -- - Building the disk D² as a CHaus space
   -- - Using ¬¬-stability of inhabitedness (InhabitedClosedSubSpaceClosedCHaus)
+
+-- =============================================================================
+-- FoundationalAxiomsTC - Foundational Axioms of Synthetic Stone Duality
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents the 5 foundational axioms from the tex file that
+-- form the axiomatic basis of Synthetic Stone Duality.
+
+module FoundationalAxiomsTC where
+  open import Axioms.StoneDuality using (Stone; Booleω; Sp; StoneDualityAxiom)
+
+  -- =========================================================================
+  -- AXIOM 1: Stone Duality Axiom (tex Definition 257, AxStoneDuality)
+  -- =========================================================================
+  --
+  -- STATEMENT: StoneDualityAxiom : (B : Booleω) → hasStoneStr (Sp B)
+  --
+  -- For every countably presented Boolean algebra B : Booleω,
+  -- the spectrum Sp(B) = BoolHom(B, 2) is a Stone space.
+  --
+  -- STATUS: POSTULATED (sd-axiom at line ~1374)
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- This is THE fundamental axiom. It says that spectra of Boolean algebras
+  -- are Stone spaces. This creates the duality:
+  --   Booleω^op ≃ Stone
+  --
+  -- CONSEQUENCES:
+  -- - Markov's Principle (mp-from-SD)
+  -- - LLPO (llpo-from-SD)
+  -- - ¬WLPO (NOT-WLPO)
+
+  -- =========================================================================
+  -- AXIOM 2: Surjections are Formal (tex lines 294-297)
+  -- =========================================================================
+  --
+  -- STATEMENT: For all g : B → C in Booleω,
+  --   g is injective ⟺ Sp(g) is surjective
+  --
+  -- STATUS: POSTULATED (surj-formal-axiom at line ~1402)
+  --
+  -- This axiom connects algebraic injectivity (in Booleω) with topological
+  -- surjectivity (in Stone). It's key for proving that quotients of Boolean
+  -- algebras correspond to surjections of spectra.
+  --
+  -- USES:
+  -- - f-injective proof
+  -- - Sp-f-surjective derivation
+
+  -- =========================================================================
+  -- AXIOM 3: Local Choice (tex lines 348-353, AxLocalChoice)
+  -- =========================================================================
+  --
+  -- STATEMENT: For all B:Booleω and type family P over Sp(B),
+  --   (∀s:Sp(B). ||P(s)||) → || ∃C:Booleω. ∃q:Sp(C)→Sp(B).
+  --                            (q surjective) × (∀t:Sp(C). P(q(t))) ||
+  --
+  -- STATUS: POSTULATED (localChoice-axiom at line ~1444)
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- Given pointwise truncated existence over a Stone space, we can "refine"
+  -- to a covering Stone space where witnesses exist without truncation.
+  --
+  -- USES:
+  -- - evens-odds-disjoint (LLPO proof)
+  -- - ClosedInStoneIsStone
+  -- - SigmaCompactHausdorff
+
+  -- =========================================================================
+  -- AXIOM 4: Dependent Choice (tex line 324, AxDependentChoice)
+  -- =========================================================================
+  --
+  -- STATEMENT: For tower (E_n)_{n:ℕ} with surjections E_{n+1} ↠ E_n,
+  --   the projection lim_k E_k → E_0 is surjective.
+  --
+  -- STATUS: POSTULATED (dependentChoice-axiom at line ~1473)
+  --
+  -- This is the topological version of dependent choice. It allows
+  -- constructing compatible sequences in inverse limit constructions.
+  --
+  -- IMPLICATION: Countable Choice (countableChoice at line ~1485)
+
+  -- =========================================================================
+  -- AXIOM 5: Countable Choice
+  -- =========================================================================
+  --
+  -- STATEMENT: (∀n:ℕ. ||A_n||) → ||(∀n:ℕ. A_n)||
+  --
+  -- STATUS: POSTULATED (countableChoice at line ~1485)
+  --
+  -- Given pointwise truncated existence over ℕ, produce a truncated
+  -- uniform section. This follows from Dependent Choice.
+
+  -- =========================================================================
+  -- SUMMARY: Axiom Dependencies
+  -- =========================================================================
+  --
+  -- The axioms form a hierarchy:
+  --
+  -- 1. sd-axiom (Stone Duality)
+  --    ├── Enables Sp construction
+  --    ├── Gives MP, LLPO, ¬WLPO
+  --    └── Connects algebra (Booleω) and topology (Stone)
+  --
+  -- 2. surj-formal-axiom (Formal Surjections)
+  --    ├── Requires Stone infrastructure
+  --    └── Used for proving quotient properties
+  --
+  -- 3. localChoice-axiom (Local Choice)
+  --    ├── Requires Stone infrastructure
+  --    └── Used for eliminating truncation over Stone spaces
+  --
+  -- 4. dependentChoice-axiom (Dependent Choice)
+  --    ├── Independent of Stone infrastructure
+  --    └── Used for inverse limit constructions
+  --
+  -- 5. countableChoice (follows from 4)
+  --    └── Convenience axiom for ℕ-indexed families
 
 -- =============================================================================
 -- End of current formalization
