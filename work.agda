@@ -13519,23 +13519,128 @@ module CohomologyModule where
       iso-sec : (p : 0ₖ 1 ≡ 0ₖ {G = A x} 1) → elem-to-path x (path-to-elem x p) ≡ p
       iso-sec = Iso.sec EM-iso
 
-    -- The adjusted-constant lemma requires detailed path algebra involving the EM iso
-    -- We state it as a postulate and focus on the main structure
-    -- The proof follows from: elem-to-path (fv - fu) = sym βu ∙ βv
-    -- which allows showing β' is constant
-    postulate
-      adjusted-constant-helper : (α : (x : S) → EM (A x) 1)
-        → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
-        → (f : C⁰)
-        → (eq : d₀ f ≡ build-cocycle α β)
-        → (x : S) (u v : T x) → adjusted-path α β f x u ≡ adjusted-path α β f x v
-
+    -- The adjusted-constant lemma: β' is constant on T x
+    -- Proof uses: d₀(f) = g implies elem-to-path(fv - fu) = sym βu ∙ βv
     adjusted-constant : (α : (x : S) → EM (A x) 1)
       → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
       → (f : C⁰)
       → (eq : d₀ f ≡ build-cocycle α β)
       → (x : S) (u v : T x) → adjusted-path α β f x u ≡ adjusted-path α β f x v
-    adjusted-constant = adjusted-constant-helper
+    adjusted-constant α β f eq x u v =
+      let open AGx x
+          open IsoHelperx x
+          fu = f x u
+          fv = f x v
+          βu = β x u
+          βv = β x v
+          g = build-cocycle α β
+          pu = elem-to-path x fu  -- : 0ₖ 1 ≡ 0ₖ 1
+          pv = elem-to-path x fv  -- : 0ₖ 1 ≡ 0ₖ 1
+
+          -- Goal: βu ∙ sym pu ≡ βv ∙ sym pv
+          -- Both sides are paths α x ≡ 0ₖ 1
+
+          -- From coboundary: fv - fu = g(u,v) = path-to-elem (sym βu ∙ βv)
+          cobdy-eq : (fv AGx.- fu) ≡ g x u v
+          cobdy-eq = cong (λ h → h x u v) eq
+
+          -- elem-to-path is a hom: elem-to-path(a - b) = elem-to-path a ∙ sym (elem-to-path b)
+          hom-minus : elem-to-path x (fv AGx.- fu) ≡ pv ∙ sym pu
+          hom-minus =
+            EMProp.EM→ΩEM+1-hom {G = A x} 0 fv (AGx.-_ fu)
+              ∙ cong (pv ∙_) (EMProp.EM→ΩEM+1-sym {G = A x} 0 fu)
+
+          -- Apply iso-sec: elem-to-path (path-to-elem p) = p
+          -- So: elem-to-path (g x u v) = elem-to-path (path-to-elem (sym βu ∙ βv)) = sym βu ∙ βv
+          path-eq : pv ∙ sym pu ≡ sym βu ∙ βv
+          path-eq = sym hom-minus ∙ cong (elem-to-path x) cobdy-eq ∙ iso-sec (sym βu ∙ βv)
+
+          -- From path-eq: pv ∙ sym pu = sym βu ∙ βv
+          -- We want: βu ∙ sym pu = βv ∙ sym pv
+
+          -- Rearranging path-eq:
+          -- pv ∙ sym pu = sym βu ∙ βv
+          -- Multiply left by sym pv and right by pu:
+          -- sym pv ∙ (pv ∙ sym pu) ∙ pu = sym pv ∙ (sym βu ∙ βv) ∙ pu
+          -- (sym pv ∙ pv) ∙ sym pu ∙ pu = sym pv ∙ sym βu ∙ βv ∙ pu
+          -- refl ∙ refl = sym pv ∙ sym βu ∙ βv ∙ pu
+          -- This doesn't immediately help...
+
+          -- Alternative: from βu ∙ sym pu we want to get to βv ∙ sym pv
+          -- Key: βu = βv ∙ sym(sym βu ∙ βv)⁻¹ shifted... messy
+
+          -- Let's try: show βu ∙ sym pu ∙ pv = βv
+          -- Then: βu ∙ sym pu ∙ pv ∙ sym pv = βv ∙ sym pv
+          --       βu ∙ sym pu ∙ refl = βv ∙ sym pv (wrong)
+
+          -- From path-eq: pv ∙ sym pu = sym βu ∙ βv
+          -- Apply βu ∙_ to both sides:
+          -- βu ∙ (pv ∙ sym pu) = βu ∙ (sym βu ∙ βv) = (βu ∙ sym βu) ∙ βv = refl ∙ βv = βv
+          step1 : βu ∙ (pv ∙ sym pu) ≡ βv
+          step1 = cong (βu ∙_) path-eq
+                  ∙ ∙assoc βu (sym βu) βv
+                  ∙ cong (_∙ βv) (rCancel βu)
+                  ∙ sym (lUnit βv)
+
+          -- From step1: βu ∙ pv ∙ sym pu = βv (using assoc)
+          step1' : (βu ∙ pv) ∙ sym pu ≡ βv
+          step1' = sym (∙assoc βu pv (sym pu)) ∙ step1
+
+          -- Apply ∙ sym pv to both sides:
+          step2 : ((βu ∙ pv) ∙ sym pu) ∙ sym pv ≡ βv ∙ sym pv
+          step2 = cong (_∙ sym pv) step1'
+
+          -- LHS = (βu ∙ pv) ∙ (sym pu ∙ sym pv)  [assoc]
+          --     = (βu ∙ pv) ∙ sym (pv ∙ pu)      [symDistr]
+          -- This doesn't simplify nicely...
+
+          -- Different approach: apply sym pu ∙_ to (βu ∙ pv) on both sides of step1'
+          -- No, that changes the equation wrongly
+
+          -- Let's try: multiply step1 on RIGHT by (sym pv):
+          -- βu ∙ (pv ∙ sym pu) ∙ sym pv = βv ∙ sym pv
+          -- βu ∙ pv ∙ sym pu ∙ sym pv = βv ∙ sym pv
+
+          -- And we want: βu ∙ sym pu = βv ∙ sym pv
+
+          -- Hmm, we need pv ∙ _ ∙ sym pv = id, which is only true if the middle is refl
+
+          -- Actually, the issue is that β' should be constant, but the paths
+          -- go through the base point in different ways.
+
+          -- Let me reconsider the definition:
+          -- adjusted-path α β f x u = β x u ∙ sym (elem-to-path x (f x u))
+          -- β x u : α x ≡ 0ₖ 1
+          -- elem-to-path x (f x u) : 0ₖ 1 ≡ 0ₖ 1
+
+          -- So adjusted-path is: α x ≡ 0ₖ 1, going α x → 0ₖ 1 → 0ₖ 1
+
+          -- Actually wait, the composition is:
+          -- β x u ∙ sym pu : α x ≡ 0ₖ 1
+          -- Because pu : 0ₖ 1 ≡ 0ₖ 1, and sym pu : 0ₖ 1 ≡ 0ₖ 1
+          -- And β x u : α x ≡ 0ₖ 1
+          -- So β x u ∙ sym pu : α x ≡ 0ₖ 1 is valid (0ₖ 1 → 0ₖ 1 composed with α x → 0ₖ 1)
+
+          -- The issue is that the loop sym pu doesn't change the endpoint,
+          -- so both β'(u) and β'(v) are paths from α x to 0ₖ 1
+          -- We want to show they're equal
+
+          -- Key insight: in EM G 1, the space of paths from α x to 0ₖ 1 is a set
+          -- (since EM G 1 is a 1-type / groupoid)
+          -- So we just need to show the paths are homotopic
+
+          -- Use the h-level: EM spaces at level n+1 are n-truncated
+          -- EM G 1 is a 1-type, so its path space is a set
+          emLevel : isOfHLevel 3 (EM (A x) 1)
+          emLevel = hLevelEM (A x) 1
+
+          -- The path space α x ≡ 0ₖ 1 is a set
+          pathIsSet : isSet (α x ≡ 0ₖ 1)
+          pathIsSet = emLevel (α x) (0ₖ 1)
+
+          -- So any two paths from α x to 0ₖ 1 are equal!
+          -- This makes adjusted-constant trivial
+      in pathIsSet (adjusted-path α β f x u) (adjusted-path α β f x v)
 
     -- Main result: using inhabited to get the constant path
     vanishing-result : (α : (x : S) → EM (A x) 1)
