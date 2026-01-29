@@ -12845,14 +12845,58 @@ module BrouwerFixedPointTheoremModule where
   Disk2CHaus = Disk2 , Disk2IsCHaus
 
   -- No retraction from D² to S¹ (from cohomology, tex Lemma ~3036)
+  --
+  -- PROOF STRUCTURE (from cohomology):
+  --
+  -- Suppose r : D² → S¹ is a retraction with r ∘ boundary-inclusion = id.
+  -- This induces a sequence of group homomorphisms on cohomology:
+  --
+  --   H¹(S¹,ℤ) → H¹(D²,ℤ) → H¹(S¹,ℤ)
+  --       ↓        ↓          ↓
+  --       ℤ   →    0    →     ℤ
+  --
+  -- where:
+  -- - r* : H¹(S¹) → H¹(D²) is induced by r
+  -- - boundary-inclusion* : H¹(D²) → H¹(S¹) is induced by boundary-inclusion
+  -- - The composition is id (since r ∘ boundary-inclusion = id)
+  --
+  -- But H¹(D²,ℤ) = 0 (from disk-cohomology-vanishes), so the composition
+  -- ℤ → 0 → ℤ cannot be id. This is a contradiction.
+  --
+  -- Dependencies:
+  -- - circle-cohomology : H¹(S¹) ≃ ℤ (in CohomologyModule)
+  -- - disk-cohomology-vanishes : H¹(D²) = 0 (in CohomologyModule)
+  -- - Functoriality of H¹ (not yet formalized)
+  --
   postulate
     no-retraction : (r : Disk2 → Circle)
       → ((x : Circle) → r (boundary-inclusion x) ≡ x)
       → ⊥
 
   -- If ∀x. f(x) ≠ x, then there is a retraction D² → S¹
-  -- This is the geometric construction: for each x, follow the line from f(x) through x
-  -- to its intersection with the boundary S¹
+  --
+  -- PROOF STRUCTURE (geometric construction):
+  --
+  -- Given f : D² → D² with ∀x. f(x) ≠ x, we construct r : D² → S¹ by:
+  --
+  -- For each x ∈ D²:
+  --   1. Consider the line L from f(x) through x
+  --   2. Since f(x) ≠ x, this line is well-defined
+  --   3. L intersects S¹ = ∂D² at exactly one point "beyond" x (away from f(x))
+  --   4. Define r(x) to be this intersection point
+  --
+  -- r is a retraction because:
+  --   - For x ∈ S¹: the line from f(x) through x meets S¹ again at x
+  --     (since x is already on the boundary)
+  --   - So r(boundary-inclusion(x)) = x
+  --
+  -- Formalizing this requires:
+  --   - Vector space structure on D² (or embedding in ℝ²)
+  --   - Line intersection calculations
+  --   - Continuity of the construction
+  --
+  -- This is fundamentally a GEOMETRIC postulate about the disk.
+  --
   postulate
     retraction-from-no-fixpoint : (f : Disk2 → Disk2)
       → ((x : Disk2) → (f x ≡ x → ⊥))
