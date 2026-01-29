@@ -12732,16 +12732,29 @@ module ZILocalModule where
     Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
 
 -- =============================================================================
--- IntermediateValueTheoremModule (tex Theorem 3082)
+-- IntermediateValueTheoremModule (tex Theorem ivt, lines 3082-3097)
 -- =============================================================================
 --
--- For any f : I → I and y : I such that f(0) ≤ y and y ≤ f(1),
+-- THEOREM: For any f : I → I and y : I such that f(0) ≤ y and y ≤ f(1),
 -- there exists x : I such that f(x) = y.
+--
+-- TEX PROOF SUMMARY (lines 3088-3097):
+-- 1. By InhabitedClosedSubSpaceClosedCHaus, ∃_{x:I} f(x)=y is closed, hence ¬¬-stable
+-- 2. Proceed by contradiction: assume ∀x. f(x) ≠ y
+-- 3. By LesserOpenPropAndApartness: a ≠ b implies a < b or b < a
+-- 4. Define U₀ = {x | f(x) < y} and U₁ = {x | y < f(x)}
+-- 5. U₀ and U₁ are disjoint and cover I (since ∀x. f(x) ≠ y)
+-- 6. Thus I = U₀ + U₁, giving a function I → 2
+-- 7. But Bool is I-local (Z-I-local), so this function is constant
+-- 8. However, 0 ∈ U₀ (since f(0) < y) and 1 ∈ U₁ (since y < f(1))
+-- 9. This contradicts constancy, so our assumption was false
+--
+-- STATUS: FULLY PROVED in Agda (not a postulate)
 --
 -- Proof uses:
 -- 1. InhabitedClosedSubSpaceClosedCHaus (existence is closed)
 -- 2. LesserOpenPropAndApartness (a<b or b<a for distinct a,b)
--- 3. Z-I-local (no non-constant maps I → 2)
+-- 3. Bool-I-local (no non-constant maps I → 2)
 
 module IntermediateValueTheoremModule where
   open IntervalIsCHausModule
@@ -12889,15 +12902,28 @@ module IntermediateValueTheoremModule where
     in closedIsStable existence-prop existence-closed ¬¬existence
 
 -- =============================================================================
--- BrouwerFixedPointTheoremModule (tex Theorem 3099)
+-- BrouwerFixedPointTheoremModule (tex Theorem, lines 3099-3111)
 -- =============================================================================
 --
--- For all f : D² → D², there exists x : D² such that f(x) = x.
+-- THEOREM: For all f : D² → D², there exists x : D² such that f(x) = x.
+--
+-- TEX PROOF SUMMARY (lines 3103-3110):
+-- 1. By InhabitedClosedSubSpaceClosedCHaus, ∃_{x:D²} f(x)=x is closed, hence ¬¬-stable
+-- 2. Proceed by contradiction: assume ∀x. f(x) ≠ x
+-- 3. For each x, define d_x = x - f(x), which has an invertible coordinate
+-- 4. Let H_x(t) = f(x) + t·d_x be the line through x and f(x)
+-- 5. H_x intersects ∂D² = S¹ at exactly one point with t > 0 (quadratic equation)
+-- 6. Define r(x) = this intersection point; r : D² → S¹
+-- 7. r restricts to identity on S¹ (i.e., r is a retraction)
+-- 8. But no-retraction says no such r exists (contradicts H¹(S¹) ≃ ℤ vs H¹(D²) = 0)
+--
+-- STATUS: Structure complete, depends on postulates:
+-- - no-retraction, retraction-from-no-fixpoint, Disk2, Circle, etc.
 --
 -- Proof uses:
 -- 1. InhabitedClosedSubSpaceClosedCHaus (existence is closed)
 -- 2. Retraction argument: if f(x) ≠ x for all x, construct retraction D² → S¹
--- 3. no-retraction from cohomology
+-- 3. no-retraction from cohomology or shape theory
 
 module BrouwerFixedPointTheoremModule where
   open InhabitedClosedSubSpaceClosedCHausModule
