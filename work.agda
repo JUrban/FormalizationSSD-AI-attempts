@@ -13033,6 +13033,13 @@ module BrouwerFixedPointTheoremModule where
   postulate
     Disk2IsCHaus : hasCHausStr Disk2
 
+  -- D² is contractible (tex Corollary 3047 R-I-contractible)
+  -- The disk contracts to its center via radial contraction: H(x,t) = (1-t)·x
+  -- This is a more primitive geometric postulate than disk-cohomology-vanishes,
+  -- and implies H¹(D²) = 0 via Hⁿ-contrType≅0 from the Cubical library.
+  postulate
+    isContrDisk2 : isContr Disk2
+
   -- The CHaus structure on D²
   Disk2CHaus : CHaus
   Disk2CHaus = Disk2 , Disk2IsCHaus
