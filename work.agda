@@ -13872,17 +13872,82 @@ module CohomologyModule where
 
   -- H¹(S¹,ℤ) ≅ ℤ (fundamental cohomology of the circle)
   -- See: Cubical.ZCohomology.Groups.Sn.H¹-S¹≅ℤ
+  --
+  -- ELIMINATION STRATEGY for circle-cohomology:
+  -- 1. Define Circle := S¹ from Cubical.HITs.S1.Base
+  -- 2. Import H¹-S¹≅ℤ : GroupIso (coHomGr 1 S¹) ℤGroup
+  --    from Cubical.ZCohomology.Groups.Sn
+  -- 3. The GroupIso gives us an Iso (coHom 1 ℤAbGroup S¹) ℤ
+  -- 4. Convert Iso to Equiv using isoToEquiv
+  --
+  -- Key imports needed:
+  --   open import Cubical.HITs.S1 using (S¹; base; loop)
+  --   open import Cubical.ZCohomology.Groups.Sn using (H¹-S¹≅ℤ; Hⁿ-Sⁿ≅ℤ)
   postulate
     circle-cohomology : H¹ BrouwerFixedPointTheoremModule.Circle ≃ ℤ
 
   -- H¹(D²,ℤ) = 0 (disk is contractible)
   -- See: Cubical.ZCohomology.Groups.Unit.Hⁿ-contrType≅0
+  --
+  -- ELIMINATION STRATEGY for disk-cohomology-vanishes:
+  -- 1. Define Disk2 as the unit disk { z : ℂ | |z| ≤ 1 }
+  --    or equivalently as a quotient of I × I identifying boundary points
+  -- 2. Prove isContr Disk2 (disk is contractible via radial contraction)
+  -- 3. Import Hⁿ-contrType≅0 from Cubical.ZCohomology.Groups.Unit:
+  --    Hⁿ-contrType≅0 : {A : Type ℓ} → isContr A
+  --                   → GroupIso (coHomGr (suc n) A) UnitGroup₀
+  -- 4. Apply with n = 0 to get H¹(Disk2) ≅ Unit
+  -- 5. Since Unit ≅ 0 as abelian groups, H¹(Disk2) = 0
+  --
+  -- Alternative: Use the Cubical library's disk construction if available
+  --
+  -- Key imports needed:
+  --   open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0)
   postulate
     disk-cohomology-vanishes : H¹ BrouwerFixedPointTheoremModule.Disk2 ≡ 0ₕ 1
 
   -- This completes the justification for the no-retraction postulate
   -- in BrouwerFixedPointTheoremModule
 
+-- =============================================================================
+-- Summary of postulate elimination status
+-- =============================================================================
+--
+-- FULLY PROVED (not postulates anymore):
+-- 1. xor-symmdiff (line ~7298): Complete proof using helper lemmas
+-- 2. xor-meetNegForm-meetNegForm-correct (line ~7397): Complete proof
+-- 3. xor-joinForm-meetNegForm-correct (line ~7422): Complete proof
+-- 4. xor-meetNegForm-joinForm-correct (line ~7445): Complete proof
+-- 5. closedSigmaClosed-derived (line ~9118): Complete proof in module
+-- 6. section-exact-cech-complex (line ~13335): Complete proof
+-- 7. canonical-exact-cech-complex (line ~13396): Complete proof
+-- 8. exact-cech-complex-vanishing-cohomology (line ~13652): Complete proof
+--
+-- PROVED BUT KEPT AS POSTULATE (forward reference issues):
+-- 1. closedSigmaClosed (line ~3278): Proof at line ~9118, kept for order
+-- 2. f-injective (line ~4713): Proof at line ~7148, kept for order
+--
+-- FUNDAMENTAL AXIOMS (from tex file, intended as axioms):
+-- 1. sd-axiom (line ~1346): Stone Duality Axiom
+-- 2. surj-formal-axiom (line ~1374): Surjections Are Formal Surjections
+-- 3. localChoice-axiom (line ~1457): Local Choice Axiom
+--
+-- GEOMETRIC POSTULATES (require concrete space definitions):
+-- 1. Disk2, Circle, boundary-inclusion (lines ~12870-12881)
+-- 2. circle-cohomology, disk-cohomology-vanishes (lines ~13875, 13881)
+-- 3. retraction-from-no-fixpoint (line ~12915): geometric construction
+--
+-- TOPOLOGICAL POSTULATES (require topology infrastructure):
+-- 1. Interval topology postulates (lines ~12600-12700)
+-- 2. CHausFiniteIntersectionProperty (line ~12064)
+-- 3. Various closed subset properties
+--
+-- Total postulates: ~62
+-- - ~8 fundamental axioms (intended as axioms)
+-- - ~20 geometric/topological (require concrete definitions)
+-- - ~6 provable but kept for forward reference
+-- - ~28 other infrastructure postulates
+--
 -- =============================================================================
 -- End of current formalization
 -- =============================================================================
