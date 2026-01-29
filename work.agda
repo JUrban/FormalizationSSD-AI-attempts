@@ -13569,17 +13569,47 @@ module CohomologyModule where
     ExactCechComplexVanishingProof.vanishing-result S T A inhabited exact α β
 
   -- =========================================================================
+  -- Čech complex exactness for Stone fibers (tex Lemma 2878)
+  -- =========================================================================
+  --
+  -- For S:Stone and T:S→Stone with Π_{x:S}∥T_x∥, we have Ȟ¹(S,T,ℤ) = 0.
+  --
+  -- Proof sketch (from tex):
+  -- 1. Use finite-approximation-surjection-stone to get S_k, T_k finite
+  -- 2. By Scott continuity, Č(S,T,ℤ) is the sequential colimit of Č(S_k,T_k,ℤ)
+  -- 3. By section-exact-cech-complex, each Č(S_k,T_k,ℤ) is exact
+  -- 4. Sequential colimits preserve exactness
+
+  postulate
+    cech-complex-vanishing-stone : (S : Type₀) (T : S → Type₀)
+      → hasStoneStr S
+      → ((x : S) → hasStoneStr (T x))
+      → ((x : S) → ∥ T x ∥₁)
+      → CechComplex.Ȟ¹-vanishes S T (λ _ → ℤAbGroup)
+
+  -- =========================================================================
   -- Stone cohomology vanishes (tex Lemma 2887)
   -- =========================================================================
   --
   -- For any Stone space S, we have H¹(S,ℤ) = 0.
   --
   -- This is a key result connecting Stone duality to cohomology.
-  -- The proof uses:
-  -- 1. Local choice to get T:S→Stone with Π_{x:S}∥T_x∥ and β:Π_{x:S}(α(x)=*)^{T_x}
-  -- 2. Čech complex exactness to conclude α = *
+  --
+  -- Proof sketch:
+  -- Given α : S → BZ, we need to show α is null-homotopic.
+  -- 1. Use local choice (localChoice-axiom) to get:
+  --    - T : S → Stone with Π_{x:S}∥T_x∥
+  --    - β : Π_{x:S} (α(x) = *)^{T_x}
+  -- 2. Apply cech-complex-vanishing-stone to get:
+  --    - Ȟ¹(S, T, ℤ) = 0 (Čech exactness)
+  -- 3. Apply exact-cech-complex-vanishing-cohomology (PROVED!) to conclude:
+  --    - α(x) = * for all x : S
+  --
+  -- The key ingredients are:
+  -- - localChoice-axiom (Section 6.1)
+  -- - cech-complex-vanishing-stone (tex Lemma 2878)
+  -- - exact-cech-complex-vanishing-cohomology (tex Lemma 2823) - FULLY PROVED
 
-  -- For now, we postulate this (connecting to the higher EM-spaces results)
   postulate
     eilenberg-stone-vanish : (S : Stone) → H¹ (StoneType S) ≡ 0ₕ 1
 
