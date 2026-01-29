@@ -12731,6 +12731,63 @@ module ZILocalModule where
   postulate
     Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
 
+  -- PROOF PATH FOR Bool-I-local (eliminating the postulate):
+  --
+  -- The tex proof uses H⁰(I,ℤ) = ℤ to derive Z-I-local.
+  -- We have interval-cohomology-vanishes : H¹(I) = 0.
+  -- We need: H⁰(I,ℤ) = ℤ (zeroth cohomology).
+  --
+  -- H⁰(X,ℤ) = coHom 0 ℤAbGroup X = ∥ X → ℤ ∥₂
+  -- For connected X, this simplifies to: constant maps X → ℤ
+  -- Since I is connected, H⁰(I,ℤ) = ℤ means every map I → ℤ is constant.
+  --
+  -- ALTERNATIVE CONNECTEDNESS ARGUMENT:
+  -- I is path-connected (given x,y : I, the linear path t ↦ (1-t)·x + t·y connects them).
+  -- Path-connected types are connected (no non-constant maps to discrete types).
+  --
+  -- FORMAL PROOF (if we had path-connectedness of I):
+  --
+  -- Bool-I-local-from-connected :
+  --   (I-connected : (D : Type₀) → isSet D → (f : UnitInterval → D) → isProp (fiber f (f 0I)))
+  --   → (f : UnitInterval → Bool)
+  --   → (x y : UnitInterval) → f x ≡ f y
+  -- Bool-I-local-from-connected conn f x y =
+  --   let witness : f x ≡ f 0I
+  --       witness = <from I-connected>
+  --       witness' : f y ≡ f 0I
+  --       witness' = <from I-connected>
+  --   in witness ∙ sym witness'
+  --
+  -- The key is proving I-connected, which follows from path-connectedness.
+
+  -- =========================================================================
+  -- CONNECTEDNESS FROM CUBICAL LIBRARY
+  -- =========================================================================
+  --
+  -- The Cubical library defines (from Cubical.Homotopy.Connected):
+  --
+  --   isConnected : HLevel → Type → Type
+  --   isConnected n A = isContr (hLevelTrunc n A)
+  --
+  -- Key fact: If A is 0-connected and B is a set, then every map A → B is constant.
+  --
+  -- PROOF PATH FOR Bool-I-local:
+  -- 1. Prove UnitInterval is 0-connected (isConnected 0 UnitInterval)
+  --    - UnitInterval is path-connected (can draw line from any point to any other)
+  --    - Path-connected implies 0-connected
+  --
+  -- 2. Bool is a set (isSet Bool = isOfHLevel 2 Bool)
+  --
+  -- 3. Use connectedness to show every f : UnitInterval → Bool is constant
+  --    - Connected spaces have constant maps to discrete types
+  --
+  -- The Cubical library has isConnectedFun and related infrastructure.
+  -- If we had isConnected 0 UnitInterval, we could derive Bool-I-local.
+  --
+  -- Key imports needed:
+  --   open import Cubical.Homotopy.Connected using (isConnected; isConnectedFun)
+  --   open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; ∥_∥₁)
+
 -- =============================================================================
 -- IntermediateValueTheoremModule (tex Theorem ivt, lines 3082-3097)
 -- =============================================================================
@@ -14490,6 +14547,18 @@ module CohomologyModule where
 -- 3. Connect Circle to S¹ from Cubical.HITs.S1
 -- 4. Use H¹-S¹≅ℤ from Cubical library → circle-cohomology
 -- 5. Formalize H¹ functoriality → no-retraction theorem
+--
+-- ELIMINATION PATH FOR Bool-I-local POSTULATE (lines ~12733-12790):
+-- 1. Prove UnitInterval is 0-connected (path-connected → connected)
+--    Use: Cubical.Homotopy.Connected.isConnected
+-- 2. Use: connected types have constant maps to discrete types
+-- 3. Apply to get Bool-I-local from I being 0-connected
+-- Alternative: Use H⁰(I,ℤ) = ℤ from cohomology-I (tex Prop 2991)
+--
+-- TYPE-CHECKED CODE IN THIS FILE:
+-- 1. H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (line ~14109)
+-- 2. isILocal : Type₀ → Type₁ (line ~14166)
+-- 3. ℤ-Unit-ℤ-is-zero (line ~14297)
 --
 -- =============================================================================
 -- End of current formalization
