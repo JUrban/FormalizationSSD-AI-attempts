@@ -23397,5 +23397,140 @@ module RIContractibleTC where
   -- of R and D² that would require formalizing real numbers and convexity.
 
 -- =============================================================================
+-- Module: IntervalCohomologyTC
+-- tex Proposition 2991: H⁰(I,ℤ) = ℤ and H¹(I,ℤ) = 0
+-- =============================================================================
+--
+-- PROPOSITION (tex Prop 2991, cohomology-I):
+-- "We have that H⁰(I,ℤ) = ℤ and H¹(I,ℤ) = 0."
+--
+-- This is a fundamental result for the Brouwer Fixed Point Theorem.
+--
+-- PROOF STRUCTURE (from tex):
+-- 1. Consider cs : 2^N → I and the associated Čech cover T of I:
+--    T_x = Σ_{y:2^N} (x =_I cs(y))
+--
+-- 2. For l=2,3 we have: lim_n I_n^{~l} = Σ_{x:I} T_x^l
+--
+-- 3. By tex Lemma 2973 (Cn-exact-sequence) and stability of exactness
+--    under sequential colimit, we have an exact sequence:
+--    0 → ℤ → colim_n ℤ^{I_n} → colim_n ℤ^{I_n^{~2}} → colim_n ℤ^{I_n^{~3}}
+--
+-- 4. By tex Lemma (scott-continuity) this sequence is equivalent to:
+--    0 → ℤ → Π_{x:I} ℤ^{T_x} → Π_{x:I} ℤ^{T_x^2} → Π_{x:I} ℤ^{T_x^3}
+--
+-- 5. Exactness implies: Ȟ⁰(I,T,ℤ) = ℤ and Ȟ¹(I,T,ℤ) = 0
+--
+-- 6. We conclude by tex Lemmas (cech-eilenberg-0-agree) and
+--    (cech-eilenberg-1-agree).
+
+module IntervalCohomologyTC where
+  open import Cubical.Data.Int using (ℤ)
+  open IntervalIsCHausModule using (UnitInterval; 0I; 1I)
+  open CohomologyModule using (H¹; 0ₕ; interval-cohomology-vanishes)
+
+  -- =================================================================
+  -- H⁰(I,ℤ) = ℤ: Zeroth cohomology
+  -- =================================================================
+  --
+  -- H⁰(X,ℤ) = coHom 0 ℤAbGroup X = ∥ X → ℤ ∥₂
+  --
+  -- For connected X, this equals ℤ (constant functions).
+  -- Since I is connected (path-connected), H⁰(I,ℤ) = ℤ.
+  --
+  -- TYPE-CHECKED WITNESS:
+  -- This is exactly what Z-I-local-derived captures:
+  -- A function f : I → ℤ is constant, so the inclusion ℤ → ℤ^I is
+  -- an equivalence.
+
+  -- From IntervalConnectednessDerivedTC:
+  open IntervalConnectednessDerivedTC using (Z-I-local-derived)
+
+  -- Z-I-local-derived : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
+  -- This proves that all maps I → ℤ are constant, which is equivalent to
+  -- saying the inclusion ℤ → ℤ^I is an equivalence.
+
+  -- =================================================================
+  -- H¹(I,ℤ) = 0: First cohomology
+  -- =================================================================
+  --
+  -- This is captured by the postulate in CohomologyModule:
+  --   interval-cohomology-vanishes : H¹ UnitInterval ≡ 0ₕ 1
+  --
+  -- The proof would use:
+  -- 1. The Čech cover of I from the surjection cs : 2^N → I
+  -- 2. Cn-exact-sequence (tex Lemma 2973): exactness of finite approx
+  -- 3. Sequential colimit stability (exactness preserved under colim)
+  -- 4. Scott continuity to convert colim to products
+  -- 5. Čech-Eilenberg agreement (tex Lemmas cech-eilenberg-0/1-agree)
+
+  -- TYPE-CHECKED: Reference the existing postulate
+  H¹-I-is-0 : H¹ UnitInterval ≡ 0ₕ 1
+  H¹-I-is-0 = interval-cohomology-vanishes
+
+  -- =================================================================
+  -- Application: Z-I-local from H⁰(I,ℤ) = ℤ (tex Lemma 3015)
+  -- =================================================================
+  --
+  -- From tex: "By cohomology-I, from H⁰(I,ℤ) = ℤ we get that the map
+  -- ℤ → ℤ^I is an equivalence, so ℤ is I-local."
+  --
+  -- This is exactly what Z-I-local-derived proves via the
+  -- is-1-connected-I from IntervalConnectednessDerivedTC.
+
+  -- =================================================================
+  -- Application: Bool-I-local from Z-I-local (tex Lemma 3015)
+  -- =================================================================
+  --
+  -- From tex: "We see that 2 is I-local as it is a retract of ℤ."
+  --
+  -- Since Bool embeds into ℤ (false ↦ 0, true ↦ 1) and this
+  -- embedding has a retraction, Bool inherits I-locality from ℤ.
+  --
+  -- This is type-checked in IntervalConnectednessDerivedTC as
+  -- Bool-I-local-derived.
+
+  open IntervalConnectednessDerivedTC using (Bool-I-local-derived)
+
+  -- Bool-I-local-derived : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  -- This is the key ingredient for the Intermediate Value Theorem!
+
+  -- =================================================================
+  -- Mathematical Significance
+  -- =================================================================
+  --
+  -- 1. H⁰(I,ℤ) = ℤ proves ℤ is I-local (maps I → ℤ are constant)
+  --
+  -- 2. H¹(I,ℤ) = 0 is used to prove BZ is I-local (tex Lemma 3027)
+  --    Since principal ℤ-bundles over I are classified by H¹(I,ℤ),
+  --    and H¹(I,ℤ) = 0, all bundles are trivial, so maps I → BZ factor
+  --    through the basepoint.
+  --
+  -- 3. These results are fundamental for:
+  --    - Intermediate Value Theorem (Bool-I-local)
+  --    - Shape of S¹ is BZ (tex Proposition 3051)
+  --    - No-retraction theorem S¹ → D²
+  --    - Brouwer Fixed Point Theorem
+
+  -- =================================================================
+  -- Dependencies and Status
+  -- =================================================================
+  --
+  -- EXISTING INFRASTRUCTURE:
+  -- 1. interval-cohomology-vanishes : H¹ UnitInterval ≡ 0ₕ 1 (POSTULATED)
+  -- 2. Z-I-local-derived (TYPE-CHECKED from is-1-connected-I)
+  -- 3. Bool-I-local-derived (TYPE-CHECKED from Z-I-local-derived)
+  --
+  -- TEX PROOF DEPENDENCIES:
+  -- 1. cs : 2^N → I (surjection from Cantor space)
+  -- 2. Cn-exact-sequence (tex Lemma 2973) - PARTIALLY DOCUMENTED
+  -- 3. scott-continuity - NOT YET FORMALIZED
+  -- 4. cech-eilenberg-0-agree, cech-eilenberg-1-agree - POSTULATED
+  --
+  -- STATUS: PARTIALLY TYPE-CHECKED
+  -- - H⁰ part: COMPLETE via Z-I-local-derived
+  -- - H¹ part: POSTULATED as interval-cohomology-vanishes
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
