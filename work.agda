@@ -14135,23 +14135,48 @@ module CohomologyModule where
   module DiskCohomologyFromContr where
     open import Cubical.Algebra.Group.Morphisms
     open import Cubical.Algebra.Group.MorphismProperties
-    open BrouwerFixedPointTheoremModule using (Disk2; isSetDisk2)
+    open import Cubical.Cohomology.EilenbergMacLane.Groups.Unit
+      using (isContr-Hⁿ⁺¹[Unit,G])
+    open import Cubical.Data.Unit.Properties using (isContr→≃Unit; isContrUnit)
+    open import Cubical.Foundations.Isomorphism using (isoToEquiv; isContr→Iso)
+    open import Cubical.Foundations.Univalence using (ua)
+    open BrouwerFixedPointTheoremModule using (Disk2; isSetDisk2; isContrDisk2)
 
-    -- If we could prove isContr Disk2, we would get:
-    -- H¹(Disk2,ℤ) ≅ UnitGroup₀ ≅ 0
+    -- =======================================================================
+    -- DERIVATION: disk-cohomology-vanishes from isContrDisk2
+    -- =======================================================================
     --
-    -- The proof would be:
-    --   disk-cohomology-vanishes-from-contr : isContr Disk2 → H¹ Disk2 ≡ 0ₕ 1
-    --   disk-cohomology-vanishes-from-contr contr =
-    --     let iso = Hⁿ-contrType≅0 {n = 0} contr
-    --     in GroupIso→H¹≡0 iso
-    --
-    -- where GroupIso→H¹≡0 extracts that coHom 1 ≡ 0ₕ 1 from the isomorphism
-    -- with the trivial group.
-    --
-    -- The remaining gap is: postulate isContrDisk2 : isContr Disk2
-    -- which requires connecting Disk2 to a concrete disk definition
-    -- (e.g., the unit disk in ℂ or a quotient of I²).
+    -- Strategy:
+    -- 1. isContrDisk2 : isContr Disk2  (postulated in BrouwerFixedPointTheoremModule)
+    -- 2. isContr→≃Unit : isContr A → A ≃ Unit
+    -- 3. By univalence: Disk2 ≡ Unit
+    -- 4. Transport isContr-Hⁿ⁺¹[Unit,G] along this path to get isContr (H¹ Disk2)
+    -- 5. From contractibility: H¹ Disk2 ≡ 0ₕ 1
+
+    -- The equivalence Disk2 ≃ Unit from contractibility
+    Disk2≃Unit : Disk2 ≃ Unit
+    Disk2≃Unit = isContr→≃Unit isContrDisk2
+
+    -- The path Disk2 ≡ Unit by univalence
+    Disk2≡Unit : Disk2 ≡ Unit
+    Disk2≡Unit = ua Disk2≃Unit
+
+    -- H¹(Disk2) is contractible (by transport from H¹(Unit) being contractible)
+    isContr-H¹-Disk2 : isContr (coHom 1 ℤAbGroup Disk2)
+    isContr-H¹-Disk2 = subst (λ X → isContr (coHom 1 ℤAbGroup X))
+                             (sym Disk2≡Unit)
+                             (isContr-Hⁿ⁺¹[Unit,G] {G = ℤAbGroup} 0)
+
+    -- The derived theorem: H¹(Disk2) = 0ₕ 1
+    -- This follows from contractibility: in a contractible type, all elements are equal.
+    disk-cohomology-vanishes-derived : H¹ Disk2 ≡ 0ₕ 1
+    disk-cohomology-vanishes-derived = isContr→isProp isContr-H¹-Disk2 _ _
+
+    -- =======================================================================
+    -- NOTE: This derivation shows that the disk-cohomology-vanishes postulate
+    -- is redundant given the isContrDisk2 postulate. The postulate
+    -- disk-cohomology-vanishes can be replaced by disk-cohomology-vanishes-derived.
+    -- =======================================================================
 
   -- =========================================================================
   -- Circle cohomology: Using H¹-S¹≅ℤ from Cubical library
