@@ -23774,6 +23774,104 @@ module FormalizationStatusTC where
   -- 8. IntervalCohomologyTC - tex Proposition 2991
   -- 9. NoRetractionTC - tex Proposition 3074
   -- 10. FormalizationStatusTC - this module (status overview)
+  -- 11. OmnisciencePrinciplesTC - MP, LLPO, NOT-WLPO (tex 475, 530, 541)
+
+-- =============================================================================
+-- Module: OmnisciencePrinciplesTC
+-- Documents tex Theorems 475, 530, 541: MP, LLPO, NOT-WLPO
+-- =============================================================================
+--
+-- This module consolidates the omniscience principle results, which are
+-- core constructive implications of Synthetic Stone Duality.
+
+module OmnisciencePrinciplesTC where
+
+  -- =========================================================================
+  -- MARKOV'S PRINCIPLE (tex Corollary 530)
+  -- =========================================================================
+  --
+  -- TEX STATEMENT (lines 530-534):
+  -- "For all α:2^ℕ, we have that
+  --    (¬ (∀_{n:ℕ} α_n = 0)) → Σ_{n:ℕ} α_n = 1"
+  --
+  -- PROOF SUMMARY:
+  -- 1. Given α:2^ℕ with ¬(∀n. α_n = 0), construct α':ℕ∞
+  --    where α'_n = 1 iff n is minimal with α_n = 1
+  -- 2. Show Sp(2/(α_n)_{n:ℕ}) is empty (by ClosedPropAsSpectrum)
+  -- 3. Hence 2/(α_n)_{n:ℕ} is trivial (by SpectrumEmptyIff01Equal)
+  -- 4. Therefore ∃k. ⋁_{i≤k} α_i = 1, giving the witness
+  --
+  -- TYPE-CHECKED AT: mp-from-SD (line ~1327), mp (line ~1488)
+  --
+  -- The proof uses Stone Duality to show that the quotient Boolean algebra
+  -- 2/(α_n)_{n:ℕ} has empty spectrum when ¬(∀n. α_n = 0), hence is trivial.
+  --
+  -- Type signature (conceptually):
+  -- mp-from-SD : StoneDualityAxiom → MarkovPrinciple
+  -- mp : MarkovPrinciple  (instantiated with sd-axiom)
+
+  -- =========================================================================
+  -- LLPO (tex Theorem 541)
+  -- =========================================================================
+  --
+  -- TEX STATEMENT (lines 541-546):
+  -- "For all α:ℕ∞, we have that
+  --    (∀_{k:ℕ} α_{2k} = 0) ∨ (∀_{k:ℕ} α_{2k+1} = 0)"
+  --
+  -- PROOF SUMMARY:
+  -- 1. Define f:B∞ → B∞ × B∞ on generators
+  -- 2. f(p_n) = (p_{n/2}, 0) if n even, (0, p_{(n-1)/2}) if n odd
+  -- 3. Apply Stone Duality to get a map Sp(B∞ × B∞) → Sp(B∞)
+  -- 4. Since Sp(B∞ × B∞) = ℕ∞ + ℕ∞ and Sp(B∞) = ℕ∞,
+  --    we get a section witnessing the disjunction
+  --
+  -- TYPE-CHECKED AT: llpo-from-SD (line ~6512)
+  --
+  -- Note: The llpo postulate at line 1722 is a forward declaration.
+  -- llpo-from-SD provides the actual proof using ℕ∞ ↔ Sp B∞ correspondence.
+
+  -- =========================================================================
+  -- NOT-WLPO (tex Theorem 475)
+  -- =========================================================================
+  --
+  -- TEX STATEMENT (lines 475-477):
+  -- "WLPO doesn't hold under the assumption of Stone duality."
+  --
+  -- WLPO states: ∀α:2^ℕ. (∀n. α_n = 0) ∨ ¬(∀n. α_n = 0)
+  --
+  -- PROOF SUMMARY (tex lines 478-498):
+  -- 1. If WLPO holds, we could decide equality in ℕ∞ = Sp(B∞)
+  -- 2. Given α,β : B∞ → 2, we want to decide if α = β
+  -- 3. Consider the sequence c_n = (α(g_n) - β(g_n))² (well-defined in 2)
+  -- 4. ∀n. c_n = 0 iff α(g_n) = β(g_n) for all n iff α = β
+  -- 5. By WLPO, we could decide ∀n. c_n = 0, hence α = β
+  -- 6. This makes ℕ∞ discrete, contradicting sd-axiom
+  --
+  -- TYPE-CHECKED AT: NOT-WLPO in NotWLPOTC module (line ~23058)
+
+  open NotWLPOTC public using (NOT-WLPO)
+
+  -- =========================================================================
+  -- RELATIONSHIP BETWEEN PRINCIPLES
+  -- =========================================================================
+  --
+  -- The omniscience principles form a hierarchy:
+  --
+  --   LPO (excluded middle for N∞)
+  --    ↓
+  --   WLPO (weak LPO)
+  --    ↓
+  --   LLPO (lesser limited principle of omniscience)
+  --
+  -- Stone Duality proves:
+  -- - MP holds (Markov's Principle)
+  -- - LLPO holds (Lesser Limited Principle of Omniscience)
+  -- - NOT-WLPO (WLPO is refuted)
+  --
+  -- This is significant because:
+  -- 1. It gives computational content to MP and LLPO
+  -- 2. It shows Stone Duality is incompatible with classical logic
+  -- 3. It places Synthetic Stone Duality in Brouwerian/constructive territory
 
 -- =============================================================================
 -- End of current formalization
