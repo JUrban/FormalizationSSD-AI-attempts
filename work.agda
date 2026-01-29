@@ -689,6 +689,29 @@ commRingPath→boolRingEquiv A B p = commRingEquivToEquiv , snd commRingEquivToE
   commRingEquivToEquiv = fst commRingEquivToEquiv'
 
 -- =============================================================================
+-- Bool as a Booleω algebra (2 is a countably presented Boolean ring)
+-- =============================================================================
+
+-- BoolBR (the 2-element Boolean ring) is a Booleω algebra
+-- This follows from is-cp-2 : has-Boole-ω' BoolBR
+Bool-Booleω : Booleω
+Bool-Booleω = BoolBR , ∣ is-cp-2 ∣₁
+
+-- Sp(Bool-Booleω) ≅ Bool (spectrum of the 2-element Boolean ring is Bool itself)
+-- The spectrum Sp(B) consists of Boolean ring homomorphisms B → 2
+-- For B = 2, this is BoolHom BoolBR BoolBR which has exactly 2 elements:
+-- - The identity homomorphism
+-- - The trivial homomorphism (λ _ → false)
+-- This shows ∥ Sp Bool-Booleω ∥₁ (the spectrum is inhabited)
+Sp-Bool-inhabited : ∥ Sp Bool-Booleω ∥₁
+Sp-Bool-inhabited = ∣ idBoolHom ∣₁
+  where
+  -- The identity Boolean ring homomorphism
+  idBoolHom : BoolHom BoolBR BoolBR
+  idBoolHom = idfun Bool ,
+    record { pres1 = refl ; pres+ = λ _ _ → refl ; pres· = λ _ _ → refl }
+
+-- =============================================================================
 -- Quotients preserve Booleω (key lemma for MP proof)
 -- =============================================================================
 
