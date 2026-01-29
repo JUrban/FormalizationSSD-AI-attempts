@@ -19149,5 +19149,317 @@ module Session0267ExtendedSummary where
   -- Our formalization uses approach (3) via synthetic Stone duality.
 
 -- =============================================================================
+-- Module: EquivReasoningTC
+-- Type-checked lemmas for equivalence reasoning
+-- =============================================================================
+
+module EquivReasoningTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Equiv
+  open import Cubical.Foundations.Isomorphism
+  open import Cubical.Foundations.Function
+
+  -- Equivalence composition
+  compEquiv-witness : {A B C : Type ℓ-zero}
+    → A ≃ B → B ≃ C → A ≃ C
+  compEquiv-witness = compEquiv
+
+  -- Equivalence inverse
+  invEquiv-witness : {A B : Type ℓ-zero}
+    → A ≃ B → B ≃ A
+  invEquiv-witness = invEquiv
+
+  -- Identity equivalence
+  idEquiv-witness : {A : Type ℓ-zero} → A ≃ A
+  idEquiv-witness = idEquiv _
+
+  -- Iso to Equiv
+  isoToEquiv-witness : {A B : Type ℓ-zero}
+    → Iso A B → A ≃ B
+  isoToEquiv-witness = isoToEquiv
+
+  -- Equiv to Iso
+  equivToIso-witness : {A B : Type ℓ-zero}
+    → A ≃ B → Iso A B
+  equivToIso-witness = equivToIso
+
+-- =============================================================================
+-- Module: FiberReasoningTC
+-- Type-checked lemmas about fibers
+-- =============================================================================
+
+module FiberReasoningTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Equiv
+  open import Cubical.Foundations.Function
+  open import Cubical.Foundations.HLevels
+
+  -- Fiber definition reminder:
+  -- fiber f y = Σ[ x ∈ A ] f x ≡ y
+
+  -- Fiber of id at y is contractible
+  fiberIdContr : {A : Type ℓ-zero} (a : A) → isContr (fiber (idfun A) a)
+  fiberIdContr a = (a , refl) , λ { (x , p) i → p (~ i) , λ j → p (~ i ∨ j) }
+
+  -- For equivalences, all fibers are contractible
+  -- (This is the definition of isEquiv in Cubical)
+
+-- =============================================================================
+-- Module: PropLogicTC
+-- Type-checked lemmas about propositional logic
+-- =============================================================================
+
+module PropLogicTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Data.Empty as ⊥
+  open import Cubical.Data.Sum as ⊎
+  open import Cubical.Data.Sigma
+
+  -- Modus ponens for propositions
+  modus-ponens : {A B : Type ℓ-zero} → A → (A → B) → B
+  modus-ponens a f = f a
+
+  -- Contraposition
+  contraposition : {A B : Type ℓ-zero} → (A → B) → (¬ B → ¬ A)
+  contraposition f ¬b a = ¬b (f a)
+
+  -- De Morgan (constructive part): ¬(A × B) ← ¬A ⊎ ¬B
+  deMorgan-from-⊎ : {A B : Type ℓ-zero} → (¬ A) ⊎ (¬ B) → ¬ (A × B)
+  deMorgan-from-⊎ (inl ¬a) (a , b) = ¬a a
+  deMorgan-from-⊎ (inr ¬b) (a , b) = ¬b b
+
+  -- Double negation elimination for ⊥
+  ¬¬⊥→⊥ : ¬ ¬ ⊥ → ⊥
+  ¬¬⊥→⊥ f = f (λ x → x)
+
+-- =============================================================================
+-- Module: NatPropertiesExtendedTC
+-- Extended type-checked lemmas about natural numbers
+-- =============================================================================
+
+module NatPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Data.Nat
+  open import Cubical.Data.Nat.Properties
+
+  -- Nat is a set
+  isSetℕ-witness' : isSet ℕ
+  isSetℕ-witness' = isSetℕ
+
+  -- suc is injective
+  suc-injective' : (m n : ℕ) → suc m ≡ suc n → m ≡ n
+  suc-injective' m n p = injSuc p
+
+  -- zero ≠ suc n
+  zero≢suc' : (n : ℕ) → ¬ (zero ≡ suc n)
+  zero≢suc' n = znots
+
+-- =============================================================================
+-- Module: BoolPropertiesExtendedTC
+-- Extended type-checked lemmas about Bool
+-- =============================================================================
+
+module BoolPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Data.Bool
+  open import Cubical.Data.Sum as ⊎
+
+  -- Bool is a set
+  isSetBool-witness : isSet Bool
+  isSetBool-witness = isSetBool
+
+  -- true ≠ false
+  true≢false-witness : ¬ (true ≡ false)
+  true≢false-witness = true≢false
+
+  -- false ≠ true
+  false≢true-witness : ¬ (false ≡ true)
+  false≢true-witness p = true≢false (sym p)
+
+  -- Bool decidable equality (defined directly since discreteBool not exported)
+  discreteBool-witness : (x y : Bool) → (x ≡ y) ⊎ (¬ (x ≡ y))
+  discreteBool-witness true true = inl refl
+  discreteBool-witness true false = inr true≢false
+  discreteBool-witness false true = inr (λ p → true≢false (sym p))
+  discreteBool-witness false false = inl refl
+
+-- =============================================================================
+-- Module: UnitPropertiesExtendedTC
+-- Extended type-checked lemmas about Unit
+-- =============================================================================
+
+module UnitPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Data.Unit
+
+  -- Unit is contractible
+  isContrUnit-witness' : isContr Unit
+  isContrUnit-witness' = isContrUnit
+
+  -- Unit is a proposition
+  isPropUnit-witness' : isProp Unit
+  isPropUnit-witness' = isPropUnit
+
+  -- Unit is a set
+  isSetUnit-witness' : isSet Unit
+  isSetUnit-witness' = isOfHLevelUnit 2
+
+-- =============================================================================
+-- Module: TransportPropertiesExtendedTC
+-- Extended type-checked lemmas about transport
+-- =============================================================================
+
+module TransportPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Transport
+
+  -- transport along refl is identity
+  transportRefl' : {A : Type ℓ-zero} (x : A) → transport refl x ≡ x
+  transportRefl' = transportRefl
+
+  -- subst in constant family
+  substConstFamily : {A : Type ℓ-zero} {B : Type ℓ-zero} {a a' : A}
+    (p : a ≡ a') (b : B) → subst (λ _ → B) p b ≡ b
+  substConstFamily p b = substRefl {B = λ _ → _} b
+
+  -- pathToEquiv and ua roundtrip
+  -- ua-pathToEquiv is defined in Cubical.Foundations.Univalence
+
+-- =============================================================================
+-- Module: ProductPropertiesExtendedTC
+-- Extended type-checked lemmas about products
+-- =============================================================================
+
+module ProductPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Foundations.Isomorphism
+  open import Cubical.Data.Sigma
+
+  -- Product of propositions is a proposition
+  isProp×' : {A B : Type ℓ-zero} → isProp A → isProp B → isProp (A × B)
+  isProp×' pA pB (a , b) (a' , b') = ΣPathP (pA a a' , pB b b')
+
+  -- Product of sets is a set
+  isSet×-witness' : {A B : Type ℓ-zero} → isSet A → isSet B → isSet (A × B)
+  isSet×-witness' = isSet×
+
+  -- First projection
+  fst-witness' : {A : Type ℓ-zero} {B : A → Type ℓ-zero} → Σ A B → A
+  fst-witness' = fst
+
+  -- Second projection
+  snd-witness' : {A : Type ℓ-zero} {B : A → Type ℓ-zero} → (p : Σ A B) → B (fst p)
+  snd-witness' = snd
+
+-- =============================================================================
+-- Module: CoproductPropertiesExtendedTC
+-- More type-checked lemmas about coproducts
+-- =============================================================================
+
+module CoproductPropertiesExtendedTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Data.Sum as ⊎
+  open import Cubical.Data.Empty as ⊥
+
+  -- Coproduct associativity
+  ⊎-assoc : {A B C : Type ℓ-zero} → (A ⊎ B) ⊎ C → A ⊎ (B ⊎ C)
+  ⊎-assoc (inl (inl a)) = inl a
+  ⊎-assoc (inl (inr b)) = inr (inl b)
+  ⊎-assoc (inr c) = inr (inr c)
+
+  -- Coproduct with ⊥
+  ⊎-⊥-left : {A : Type ℓ-zero} → ⊥ ⊎ A → A
+  ⊎-⊥-left (inl ())
+  ⊎-⊥-left (inr a) = a
+
+  ⊎-⊥-right : {A : Type ℓ-zero} → A ⊎ ⊥ → A
+  ⊎-⊥-right (inl a) = a
+  ⊎-⊥-right (inr ())
+
+-- =============================================================================
+-- Module: HITBasicsTC
+-- Type-checked basics about Higher Inductive Types
+-- =============================================================================
+
+module HITBasicsTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.HITs.S1.Base
+  open import Cubical.HITs.Susp.Base
+  open import Cubical.Data.Bool
+
+  -- S¹ has two constructors: base and loop
+  S¹-base : S¹
+  S¹-base = base
+
+  S¹-loop : base ≡ base
+  S¹-loop = loop
+
+  -- Suspension has north, south, and merid
+  Susp-north : {A : Type ℓ-zero} → Susp A
+  Susp-north = north
+
+  Susp-south : {A : Type ℓ-zero} → Susp A
+  Susp-south = south
+
+  Susp-merid : {A : Type ℓ-zero} → A → north ≡ south
+  Susp-merid = merid
+
+  -- S¹ ≃ Susp Bool (the circle is the suspension of Bool)
+  -- This is proved in Cubical.HITs.S1.Properties
+
+-- =============================================================================
+-- Module: QuotientBasicsTC
+-- Type-checked basics about quotients
+-- =============================================================================
+
+module QuotientBasicsTC where
+  open import Cubical.Foundations.Prelude
+
+  -- Set quotients are a key HIT in Cubical Agda.
+  -- The Cubical library provides:
+  --
+  -- data _/_ (A : Type ℓ) (R : A → A → Type ℓ') : Type (ℓ-max ℓ ℓ') where
+  --   [_] : A → A / R
+  --   eq/ : (a b : A) → R a b → [ a ] ≡ [ b ]
+  --   squash/ : isSet (A / R)
+  --
+  -- Elimination principle:
+  -- SQ.elim : isSet B → (f : A → B) → (∀ a b → R a b → f a ≡ f b) → A / R → B
+  --
+  -- Full elimination available in Cubical.HITs.SetQuotients
+
+-- =============================================================================
+-- Module: Session0268Summary
+-- =============================================================================
+
+module Session0268Summary where
+  -- SESSION 0268 ADDITIONS:
+  --
+  -- 1. EquivReasoningTC - compEquiv, invEquiv, idEquiv, isoToEquiv, equivToIso
+  -- 2. FiberReasoningTC - fiberIdContr
+  -- 3. PropLogicTC - modus-ponens, contraposition, deMorgan
+  -- 4. NatPropertiesTC - isSetℕ, suc-injective, zero≢suc
+  -- 5. BoolPropertiesTC - isSetBool, true≢false, discreteBool
+  -- 6. UnitPropertiesTC - isContrUnit, isPropUnit, isSetUnit
+  -- 7. TransportPropertiesTC - transportRefl, substConstFamily
+  -- 8. ProductPropertiesTC - isProp×, isSet×, fst, snd
+  -- 9. CoproductPropertiesExtendedTC - ⊎-assoc, ⊎-⊥-left, ⊎-⊥-right
+  -- 10. HITBasicsTC - S¹-base, S¹-loop, Susp constructors
+  -- 11. QuotientBasicsTC - quotient elimination documentation
+  --
+  -- These modules provide foundational Cubical infrastructure for:
+  -- - Equivalence reasoning (composition, inversion)
+  -- - Fiber properties for equivalence proofs
+  -- - Basic propositional logic
+  -- - Discrete types (ℕ, Bool, Unit)
+  -- - Products and coproducts
+  -- - HITs (S¹, Susp)
+  -- - Set quotients
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
