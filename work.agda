@@ -13123,13 +13123,16 @@ module ClosedInStoneIsStoneProof where
 -- and add the Čech cohomology constructions from the paper.
 --
 -- Key results from the tex file:
--- - Čech complex C(S,T,A) (tex 2784-2795)
--- - section-exact-cech-complex (tex Lemma 2807)
--- - canonical-exact-cech-complex (tex Lemma 2815)
--- - exact-cech-complex-vanishing-cohomology (tex Lemma 2823)
--- - eilenberg-stone-vanish: H^1(S,Z) = 0 for Stone S (tex 2887)
--- - stone-commute-delooping: B(Z^S) ≃ (BZ)^S (tex 2895)
--- - cech-eilenberg-1-agree: H^1(X,Z) = Ȟ^1(X,S,Z) (tex 2945)
+-- - Čech complex C(S,T,A) (tex 2784-2795) - DEFINED
+-- - section-exact-cech-complex (tex Lemma 2807) - PROVED!
+-- - canonical-exact-cech-complex (tex Lemma 2815) - PROVED!
+-- - exact-cech-complex-vanishing-cohomology (tex Lemma 2823) - PROVED!
+-- - cech-complex-vanishing-stone (tex Lemma 2878) - postulate with proof sketch
+-- - eilenberg-stone-vanish: H^1(S,Z) = 0 for Stone S (tex 2887) - postulate with proof deps
+-- - stone-commute-delooping: B(Z^S) ≃ (BZ)^S (tex 2895) - postulate
+-- - cech-eilenberg-1-agree: H^1(X,Z) = Ȟ^1(X,S,Z) (tex 2945) - postulate
+-- - interval-cohomology-vanishes (tex Prop 2991) - postulate with tex proof structure
+-- - Cn-exact-sequence (tex Lemma 2973) - finite approx module added
 
 module CohomologyModule where
   open import Axioms.StoneDuality using (Stone; hasStoneStr)
