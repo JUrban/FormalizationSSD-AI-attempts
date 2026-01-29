@@ -14557,9 +14557,134 @@ module CohomologyModule where
 --
 -- TYPE-CHECKED CODE IN THIS FILE:
 -- 1. H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (line ~14109)
--- 2. isILocal : Type₀ → Type₁ (line ~14166)
--- 3. ℤ-Unit-ℤ-is-zero (line ~14297)
+-- 2. isILocal : Type₀ → Type₁ (line ~14221)
+-- 3. ℤ-Unit-ℤ-is-zero (NoRetractionFunctorialProof, line ~14370)
+-- 4. Unit-initial-STF (ShapeTheoryFromCubical, line ~14604)
+-- 5. Unit-terminal-STF (ShapeTheoryFromCubical, line ~14609)
+-- 6. no-group-retract-of-Unit-STF (ShapeTheoryFromCubical, line ~14625)
+-- 7. ℤ-not-retract-of-Unit-STF (ShapeTheoryFromCubical, line ~14654)
 --
+-- =============================================================================
+-- Shape Theory Infrastructure (connecting to Cubical library)
+-- =============================================================================
+
+module ShapeTheoryFromCubical where
+  open import Cubical.Data.Int using (ℤ; pos; negsuc)
+  open import Cubical.Data.Nat using (ℕ; zero; suc)
+  open import Cubical.Algebra.Group.Base
+  open import Cubical.Algebra.Group.Morphisms
+  open import Cubical.Algebra.Group.MorphismProperties
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup; UnitGroup₀)
+  open import Cubical.HITs.S1 using (S¹; base; loop)
+  open IntervalIsCHausModule using (UnitInterval)
+
+  -- =========================================================================
+  -- FUNDAMENTAL LEMMA: Bℤ not contractible (key for no-retraction)
+  -- =========================================================================
+  --
+  -- The Eilenberg-MacLane space K(ℤ,1) = Bℤ is NOT contractible.
+  -- This is because π₁(Bℤ) = ℤ ≠ 0.
+  --
+  -- In the Cubical library, S¹ is the standard model of K(ℤ,1),
+  -- since π₁(S¹) = ℤ and πₙ(S¹) = 0 for n ≥ 2.
+  --
+  -- The Cubical library has a direct proof:
+  -- Cubical.HITs.S1.LoopEquiv gives: Ω(S¹,base) ≃ ℤ
+  -- Therefore loop ≢ refl (since winding(loop) = 1 ≠ 0 = winding(refl))
+  --
+  -- For our purposes, we document the type-checked algebraic infrastructure.
+
+  -- =========================================================================
+  -- GROUP THEORY FOR NO-RETRACTION (type-checked)
+  -- =========================================================================
+  --
+  -- Key fact: no nontrivial group is a retract of the trivial group
+  --
+  -- This is the algebraic heart of the no-retraction theorem.
+  -- If there were a retraction D² → S¹, then H¹ functoriality would give
+  -- a retraction ℤ ← 0, which is impossible.
+
+  -- Group homomorphism from Unit to any group sends tt to the identity
+  Unit-initial-STF : (G : Group ℓ-zero) → (φ : GroupHom UnitGroup₀ G) → (x : Unit) → fst φ x ≡ GroupStr.1g (snd G)
+  Unit-initial-STF G (φ , is-hom) tt = IsGroupHom.pres1 is-hom
+
+  -- Group homomorphism into Unit is trivial (any element maps to tt)
+  Unit-terminal-STF : (G : Group ℓ-zero) → (φ : GroupHom G UnitGroup₀) → (x : fst G) → fst φ x ≡ tt
+  Unit-terminal-STF G (φ , is-hom) x = refl
+
+  -- THE KEY ALGEBRAIC LEMMA:
+  -- If G is a retract of Unit (via group homomorphisms), then G is trivial.
+  --
+  -- More precisely: if s : Unit → G and r : G → Unit are group homomorphisms
+  -- with s ∘ r = id, then every element of G equals the identity.
+  --
+  -- PROOF:
+  -- For any x : G, we have:
+  --   x = (s ∘ r)(x)           [by s ∘ r = id]
+  --     = s(r(x))
+  --     = s(tt)                [since r(x) = tt for any x]
+  --     = 1g                   [since s(tt) = s(1_Unit) = 1g]
+  --
+  no-group-retract-of-Unit-STF : (G : Group ℓ-zero)
+    → (s : GroupHom UnitGroup₀ G)   -- section
+    → (r : GroupHom G UnitGroup₀)   -- retraction
+    → ((x : fst G) → fst s (fst r x) ≡ x)  -- s ∘ r = id
+    → (x : fst G) → x ≡ GroupStr.1g (snd G)
+  no-group-retract-of-Unit-STF G s r sec x =
+    x                        ≡⟨ sym (sec x) ⟩
+    fst s (fst r x)          ≡⟨ cong (fst s) (Unit-terminal-STF G r x) ⟩
+    fst s tt                 ≡⟨ Unit-initial-STF G s tt ⟩
+    GroupStr.1g (snd G)      ∎
+
+  -- COROLLARY: ℤ is not a retract of Unit
+  --
+  -- This is immediate since ℤ is not trivial (1 ≠ 0).
+  --
+  -- PROOF:
+  -- If ℤ were a retract of Unit, then every element of ℤ would equal 0.
+  -- But 1 ≠ 0, so this is impossible.
+  --
+  private
+    -- 1 ≠ 0 on ℤ
+    one-neq-zero-ℤ : pos 1 ≡ pos 0 → ⊥
+    one-neq-zero-ℤ p = subst isPos p tt
+      where
+      isPos : ℤ → Type
+      isPos (pos zero) = ⊥
+      isPos (pos (suc n)) = Unit
+      isPos (negsuc n) = ⊥
+
+  ℤ-not-retract-of-Unit-STF : (s : GroupHom UnitGroup₀ ℤGroup)
+    → (r : GroupHom ℤGroup UnitGroup₀)
+    → ((n : ℤ) → fst s (fst r n) ≡ n)
+    → ⊥
+  ℤ-not-retract-of-Unit-STF s r sec =
+    let all-zero = no-group-retract-of-Unit-STF ℤGroup s r sec
+        one-is-zero : pos 1 ≡ pos 0
+        one-is-zero = all-zero (pos 1)
+    in one-neq-zero-ℤ one-is-zero
+
+  -- =========================================================================
+  -- APPLICATION TO NO-RETRACTION THEOREM
+  -- =========================================================================
+  --
+  -- For the no-retraction theorem, we need:
+  --
+  -- 1. H¹(S¹) ≅ ℤ (from Cubical.ZCohomology.Groups.Sn)
+  -- 2. H¹(D²) ≅ 0 (from isContr D² + Cubical.ZCohomology.Groups.Unit)
+  -- 3. H¹ is functorial (from Cubical.ZCohomology.Properties)
+  --
+  -- If r : D² → S¹ is a retraction, then H¹(r) gives:
+  --   H¹(S¹) → H¹(D²) → H¹(S¹)
+  --   ℤ      →    0   →    ℤ
+  --
+  -- with composition = id. But by ℤ-not-retract-of-Unit, this is impossible.
+  --
+  -- (Note the contravariance: a retraction D² → S¹ gives a section on H¹)
+
+  -- This completes the algebraic infrastructure for the no-retraction proof.
+
 -- =============================================================================
 -- End of current formalization
 -- =============================================================================
