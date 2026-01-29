@@ -14686,5 +14686,98 @@ module ShapeTheoryFromCubical where
   -- This completes the algebraic infrastructure for the no-retraction proof.
 
 -- =============================================================================
+-- Connectedness Infrastructure for Bool-I-local
+-- =============================================================================
+
+module ConnectednessForBoolILocal where
+  open import Cubical.Data.Nat using (ℕ; zero; suc)
+  open import Cubical.Homotopy.Connected using (isConnected)
+  open import Cubical.HITs.Truncation using (hLevelTrunc; ∣_∣ₕ; rec; elim)
+  open IntervalIsCHausModule using (UnitInterval)
+
+  -- =========================================================================
+  -- STRATEGY: Connected types have constant maps to discrete types
+  -- =========================================================================
+  --
+  -- DEFINITION (from Cubical.Homotopy.Connected):
+  --   isConnected n A = isContr (hLevelTrunc n A)
+  --
+  -- For n = 1 (0-connected = path-connected in classical sense):
+  --   isConnected 1 A = isContr ∥ A ∥₁
+  --
+  -- This means A is inhabited and any two points can be connected by a path
+  -- (up to truncation).
+  --
+  -- KEY FACT: If A is 1-connected and B is a set (0-truncated), then
+  --           any map f : A → B is constant.
+  --
+  -- PROOF SKETCH:
+  -- Let f : A → B where isConnected 1 A and isSet B.
+  -- Since ∥ A ∥₁ is contractible with center c : ∥ A ∥₁,
+  -- for any a : A, we have ∣ a ∣₁ ≡ c.
+  -- Define g : ∥ A ∥₁ → B by rec (B being set) f.
+  -- Then f(a) = g(∣ a ∣₁) = g(c) for all a : A.
+  -- So f is constant (equal to g(c)).
+
+  -- The lemma: 1-connected types have constant maps to sets
+  -- (This is the key for Bool-I-local)
+  --
+  -- connected-to-set-is-constant :
+  --   {A : Type} {B : Type}
+  --   → isConnected 1 A
+  --   → isSet B
+  --   → (f : A → B)
+  --   → (x y : A) → f x ≡ f y
+  --
+  -- PROOF:
+  -- 1. From isConnected 1 A, we have c : isContr ∥ A ∥₁
+  -- 2. Define g : ∥ A ∥₁ → B via rec (since B is a set)
+  --    g : ∥ A ∥₁ → B by rec isSetB f
+  -- 3. For any x : A, g(∣ x ∣₁) = f(x) (by computation of rec)
+  -- 4. Since ∥ A ∥₁ is contractible, ∣ x ∣₁ ≡ ∣ y ∣₁
+  -- 5. Therefore g(∣ x ∣₁) ≡ g(∣ y ∣₁), i.e., f(x) ≡ f(y)
+
+  -- =========================================================================
+  -- APPLICATION TO Bool-I-local
+  -- =========================================================================
+  --
+  -- If we prove: isConnected 1 UnitInterval
+  -- Then: Bool-I-local follows from connected-to-set-is-constant
+  --       since Bool is a set.
+  --
+  -- PROVING isConnected 1 UnitInterval:
+  -- The unit interval I is path-connected in the following sense:
+  -- For any x, y : I, there exists a path (1-t)·x + t·y connecting them.
+  --
+  -- This requires:
+  -- 1. Definition of I as a CHaus type (already have UnitInterval)
+  -- 2. The linear path interpolation (1-t)·x + t·y : I for t : I
+  -- 3. Proof that this makes ∥ I ∥₁ contractible
+  --
+  -- The tex file assumes path-connectedness as part of the real numbers
+  -- structure (convexity/interpolation).
+
+  -- =========================================================================
+  -- WHAT'S NEEDED FOR FULL PROOF
+  -- =========================================================================
+  --
+  -- 1. Define linear interpolation on I:
+  --    interp : I → I → I → I
+  --    interp t x y = (1-t)·x + t·y
+  --
+  -- 2. Prove path-connectedness:
+  --    I-path-connected : (x y : I) → ∥ x ≡ y ∥₁
+  --    using the path t ↦ interp t x y
+  --
+  -- 3. Derive 1-connectedness:
+  --    isConnected-1-I : isConnected 1 UnitInterval
+  --
+  -- 4. Apply to Bool:
+  --    Bool-I-local-from-connected : (f : I → Bool) → (x y : I) → f x ≡ f y
+  --
+  -- The missing piece is the interpolation structure on I, which requires
+  -- the ordered field structure on ℝ and the interval's embedding in ℝ.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
