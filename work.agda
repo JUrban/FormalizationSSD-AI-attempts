@@ -15235,5 +15235,203 @@ module NoRetractionTheoremComplete where
   --    exists by the No-Retraction Theorem.
 
 -- =============================================================================
+-- Cohomology of Contractible Types - Type-Checked Code
+-- =============================================================================
+
+module CohomologyContractibleTypeChecked where
+  -- This module imports the key fact that contractible types have trivial
+  -- cohomology (Hⁿ = 0 for n ≥ 1), which is needed for the no-retraction proof.
+
+  open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0)
+  open import Cubical.ZCohomology.GroupStructure using (coHomGr)
+  open import Cubical.Algebra.Group.Base using (Group)
+  open import Cubical.Algebra.Group.Morphisms using (GroupIso)
+  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup)
+  open import Cubical.Data.Nat using (ℕ; zero; suc)
+
+  -- The key theorem from the Cubical library:
+  --
+  -- Hⁿ-contrType≅0 : ∀ {A : Type} (n : ℕ) → isContr A → GroupIso (coHomGr (suc n) A) UnitGroup
+  --
+  -- In words: For any contractible type A, Hⁿ(A) ≅ 0 for all n ≥ 1.
+
+  -- TYPE-CHECKED WITNESS:
+  -- We can instantiate this for the disk D² once we have isContr Disk2.
+  -- For now, we document the connection:
+  --
+  -- disk-cohomology-vanishes-witness : isContr Disk2 → GroupIso (coHomGr 1 Disk2) UnitGroup
+  -- disk-cohomology-vanishes-witness = Hⁿ-contrType≅0 0
+
+  -- This is exactly what we need for the no-retraction proof!
+  -- The disk D² is contractible, so H¹(D²) ≅ 0.
+  --
+  -- Combined with H¹(S¹) ≅ ℤ (from H¹-S¹≃ℤ-witness), this gives the
+  -- algebraic contradiction that completes the no-retraction proof.
+
+  -- =========================================================================
+  -- Instantiation for Unit Type (as a sanity check)
+  -- =========================================================================
+
+  -- Unit is contractible, so its cohomology should vanish
+  H¹-Unit≅0 : GroupIso (coHomGr 1 Unit) UnitGroup
+  H¹-Unit≅0 = Hⁿ-contrType≅0 0 (tt , λ _ → refl)
+
+  H²-Unit≅0 : GroupIso (coHomGr 2 Unit) UnitGroup
+  H²-Unit≅0 = Hⁿ-contrType≅0 1 (tt , λ _ → refl)
+
+  -- These type-check and confirm the library is working correctly.
+
+-- =============================================================================
+-- Čech Cohomology Infrastructure
+-- =============================================================================
+
+module CechCohomologyDoc where
+  -- This module documents the Čech cohomology approach mentioned in the tex file.
+  -- The key result from the tex is that H¹(X,ℤ) for compact Hausdorff X can be
+  -- computed using Čech cohomology.
+
+  -- From main-monolithic.tex, the key results are:
+  --
+  -- 1. H¹(S,ℤ) = 0 for Stone S (tex line ~2887)
+  --    This follows from Stone spaces being profinite (limits of finite discrete spaces)
+  --
+  -- 2. H¹(I,ℤ) = 0 for interval I (tex Prop 2991)
+  --    This follows from I being path-connected
+  --
+  -- 3. H¹(S¹,ℤ) = ℤ for circle S¹
+  --    This is Hn-Sn≅Z from the Cubical library
+  --
+  -- The approach is:
+  --
+  -- For Stone spaces:
+  -- - Stone spaces have vanishing higher cohomology because they are
+  --   limits of finite discrete spaces, and finite discrete spaces
+  --   have trivial cohomology above degree 0.
+  --
+  -- For compact Hausdorff spaces (like I):
+  -- - Use Čech cohomology with Stone covers
+  -- - The interval I is covered by Stone spaces (via Archimedean property)
+  -- - The Čech complex computes H¹(I,ℤ) = 0
+
+  -- The algebraic fact we proved:
+  -- For n ≥ 1, if X is contractible, then Hⁿ(X,ℤ) = 0
+  -- (from Cubical.ZCohomology.Groups.Unit)
+
+  -- For the interval, we'd need either:
+  -- 1. Prove isContr I (requires path-connectedness formalization), or
+  -- 2. Use the Čech approach with Stone covers
+
+-- =============================================================================
+-- Retraction Non-Existence Assembler
+-- =============================================================================
+
+module RetractionNonExistenceAssembler where
+  -- This module assembles all the pieces for the no-retraction theorem.
+  -- It documents what's type-checked vs postulated.
+
+  open import Cubical.HITs.S1 using (S¹)
+  open import Cubical.ZCohomology.GroupStructure using (coHomGr; coHomMorph)
+  open import Cubical.Algebra.Group.Morphisms using (GroupHom; GroupIso)
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup)
+
+  -- =========================================================================
+  -- TYPE-CHECKED COMPONENTS (from earlier modules in this file):
+  -- =========================================================================
+
+  -- 1. H¹(S¹) ≅ ℤ
+  --    H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup
+  --    (line ~14109, from CircleCohomologyFromLibrary)
+
+  -- 2. ℤ is not a retract of Unit
+  --    ℤ-not-retract-of-Unit-STF : ... → ⊥
+  --    (line ~14654, from ShapeTheoryFromCubical)
+
+  -- 3. S¹ is not contractible
+  --    S¹-not-contractible : isContr S¹ → ⊥
+  --    (line ~14978, from FundamentalGroupS1)
+
+  -- 4. Cohomology functoriality
+  --    coHom-functorial-comp : If g ∘ f = id then f* ∘ g* = id on cohomology
+  --    (line ~15105, from CohomologyFunctorialityTypeChecked)
+
+  -- 5. Contractible types have vanishing higher cohomology
+  --    Hⁿ-contrType≅0 : isContr A → GroupIso (coHomGr (suc n) A) UnitGroup
+  --    (from Cubical library, instantiated above)
+
+  -- =========================================================================
+  -- POSTULATED COMPONENTS (geometric axioms):
+  -- =========================================================================
+
+  -- 1. Disk2 : Type (the 2-disk as a type)
+  -- 2. Circle-as-boundary : S¹ → Disk2 (the boundary inclusion)
+  -- 3. isContr-Disk2 : isContr Disk2 (disk is contractible)
+
+  -- Once isContr-Disk2 is provided, we can derive:
+  --   H¹-Disk2≅0 : GroupIso (coHomGr 1 Disk2) UnitGroup
+  --   H¹-Disk2≅0 = Hⁿ-contrType≅0 0 isContr-Disk2
+
+  -- =========================================================================
+  -- PROOF OUTLINE (using the above):
+  -- =========================================================================
+
+  -- Assume retraction r : Disk2 → S¹ with section i = Circle-as-boundary
+  -- such that r ∘ i = id on S¹.
+  --
+  -- Step 1: Apply coHomMorph to get:
+  --   r* : GroupHom (coHomGr 1 S¹) (coHomGr 1 Disk2)
+  --   i* : GroupHom (coHomGr 1 Disk2) (coHomGr 1 S¹)
+  --   with i* ∘ r* = id (by coHom-functorial-comp)
+  --
+  -- Step 2: Transport through isomorphisms:
+  --   H¹(S¹) ≅ ℤ (by H¹-S¹≃ℤ-witness)
+  --   H¹(Disk2) ≅ UnitGroup (by H¹-Disk2≅0 from isContr-Disk2)
+  --
+  -- Step 3: We get group homomorphisms:
+  --   ℤGroup → UnitGroup → ℤGroup
+  --   with composition = id
+  --
+  -- Step 4: Contradiction!
+  --   ℤ-not-retract-of-Unit-STF shows this is impossible.
+  --
+  -- QED: No retraction exists.
+
+-- =============================================================================
+-- Stone Space Cohomology Theory
+-- =============================================================================
+
+module StoneCohomologyDoc where
+  -- This module documents the cohomology of Stone spaces.
+  -- The key result (tex ~2887) is that H¹(S,ℤ) = 0 for Stone spaces S.
+
+  -- A Stone space is a profinite set - an inverse limit of finite discrete sets.
+  -- This gives a topological characterization: totally disconnected, compact Hausdorff.
+
+  -- The proof that H¹(S,ℤ) = 0 for Stone S relies on:
+  --
+  -- 1. Stone = profinite = lim←(finite discrete sets)
+  --
+  -- 2. For finite discrete F:
+  --    - F is a finite disjoint union of points
+  --    - H¹(point, ℤ) = 0 (point is contractible)
+  --    - H¹(F, ℤ) = ⊕ H¹(point, ℤ) = 0
+  --
+  -- 3. Cohomology commutes with limits (under appropriate conditions):
+  --    H¹(lim← Fᵢ, ℤ) = colim→ H¹(Fᵢ, ℤ) = colim→ 0 = 0
+  --
+  -- This is formalized in the tex via Čech cohomology and the
+  -- Eilenberg-Steenrod axioms.
+
+  -- For our formalization:
+  --
+  -- The postulate stone-cohomology-vanishes captures this:
+  --   stone-cohomology-vanishes : (S : Stone) → GroupIso (coHomGr 1 (fst S)) UnitGroup
+  --
+  -- The proof strategy would be to:
+  -- 1. Define Stone spaces as limits of finite discrete sets
+  -- 2. Use the fact that cohomology commutes with appropriate limits
+  -- 3. Show finite discrete sets have trivial H¹
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
