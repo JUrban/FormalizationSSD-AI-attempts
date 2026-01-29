@@ -23780,6 +23780,7 @@ module FormalizationStatusTC where
   -- 14. CHausFiniteIntersectionPropertyTC - FIP for CHaus (tex 1981)
   -- 15. CHausSeperationOfClosedByOpensTC - CHaus normality (tex 2058)
   -- 16. StonePropertiesTC - foundational Stone lemmas (tex 251, 1636, 1628, 1613, 1770, 1906, 1930)
+  -- 17. CHausStructuralTC - CHaus closure properties (tex 2003, 2019, 2098)
 
 -- =============================================================================
 -- Module: OmnisciencePrinciplesTC
@@ -24289,6 +24290,95 @@ module StonePropertiesTC where
   --         ↓
   -- 7. IVT, BFT (tex 3082, 3099)
   --    "Main topological applications"
+
+-- =============================================================================
+-- CHausStructuralTC - Compact Hausdorff Structural Properties
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents structural properties of compact Hausdorff spaces,
+-- focusing on how CHaus is closed under various operations.
+
+module CHausStructuralTC where
+  open CompactHausdorffModule using (CHaus; hasCHausStr)
+
+  -- =========================================================================
+  -- TEX COROLLARY 2003 - ChausMapsPreserveIntersectionOfClosed
+  -- =========================================================================
+  --
+  -- STATEMENT: Let X,Y:CHaus and f:X → Y.
+  -- Suppose (G_n)_{n:ℕ} is a decreasing sequence of closed subsets of X.
+  -- Then f(⋂_{n:ℕ} G_n) = ⋂_{n:ℕ} f(G_n).
+  --
+  -- STATUS: POSTULATED (ChausMapsPreserveIntersectionOfClosed at line ~12137)
+  --
+  -- PROOF SKETCH:
+  -- 1. f(⋂_{n:ℕ} G_n) ⊆ ⋂_{n:ℕ} f(G_n) always holds
+  -- 2. For converse: if y ∈ f(G_n) for all n, define F = f⁻¹(y)
+  -- 3. Then F ∩ G_n is non-empty for all n
+  -- 4. By CHausFiniteIntersectionProperty, ⋂_{n:ℕ} (F ∩ G_n) ≠ ∅
+  -- 5. By InhabitedClosedSubSpaceClosedCHaus, this is merely inhabited
+  -- 6. Thus y ∈ f(⋂_{n:ℕ} G_n)
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- This property shows that CHaus maps are "well-behaved" with respect
+  -- to countable intersections. It's used in proving CompactHausdorffTopology.
+
+  -- =========================================================================
+  -- TEX COROLLARY 2019 - CompactHausdorffTopology
+  -- =========================================================================
+  --
+  -- STATEMENT: Let A ⊆ X be a subset of a compact Hausdorff space and p:S↠X
+  -- a surjection with S:Stone. Then:
+  -- - A is closed iff A = ⋂_{n:ℕ} p(D_n) for decidable D_n ⊆ S
+  -- - A is open iff A = ⋃_{n:ℕ} ¬p(D_n) for decidable D_n ⊆ S
+  --
+  -- STATUS: POSTULATED (CompactHausdorffTopology-closed/open at line ~12185)
+  --
+  -- This characterizes the topology of CHaus spaces in terms of:
+  -- - Countable intersections of images of decidable sets (for closed)
+  -- - Countable unions of complements of images of decidable sets (for open)
+  --
+  -- USES: StoneClosedSubsets, CompactHausdorffClosed, ChausMapsPreserveIntersectionOfClosed
+
+  -- =========================================================================
+  -- TEX LEMMA 2098 - SigmaCompactHausdorff
+  -- =========================================================================
+  --
+  -- STATEMENT: Compact Hausdorff spaces are stable under Σ-types.
+  -- If X:CHaus and Y:X→CHaus, then Σ_{x:X} Y(x) is compact Hausdorff.
+  --
+  -- STATUS: POSTULATED (SigmaCompactHausdorff at line ~12270)
+  --
+  -- PROOF SKETCH:
+  -- 1. By ClosedDependentSums, identity types in Σ_{x:X}Y(x) are closed
+  -- 2. By StoneAsClosedSubsetOfCantor, for any x:X there merely exists
+  --    closed C⊆2^ℕ with surjection Σ_{α:2^ℕ}C(α) ↠ Y(x)
+  -- 3. By local choice, we merely get S:Stone with p:S↠X such that
+  --    for all s:S we have C_s⊆2^ℕ closed with surjection Σ_{2^ℕ}C_s↠Y(p(s))
+  -- 4. This gives surjection Σ_{s:S,α:2^ℕ}C_s(α) ↠ Σ_{x:X}Y_x
+  -- 5. The source is Stone by StoneClosedUnderPullback and ClosedInStoneIsStone
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- This is crucial for building complex CHaus spaces from simpler ones.
+  -- It shows that CHaus is closed under dependent sums.
+
+  -- =========================================================================
+  -- SUMMARY: CHaus Closure Properties
+  -- =========================================================================
+  --
+  -- The tex proves CHaus is closed under many operations:
+  --
+  -- 1. Finite products (trivial)
+  -- 2. Σ-types (tex 2098, SigmaCompactHausdorff)
+  -- 3. Closed subsets (ClosedInCHausIsCHaus)
+  -- 4. Quotients by closed equivalences
+  --
+  -- These closures enable proving the main theorems (IVT, BFT) by:
+  -- - Building the interval I as a CHaus space
+  -- - Building the disk D² as a CHaus space
+  -- - Using ¬¬-stability of inhabitedness (InhabitedClosedSubSpaceClosedCHaus)
 
 -- =============================================================================
 -- End of current formalization
