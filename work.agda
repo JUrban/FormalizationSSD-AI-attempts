@@ -21870,6 +21870,83 @@ module CohomologyNoRetractionTC where
   -- This is captured by ℤ-not-retract-of-0 above.
 
 -- =============================================================================
+-- Module: CohomologyFromLibraryTC
+-- Type-checked cohomology results from Cubical library
+-- =============================================================================
+
+module CohomologyFromLibraryTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Equiv
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Data.Unit
+  open import Cubical.Data.Empty
+  open import Cubical.HITs.S1 as S1 using (S¹; base; loop)
+  open import Cubical.Data.Int using (ℤ; pos; negsuc)
+  open import Cubical.Data.Nat using (snotz; ℕ)
+  open import Cubical.Data.Int using (injPos)
+  open import Cubical.Algebra.Group.Base using (Group)
+  open import Cubical.Algebra.Group.Morphisms using (GroupIso)
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup₀)
+  open import Cubical.ZCohomology.Groups.Sn using (Hⁿ-Sⁿ≅ℤ)
+  open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0; isContrHⁿ-Unit)
+  open import Cubical.ZCohomology.Base using (coHom)
+  open import Cubical.ZCohomology.GroupStructure using (coHomGr)
+
+  -- =================================================================
+  -- TYPE-CHECKED: H¹(S¹) ≅ ℤ from Cubical library
+  -- =================================================================
+
+  H¹-S¹-is-ℤ : GroupIso (coHomGr 1 S¹) ℤGroup
+  H¹-S¹-is-ℤ = Hⁿ-Sⁿ≅ℤ 0
+
+  -- =================================================================
+  -- TYPE-CHECKED: H¹(Unit) ≅ 0 from Cubical library
+  -- =================================================================
+  -- Unit is contractible, so its higher cohomology vanishes.
+
+  H¹-Unit-is-0 : GroupIso (coHomGr 1 Unit) UnitGroup₀
+  H¹-Unit-is-0 = Hⁿ-contrType≅0 0 isContrUnit
+
+  -- =================================================================
+  -- TYPE-CHECKED: H^n(A) = 0 for contractible A (from library)
+  -- =================================================================
+
+  Hⁿ-contr-vanishes : {A : Type₀} → (n : ℕ) → isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
+  Hⁿ-contr-vanishes = Hⁿ-contrType≅0
+
+  -- =================================================================
+  -- DOCUMENTATION: Using this for no-retraction
+  -- =================================================================
+  --
+  -- The cohomology argument for no-retraction uses:
+  --
+  -- 1. H¹(S¹) ≅ ℤ (H¹-S¹-is-ℤ above)
+  -- 2. H¹(D²) ≅ 0 (since D² is contractible, use Hⁿ-contr-vanishes)
+  -- 3. Functoriality: r : D² → S¹ induces r* : H¹(S¹) → H¹(D²)
+  -- 4. If r ∘ i = id, then i* ∘ r* = id on H¹(S¹)
+  -- 5. But i* ∘ r* factors through H¹(D²) = 0
+  -- 6. So id : ℤ → ℤ factors through 0 - contradiction!
+  --
+  -- Steps 1-2 are type-checked via the library.
+  -- Steps 3-6 are documented in CohomologyNoRetractionTC.
+
+  -- =================================================================
+  -- TYPE-CHECKED: isContr Unit (trivial but for reference)
+  -- =================================================================
+
+  Unit-is-contractible : isContr Unit
+  Unit-is-contractible = isContrUnit
+
+  -- =================================================================
+  -- APPLICATION: D²-algebraic (= Unit) has vanishing H¹
+  -- =================================================================
+  -- Since D²-algebraic = Unit, we have:
+
+  H¹-D²-algebraic-is-0 : GroupIso (coHomGr 1 Unit) UnitGroup₀
+  H¹-D²-algebraic-is-0 = H¹-Unit-is-0
+
+-- =============================================================================
 -- Module: BrouwerFPTSummaryTC
 -- Summary of the fully type-checked Brouwer FPT infrastructure
 -- =============================================================================
