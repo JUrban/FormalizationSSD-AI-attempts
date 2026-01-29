@@ -1364,6 +1364,11 @@ mp-from-SD SD α α≠0 = MarkovLib.extract' α (MarkovLib.∃αn α true-in-ide
   true-in-ideal : IQ.generatedIdeal BoolCR α true
   true-in-ideal = true-in-αIdeal
 
+-- Quotient of Bool-Booleω as a full Booleω algebra
+-- This combines the quotient Boolean ring with its Booleω witness
+quotient-Booleω : binarySequence → Booleω
+quotient-Booleω α = BoolBR QB./Im α , quotientPreservesBooleω α
+
 -- For compatibility, keep mp as a definition using the postulated SD
 postulate
   sd-axiom : StoneDualityAxiom
