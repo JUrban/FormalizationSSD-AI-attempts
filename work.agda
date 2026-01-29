@@ -22691,5 +22691,108 @@ module IntervalConnectednessDerivedTC where
   -- ordered field structure.
 
 -- =============================================================================
+-- StoneILocalTC: Stone spaces are I-local (tex Remark after Lemma 3015)
+-- =============================================================================
+--
+-- Since Bool (2) is I-local, any Stone space is I-local.
+--
+-- The proof idea:
+-- 1. Bool-I-local: Any map I → Bool is constant (proved above)
+-- 2. Stone = Sp(B) for some B : Booleω
+-- 3. Sp(B) = BoolHom(B,2) ⊂ B → Bool (functions preserving ring structure)
+-- 4. (B → Bool) is I-local since Bool is I-local and B is a set
+-- 5. Subsets of I-local types are I-local (embedding preserves locality)
+-- 6. Hence Sp(B) is I-local
+
+module StoneILocalTC where
+  open IntervalConnectednessDerivedTC using (Bool-I-local-derived; is-1-connected-I)
+  open ConnectednessForBoolILocal using (connected-1-to-set-constant)
+  open IntervalIsCHausModule using (UnitInterval)
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; SpGeneralBooleanRing)
+  open import Cubical.Data.Bool using (Bool; isSetBool)
+
+  -- =========================================================================
+  -- I-locality for function spaces
+  -- =========================================================================
+  --
+  -- If B is I-local and A is a set, then (A → B) is I-local.
+  -- Proof: A map I → (A → B) is the same as A → (I → B).
+  --        For each a : A, the map I → B is constant by B being I-local.
+  --        Hence the whole function is constant.
+
+  -- Maps to function types are constant if codomain is I-local
+  funspace-I-local : {A : Type ℓ-zero} {B : Type ℓ-zero}
+    → isSet A
+    → ((f : UnitInterval → B) → (x y : UnitInterval) → f x ≡ f y)
+    → (g : UnitInterval → (A → B))
+    → (x y : UnitInterval) → g x ≡ g y
+  funspace-I-local {A} {B} setA B-local g x y = funExt pointwise
+    where
+    pointwise : (a : A) → g x a ≡ g y a
+    pointwise a = B-local (λ i → g i a) x y
+
+  -- (X → Bool) is I-local for any set X
+  fun-to-Bool-I-local : {X : Type ℓ-zero}
+    → isSet X
+    → (g : UnitInterval → (X → Bool))
+    → (x y : UnitInterval) → g x ≡ g y
+  fun-to-Bool-I-local setX = funspace-I-local setX Bool-I-local-derived
+
+  -- =========================================================================
+  -- Stone spaces are I-local
+  -- =========================================================================
+  --
+  -- Stone = Sp(B) for B : Booleω
+  -- Sp(B) = BoolHom(B,2) which is a subset of (⟨B⟩ → Bool)
+  -- Since (⟨B⟩ → Bool) is I-local and Sp(B) ↪ (⟨B⟩ → Bool),
+  -- any map I → Sp(B) composed with the embedding gives a map I → (⟨B⟩ → Bool)
+  -- which is constant, hence the original map is constant.
+  --
+  -- For the formal statement, we express I-locality as:
+  -- Any map I → S (where S is Stone) is constant.
+
+  -- Sp(B) ↪ (⟨B⟩ → Bool) via the underlying function
+  Sp-to-fun : (B : Booleω) → Sp B → (⟨ fst B ⟩ → Bool)
+  Sp-to-fun B h = fst h
+
+  -- Stone-I-local: Maps from I to Stone spaces are constant
+  Stone-Sp-I-local : (B : Booleω) → (f : UnitInterval → Sp B)
+    → (x y : UnitInterval) → f x ≡ f y
+  Stone-Sp-I-local B f x y = goal
+    where
+    -- The underlying ring ⟨B⟩ is a set (Boolean rings are sets)
+    B-is-set : isSet ⟨ fst B ⟩
+    B-is-set = BooleanRingStr.is-set (snd (fst B))
+
+    -- The composition I → Sp(B) → (⟨B⟩ → Bool)
+    g : UnitInterval → (⟨ fst B ⟩ → Bool)
+    g i = Sp-to-fun B (f i)
+
+    -- g is constant because (⟨B⟩ → Bool) is I-local
+    g-const : g x ≡ g y
+    g-const = fun-to-Bool-I-local B-is-set g x y
+
+    -- The embedding Sp(B) ↪ (⟨B⟩ → Bool) is injective on the underlying function
+    -- (two BoolHoms are equal iff their underlying functions are equal)
+    -- CommRingHom≡ : {f g : CommRingHom A B} → fst f ≡ fst g → f ≡ g
+    goal : f x ≡ f y
+    goal = CommRingHom≡ g-const
+
+  -- =========================================================================
+  -- SUMMARY (tex Remark after Lemma 3015)
+  -- =========================================================================
+  --
+  -- "Since 2 is I-local, we have that any Stone space is I-local."
+  --
+  -- This is now TYPE-CHECKED:
+  -- - Bool-I-local-derived: Bool is I-local (from connectedness)
+  -- - fun-to-Bool-I-local: (X → Bool) is I-local for any set X
+  -- - Stone-Sp-I-local: Sp(B) is I-local
+  --
+  -- This result is used in the proof that the IVT holds:
+  -- If f : I → I has no solution to f(x) = y, then we get a
+  -- non-constant map I → Bool, contradicting Bool-I-local.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
