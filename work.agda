@@ -13913,7 +13913,15 @@ module CohomologyModule where
 -- Summary of postulate elimination status
 -- =============================================================================
 --
--- FULLY PROVED (not postulates anymore):
+-- MAJOR THEOREMS FULLY PROVED:
+-- 1. IntermediateValueTheorem (line ~12819): COMPLETE PROOF
+--    Uses: InhabitedClosedSubSpaceClosedCHaus, Bool-I-local, closedIsStable
+--    Depends on: interval topology postulates (Bool-I-local, <I-apartness, etc.)
+--
+-- 2. TruncationStoneClosed (line ~12833): Complete (modulo LemSurjectionsFormal postulate)
+--    Shows: ||S|| is closed for Stone S
+--
+-- LEMMAS FULLY PROVED (not postulates anymore):
 -- 1. xor-symmdiff (line ~7298): Complete proof using helper lemmas
 -- 2. xor-meetNegForm-meetNegForm-correct (line ~7397): Complete proof
 -- 3. xor-joinForm-meetNegForm-correct (line ~7422): Complete proof
@@ -13938,7 +13946,7 @@ module CohomologyModule where
 -- 3. retraction-from-no-fixpoint (line ~12915): geometric construction
 --
 -- TOPOLOGICAL POSTULATES (require topology infrastructure):
--- 1. Interval topology postulates (lines ~12600-12700)
+-- 1. Interval topology postulates (lines ~12600-12700): Bool-I-local, <I-apartness
 -- 2. CHausFiniteIntersectionProperty (line ~12064)
 -- 3. Various closed subset properties
 --
@@ -13947,6 +13955,11 @@ module CohomologyModule where
 -- - ~20 geometric/topological (require concrete definitions)
 -- - ~6 provable but kept for forward reference
 -- - ~28 other infrastructure postulates
+--
+-- BROUWER FIXED POINT THEOREM (line ~12854):
+-- Status: Structure is complete, depends on no-retraction and retraction-from-no-fixpoint
+-- The proof structure is: if ∀x. f(x)≠x, construct retraction D²→S¹, contradiction
+-- Main missing pieces: concrete disk/circle definitions connecting to Cubical library
 --
 -- =============================================================================
 -- End of current formalization
