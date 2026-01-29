@@ -14258,6 +14258,61 @@ module CohomologyModule where
     -- =======================================================================
 
   -- =========================================================================
+  -- IntervalConnectedFromContr: Deriving is-1-connected-I
+  -- =========================================================================
+  --
+  -- DERIVATION: is-1-connected-I from isContrUnitInterval
+  --
+  -- Key insight: Contractibility implies 1-connectedness.
+  -- - is-1-connected A = isContr ∥ A ∥₁
+  -- - If isContr A, then A is inhabited and ∥ A ∥₁ is an inhabited proposition.
+  -- - An inhabited proposition is contractible.
+  --
+  -- This shows that the is-1-connected-I postulate (in IntervalConnectednessDerivedTC)
+  -- is DERIVABLE from isContrUnitInterval.
+
+  module IntervalConnectedFromContr where
+    open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; squash₁)
+    open IntervalIsCHausModule using (UnitInterval; isContrUnitInterval)
+
+    -- =======================================================================
+    -- DERIVATION: is-1-connected-I from isContrUnitInterval
+    -- =======================================================================
+    --
+    -- Strategy:
+    -- 1. isContrUnitInterval : isContr UnitInterval (postulated in IntervalIsCHausModule)
+    -- 2. UnitInterval is inhabited (from the center of isContrUnitInterval)
+    -- 3. ∥ UnitInterval ∥₁ is a proposition (squash₁)
+    -- 4. An inhabited proposition is contractible
+
+    -- The center of UnitInterval from contractibility
+    interval-center : UnitInterval
+    interval-center = fst isContrUnitInterval
+
+    -- ∥ UnitInterval ∥₁ is inhabited
+    interval-trunc-inhabited : ∥ UnitInterval ∥₁
+    interval-trunc-inhabited = ∣ interval-center ∣₁
+
+    -- ∥ UnitInterval ∥₁ is a proposition (built into PropositionalTruncation)
+    interval-trunc-isProp : isProp ∥ UnitInterval ∥₁
+    interval-trunc-isProp = squash₁
+
+    -- The derived theorem: is-1-connected UnitInterval
+    -- An inhabited proposition is contractible: (center, isProp _ _)
+    is-1-connected-I-derived : isContr ∥ UnitInterval ∥₁
+    is-1-connected-I-derived = interval-trunc-inhabited , λ x → interval-trunc-isProp _ x
+
+    -- =======================================================================
+    -- NOTE: This derivation shows that the is-1-connected-I postulate
+    -- (in IntervalConnectednessDerivedTC) is redundant given isContrUnitInterval.
+    --
+    -- POSTULATE CHAIN:
+    --   isContrUnitInterval → is-1-connected-I → Bool-I-local, Z-I-local
+    --
+    -- This further reduces the number of independent postulates!
+    -- =======================================================================
+
+  -- =========================================================================
   -- Circle cohomology: Using H¹-S¹≅ℤ from Cubical library
   -- =========================================================================
   --
@@ -22786,6 +22841,11 @@ module IntervalConnectednessDerivedTC where
   -- If A is inhabited and path-connected, then ∥ A ∥₁ is contractible.
   --
   -- This postulate captures the convex structure of I ⊂ ℝ.
+  --
+  -- NOTE: This postulate is NOW DERIVABLE from isContrUnitInterval!
+  -- See: IntervalConnectedFromContr.is-1-connected-I-derived
+  -- The derivation uses the fact that contractible types are 1-connected:
+  --   isContr A → isContr ∥ A ∥₁
 
   postulate
     is-1-connected-I : is-1-connected UnitInterval
