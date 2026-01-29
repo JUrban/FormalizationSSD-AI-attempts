@@ -14079,21 +14079,63 @@ module CohomologyModule where
     open import Cubical.HITs.Sn using (S₊)
     open import Cubical.Algebra.Group.Morphisms
     open import Cubical.Algebra.Group.MorphismProperties
-    open BrouwerFixedPointTheoremModule using (Circle; isSetCircle)
+    open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+    open import Cubical.ZCohomology.Groups.Sn using (Hⁿ-Sⁿ≅ℤ)
+    open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0)
+    open import Cubical.ZCohomology.Base using (coHom)
+    open import Cubical.ZCohomology.GroupStructure using (coHomGr)
+    open BrouwerFixedPointTheoremModule using (Circle; isSetCircle; Disk2; isSetDisk2)
 
-    -- H¹-S¹≅ℤ gives: GroupIso (coHomGr 1 (S₊ 1)) ℤGroup
-    -- This is a group isomorphism at the truncated level.
+    -- =========================================================================
+    -- KEY LIBRARY THEOREMS FOR BFP COHOMOLOGY ARGUMENT
+    -- =========================================================================
     --
-    -- If we had Circle ≡ S¹, we could transport:
-    --   circle-cohomology-from-library : Circle ≡ S¹ → H¹ Circle ≃ ℤ
-    --   circle-cohomology-from-library p =
-    --     let iso = H¹-S¹≅ℤ
-    --         -- GroupIso gives us an Iso on underlying types
-    --         -- Need to transport along Circle ≡ S¹
-    --     in {! extract from GroupIso !}
+    -- From Cubical.ZCohomology.Groups.Sn:
+    --   Hⁿ-Sⁿ≅ℤ : (n : ℕ) → GroupIso (coHomGr (suc n) (S₊ (suc n))) ℤGroup
     --
-    -- The key observation is that H¹-S¹≅ℤ already exists in the library,
-    -- we just need to connect our abstract Circle to the concrete S¹.
+    -- Specializing to n = 0:
+    --   Hⁿ-Sⁿ≅ℤ 0 : GroupIso (coHomGr 1 S¹) ℤGroup
+    --
+    -- This gives us H¹(S¹) ≃ ℤ as needed for circle-cohomology.
+    --
+    -- From Cubical.ZCohomology.Groups.Unit:
+    --   Hⁿ-contrType≅0 : (n : ℕ) → isContr A → GroupIso (coHomGr (suc n) A) UnitGroup
+    --
+    -- If Disk2 is contractible (which follows from it being homeomorphic to I²),
+    -- then Hⁿ-contrType≅0 0 isContrDisk2 gives H¹(Disk2) ≃ 0.
+
+    -- Direct witness of circle cohomology from library
+    -- Note: S₊ 1 = S¹ in the Cubical library
+    H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup
+    H¹-S¹≃ℤ-witness = Hⁿ-Sⁿ≅ℤ 0
+
+    -- =======================================================================
+    -- ELIMINATION STRATEGY FOR circle-cohomology POSTULATE:
+    -- =======================================================================
+    --
+    -- 1. Define Circle := S¹ (use the Cubical library's circle HIT)
+    --    OR prove an equivalence Circle ≃ S¹
+    --
+    -- 2. Use H¹-S¹≃ℤ-witness to get the isomorphism
+    --
+    -- 3. The abstract circle-cohomology postulate is then:
+    --    circle-cohomology-from-S¹ : H¹ Circle ≃ ℤ
+    --    circle-cohomology-from-S¹ = GroupIso→Equiv (Hⁿ-Sⁿ≅ℤ 0)
+    --
+    -- where H¹ X = ∥ X → K(ℤ,1) ∥₂ is the first cohomology type
+
+    -- =======================================================================
+    -- ELIMINATION STRATEGY FOR disk-cohomology-vanishes POSTULATE:
+    -- =======================================================================
+    --
+    -- 1. Prove isContr Disk2 (D² is contractible)
+    --    - This follows from D² being homeomorphic to the unit square I²
+    --    - Or from D² being a closed, bounded, convex subset of ℝ²
+    --
+    -- 2. Use Hⁿ-contrType≅0 to get H¹(Disk2) ≃ Unit
+    --
+    -- disk-cohomology-from-contr : isContr Disk2 → GroupIso (coHomGr 1 Disk2) UnitGroup₀
+    -- disk-cohomology-from-contr contr = Hⁿ-contrType≅0 0 contr
 
   -- =========================================================================
   -- No-retraction proof structure using cohomology
@@ -14227,11 +14269,13 @@ module CohomologyModule where
 -- The proof structure is: if ∀x. f(x)≠x, construct retraction D²→S¹, contradiction
 -- Main missing pieces: concrete disk/circle definitions connecting to Cubical library
 --
--- NEW INFRASTRUCTURE MODULES FOR BFP COHOMOLOGY (lines ~13911-14040):
+-- NEW INFRASTRUCTURE MODULES FOR BFP COHOMOLOGY (lines ~14077-14175):
 -- 1. DiskCohomologyFromContr: Shows how isContr Disk2 implies H¹(D²) = 0
 --    Uses: Hⁿ-contrType≅0 from Cubical.ZCohomology.Groups.Unit
 -- 2. CircleCohomologyFromLibrary: Shows how to use H¹-S¹≅ℤ from Cubical library
 --    Uses: Cubical.HITs.S1, Cubical.ZCohomology.Groups.Sn
+--    NEW: Contains H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (line ~14109)
+--         This is type-checked code directly connecting to Cubical library!
 -- 3. No-retraction proof structure: Detailed functoriality argument
 --    Explains how H¹(D²) = 0 and H¹(S¹) ≃ ℤ contradict retraction existence
 --
