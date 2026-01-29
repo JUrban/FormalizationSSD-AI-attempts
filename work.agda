@@ -21451,5 +21451,132 @@ module S1NotContractibleTC where
                         (pos 0) (pos 1)
 
 -- =============================================================================
+-- Module: BrouwerFPTConcreteTC
+-- Connection between concrete definitions and Brouwer FPT
+-- =============================================================================
+
+module BrouwerFPTConcreteTC where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Equiv
+  open import Cubical.Foundations.HLevels
+  open import Cubical.Foundations.Univalence
+  open import Cubical.Data.Unit
+  open import Cubical.Data.Empty
+  open import Cubical.HITs.S1 as S1 using (S¹; base; loop)
+  open import Cubical.HITs.S1.Base using (ΩS¹≡ℤ; isGroupoidS¹)
+  open import Cubical.Data.Int using (ℤ; pos; negsuc)
+  open import Cubical.Data.Nat using (snotz)
+  open import Cubical.Data.Int using (injPos)
+
+  -- =================================================================
+  -- CONCRETE DEFINITIONS (replacing postulates)
+  -- =================================================================
+
+  -- Circle: now concrete (S¹ from Cubical library)
+  Circle-concrete : Type₀
+  Circle-concrete = S¹
+
+  -- Disk2: contractible type (algebraic model)
+  -- For algebraic no-retraction, any contractible type works
+  D²-algebraic : Type₀
+  D²-algebraic = Unit
+
+  isContr-D²-algebraic : isContr D²-algebraic
+  isContr-D²-algebraic = tt , λ _ → refl
+
+  -- The boundary map (any S¹ element maps to the point)
+  boundary-algebraic : S¹ → D²-algebraic
+  boundary-algebraic _ = tt
+
+  -- =================================================================
+  -- MAIN THEOREM: No retraction (TYPE-CHECKED!)
+  -- =================================================================
+
+  -- This is the algebraic core of the no-retraction theorem
+  -- If r : D² → S¹ and i : S¹ → D² with r ∘ i = id, then ⊥
+
+  no-retraction-algebraic :
+    (r : D²-algebraic → S¹)
+    (retract : (x : S¹) → r (boundary-algebraic x) ≡ x)
+    → ⊥
+  no-retraction-algebraic r retract = S¹-not-contr S¹-is-contr
+    where
+      -- Key: r is constant (factors through Unit)
+      r-const : (u v : D²-algebraic) → r u ≡ r v
+      r-const u v = cong r (isContr→isProp isContr-D²-algebraic u v)
+
+      -- Therefore all values of S¹ are equal
+      all-S¹-equal : (x y : S¹) → x ≡ y
+      all-S¹-equal x y =
+        x              ≡⟨ sym (retract x) ⟩
+        r (boundary-algebraic x)   ≡⟨ r-const (boundary-algebraic x) (boundary-algebraic y) ⟩
+        r (boundary-algebraic y)   ≡⟨ retract y ⟩
+        y ∎
+
+      -- S¹ would be contractible
+      S¹-is-contr : isContr S¹
+      S¹-is-contr = base , all-S¹-equal base
+
+      -- But S¹ is not contractible (π₁(S¹) = ℤ ≠ 0)
+      S¹-not-contr : isContr S¹ → ⊥
+      S¹-not-contr (c , p) = snotz (injPos (sym path-in-ℤ))
+        where
+          loops-contr : isContr (base ≡ base)
+          loops-contr = isOfHLevelPath 0 (c , p) base base
+
+          π₁S¹≃ℤ : (base ≡ base) ≡ ℤ
+          π₁S¹≃ℤ = ΩS¹≡ℤ
+
+          path-in-ℤ : pos 0 ≡ pos 1
+          path-in-ℤ = subst (λ T → (x y : T) → x ≡ y) π₁S¹≃ℤ
+                            (λ x y → isContr→isProp loops-contr x y)
+                            (pos 0) (pos 1)
+
+  -- =================================================================
+  -- POSTULATE ELIMINATION STATUS
+  -- =================================================================
+
+  -- The following postulates from BrouwerFixedPointTheoremModule
+  -- can now be eliminated with concrete definitions:
+  --
+  -- ELIMINATED:
+  -- 1. Circle : Type₀
+  --    → Use S¹ from Cubical.HITs.S1
+  --
+  -- 2. isSetCircle : isSet Circle
+  --    → INCORRECT! S¹ is a groupoid, not a set
+  --    → Use isGroupoidS¹ : isGroupoid S¹
+  --
+  -- 3. no-retraction (ALGEBRAIC FORM)
+  --    → Proved above as no-retraction-algebraic
+  --
+  -- STILL GEOMETRIC POSTULATES (require real D² structure):
+  -- 1. Disk2 : Type₀
+  --    → For the actual FPT, need geometric D² ⊆ ℝ²
+  --    → For no-retraction only, Unit suffices
+  --
+  -- 2. isSetDisk2 : isSet Disk2
+  --    → Unit is a set (isPropUnit → isSetUnit)
+  --
+  -- 3. boundary-inclusion : Circle → Disk2
+  --    → Geometric: inclusion of S¹ as boundary of D²
+  --    → Algebraic: any map suffices for no-retraction
+  --
+  -- 4. Disk2IsCHaus : hasCHausStr Disk2
+  --    → Geometric property, but Unit is compact Hausdorff
+  --
+  -- 5. retraction-from-no-fixpoint
+  --    → This is PURELY GEOMETRIC and cannot be eliminated
+  --    → It constructs r : D² → S¹ from f with no fixed points
+  --    → Requires actual disk geometry (line intersection)
+
+  -- For Unit as D², we have these properties:
+  isSet-D²-algebraic : isSet D²-algebraic
+  isSet-D²-algebraic = isProp→isSet isPropUnit
+
+  -- But the full geometric theorem requires the actual disk
+  -- with proper boundary structure.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
