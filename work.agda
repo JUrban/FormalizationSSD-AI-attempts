@@ -14078,6 +14078,55 @@ module CohomologyModule where
   -- connecting our abstract Circle/Disk2 to concrete Cubical HITs.
 
 -- =============================================================================
+-- I-LOCALIZATION / SHAPE THEORY APPROACH (tex Section 3011)
+-- =============================================================================
+--
+-- The tex file provides an alternative proof of no-retraction using
+-- I-localization (shape theory), which avoids direct cohomology calculations.
+--
+-- KEY CONCEPTS (from tex lines 3013-3079):
+--
+-- 1. I-LOCALIZATION MODALITY L_I (tex line 3013):
+--    - X is I-local if L_I(X) = X (constant maps I → X suffice)
+--    - X is I-contractible if L_I(X) = 1 (has trivial shape)
+--
+-- 2. ℤ AND Bool ARE I-LOCAL (tex Lemma 3015 Z-I-local):
+--    - From H⁰(I,ℤ) = ℤ, we get ℤ → ℤ^I is an equivalence
+--    - Bool is I-local as a retract of ℤ
+--    - Corollary: Any Stone space is I-local (closed under products)
+--
+-- 3. Bℤ IS I-LOCAL (tex Lemma 3027 BZ-I-local):
+--    - Identity types in Bℤ are ℤ-torsors, hence I-local
+--    - The map Bℤ → Bℤ^I is an embedding
+--    - From H¹(I,ℤ) = 0, it's also surjective, hence equivalence
+--
+-- 4. CONTINUOUSLY PATH-CONNECTED ⟹ I-CONTRACTIBLE (tex Lemma 3035):
+--    - If X has a point x with ∀y. ∃f:I→X. f(0)=x ∧ f(1)=y
+--    - Then X is I-contractible
+--
+-- 5. ℝ AND D² ARE I-CONTRACTIBLE (tex Corollary 3047 R-I-contractible):
+--    - Both ℝ and D² = {(x,y):ℝ² | x²+y² ≤ 1} satisfy the above
+--    - Hence L_I(ℝ) = L_I(D²) = 1
+--
+-- 6. SHAPE OF S¹ IS Bℤ (tex Proposition 3051 shape-S1-is-BZ):
+--    - L_I(ℝ/ℤ) = Bℤ = K(ℤ,1)
+--    - Proof uses pullback square: ℝ → 1, ℝ/ℤ → Bℤ
+--    - Fibers of ℝ → ℝ/ℤ are ℤ-torsors
+--    - Since Bℤ is I-local and ℝ is I-contractible, ℝ/ℤ → Bℤ is I-localization
+--
+-- 7. NO-RETRACTION FROM SHAPE THEORY (tex Proposition 3074 no-retraction):
+--    - If r : D² → S¹ were a retraction of S¹ → D²
+--    - Applying L_I gives: L_I(r) : L_I(D²) → L_I(S¹)
+--    -                   = L_I(r) : 1 → Bℤ
+--    - This would be a retraction of Bℤ → 1
+--    - But then Bℤ ≃ 1, contradicting that Bℤ = K(ℤ,1) is not contractible
+--
+-- This shape-theoretic proof is cleaner than the cohomology proof because:
+-- - It uses structural facts about I-contractibility and I-locality
+-- - The key computation L_I(D²) = 1 follows from D² being path-connected
+-- - The key computation L_I(S¹) = Bℤ uses universal property of ℝ/ℤ
+
+-- =============================================================================
 -- Summary of postulate elimination status
 -- =============================================================================
 --
