@@ -14555,7 +14555,7 @@ module CohomologyModule where
 -- 3. Apply to get Bool-I-local from I being 0-connected
 -- Alternative: Use H⁰(I,ℤ) = ℤ from cohomology-I (tex Prop 2991)
 --
--- TYPE-CHECKED CODE IN THIS FILE:
+-- TYPE-CHECKED CODE IN THIS FILE (15 verified lemmas):
 -- 1. H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (line ~14109)
 -- 2. isILocal : Type₀ → Type₁ (line ~14221)
 -- 3. ℤ-Unit-ℤ-is-zero (NoRetractionFunctorialProof, line ~14370)
@@ -14563,6 +14563,26 @@ module CohomologyModule where
 -- 5. Unit-terminal-STF (ShapeTheoryFromCubical, line ~14609)
 -- 6. no-group-retract-of-Unit-STF (ShapeTheoryFromCubical, line ~14625)
 -- 7. ℤ-not-retract-of-Unit-STF (ShapeTheoryFromCubical, line ~14654)
+-- 8. is-1-connected (ConnectednessForBoolILocal, line ~14795)
+-- 9. connected-1-to-set-constant (ConnectednessForBoolILocal, line ~14800)
+-- 10. loop-winding-is-1 (FundamentalGroupS1, line ~14960)
+-- 11. loop-neq-refl (FundamentalGroupS1, line ~14966)
+-- 12. S¹-not-contractible (FundamentalGroupS1, line ~14978)
+-- 13. ΩS¹≃ℤ (FundamentalGroupS1, line ~14998)
+-- 14. isContr→is-simply-connected (SimplyConnectedTypes, line ~15040)
+-- 15. coHom-functorial-comp (CohomologyFunctorialityTypeChecked, line ~15105)
+--
+-- NO-RETRACTION THEOREM STATUS:
+-- All algebraic infrastructure is now type-checked:
+-- ✓ H¹(S¹) ≅ ℤ (cohomology of circle)
+-- ✓ ℤ is not a retract of Unit (group theory)
+-- ✓ S¹ is not contractible (homotopy)
+-- ✓ Cohomology functoriality (induced maps)
+--
+-- Remaining geometric axioms:
+-- - Disk2 : CHaus (the 2-disk as compact Hausdorff)
+-- - isContrDisk2 : isContr Disk2 (disk is contractible)
+-- - disk-cohomology-vanishes : H¹(D²) ≅ 0 (follows from contractibility)
 --
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
