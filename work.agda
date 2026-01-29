@@ -12641,11 +12641,33 @@ module ZILocalModule where
   open IntervalTopologyModule
   open import Cubical.Data.Int using (ℤ)
 
-  -- Any map I → Z is constant
+  -- Any map I → Z is constant (tex Lemma Z-I-local ~3015)
+  --
+  -- PROOF STRUCTURE:
+  -- 1. The interval I is connected (path-connected and locally path-connected)
+  -- 2. ℤ is discrete (0-truncated)
+  -- 3. A continuous map from a connected space to a discrete space must be constant
+  --
+  -- Alternatively, from cohomology:
+  -- - interval-cohomology-vanishes implies no non-trivial maps I → K(ℤ,0) = ℤ
+  --
+  -- Dependencies:
+  -- - interval-cohomology-vanishes or connectedness of I
+  -- - discreteness of ℤ
+  --
   postulate
     Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
 
-  -- Any map I → Bool is constant
+  -- Any map I → Bool is constant (tex Lemma BZ-I-local ~3027)
+  --
+  -- PROOF STRUCTURE:
+  -- Same argument as Z-I-local:
+  -- 1. I is connected
+  -- 2. Bool is discrete (0-truncated)
+  -- 3. Connected → discrete implies constant
+  --
+  -- This is the key lemma used in the Intermediate Value Theorem proof.
+  --
   postulate
     Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
 
