@@ -23775,6 +23775,7 @@ module FormalizationStatusTC where
   -- 9. NoRetractionTC - tex Proposition 3074
   -- 10. FormalizationStatusTC - this module (status overview)
   -- 11. OmnisciencePrinciplesTC - MP, LLPO, NOT-WLPO (tex 475, 530, 541)
+  -- 12. MainApplicationTheoremsTC - IVT, BFT (tex 3082, 3099)
 
 -- =============================================================================
 -- Module: OmnisciencePrinciplesTC
