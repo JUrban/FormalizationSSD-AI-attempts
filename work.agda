@@ -12601,8 +12601,17 @@ module IntervalTopologyModule where
   inFiniteClosedIntervals : (n : ℕ) → FiniteClosedIntervals n → UnitInterval → Type₀
   inFiniteClosedIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) ≤I x) × (x ≤I snd (Is i))
 
+  -- tex Lemma 2614: Image of decidable subset is finite union of closed intervals
+  --
+  -- PROOF STRUCTURE:
+  -- 1. D : 2^ℕ → Bool is decidable, so D = ⋃_i C_i where C_i are clopen
+  -- 2. Each C_i is a cylinder set {α | α↾n = s} for some s : Fin n → Bool
+  -- 3. cs(C_i) = [a_i, b_i] is a closed interval (since cs is monotone)
+  -- 4. The image cs({α | D(α) = true}) = ⋃_i cs(C_i) = ⋃_i [a_i, b_i]
+  --
+  -- Key insight: clopen sets in 2^ℕ map to closed intervals in I under cs
+  --
   postulate
-    -- tex Lemma 2614: Image of decidable subset is finite union of closed intervals
     ImageDecidableClosedInterval : (D : DecSubsetCantor)
       → ∥ Σ[ n ∈ ℕ ] Σ[ Is ∈ FiniteClosedIntervals n ]
           ((x : UnitInterval) → (Σ[ α ∈ CantorSpace ] (D α ≡ true) × (cs α ≡ x))
@@ -12615,14 +12624,27 @@ module IntervalTopologyModule where
   inFiniteOpenIntervals : (n : ℕ) → FiniteOpenIntervals n → UnitInterval → Type₀
   inFiniteOpenIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) <I x) × (x <I snd (Is i))
 
+  -- tex Lemma 2673: Complement of finite union of closed is finite union of open
+  --
+  -- PROOF STRUCTURE:
+  -- Given [a₁,b₁] ∪ ... ∪ [aₙ,bₙ], the complement is:
+  -- (−∞,min(a_i)) ∪ (b₁,a_j) ∪ ... ∪ (max(b_i),∞) intersected with [0,1]
+  -- This is a finite union of open intervals (0,c₁) ∪ (c₁,c₂) ∪ ... ∪ (cₖ,1)
+  --
   postulate
-    -- tex Lemma 2673
     complementClosedIntervalOpenIntervals : (n : ℕ) → (Is : FiniteClosedIntervals n)
       → ∥ Σ[ m ∈ ℕ ] Σ[ Os ∈ FiniteOpenIntervals m ]
           ((x : UnitInterval) → (¬ inFiniteClosedIntervals n Is x)
                               ↔ inFiniteOpenIntervals m Os x) ∥₁
 
-  -- Main theorems (postulated)
+  -- tex Lemma 2729: Open sets in I have standard form
+  --
+  -- PROOF STRUCTURE:
+  -- Every open set U in I is a countable union of open intervals.
+  -- This follows from:
+  -- 1. I is second countable (has countable base of open intervals)
+  -- 2. Every open set is union of basic opens
+  --
   postulate
     IntervalTopologyStandard : (U : UnitInterval → hProp ℓ-zero)
       → ((x : UnitInterval) → isOpenProp (U x))
