@@ -14059,6 +14059,9 @@ module CohomologyModule where
     postulate
       Cn-exact-sequence : (n : ℕ) → Type₀
 
+  -- NOTE: This postulate is NOW DERIVABLE from isContrUnitInterval!
+  -- See: IntervalCohomologyFromContr.interval-cohomology-vanishes-derived
+  -- The derivation uses isContrUnitInterval via transport from H¹(Unit) = 0.
   postulate
     interval-cohomology-vanishes : H¹ IntervalIsCHausModule.UnitInterval ≡ 0ₕ 1
 
@@ -14118,6 +14121,10 @@ module CohomologyModule where
   --
   -- Key imports needed:
   --   open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0)
+  --
+  -- NOTE: This postulate is NOW DERIVABLE from isContrDisk2!
+  -- See: DiskCohomologyFromContr.disk-cohomology-vanishes-derived
+  -- The derivation uses isContrDisk2 via transport from H¹(Unit) = 0.
   postulate
     disk-cohomology-vanishes : H¹ BrouwerFixedPointTheoremModule.Disk2 ≡ 0ₕ 1
 
@@ -14313,6 +14320,36 @@ module CohomologyModule where
     --
     -- disk-cohomology-from-contr : isContr Disk2 → GroupIso (coHomGr 1 Disk2) UnitGroup₀
     -- disk-cohomology-from-contr contr = Hⁿ-contrType≅0 0 contr
+
+  -- =========================================================================
+  -- NoRetractionFromCohomology: Derivation structure for no-retraction
+  -- =========================================================================
+  --
+  -- DERIVATION STRATEGY (tex Proposition 3074):
+  --
+  -- The no-retraction theorem states: There is no retraction r : D² → S¹
+  --
+  -- PROOF (from cohomology functoriality):
+  -- 1. H¹(S¹) ≅ ℤ (nontrivial, from Hⁿ-Sⁿ≅ℤ in Cubical library)
+  -- 2. H¹(D²) = 0 (from isContrDisk2 via disk-cohomology-vanishes-derived)
+  -- 3. If r : D² → S¹ is a retraction of i : S¹ → D², then r ∘ i = id_S¹
+  -- 4. Functoriality: i* : H¹(D²) → H¹(S¹) and r* : H¹(S¹) → H¹(D²)
+  -- 5. (r ∘ i)* = i* ∘ r* = id on H¹(S¹) (contravariant functor)
+  -- 6. So r* : H¹(S¹) → H¹(D²) has left inverse, hence is injective
+  -- 7. But H¹(S¹) ≅ ℤ is nontrivial and H¹(D²) ≅ 0 is trivial
+  -- 8. No injection ℤ → 0 exists → Contradiction!
+  --
+  -- KEY COMPONENTS NOW AVAILABLE:
+  -- - isContr-H¹-Disk2 : isContr (H¹ Disk2) (from DiskCohomologyFromContr)
+  -- - H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (imported above)
+  --
+  -- REMAINING COMPONENTS NEEDED:
+  -- - Circle ≡ S¹ (connect abstract Circle to Cubical library's S¹)
+  -- - coHom-funct functoriality (from Cubical.ZCohomology.Base)
+  -- - Proof that injection from nontrivial group to trivial group is impossible
+  --
+  -- NOTE: The no-retraction postulate in BrouwerFixedPointTheoremModule
+  -- is derivable from these cohomology facts once Circle ≡ S¹ is established.
 
   -- =========================================================================
   -- I-LOCALITY MODULE (tex Section 3011, Lemmas 3015-3035)
