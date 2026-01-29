@@ -14091,16 +14091,28 @@ module CohomologyModule where
   -- H¹(S¹,ℤ) ≅ ℤ (fundamental cohomology of the circle)
   -- See: Cubical.ZCohomology.Groups.Sn.H¹-S¹≅ℤ
   --
-  -- ELIMINATION STRATEGY for circle-cohomology:
-  -- 1. Define Circle := S¹ from Cubical.HITs.S1.Base
-  -- 2. Import H¹-S¹≅ℤ : GroupIso (coHomGr 1 S¹) ℤGroup
-  --    from Cubical.ZCohomology.Groups.Sn
-  -- 3. The GroupIso gives us an Iso (coHom 1 ℤAbGroup S¹) ℤ
-  -- 4. Convert Iso to Equiv using isoToEquiv
+  -- HOMOTOPY TYPE NOTE:
+  -- The abstract Circle in BrouwerFixedPointTheoremModule is postulated as a SET:
+  --   isSetCircle : isSet Circle
+  -- But the Cubical library's S¹ is a 1-GROUPOID (not a set):
+  --   It has π₁(S¹) = ℤ, so identity types in S¹ are nontrivial.
   --
-  -- Key imports needed:
-  --   open import Cubical.HITs.S1 using (S¹; base; loop)
-  --   open import Cubical.ZCohomology.Groups.Sn using (H¹-S¹≅ℤ; Hⁿ-Sⁿ≅ℤ)
+  -- This means Circle ≠ S¹ as types! However, for the cohomology argument:
+  -- - Circle is meant to represent the topological circle (compact, connected)
+  -- - The cohomology H¹(Circle) still captures the essential fact
+  -- - The postulate circle-cohomology : H¹ Circle ≃ ℤ is justified
+  --
+  -- In Synthetic Stone Duality, compact Hausdorff spaces are represented as SETS
+  -- (0-truncated types), capturing their Stone space structure. The circle as
+  -- a CHaus space IS a set, even though the homotopical circle S¹ is not.
+  --
+  -- ELIMINATION STRATEGY for circle-cohomology:
+  -- Since Circle (as CHaus) is a set but S¹ (as HIT) is not, we cannot directly
+  -- identify them. Instead, the postulate expresses that the abstract Circle
+  -- has the cohomological properties expected of the topological circle.
+  --
+  -- For a full derivation, one would need to show that the quotient-based
+  -- construction of the circle (as a CHaus space) has H¹ ≃ ℤ.
   postulate
     circle-cohomology : H¹ BrouwerFixedPointTheoremModule.Circle ≃ ℤ
 
