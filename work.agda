@@ -22610,5 +22610,86 @@ module PostulateStatusTC where
   -- without axiomatizing Euclidean geometry.
 
 -- =============================================================================
+-- IntervalConnectednessDerivedTC: Deriving Bool-I-local from Connectedness
+-- =============================================================================
+--
+-- This module shows how Bool-I-local and Z-I-local can be derived from
+-- the 1-connectedness of the unit interval. The interval I is path-connected
+-- because any two points x,y ∈ I can be connected by the linear path
+-- t ↦ (1-t)·x + t·y. This path-connectedness implies 1-connectedness.
+--
+-- The derivation proceeds in three steps:
+-- 1. Postulate is-1-connected-I : is-1-connected UnitInterval (from path-connectedness)
+-- 2. Apply connected-1-to-set-constant (already type-checked in ConnectednessForBoolILocal)
+-- 3. Conclude Bool-I-local-derived and Z-I-local-derived
+--
+-- This reduces the geometric content to a single postulate about I's structure.
+
+module IntervalConnectednessDerivedTC where
+  open ConnectednessForBoolILocal
+  open IntervalIsCHausModule using (UnitInterval)
+  open import Cubical.Data.Bool using (Bool; isSetBool)
+  open import Cubical.Data.Int using (ℤ; isSetℤ)
+
+  -- =========================================================================
+  -- THE KEY POSTULATE: Unit interval is 1-connected
+  -- =========================================================================
+  --
+  -- Justification from tex (Lemma 3035 and surrounding):
+  -- I is continuously path-connected: for any x,y : I, the path
+  --   γ : I → I  where γ(t) = (1-t)·x + t·y
+  -- connects x to y. This uses the ordered field structure of ℝ.
+  --
+  -- Path-connectedness implies 1-connectedness:
+  -- is-1-connected A = isContr ∥ A ∥₁
+  -- If A is inhabited and path-connected, then ∥ A ∥₁ is contractible.
+  --
+  -- This postulate captures the convex structure of I ⊂ ℝ.
+
+  postulate
+    is-1-connected-I : is-1-connected UnitInterval
+
+  -- =========================================================================
+  -- DERIVED: Bool-I-local from 1-connectedness
+  -- =========================================================================
+  --
+  -- Using the type-checked lemma connected-1-to-set-constant:
+  --   connected-1-to-set-constant : is-1-connected A → isSet B → (f : A → B)
+  --                               → (x y : A) → f x ≡ f y
+
+  Bool-I-local-derived : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  Bool-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetBool
+
+  -- =========================================================================
+  -- DERIVED: Z-I-local from 1-connectedness (tex Lemma 3015)
+  -- =========================================================================
+  --
+  -- ℤ is a set (has decidable equality, hence 0-truncated).
+  -- By the same argument as Bool-I-local-derived.
+
+  Z-I-local-derived : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
+  Z-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetℤ
+
+  -- =========================================================================
+  -- SUMMARY: Postulate Reduction
+  -- =========================================================================
+  --
+  -- BEFORE (in ZILocalModule):
+  --   postulate Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
+  --   postulate Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  --
+  -- AFTER (this module):
+  --   postulate is-1-connected-I : is-1-connected UnitInterval
+  --   (Bool-I-local-derived and Z-I-local-derived follow by proof)
+  --
+  -- This reduces 2 postulates to 1, with the single postulate capturing
+  -- the geometric content (convexity/path-connectedness of I).
+  --
+  -- BENEFIT: The proof that connected types have constant maps to sets
+  -- (connected-1-to-set-constant) is now TYPE-CHECKED, so the only
+  -- remaining gap is the 1-connectedness of I which follows from its
+  -- ordered field structure.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
