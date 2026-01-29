@@ -23006,5 +23006,128 @@ module PathConnectedContractibleTC where
   -- needed for shape computations in the synthetic setting.
 
 -- =============================================================================
+-- NotWLPOTC: ¬WLPO from Stone Duality (tex Theorem NotWLPO, line 475)
+-- =============================================================================
+
+-- This module proves ¬WLPO (negation of Weak Limited Principle of Omniscience)
+-- using Stone Duality.
+--
+-- The key insight is that WLPO would give a decidable predicate on Cantor space
+-- (2^ℕ) that distinguishes "all zeros" sequences. By Stone Duality, any such
+-- decidable predicate corresponds to an element of the free Boolean algebra
+-- freeBA ℕ. But finite Boolean terms can't distinguish sequences that agree
+-- on finitely many positions.
+
+module NotWLPOTC where
+  import WLPO as WLPOmod
+  open CantorIsStoneModule
+  open import Axioms.StoneDuality using (evaluationMap; SDHomVersion)
+  open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA)
+
+  -- The key connection: decidable predicates on Cantor space ≅ elements of freeBA ℕ
+  --
+  -- Stone Duality (sd-axiom) says:
+  --   evaluationMap : ⟨ freeBA ℕ ⟩ → (Sp(freeBA ℕ) → Bool) is an equivalence
+  --
+  -- Since Sp(freeBA ℕ) ≃ CantorSpace (via Sp-freeBA-ℕ-Iso):
+  --   evaluationMap : ⟨ freeBA ℕ ⟩ ≃ (CantorSpace → Bool)
+  --
+  -- Therefore, every function f : CantorSpace → Bool corresponds to
+  -- some element c ∈ freeBA ℕ.
+
+  -- Using the Stone Duality axiom, we get that evaluationMap is an equivalence
+  SD-freeBA-ℕ : isEquiv (evaluationMap freeBA-ℕ-Booleω)
+  SD-freeBA-ℕ = sd-axiom freeBA-ℕ-Booleω
+
+  -- The inverse of evaluationMap gives us: (Sp(freeBA ℕ) → Bool) → ⟨ freeBA ℕ ⟩
+  decPred→elem' : (Sp freeBA-ℕ-Booleω → Bool) → ⟨ freeBA ℕ ⟩
+  decPred→elem' = invEq (_ , SD-freeBA-ℕ)
+
+  -- The round-trip property: evaluating the element at a point gives back f
+  decPred→elem-property' : (g : Sp freeBA-ℕ-Booleω → Bool) (h : Sp freeBA-ℕ-Booleω)
+    → evaluationMap freeBA-ℕ-Booleω (decPred→elem' g) h ≡ g h
+  decPred→elem-property' g h = funExt⁻ (secEq (_ , SD-freeBA-ℕ) g) h
+
+  -- The main theorem: WLPO leads to contradiction
+  --
+  -- Proof outline:
+  -- 1. If WLPO holds, define decide-fn : 2^ℕ → Bool by decide-fn(α) = if (∀n.αn=false) then false else true
+  -- 2. By Stone Duality, decide-fn comes from some element c ∈ freeBA ℕ
+  -- 3. The WLPO module shows this leads to contradiction via PlayingWithWLPO'
+
+  -- We need to transport the decidable predicate through the isomorphism
+  -- Sp(freeBA ℕ) ≃ CantorSpace
+
+  -- The evaluation function goes: h $cr c where c ∈ freeBA ℕ and h : Sp(freeBA ℕ)
+  -- Using the universal property: Sp(freeBA ℕ) ≃ (ℕ → Bool) = binarySequence
+  -- A point h corresponds to a sequence α, and h $cr c = α $freeℕ c (from WLPO.agda)
+
+  -- ¬WLPO theorem using the infrastructure from WLPO.agda
+  ¬WLPO : ¬ WLPO
+  ¬WLPO wlpo = contradiction'
+    where
+    -- If WLPO holds, we can define a decidability function
+    decide-fn : binarySequence → Bool
+    decide-fn α with wlpo α
+    ... | yes _ = false  -- all zeros → false
+    ... | no _ = true    -- not all zeros → true
+
+    -- The biconditional property that WLPO gives us
+    WLPOf : (α : binarySequence) → (decide-fn α ≡ false) ↔ ((n : ℕ) → α n ≡ false)
+    WLPOf α = forward , backward
+      where
+      forward : decide-fn α ≡ false → (n : ℕ) → α n ≡ false
+      forward fα=false with wlpo α
+      ... | yes all-zero = all-zero
+      ... | no _ = ex-falso (true≢false fα=false)
+
+      backward : ((n : ℕ) → α n ≡ false) → decide-fn α ≡ false
+      backward all-zero with wlpo α
+      ... | yes _ = refl
+      ... | no ¬all-zero = ex-falso (¬all-zero all-zero)
+
+    -- The key: by Stone Duality, decide-fn corresponds to some element c ∈ freeBA ℕ
+    -- We use the isomorphism Sp(freeBA ℕ) ≃ binarySequence from WLPO.agda
+
+    -- The element c ∈ freeBA ℕ corresponding to decide-fn
+    -- We use the Stone Duality axiom to get c from decide-fn
+    elem-c : ⟨ freeBA ℕ ⟩
+    elem-c = decPred→elem' (decide-fn ∘ Iso.fun Sp-freeBA-ℕ-Iso)
+
+    -- The Stone Duality property: decide-fn α = evaluate α $cr elem-c
+    -- This uses the universal property of freeBA and the SD axiom
+    SD-property : (α : binarySequence) → decide-fn α ≡ WLPOmod.evaluate α $cr elem-c
+    SD-property α = sym step2
+      where
+      -- evaluate α : BoolHom (freeBA ℕ) BoolBR = Sp(freeBA ℕ)
+      h : Sp freeBA-ℕ-Booleω
+      h = WLPOmod.evaluate α
+
+      step1 : evaluationMap freeBA-ℕ-Booleω elem-c h ≡ decide-fn (Iso.fun Sp-freeBA-ℕ-Iso h)
+      step1 = decPred→elem-property' (decide-fn ∘ Iso.fun Sp-freeBA-ℕ-Iso) h
+
+      step2 : WLPOmod.evaluate α $cr elem-c ≡ decide-fn α
+      step2 = step1
+
+    -- Open the PlayingWithWLPO' module with our parameters to get the contradiction
+    open WLPOmod.PlayingWithWLPO' decide-fn WLPOf elem-c SD-property
+
+  -- SUMMARY: Omniscience Principles Status
+  --
+  -- 1. LLPO (Lesser Limited Principle of Omniscience)
+  --    STATUS: PROVED as llpo-from-SD (line ~6512)
+  --    Uses: ℕ∞ ↔ Sp B∞ correspondence, Sp-f-surjective
+  --
+  -- 2. Markov's Principle (MP)
+  --    STATUS: PROVED as mp = mp-from-SD sd-axiom (line ~1488)
+  --    Uses: MarkovLib from OmnisciencePrinciples.Markov
+  --
+  -- 3. ¬WLPO (Negation of Weak Limited Principle of Omniscience)
+  --    STATUS: PROVED as ¬WLPO above
+  --    Uses: Stone Duality (sd-axiom), PlayingWithWLPO' from WLPO.agda
+  --
+  -- All three omniscience principles from the README goal are now complete!
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
