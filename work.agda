@@ -12663,32 +12663,41 @@ module ZILocalModule where
   open IntervalTopologyModule
   open import Cubical.Data.Int using (ℤ)
 
-  -- Any map I → Z is constant (tex Lemma Z-I-local ~3015)
+  -- Any map I → Z is constant (tex Lemma 3015 Z-I-local)
   --
-  -- PROOF STRUCTURE:
-  -- 1. The interval I is connected (path-connected and locally path-connected)
-  -- 2. ℤ is discrete (0-truncated)
-  -- 3. A continuous map from a connected space to a discrete space must be constant
+  -- TEX PROOF (from cohomology):
+  -- By cohomology-I (tex Prop 2991), we have H⁰(I,ℤ) = ℤ.
+  -- This means the map ℤ → ℤ^I (constant maps) is an equivalence.
+  -- Therefore ℤ is I-local, i.e., every map I → ℤ is constant.
   --
-  -- Alternatively, from cohomology:
-  -- - interval-cohomology-vanishes implies no non-trivial maps I → K(ℤ,0) = ℤ
+  -- CONNECTEDNESS PROOF:
+  -- 1. I is connected (path-connected, hence connected)
+  -- 2. ℤ is discrete (decidable equality, hence 0-truncated)
+  -- 3. A continuous map from connected to discrete is constant
+  --    (preimages of singletons are clopen; if one is nonempty, it's all of I)
   --
   -- Dependencies:
-  -- - interval-cohomology-vanishes or connectedness of I
-  -- - discreteness of ℤ
+  -- - H⁰(I,ℤ) = ℤ (from interval-cohomology-vanishes or explicit calculation)
+  -- - Alternatively: connectedness of I and discreteness of ℤ
   --
   postulate
     Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
 
-  -- Any map I → Bool is constant (tex Lemma BZ-I-local ~3027)
+  -- Any map I → Bool is constant (tex Lemma 3015, corollary)
   --
-  -- PROOF STRUCTURE:
-  -- Same argument as Z-I-local:
+  -- TEX PROOF:
+  -- Bool is I-local because it's a retract of ℤ (tex Lemma 3015 proof).
+  -- Since I-local types are closed under retracts, Bool is I-local.
+  --
+  -- DIRECT PROOF (connectedness):
   -- 1. I is connected
-  -- 2. Bool is discrete (0-truncated)
-  -- 3. Connected → discrete implies constant
+  -- 2. Bool is discrete (has decidable equality)
+  -- 3. f : I → Bool continuous means f⁻¹(true), f⁻¹(false) are clopen
+  -- 4. I connected + both clopen means one is empty, so f is constant
   --
-  -- This is the key lemma used in the Intermediate Value Theorem proof.
+  -- KEY USAGE: This is the crucial lemma for the Intermediate Value Theorem.
+  -- The IVT proof constructs a characteristic function I → Bool that would
+  -- be non-constant if no solution exists, contradicting Bool-I-local.
   --
   postulate
     Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
