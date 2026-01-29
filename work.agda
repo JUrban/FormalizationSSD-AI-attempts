@@ -23666,5 +23666,115 @@ module NoRetractionTC where
   -- formalizing the L_I modality or H¹ functoriality.
 
 -- =============================================================================
+-- Module: FormalizationStatusTC
+-- Summary of formalization status for main-monolithic.tex
+-- =============================================================================
+--
+-- This module provides an overview of what has been type-checked vs postulated.
+
+module FormalizationStatusTC where
+
+  -- =========================================================================
+  -- MAIN THEOREMS STATUS
+  -- =========================================================================
+  --
+  -- OMNISCIENCE PRINCIPLES (tex Theorems 475, 500, 541):
+  -- ✓ Markov's Principle (MP): TYPE-CHECKED as mp-from-SD
+  -- ✓ LLPO: TYPE-CHECKED as llpo-from-SD
+  -- ✓ ¬WLPO: TYPE-CHECKED as NOT-WLPO in NotWLPOTC
+  --
+  -- INTERMEDIATE VALUE THEOREM (tex Theorem 3082):
+  -- ✓ IntermediateValueTheorem: TYPE-CHECKED
+  --   Uses: Bool-I-local, InhabitedClosedSubSpaceClosedCHaus
+  --
+  -- BROUWER FIXED POINT THEOREM (tex Theorem 3099):
+  -- ✓ BrouwerFixedPointTheorem: TYPE-CHECKED
+  --   Depends on: no-retraction (POSTULATED)
+  --
+  -- NO-RETRACTION THEOREM (tex Proposition 3074):
+  -- ○ no-retraction: POSTULATED
+  --   Justified by: NoRetractionTC documentation via shape theory
+
+  -- =========================================================================
+  -- STONE DUALITY (tex Section 2.4)
+  -- =========================================================================
+  --
+  -- ✓ sd-axiom: StoneDualityAxiom (AXIOM - mentioned in tex)
+  -- ✓ Sp : Booleω → Type (spectrum of Boolean algebra)
+  -- ✓ CantorIsStone: Sp(freeBA N) ≃ 2^N
+  -- ✓ N_infty correspondence: N∞ ↔ Sp B∞
+  -- ✓ f-injective: PROVED as f-injective-from-trunc
+
+  -- =========================================================================
+  -- COMPACT HAUSDORFF SPACES (tex Sections 2.5-2.6)
+  -- =========================================================================
+  --
+  -- ○ CHausFiniteIntersectionProperty: POSTULATED (tex Lemma 1981)
+  -- ○ CHausSeperationOfClosedByOpens: POSTULATED (tex Lemma 2058)
+  -- ✓ InhabitedClosedSubSpaceClosedCHaus: TYPE-CHECKED
+
+  -- =========================================================================
+  -- COHOMOLOGY (tex Section 3.2)
+  -- =========================================================================
+  --
+  -- ✓ circle-cohomology: H¹(S¹) ≃ ℤ - TYPE-CHECKED via H¹-S¹≃ℤ-witness
+  -- ○ disk-cohomology-vanishes: H¹(D²) ≃ 0 - POSTULATED
+  -- ○ interval-cohomology-vanishes: H¹(I) ≃ 0 - POSTULATED (tex Prop 2991)
+
+  -- =========================================================================
+  -- SHAPE THEORY (tex Section 3.3)
+  -- =========================================================================
+  --
+  -- ✓ Z-I-local: TYPE-CHECKED in IntervalConnectednessDerivedTC
+  -- ✓ Bool-I-local: TYPE-CHECKED in IntervalConnectednessDerivedTC
+  -- ✓ Stone-I-local: TYPE-CHECKED in StoneILocalTC
+  -- ○ BZ-I-local: POSTULATED in BZILocalTC (uses interval-cohomology-vanishes)
+  --
+  -- DOCUMENTED (partially type-checked):
+  -- - PathConnectedContractibleTC (tex Lemma 3035)
+  -- - RIContractibleTC (tex Corollary 3047)
+  -- - ShapeS1IsBZTC (tex Proposition 3051)
+  -- - IntervalCohomologyTC (tex Proposition 2991)
+  -- - NoRetractionTC (tex Proposition 3074)
+
+  -- =========================================================================
+  -- INTENTIONAL AXIOMS (mentioned in tex)
+  -- =========================================================================
+  --
+  -- These are axioms that the tex file explicitly assumes:
+  -- - sd-axiom: StoneDualityAxiom
+  -- - surj-formal-axiom: FormalSurjectionsAreSurjectionsAxiom
+  -- - localChoice-axiom: LocalChoiceAxiom
+  -- - dependentChoice-axiom: DependentChoiceAxiom
+  -- - countableChoice: Countable choice for sets
+
+  -- =========================================================================
+  -- FORWARD-REFERENCE POSTULATES (organizational, not gaps)
+  -- =========================================================================
+  --
+  -- These are proved later in the file but declared early due to dependencies:
+  -- - llpo (line 1721) → proved as llpo-from-SD (line 6512)
+  -- - closedSigmaClosed (line 3306) → proved as closedSigmaClosed-derived (line 9143)
+  -- - f-injective (line 4741) → proved as f-injective-from-trunc (line 8134)
+  --
+  -- These represent file organization issues, NOT mathematical gaps.
+  -- The formalization has NO circular dependencies.
+
+  -- =========================================================================
+  -- TC MODULES ADDED (type-checked documentation)
+  -- =========================================================================
+  --
+  -- 1. IntervalConnectednessDerivedTC - Z/Bool-I-local (tex 3015)
+  -- 2. StoneILocalTC - Stone spaces I-local
+  -- 3. BZILocalTC - BZ is I-local (tex 3027)
+  -- 4. PathConnectedContractibleTC - tex Lemma 3035
+  -- 5. NotWLPOTC - tex Theorem 475
+  -- 6. ShapeS1IsBZTC - tex Proposition 3051
+  -- 7. RIContractibleTC - tex Corollary 3047
+  -- 8. IntervalCohomologyTC - tex Proposition 2991
+  -- 9. NoRetractionTC - tex Proposition 3074
+  -- 10. FormalizationStatusTC - this module (status overview)
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
