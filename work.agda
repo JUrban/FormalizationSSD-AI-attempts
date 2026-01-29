@@ -23874,5 +23874,83 @@ module OmnisciencePrinciplesTC where
   -- 3. It places Synthetic Stone Duality in Brouwerian/constructive territory
 
 -- =============================================================================
+-- Module: MainApplicationTheoremsTC
+-- Documents tex Theorems 3082 and 3099: IVT and Brouwer FPT
+-- =============================================================================
+--
+-- These are the main topological application theorems of Synthetic Stone Duality.
+
+module MainApplicationTheoremsTC where
+
+  -- =========================================================================
+  -- INTERMEDIATE VALUE THEOREM (tex Theorem 3082)
+  -- =========================================================================
+  --
+  -- TEX STATEMENT (lines 3082-3086):
+  -- "For any f:I→I and y:I such that f(0)≤y and y≤f(1),
+  --  there exists x:I such that f(x)=y."
+  --
+  -- PROOF SUMMARY (tex lines 3088-3097):
+  -- 1. By InhabitedClosedSubSpaceClosedCHaus, ∃x. f(x)=y is closed,
+  --    hence ¬¬-stable, so proceed by contradiction
+  -- 2. If no such x exists, then f(x) ≠ y for all x:I
+  -- 3. By LesserOpenPropAndApartness, a<b or b<a for distinct a,b:I
+  -- 4. Define U₀ = {x:I | f(x) < y} and U₁ = {x:I | y < f(x)}
+  -- 5. These are disjoint and cover I, so I = U₀ + U₁
+  -- 6. This gives a non-constant function I → 2
+  -- 7. Contradiction with Z-I-local (Bool-I-local)
+  --
+  -- TYPE-CHECKED AT: IntermediateValueTheorem (line ~12955)
+  --
+  -- Key dependencies used:
+  -- - Bool-I-local (from IntervalConnectednessDerivedTC)
+  -- - InhabitedClosedSubSpaceClosedCHaus
+  -- - LesserOpenPropAndApartness
+
+  open IntermediateValueTheoremModule public
+    using (IntermediateValueTheorem)
+
+  -- =========================================================================
+  -- BROUWER FIXED POINT THEOREM (tex Theorem 3099)
+  -- =========================================================================
+  --
+  -- TEX STATEMENT (lines 3099-3101):
+  -- "For all f:D²→D² there exists x:D² such that f(x)=x."
+  --
+  -- PROOF SUMMARY (tex lines 3103-3111):
+  -- 1. By InhabitedClosedSubSpaceClosedCHaus, proceed by contradiction
+  -- 2. Assume f(x) ≠ x for all x:D²
+  -- 3. For any x:D², set d_x = x - f(x) (nonzero by assumption)
+  -- 4. Let H_x(t) = f(x) + t·d_x be the line through x and f(x)
+  -- 5. Find intersection of H_x with ∂D² = S¹ with t > 0
+  -- 6. This defines r:D² → S¹ with r|_{S¹} = id (a retraction)
+  -- 7. Contradiction with no-retraction (tex Proposition 3074)
+  --
+  -- TYPE-CHECKED AT: BrouwerFixedPointTheorem (line ~13135)
+  --
+  -- Key dependencies:
+  -- - no-retraction (POSTULATED, justified by NoRetractionTC)
+  -- - InhabitedClosedSubSpaceClosedCHaus
+  -- - Real number and disk geometry (POSTULATED)
+
+  open BrouwerFixedPointTheoremModule public
+    using (BrouwerFixedPointTheorem; Disk2; Circle)
+
+  -- =========================================================================
+  -- CONSTRUCTIVE SIGNIFICANCE (tex Remark after 3111)
+  -- =========================================================================
+  --
+  -- TEX REMARK (lines 3113-3115):
+  -- "In constructive reverse mathematics, both the intermediate value theorem
+  --  and Brouwer's fixed-point theorem are equivalent to LLPO. But LLPO does
+  --  not hold in real cohesive homotopy type theory, so Shulman proves a
+  --  variant of the statement involving a double negation."
+  --
+  -- In Synthetic Stone Duality:
+  -- - LLPO holds (proved as llpo-from-SD)
+  -- - Therefore IVT and BFT hold WITHOUT double negation modification
+  -- - This is a distinctive feature of this approach vs cohesive HoTT
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
