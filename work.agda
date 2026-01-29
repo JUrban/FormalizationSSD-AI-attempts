@@ -13902,11 +13902,34 @@ module CohomologyModule where
     -- 3. ℤ^{Iₙ^{~2}} → ℤ^{Iₙ^{~3}} kernel equals image of ℤ^{Iₙ}
     --    (every cocycle is a coboundary, proven by the path sum construction)
 
-    -- The finite approximation exact sequence
-    -- This is essentially section-exact for the "standard section" 0 ∈ Iₙ
+    -- The finite approximation exact sequence (tex Lemma 2973)
     --
-    -- We express this as: for any n, the Čech complex for (Iₙ, ~_n, ℤ) is exact
-    -- where Iₙ = Fin(2^n) and ~_n is the adjacent relation
+    -- TEX STATEMENT: For any n : ℕ, the sequence
+    --   0 → ℤ --d₀--> ℤ^{Iₙ} --d₁--> ℤ^{Iₙ^{~2}} --d₂--> ℤ^{Iₙ^{~3}}
+    -- is exact, where:
+    --   d₀(k) = (λ _. k)                          -- constant function
+    --   d₁(α)(u,v) = α(v) - α(u)                  -- coboundary
+    --   d₂(β)(u,v,w) = β(v,w) - β(u,w) + β(u,v)  -- standard Čech differential
+    --
+    -- TEX PROOF (lines 2983-2988):
+    -- 1. Exact at ℤ: The map ℤ → ℤ^{Iₙ} is injective since Iₙ is inhabited
+    --    (just evaluate at any point to recover k)
+    --
+    -- 2. Exact at ℤ^{Iₙ}: A cocycle α : ℤ^{Iₙ} has d₁(α) = 0
+    --    ⟹ for all u ~_n v, we have α(v) = α(u)
+    --    ⟹ by description-Cn-simn, α is constant (adjacent elements are related)
+    --    ⟹ α ∈ im(d₀), so ker(d₁) = im(d₀)
+    --
+    -- 3. Exact at ℤ^{Iₙ^{~2}}: A cocycle β : ℤ^{Iₙ^{~2}} has d₂(β) = 0
+    --    ⟹ for all u ~_n v ~_n w, β(u,v) + β(v,w) = β(u,w)
+    --    ⟹ Define α(k) = β(0,1) + β(1,2) + ... + β(k-1,k) (telescoping sum)
+    --    ⟹ Then β(k,l) = α(l) - α(k), so β = d₁(α) is a coboundary
+    --    ⟹ ker(d₂) = im(d₁)
+    --
+    -- This is the key lemma for proving interval-cohomology-vanishes via
+    -- sequential colimits: each finite approximation has exact Čech complex,
+    -- and exactness is preserved under sequential colimits.
+    --
     postulate
       Cn-exact-sequence : (n : ℕ) → Type₀
 
