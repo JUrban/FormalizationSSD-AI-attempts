@@ -63,6 +63,9 @@ open import Cubical.Homotopy.EilenbergMacLane.Properties as EMProp using (EM≃�
 open import Cubical.Homotopy.EilenbergMacLane.GroupStructure as EMGS using (_+ₖ_; -ₖ_; rCancelₖ)
 open import Cubical.Homotopy.Connected using (isConnected; isConnectedFun)
 open import Cubical.Cohomology.EilenbergMacLane.Base using (coHom; _+ₕ_; -ₕ_; 0ₕ)
+-- ZCohomology group isomorphisms from the Cubical library
+open import Cubical.ZCohomology.Groups.Unit using (isContrHⁿ-Unit; Hⁿ-contrType≅0)
+open import Cubical.ZCohomology.Groups.Sn using (H¹-S¹≅ℤ; Hⁿ-Sⁿ≅ℤ)
 open import Cubical.Algebra.AbGroup.Base using (AbGroup; AbGroupStr; IsAbGroup; AbGroup→Group; makeIsAbGroup)
 open import Cubical.Algebra.Group.Base using (Group; GroupStr)
 open import Cubical.Homotopy.Loopspace using (Ω; Ω→; isOfHLevelΩ)
@@ -13631,7 +13634,13 @@ module CohomologyModule where
   --
   -- We show H¹(I,ℤ) = 0 where I is the unit interval.
   --
-  -- The proof uses the Čech cover structure of I.
+  -- The proof uses contractibility: I is contractible, so H¹(I) = 0.
+  -- In the Cubical library:
+  --   - isContrHⁿ-Unit : (n : ℕ) → isContr (coHom (suc n) Unit)
+  --   - Hⁿ-contrType≅0 : isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
+  --
+  -- If we had isContr UnitInterval, we could use Hⁿ-contrType≅0 directly.
+  -- The interval [0,1] is contractible (via retraction to any point).
 
   postulate
     interval-cohomology-vanishes : H¹ IntervalIsCHausModule.UnitInterval ≡ 0ₕ 1
@@ -13649,12 +13658,23 @@ module CohomologyModule where
   -- 3. If r : D² → S¹ is a retraction of i : S¹ → D², then
   --    r∗ : H¹(S¹) → H¹(D²) is injective (since r ∘ i = id)
   -- 4. But ℤ doesn't inject into 0, contradiction.
+  --
+  -- Cubical library references:
+  --   - H¹-S¹≅ℤ : GroupIso (coHomGr 1 (S₊ 1)) ℤGroup
+  --   - Hⁿ-Sⁿ≅ℤ : (n : ℕ) → GroupIso (coHomGr (suc n) (S₊ (suc n))) ℤGroup
+  --   - Hⁿ-contrType≅0 : isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
+  --
+  -- To eliminate these postulates, we would need:
+  --   - Circle ≃ S₊ 1 (equivalence with Cubical's circle)
+  --   - isContr Disk2 (disk is contractible)
 
   -- H¹(S¹,ℤ) ≅ ℤ (fundamental cohomology of the circle)
+  -- See: Cubical.ZCohomology.Groups.Sn.H¹-S¹≅ℤ
   postulate
     circle-cohomology : H¹ BrouwerFixedPointTheoremModule.Circle ≃ ℤ
 
   -- H¹(D²,ℤ) = 0 (disk is contractible)
+  -- See: Cubical.ZCohomology.Groups.Unit.Hⁿ-contrType≅0
   postulate
     disk-cohomology-vanishes : H¹ BrouwerFixedPointTheoremModule.Disk2 ≡ 0ₕ 1
 
