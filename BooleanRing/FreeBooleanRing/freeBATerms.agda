@@ -69,10 +69,47 @@ module _ {ℓ : Level} {A : Type} (B : BooleanRing ℓ) (f g : BoolHom (freeBA A
       agreeOnTerms (-T t)         = pres- (snd f) (π t) ∙ 
                                     cong -_ (agreeOnTerms t) ∙ 
                                     (sym $ pres- (snd g) (π t))
-      agreeOnTerms (t ·T s)       = pres· (snd f) (π t) (π s) ∙ 
-                                    cong₂ _·_ (agreeOnTerms t) (agreeOnTerms s) ∙ 
-                                    (sym $ pres· (snd g) (π t) (π s)) 
-  
+      agreeOnTerms (t ·T s)       = pres· (snd f) (π t) (π s) ∙
+                                    cong₂ _·_ (agreeOnTerms t) (agreeOnTerms s) ∙
+                                    (sym $ pres· (snd g) (π t) (π s))
 
+-- Key lemma: includeBATermsSurj sends Tvar to generator
+-- This requires unfolding both opaque definitions
+opaque
+  unfolding generator
+  unfolding includeBATermsSurj
+  includeBATerms-Tvar : {A : Type} → (a : A) → fst includeBATermsSurj (Tvar a) ≡ generator a
+  includeBATerms-Tvar a = refl
+
+-- Additional lemmas: includeBATermsSurj preserves ring operations
+-- These follow from the definition as quotientHom ∘ includeTerm
+opaque
+  unfolding freeBA
+  unfolding includeBATermsSurj
+
+  -- includeBATermsSurj preserves addition
+  includeBATerms-+ : {A : Type} → (t s : freeBATerms A) →
+    fst includeBATermsSurj (t +T s) ≡ BooleanRingStr._+_ (snd (freeBA A)) (fst includeBATermsSurj t) (fst includeBATermsSurj s)
+  includeBATerms-+ t s = refl
+
+  -- includeBATermsSurj preserves multiplication
+  includeBATerms-· : {A : Type} → (t s : freeBATerms A) →
+    fst includeBATermsSurj (t ·T s) ≡ BooleanRingStr._·_ (snd (freeBA A)) (fst includeBATermsSurj t) (fst includeBATermsSurj s)
+  includeBATerms-· t s = refl
+
+  -- includeBATermsSurj preserves negation
+  includeBATerms-- : {A : Type} → (t : freeBATerms A) →
+    fst includeBATermsSurj (-T t) ≡ BooleanRingStr.-_ (snd (freeBA A)) (fst includeBATermsSurj t)
+  includeBATerms-- t = refl
+
+  -- includeBATermsSurj preserves 0 (false maps to 0)
+  includeBATerms-0 : {A : Type} →
+    fst (includeBATermsSurj {A = A}) (Tconst false) ≡ BooleanRingStr.𝟘 (snd (freeBA A))
+  includeBATerms-0 = refl
+
+  -- includeBATermsSurj preserves 1 (true maps to 1)
+  includeBATerms-1 : {A : Type} →
+    fst (includeBATermsSurj {A = A}) (Tconst true) ≡ BooleanRingStr.𝟙 (snd (freeBA A))
+  includeBATerms-1 = refl
 
 

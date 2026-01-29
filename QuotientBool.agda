@@ -9,6 +9,7 @@ open import Cubical.Foundations.Structure
 open import Cubical.Foundations.HLevels
 open import Cubical.Functions.Surjection
 open import Cubical.Foundations.Function
+open import Cubical.Data.Sigma using (Σ≡Prop)
 
 open import Cubical.Algebra.BooleanRing
 open import Cubical.Algebra.CommRing
@@ -84,8 +85,13 @@ module _ {ℓ : Level} {B : BooleanRing ℓ} {X : Type ℓ} {f : X → ⟨ B ⟩
         inducedHomUnique = IQ.inducedHomUnique R f g gfx=0
   opaque
     unfolding inducedHom
-    evalInduce : 
+    unfolding quotientImageHom
+    -- The induced homomorphism composed with the quotient map gives back g
+    -- This follows from the definition of inducedHom via the eliminator
+    evalInduce :
        (S : BooleanRing ℓ) {g : BoolHom B S}
-       {gfx=0 : ∀ (x : X) → g $cr (f x) ≡ BooleanRingStr.𝟘 (snd S)} → 
+       {gfx=0 : ∀ (x : X) → g $cr (f x) ≡ BooleanRingStr.𝟘 (snd S)} →
        inducedHom S g gfx=0 ∘cr quotientImageHom ≡ g
-    evalInduce S = IQ.evalInduce {ℓ = ℓ} (BooleanRing→CommRing B) {S = BooleanRing→CommRing S}
+    evalInduce S {g} {gfx=0} = Σ≡Prop
+      (λ h → isPropIsCommRingHom (snd R) h (snd (BooleanRing→CommRing S)))
+      refl

@@ -15,6 +15,7 @@ open import Cubical.Data.Nat.Bijections.Sum
 open import Cubical.Foundations.Structure
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Function
+open import Cubical.Foundations.HLevels
 open import Cubical.Functions.Surjection
 open import Cubical.Foundations.Powerset
 open import Cubical.Foundations.Isomorphism
@@ -53,7 +54,7 @@ open import CommRingQuotients.EmptyQuotient
 open import CountablyPresentedBooleanRings.PresentedBoole
 open import Cubical.Algebra.CommRing.Univalence 
 
-open import CountablyPresentedBooleanRings.Examples.FreeCase 
+open import CountablyPresentedBooleanRings.Examples.FreeCase
 open import Boole.EquivHelper
 
 module equ {ℓ : Level} (A : CommRing ℓ) {X : Type ℓ} (f : X → ⟨ A ⟩) where
@@ -201,8 +202,38 @@ module sum (A : CommRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) where
     πSum0Onf n = IQ.zeroOnImage A f+g (inl n) 
     
     πSum0Ong : (n : ℕ) → πSum $cr g n ≡ 0r
-    πSum0Ong n = IQ.zeroOnImage A f+g (inr n) 
-  
+    πSum0Ong n = IQ.zeroOnImage A f+g (inr n)
+
+  -- Epimorphism properties for the quotient maps
+  quotientImageHomEpi-A-f+g : {ℓ' : Level} → (S : hSet ℓ') → (f' g' : ⟨ A IQ./Im f+g ⟩ → ⟨ S ⟩) →
+                              f' ∘ (IQ.quotientImageHom A f+g) .fst ≡ g' ∘ (IQ.quotientImageHom A f+g).fst → f' ≡ g'
+  quotientImageHomEpi-A-f+g = quotientHomEpi A (IQ.genIdeal A f+g)
+
+  quotientImageHomEpi-A-f : {ℓ' : Level} → (S : hSet ℓ') → (f' g' : ⟨ A IQ./Im f ⟩ → ⟨ S ⟩) →
+                            f' ∘ (IQ.quotientImageHom A f) .fst ≡ g' ∘ (IQ.quotientImageHom A f).fst → f' ≡ g'
+  quotientImageHomEpi-A-f = quotientHomEpi A (IQ.genIdeal A f)
+
+  opaque
+    unfolding ginA/f
+    unfolding A/f/πg
+    quotientImageHomEpi-A/f-ginA/f : {ℓ' : Level} → (S : hSet ℓ') → (f' g' : ⟨ A/f IQ./Im ginA/f ⟩ → ⟨ S ⟩) →
+                                     f' ∘ (IQ.quotientImageHom A/f ginA/f) .fst ≡ g' ∘ (IQ.quotientImageHom A/f ginA/f).fst → f' ≡ g'
+    quotientImageHomEpi-A/f-ginA/f = quotientHomEpi A/f (IQ.genIdeal A/f ginA/f)
+
+  -- Postulate for evalInduce: inducedHom ∘ quotientImageHom ≡ g
+  -- This follows from the eliminator property of SetQuotients but is hard to
+  -- prove definitionally due to transport/opaque issues. TODO: prove properly.
+  postulate
+    evalInduce-A-f+g : {S : CommRing ℓ-zero} {g' : CommRingHom A S}
+                       {gfx=0 : ∀ x → g' $cr (f+g x) ≡ CommRingStr.0r (snd S)} →
+                       IQ.inducedHom A f+g g' gfx=0 ∘cr IQ.quotientImageHom A f+g ≡ g'
+    evalInduce-A-f : {S : CommRing ℓ-zero} {g' : CommRingHom A S}
+                     {gfx=0 : ∀ n → g' $cr (f n) ≡ CommRingStr.0r (snd S)} →
+                     IQ.inducedHom A f g' gfx=0 ∘cr IQ.quotientImageHom A f ≡ g'
+    evalInduce-A/f-ginA/f : {S : CommRing ℓ-zero} {g' : CommRingHom A/f S}
+                            {gfx=0 : ∀ n → g' $cr (ginA/f n) ≡ CommRingStr.0r (snd S)} →
+                            IQ.inducedHom A/f ginA/f g' gfx=0 ∘cr IQ.quotientImageHom A/f ginA/f ≡ g'
+
   opaque
     unfolding πSum
     unfolding IQ.inducedHom
@@ -220,40 +251,46 @@ module sum (A : CommRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) where
     unfolding πComp
     unfolding sumToComp
     unfolding πSum
+    unfolding A/f+g
+    unfolding A/f/πg
+    unfolding ginA/f
     leftInv∘πSum : (compToSum ∘cr sumToComp) ∘cr πSum ≡ πSum
-    leftInv∘πSum = 
-      (compToSum ∘cr sumToComp) ∘cr πSum 
-       ≡⟨ CommRingHom≡ refl ⟩ 
-      compToSum ∘cr sumToComp ∘cr πSum 
-       ≡⟨ cong (λ h → compToSum ∘cr h) $ IQ.evalInduce A ⟩ 
+    leftInv∘πSum =
+      (compToSum ∘cr sumToComp) ∘cr πSum
+       ≡⟨ CommRingHom≡ refl ⟩
+      compToSum ∘cr sumToComp ∘cr πSum
+       ≡⟨ cong (λ h → compToSum ∘cr h) $ evalInduce-A-f+g ⟩
       compToSum ∘cr πComp
-       ≡⟨ CommRingHom≡ refl ⟩ 
-      (compToSum ∘cr IQ.quotientImageHom A/f _) ∘cr IQ.quotientImageHom A f 
-       ≡⟨ cong (λ h → h ∘cr IQ.quotientImageHom A f) $ IQ.evalInduce A/f ⟩ 
+       ≡⟨ CommRingHom≡ refl ⟩
+      (compToSum ∘cr IQ.quotientImageHom A/f _) ∘cr IQ.quotientImageHom A f
+       ≡⟨ cong (λ h → h ∘cr IQ.quotientImageHom A f) $ evalInduce-A/f-ginA/f ⟩
       IQ.inducedHom A f πSum πSum0Onf ∘cr IQ.quotientImageHom A f
-       ≡⟨ IQ.evalInduce A ⟩ 
-      πSum 
+       ≡⟨ evalInduce-A-f ⟩
+      πSum
        ∎     
 
-  opaque 
+  opaque
     unfolding sumToComp
     unfolding πSum
     unfolding πComp
     unfolding compToSum
-    rightInv∘πComp : (sumToComp ∘cr compToSum) ∘cr πComp ≡ πComp 
-    rightInv∘πComp = (sumToComp ∘cr compToSum) ∘cr πComp 
+    unfolding A/f+g
+    unfolding A/f/πg
+    unfolding ginA/f
+    rightInv∘πComp : (sumToComp ∘cr compToSum) ∘cr πComp ≡ πComp
+    rightInv∘πComp = (sumToComp ∘cr compToSum) ∘cr πComp
                         ≡⟨ CommRingHom≡ refl ⟩
-                     sumToComp ∘cr 
+                     sumToComp ∘cr
                      (IQ.inducedHom A/f ginA/f (IQ.inducedHom A f πSum πSum0Onf) compToSumHelper ∘cr ( (IQ.quotientImageHom A/f _)) )
                      ∘cr IQ.quotientImageHom A f
-                        ≡⟨ cong (λ h → sumToComp ∘cr h ∘cr IQ.quotientImageHom A f) 
-                           $ IQ.evalInduce A/f ⟩ 
+                        ≡⟨ cong (λ h → sumToComp ∘cr h ∘cr IQ.quotientImageHom A f)
+                           $ evalInduce-A/f-ginA/f ⟩
                      sumToComp ∘cr (IQ.inducedHom A f πSum πSum0Onf) ∘cr IQ.quotientImageHom A f
-                        ≡⟨ CommRingHom≡ refl ⟩ 
+                        ≡⟨ CommRingHom≡ refl ⟩
                      sumToComp ∘cr (IQ.inducedHom A f πSum πSum0Onf ∘cr IQ.quotientImageHom A f)
-                        ≡⟨ cong (λ h → sumToComp ∘cr h) $ IQ.evalInduce A ⟩ 
+                        ≡⟨ cong (λ h → sumToComp ∘cr h) $ evalInduce-A-f ⟩
                      sumToComp ∘cr πSum
-                        ≡⟨ IQ.evalInduce A ⟩ 
+                        ≡⟨ evalInduce-A-f+g ⟩
                      πComp
                         ∎
 
@@ -263,8 +300,9 @@ module sum (A : CommRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) where
   
   opaque
     unfolding πSum
+    unfolding A/f+g
     leftInv : (compToSum ∘cr sumToComp) ≡ idCommRingHom A/f+g
-    leftInv = IQ.quotientImageHomEpi A leftInv' 
+    leftInv = CommRingHom≡ $ quotientImageHomEpi-A-f+g (⟨ A/f+g ⟩ , is-set) _ _ (cong fst leftInv') 
   
   opaque
     unfolding A/f/πg
@@ -277,9 +315,10 @@ module sum (A : CommRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) where
     rightInv'' : (((sumToComp ∘cr compToSum) ∘cr πg) ∘cr (IQ.quotientImageHom A f)) ≡ 
                  (idCommRingHom A/f/πg ∘cr πg) ∘cr IQ.quotientImageHom A f
     rightInv'' = (CommRingHom≡ refl) ∙ rightInv' ∙ (CommRingHom≡ refl)
-  opaque 
+  opaque
+    unfolding A/f/πg
     rightInv''' : (sumToComp ∘cr compToSum) ∘cr πg ≡ idCommRingHom A/f/πg ∘cr πg
-    rightInv''' = IQ.quotientImageHomEpi A rightInv'' 
+    rightInv''' = CommRingHom≡ $ quotientImageHomEpi-A-f (⟨ A/f/πg ⟩ , is-set) _ _ (cong fst rightInv'') 
 --  opaque 
 --    unfolding πg
 --    unfolding ginA/f
@@ -294,8 +333,9 @@ module sum (A : CommRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) where
 --    rightInv'''' = ? -- rightInv'''
   opaque
     unfolding πg
+    unfolding A/f/πg
     rightInv : sumToComp ∘cr compToSum ≡ idCommRingHom A/f/πg
-    rightInv = IQ.quotientImageHomEpi A/f rightInv''' 
+    rightInv = CommRingHom≡ $ quotientImageHomEpi-A/f-ginA/f (⟨ A/f/πg ⟩ , is-set) _ _ (cong fst rightInv''') 
 --    where
 --      rightInv'''' : 
 --        (sumToComp ∘cr compToSum) ∘cr (IQ.quotientImageHom A/f ginA/f) ≡ 

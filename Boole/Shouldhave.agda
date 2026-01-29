@@ -53,11 +53,11 @@ module _ {ℓ : Level}  (R : CommRing ℓ) {X : Type ℓ} {f : X → ⟨ R ⟩}
 
 opaque
   unfolding QB.quotientImageHom
-  unfolding QB.inducedHom 
-  QBEvalInduce : 
+  unfolding QB.inducedHom
+  QBEvalInduce :
      {ℓ : Level} (B : BooleanRing ℓ) {X : Type ℓ} {f : X → ⟨ B ⟩}
      {S : BooleanRing ℓ} {g : BoolHom B S}
-     {gfx=0 : ∀ (x : X) → g $cr (f x) ≡ BooleanRingStr.𝟘 (snd S)} → 
+     {gfx=0 : ∀ (x : X) → g $cr (f x) ≡ BooleanRingStr.𝟘 (snd S)} →
      QB.inducedHom {B = B} {f = f} S g gfx=0 ∘cr QB.quotientImageHom {B = B} ≡ g
-  QBEvalInduce {ℓ} B {S = S} = IQ.evalInduce {ℓ = ℓ} (BooleanRing→CommRing B) {S = BooleanRing→CommRing S}
+  QBEvalInduce {ℓ} B {X} {f} {S} {g} {gfx=0} = QB.evalInduce {B = B} {X = X} {f = f} S {g} {gfx=0}
    
