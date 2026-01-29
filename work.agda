@@ -12466,7 +12466,18 @@ module IntervalTopologyModule where
     ≤I-isClosed : (x y : UnitInterval) → isClosedProp (≤I-hProp x y)
 
   -- tex Remark 2610: x≠y is equivalent to (x<y) ∨ (y<x)
-  -- This is the apartness characterization
+  --
+  -- This is the apartness characterization of the unit interval I.
+  -- In classical analysis, x ≠ y iff |x - y| > 0 iff x < y or y < x.
+  --
+  -- PROOF SKETCH (for real numbers):
+  -- (→) If x ≠ y, then either x < y or y < x by trichotomy of reals
+  -- (←) If x < y or y < x, then clearly x ≠ y by irreflexivity of <
+  --
+  -- KEY USAGE: This is essential for the Intermediate Value Theorem proof.
+  -- If f(x) ≠ y, then we get f(x) < y or y < f(x), which partitions I
+  -- into the disjoint open sets U₀ = {x | f(x) < y} and U₁ = {x | y < f(x)}.
+  --
   postulate
     ≠I-apartness : (x y : UnitInterval)
       → (x ≡ y → ⊥) ↔ ((x <I y) ⊎ (y <I x))
@@ -12603,13 +12614,22 @@ module IntervalTopologyModule where
 
   -- tex Lemma 2614: Image of decidable subset is finite union of closed intervals
   --
-  -- PROOF STRUCTURE:
-  -- 1. D : 2^ℕ → Bool is decidable, so D = ⋃_i C_i where C_i are clopen
-  -- 2. Each C_i is a cylinder set {α | α↾n = s} for some s : Fin n → Bool
-  -- 3. cs(C_i) = [a_i, b_i] is a closed interval (since cs is monotone)
-  -- 4. The image cs({α | D(α) = true}) = ⋃_i cs(C_i) = ⋃_i [a_i, b_i]
+  -- TEX PROOF (from tex file lines 2617-2620):
+  -- 1. If D contains precisely the α : 2^ℕ with a fixed initial segment u : 2^n,
+  --    then cs(D) is a single closed interval [cs(u·0̄), cs(u·1̄)]
+  --    (where 0̄ = 000... and 1̄ = 111...)
+  -- 2. Any decidable subset of 2^ℕ is a finite union of such cylinder sets
+  -- 3. Therefore cs(D) is a finite union of closed intervals
   --
-  -- Key insight: clopen sets in 2^ℕ map to closed intervals in I under cs
+  -- PROOF STRUCTURE (more detail):
+  -- - Cylinder set: {α | α↾n = u} for fixed initial segment u : 2^n
+  -- - Image cs({α | α↾n = u}) = [cs(u·0̄), cs(u·1̄)] is closed interval
+  --   because cs is monotone and continuous
+  -- - General decidable D decomposes as finite union of cylinder sets
+  -- - Hence cs(D) = finite union of closed intervals
+  --
+  -- Key insight: The Cantor space topology (product topology) has clopen
+  -- cylinder sets as a basis, and cs maps these to closed intervals in I.
   --
   postulate
     ImageDecidableClosedInterval : (D : DecSubsetCantor)
@@ -12626,10 +12646,19 @@ module IntervalTopologyModule where
 
   -- tex Lemma 2673: Complement of finite union of closed is finite union of open
   --
-  -- PROOF STRUCTURE:
-  -- Given [a₁,b₁] ∪ ... ∪ [aₙ,bₙ], the complement is:
-  -- (−∞,min(a_i)) ∪ (b₁,a_j) ∪ ... ∪ (max(b_i),∞) intersected with [0,1]
-  -- This is a finite union of open intervals (0,c₁) ∪ (c₁,c₂) ∪ ... ∪ (cₖ,1)
+  -- TEX PROOF SKETCH (from tex file lines 2673-2676):
+  -- By induction on the number of closed intervals.
+  -- - Base: Empty union has complement I = (0,1), which is an open interval
+  -- - Inductive: Given ¬(⋃_{i<k} C_i) = ⋃_{j<l} O_j (finite union of open intervals)
+  --   and C_k closed, we need ¬(⋃_{i≤k} C_i) = ⋃ of opens
+  -- - Use ¬(A ∨ B) ↔ (¬A ∧ ¬B)
+  -- - ¬(⋃_{i≤k} C_i) = (⋃_{j<l} O_j) ∩ ¬C_k
+  -- - ¬C_k is open (complement of closed)
+  -- - Open ∩ Open = Open, and finite intersection of opens stays finite
+  --
+  -- FORMALIZATION GAP:
+  -- Need: inFiniteOpenIntervals is closed under intersection with opens
+  -- Need: complement of closed interval in I is union of ≤2 open intervals
   --
   postulate
     complementClosedIntervalOpenIntervals : (n : ℕ) → (Is : FiniteClosedIntervals n)
