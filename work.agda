@@ -12888,9 +12888,11 @@ module BrouwerFixedPointTheoremModule where
   Disk2CHaus : CHaus
   Disk2CHaus = Disk2 , Disk2IsCHaus
 
-  -- No retraction from D² to S¹ (from cohomology, tex Lemma ~3036)
+  -- No retraction from D² to S¹ (tex Proposition 3074)
   --
-  -- PROOF STRUCTURE (from cohomology):
+  -- =================================================================
+  -- PROOF STRUCTURE 1: Cohomology approach
+  -- =================================================================
   --
   -- Suppose r : D² → S¹ is a retraction with r ∘ boundary-inclusion = id.
   -- This induces a sequence of group homomorphisms on cohomology:
@@ -12911,6 +12913,32 @@ module BrouwerFixedPointTheoremModule where
   -- - circle-cohomology : H¹(S¹) ≃ ℤ (in CohomologyModule)
   -- - disk-cohomology-vanishes : H¹(D²) = 0 (in CohomologyModule)
   -- - Functoriality of H¹ (not yet formalized)
+  --
+  -- =================================================================
+  -- PROOF STRUCTURE 2: Shape-theoretic approach (tex Proposition 3074)
+  -- =================================================================
+  --
+  -- The tex file gives a more direct proof using shapes/localization:
+  --
+  -- 1. D² is I-contractible (tex Corollary 3047 R-I-contractible)
+  --    - Since D² is a closed, bounded, convex subset of ℝ², it is contractible
+  --    - The shape L_I(D²) = 1 (trivial)
+  --
+  -- 2. S¹ ≃ ℝ/ℤ has shape BZ (tex Proposition 3051 shape-S1-is-BZ)
+  --    - The shape L_I(S¹) = BZ = K(ℤ,1) (Eilenberg-MacLane space)
+  --
+  -- 3. If r : D² → S¹ is a retraction, it induces a map on shapes:
+  --    L_I(r) : L_I(D²) → L_I(S¹)
+  --           : 1 → BZ
+  --    with L_I(r) ∘ L_I(i) = id where i : S¹ → D² is the inclusion.
+  --
+  -- 4. But then BZ → 1 → BZ would be id, which is impossible since
+  --    BZ is not contractible (it has π₁(BZ) = ℤ ≠ 0).
+  --
+  -- This approach requires:
+  -- - I-localization (shape) theory for compact Hausdorff spaces
+  -- - Shape of D² is 1 (contractible shape)
+  -- - Shape of S¹ is BZ (Eilenberg-MacLane K(ℤ,1))
   --
   postulate
     no-retraction : (r : Disk2 → Circle)
@@ -13908,6 +13936,108 @@ module CohomologyModule where
 
   -- This completes the justification for the no-retraction postulate
   -- in BrouwerFixedPointTheoremModule
+
+  -- =========================================================================
+  -- Proof infrastructure: connecting cohomology to contractibility
+  -- =========================================================================
+  --
+  -- The Cubical library provides Hⁿ-contrType≅0, which gives:
+  --   isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
+  --
+  -- This means that for any contractible type A, H¹(A,ℤ) = 0.
+  --
+  -- For the Brouwer fixed point theorem, we need:
+  -- 1. H¹(D²,ℤ) = 0 (from isContr D²)
+  -- 2. H¹(S¹,ℤ) ≃ ℤ (from H¹-S¹≅ℤ in Cubical library)
+  --
+  -- The key observation is that if Disk2 is contractible (which it is,
+  -- being homeomorphic to Unit or {z : ℂ | |z| ≤ 1}), then H¹(Disk2) = 0.
+
+  module DiskCohomologyFromContr where
+    open import Cubical.Algebra.Group.Morphisms
+    open import Cubical.Algebra.Group.MorphismProperties
+    open BrouwerFixedPointTheoremModule using (Disk2; isSetDisk2)
+
+    -- If we could prove isContr Disk2, we would get:
+    -- H¹(Disk2,ℤ) ≅ UnitGroup₀ ≅ 0
+    --
+    -- The proof would be:
+    --   disk-cohomology-vanishes-from-contr : isContr Disk2 → H¹ Disk2 ≡ 0ₕ 1
+    --   disk-cohomology-vanishes-from-contr contr =
+    --     let iso = Hⁿ-contrType≅0 {n = 0} contr
+    --     in GroupIso→H¹≡0 iso
+    --
+    -- where GroupIso→H¹≡0 extracts that coHom 1 ≡ 0ₕ 1 from the isomorphism
+    -- with the trivial group.
+    --
+    -- The remaining gap is: postulate isContrDisk2 : isContr Disk2
+    -- which requires connecting Disk2 to a concrete disk definition
+    -- (e.g., the unit disk in ℂ or a quotient of I²).
+
+  -- =========================================================================
+  -- Circle cohomology: Using H¹-S¹≅ℤ from Cubical library
+  -- =========================================================================
+  --
+  -- The Cubical library already provides H¹-S¹≅ℤ, which gives:
+  --   GroupIso (coHomGr 1 (S₊ 1)) ℤGroup
+  --
+  -- where S₊ 1 = S¹ is the circle HIT.
+  --
+  -- To eliminate the circle-cohomology postulate, we would need:
+  -- 1. Circle (in BrouwerFixedPointTheoremModule) ≡ S¹ (from Cubical.HITs.S1)
+  -- 2. Extract the type-level equivalence from the group isomorphism
+
+  module CircleCohomologyFromLibrary where
+    open import Cubical.HITs.S1 using (S¹)
+    open import Cubical.HITs.Sn using (S₊)
+    open import Cubical.Algebra.Group.Morphisms
+    open import Cubical.Algebra.Group.MorphismProperties
+    open BrouwerFixedPointTheoremModule using (Circle; isSetCircle)
+
+    -- H¹-S¹≅ℤ gives: GroupIso (coHomGr 1 (S₊ 1)) ℤGroup
+    -- This is a group isomorphism at the truncated level.
+    --
+    -- If we had Circle ≡ S¹, we could transport:
+    --   circle-cohomology-from-library : Circle ≡ S¹ → H¹ Circle ≃ ℤ
+    --   circle-cohomology-from-library p =
+    --     let iso = H¹-S¹≅ℤ
+    --         -- GroupIso gives us an Iso on underlying types
+    --         -- Need to transport along Circle ≡ S¹
+    --     in {! extract from GroupIso !}
+    --
+    -- The key observation is that H¹-S¹≅ℤ already exists in the library,
+    -- we just need to connect our abstract Circle to the concrete S¹.
+
+  -- =========================================================================
+  -- No-retraction proof structure using cohomology
+  -- =========================================================================
+  --
+  -- The full proof of no-retraction uses functoriality of H¹:
+  --
+  -- Suppose r : D² → S¹ is a retraction of i : S¹ → D² (the boundary inclusion).
+  -- Then r ∘ i = id_{S¹}.
+  --
+  -- This induces a commutative diagram on cohomology:
+  --
+  --   H¹(S¹,ℤ)  --i*-->  H¹(D²,ℤ)  --r*-->  H¹(S¹,ℤ)
+  --       ℤ      --->       0       --->       ℤ
+  --
+  -- where:
+  -- - i* : H¹(S¹) → H¹(D²) is induced by boundary inclusion
+  -- - r* : H¹(D²) → H¹(S¹) is induced by retraction
+  -- - The composition r* ∘ i* = (r ∘ i)* = id* = id
+  --
+  -- But any map ℤ → 0 → ℤ composed must be 0, not id.
+  -- This is a contradiction.
+  --
+  -- FORMAL PROOF WOULD REQUIRE:
+  -- 1. Functoriality of H¹ (maps induce group homomorphisms)
+  -- 2. H¹(D²) = 0 (disk-cohomology-vanishes)
+  -- 3. H¹(S¹) ≃ ℤ (circle-cohomology)
+  -- 4. Any group homomorphism ℤ → 0 → ℤ factors through 0
+  --
+  -- These are all standard results, but formalizing them requires
+  -- connecting our abstract Circle/Disk2 to concrete Cubical HITs.
 
 -- =============================================================================
 -- Summary of postulate elimination status
