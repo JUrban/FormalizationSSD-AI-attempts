@@ -23776,6 +23776,9 @@ module FormalizationStatusTC where
   -- 10. FormalizationStatusTC - this module (status overview)
   -- 11. OmnisciencePrinciplesTC - MP, LLPO, NOT-WLPO (tex 475, 530, 541)
   -- 12. MainApplicationTheoremsTC - IVT, BFT (tex 3082, 3099)
+  -- 13. StoneSeparatedTC - Stone separation property (tex 1824)
+  -- 14. CHausFiniteIntersectionPropertyTC - FIP for CHaus (tex 1981)
+  -- 15. CHausSeperationOfClosedByOpensTC - CHaus normality (tex 2058)
 
 -- =============================================================================
 -- Module: OmnisciencePrinciplesTC
@@ -23951,6 +23954,201 @@ module MainApplicationTheoremsTC where
   -- - LLPO holds (proved as llpo-from-SD)
   -- - Therefore IVT and BFT hold WITHOUT double negation modification
   -- - This is a distinctive feature of this approach vs cohesive HoTT
+
+-- =============================================================================
+-- StoneSeparatedTC (tex Lemma 1824)
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents tex Lemma 1824: Stone spaces have the separation property.
+-- Disjoint closed subsets of a Stone space can be separated by a clopen (decidable) subset.
+
+module StoneSeparatedTC where
+  open import Axioms.StoneDuality using (Stone)
+  open StoneSeparatedModule
+
+  -- =========================================================================
+  -- TEX LEMMA 1824 - StoneSeparated
+  -- =========================================================================
+  --
+  -- STATEMENT (tex lines 1824-1827):
+  -- "Assume S : Stone with F,G : S → Closed such that F ∩ G = ∅.
+  --  Then there exists a decidable subset D : S → 2 such that F ⊆ D, G ⊆ ¬D."
+  --
+  -- PROOF SKETCH (tex lines 1828-1858):
+  -- 1. Assume S = Sp(B).
+  -- 2. By StoneClosedSubsets, for all n:ℕ there exist fₙ,gₙ:B such that:
+  --    x ∈ F ↔ ∀n. x(fₙ) = 0 and y ∈ G ↔ ∀n. y(gₙ) = 0
+  -- 3. Define hₖ by h_{2k} = fₖ and h_{2k+1} = gₖ
+  -- 4. Sp(B/(hₖ)_{k:ℕ}) = F ∩ G = ∅
+  -- 5. By SpectrumEmptyIff01Equal, there exist finite sets I,J ⊆ ℕ such that:
+  --    1 = (⋁_{i:I} fᵢ) ∨ (⋁_{j:J} gⱼ) in B
+  -- 6. Define D(x) = (x(⋁_{j:J} gⱼ) = 1)
+  -- 7. If y ∈ F: y(fᵢ) = 0 for all i:I, so y(⋁_{j:J} gⱼ) = 1, hence D(y) = true
+  -- 8. If x ∈ G: x(gⱼ) = 0 for all j:J, so x(⋁_{j:J} gⱼ) = 0, hence D(x) = false
+  -- Therefore F ⊆ D and G ⊆ ¬D
+  --
+  -- STATUS: POSTULATED (StoneSeparated at line ~10355)
+  --
+  -- Dependencies used in proof:
+  -- - StoneClosedSubsetsModule.SpOfQuotientBySeq: TYPE-CHECKED
+  --   Provides Sp(B/d) ≃ {x : Sp B | ∀n. x(dₙ) = 0}
+  -- - SpectrumEmptyIff01Equal: Documented but not directly type-checked as a lemma
+  --   The property is used implicitly via quotient Boolean ring machinery
+  --
+  -- KEY INSIGHT:
+  -- The separation property makes Stone spaces "totally disconnected" in the
+  -- classical sense: any two disjoint closed sets can be separated by clopens.
+  -- This is fundamental for compact Hausdorff separation properties.
+
+  -- Reference the postulated theorem
+  StoneSeparated-postulate : (S : Stone)
+    → (F G : ClosedSubsetOfStone S)
+    → ClosedSubsetsDisjoint S F G
+    → ∥ Σ[ D ∈ DecSubsetOfStone S ] (ClosedSubDec S F D) × (ClosedSubNotDec S G D) ∥₁
+  StoneSeparated-postulate = StoneSeparated
+
+  -- =========================================================================
+  -- TYPE-CHECKED INFRASTRUCTURE
+  -- =========================================================================
+  --
+  -- The following from StoneSeparatedModule is fully type-checked:
+  --
+  -- 1. ClosedSubsetOfStone S : Type₁
+  --    - Σ[ A ∈ (fst S → hProp) ] ((x : fst S) → isClosedProp (A x))
+  --
+  -- 2. DecSubsetOfStone S : Type₀
+  --    - fst S → Bool (decidable subset as a function to Bool)
+  --
+  -- 3. Membership predicates:
+  --    - _∈Dec_ : x ∈Dec D = (D x ≡ true)
+  --    - _∈Closed_ : x ∈Closed (A , _) = fst (A x)
+  --
+  -- 4. ClosedSubsetsDisjoint S F G : (x : fst S) → F(x) → G(x) → ⊥
+  --
+  -- 5. ClosedSubDec S F D : (x : fst S) → F(x) → D x ≡ true
+  --
+  -- 6. ClosedSubNotDec S G D : (x : fst S) → G(x) → D x ≡ false
+
+  -- Re-export key types
+  open StoneSeparatedModule public using
+    ( ClosedSubsetOfStone
+    ; DecSubsetOfStone
+    ; ClosedSubsetsDisjoint
+    ; ClosedSubDec
+    ; ClosedSubNotDec
+    ; closedComplementIsOpen
+    )
+
+-- =============================================================================
+-- CHausFiniteIntersectionPropertyTC (tex Lemma 1981)
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents tex Lemma 1981: Compact Hausdorff spaces have the
+-- finite intersection property for closed sets.
+
+module CHausFiniteIntersectionPropertyTC where
+  open CompactHausdorffModule using (CHaus)
+  open CHausFiniteIntersectionPropertyModule
+
+  -- =========================================================================
+  -- TEX LEMMA 1981 - CHausFiniteIntersectionProperty
+  -- =========================================================================
+  --
+  -- STATEMENT (tex lines 1981-1984):
+  -- "Given X : CHaus and Cₙ : X → Closed closed subsets such that ⋂_{n:ℕ} Cₙ = ∅,
+  --  there is some k:ℕ with ⋂_{n≤k} Cₙ = ∅."
+  --
+  -- PROOF SKETCH (tex lines 1985-2001):
+  -- 1. By CompactHausdorffClosed, reduce to Stone case
+  -- 2. By StoneClosedSubsets, assume Cₙ decidable
+  -- 3. So assume X = Sp(B) and cₙ : B such that:
+  --    Cₙ = {x : B → 2 | x(cₙ) = 0}
+  -- 4. We have: Sp(B/(cₙ)_{n:ℕ}) ≃ ⋂_{n:ℕ} Cₙ = ∅
+  -- 5. Hence 0 = 1 in B/(cₙ)_{n:ℕ}
+  -- 6. Therefore there exists k:ℕ with ⋁_{n≤k} cₙ = 1
+  -- 7. This means: ∅ = Sp(B/(cₙ)_{n≤k}) ≃ ⋂_{n≤k} Cₙ
+  --
+  -- STATUS: POSTULATED (CHausFiniteIntersectionProperty at line ~12092)
+  --
+  -- Dependencies:
+  -- - CompactHausdorffClosed: TYPE-CHECKED
+  -- - StoneClosedSubsets: TYPE-CHECKED (infrastructure)
+  -- - SpectrumEmptyIff01Equal: Used implicitly in quotient machinery
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- This is the topological "finite intersection property" (FIP) for
+  -- compact Hausdorff spaces. It's equivalent to compactness in classical
+  -- topology but stated here for countable families of closed sets.
+
+  -- Reference the postulated theorem
+  CHausFiniteIntersectionProperty-postulate : (X : CHaus)
+    → (C : ℕ → fst X → hProp ℓ-zero)
+    → ((n : ℕ) (x : fst X) → isClosedProp (C n x))
+    → ((x : fst X) → ((n : ℕ) → fst (C n x)) → ⊥)
+    → ∥ Σ[ k ∈ ℕ ] ((x : fst X) → Σ[ n ∈ Fin (suc k) ] fst (C (fst n) x) → ⊥) ∥₁
+  CHausFiniteIntersectionProperty-postulate = CHausFiniteIntersectionProperty
+
+-- =============================================================================
+-- CHausSeperationOfClosedByOpensTC (tex Lemma 2058)
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents tex Lemma 2058: Compact Hausdorff spaces are normal.
+-- Disjoint closed subsets can be separated by disjoint open neighborhoods.
+
+module CHausSeperationOfClosedByOpensTC where
+  open CompactHausdorffModule using (CHaus)
+  open CHausSeperationOfClosedByOpensModule
+
+  -- =========================================================================
+  -- TEX LEMMA 2058 - CHausSeperationOfClosedByOpens
+  -- =========================================================================
+  --
+  -- STATEMENT (tex lines 2058-2061):
+  -- "Assume X : CHaus and A,B ⊆ X closed such that A ∩ B = ∅.
+  --  Then there exist U,V ⊆ X open such that A ⊆ U, B ⊆ V and U ∩ V = ∅."
+  --
+  -- PROOF SKETCH (tex lines 2062-2076):
+  -- 1. Let q : S ↠ X be a surjective map with S : Stone
+  -- 2. q⁻¹(A) and q⁻¹(B) are closed in S
+  -- 3. By StoneSeperated (tex 1824), there exists D : S → 2 such that:
+  --    q⁻¹(A) ⊆ D and q⁻¹(B) ⊆ ¬D
+  -- 4. Note q(D) and q(¬D) are closed by CompactHausdorffClosed
+  -- 5. Since q⁻¹(A) ∩ ¬D = ∅, we have A ⊆ ¬q(¬D) := U
+  -- 6. Similarly B ⊆ ¬q(D) := V
+  -- 7. U and V are disjoint: ¬q(D) ∩ ¬q(¬D) = ¬(q(D) ∪ q(¬D)) = ¬X = ∅
+  --
+  -- STATUS: POSTULATED (CHausSeperationOfClosedByOpens at line ~12136)
+  --
+  -- Dependencies:
+  -- - StoneSeparated (tex 1824): POSTULATED
+  -- - CompactHausdorffClosed: TYPE-CHECKED
+  --
+  -- MATHEMATICAL SIGNIFICANCE:
+  -- This property makes CHaus spaces "normal" in the topological sense.
+  -- It's essential for proving Urysohn's lemma and the Tietze extension theorem.
+  -- In Synthetic Stone Duality, it follows from the separation property of
+  -- Stone spaces lifted through the CHaus → Stone surjection.
+
+  -- Reference the postulated theorem
+  CHausSeperationOfClosedByOpens-postulate :
+    (X : CHaus)
+    → (A B : fst X → hProp ℓ-zero)
+    → ((x : fst X) → isClosedProp (A x))
+    → ((x : fst X) → isClosedProp (B x))
+    → ((x : fst X) → fst (A x) → fst (B x) → ⊥)
+    → ∥ Σ[ U ∈ (fst X → hProp ℓ-zero) ] Σ[ V ∈ (fst X → hProp ℓ-zero) ]
+        ((x : fst X) → isOpenProp (U x)) ×
+        ((x : fst X) → isOpenProp (V x)) ×
+        ((x : fst X) → fst (A x) → fst (U x)) ×
+        ((x : fst X) → fst (B x) → fst (V x)) ×
+        ((x : fst X) → fst (U x) → fst (V x) → ⊥) ∥₁
+  CHausSeperationOfClosedByOpens-postulate = CHausSeperationOfClosedByOpens
 
 -- =============================================================================
 -- End of current formalization
