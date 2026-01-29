@@ -24703,5 +24703,116 @@ module FoundationalAxiomsTC where
   --    └── Convenience axiom for ℕ-indexed families
 
 -- =============================================================================
+-- COMPREHENSIVE DERIVABILITY SUMMARY
+-- =============================================================================
+--
+-- This section consolidates all postulate derivability relationships.
+--
+-- =========================================================================
+-- PRIMITIVE GEOMETRIC POSTULATES (justified by tex axioms)
+-- =========================================================================
+--
+-- 1. isContrUnitInterval : isContr UnitInterval (~line 12463)
+--    TEX: Corollary 3047 (R and D² are I-contractible)
+--    GEOMETRIC MEANING: [0,1] contracts to any point via H(x,t) = (1-t)·x + t·p
+--
+-- 2. isContrDisk2 : isContr Disk2 (~line 13049)
+--    TEX: Corollary 3047 (R and D² are I-contractible)
+--    GEOMETRIC MEANING: Disk contracts radially to center
+--
+-- =========================================================================
+-- DERIVABLE POSTULATES (from primitives above)
+-- =========================================================================
+--
+-- FROM isContrUnitInterval:
+--
+--   a) is-1-connected-I (~line 22851)
+--      DERIVED IN: IntervalConnectedFromContr.is-1-connected-I-derived (~line 14284)
+--      DERIVATION: isContr A → isContr ∥ A ∥₁ (contractible implies 1-connected)
+--
+--   b) Bool-I-local (~line derived at 22861)
+--      DERIVED FROM: is-1-connected-I via connected-1-to-set-constant
+--      PROOF: 1-connected types have constant maps to sets
+--
+--   c) Z-I-local (~line derived at 22871)
+--      DERIVED FROM: is-1-connected-I via connected-1-to-set-constant
+--      PROOF: Same as Bool-I-local
+--
+--   d) interval-cohomology-vanishes (~line 14058)
+--      DERIVED IN: IntervalCohomologyFromContr.interval-cohomology-vanishes-derived (~line 14227)
+--      DERIVATION: isContr A → H¹(A) = 0 via Hⁿ-contrType≅0
+--
+-- FROM isContrDisk2:
+--
+--   e) disk-cohomology-vanishes (~line 14133)
+--      DERIVED IN: DiskCohomologyFromContr.disk-cohomology-vanishes-derived (~line 14191)
+--      DERIVATION: isContr A → H¹(A) = 0 via Hⁿ-contrType≅0
+--
+-- =========================================================================
+-- POSTULATE REDUCTION SUMMARY
+-- =========================================================================
+--
+-- BEFORE (independent postulates):
+--   - is-1-connected-I
+--   - Bool-I-local
+--   - Z-I-local
+--   - interval-cohomology-vanishes
+--   - disk-cohomology-vanishes
+--   Total: 5 independent postulates
+--
+-- AFTER (with derivations):
+--   - isContrUnitInterval → {is-1-connected-I, Bool-I-local, Z-I-local, interval-cohomology-vanishes}
+--   - isContrDisk2 → disk-cohomology-vanishes
+--   Total: 2 primitive geometric postulates
+--
+-- NET REDUCTION: 5 → 2 (eliminated 3 independent postulates)
+--
+-- =========================================================================
+-- STRUCTURAL POSTULATES (require more infrastructure to derive)
+-- =========================================================================
+--
+-- 1. closedSigmaClosed (~line 3307)
+--    STATUS: DERIVABLE via ClosedSigmaClosedDerived.closedSigmaClosed-derived (~line 9143)
+--    BLOCKER: Forward reference (derived version defined later than usage)
+--
+-- 2. no-retraction (~line 13108)
+--    STATUS: DERIVABLE from cohomology functoriality (documented at ~line 14392)
+--    BLOCKER: Circle ≠ S¹ as types (CHaus set vs HIT 1-groupoid)
+--    ALTERNATIVE: Could use circle-cohomology postulate directly
+--
+-- 3. retraction-from-no-fixpoint (~line 13137)
+--    STATUS: Geometric construction (line intersection in D²)
+--    BLOCKER: Requires concrete disk embedding in ℝ²
+--
+-- =========================================================================
+-- REMAINING STEPS FOR FULL FORMALIZATION
+-- =========================================================================
+--
+-- 1. EASY: Add lemmas equating postulated and derived versions
+--    (They're propositionally equal since the types are propositions)
+--
+-- 2. MEDIUM: Reorganize file to eliminate forward-reference postulates
+--    (Move infrastructure earlier, replace postulates with definitions)
+--
+-- 3. HARD: Connect abstract Circle/Disk2 to Cubical library concrete types
+--    OR use shape-theoretic proof of no-retraction
+--
+-- 4. GEOMETRIC: Formalize line intersection for retraction-from-no-fixpoint
+--    (Requires embedding D² in ℝ², quadratic formula, etc.)
+--
+-- =========================================================================
+-- THEOREM STATUS
+-- =========================================================================
+--
+-- FULLY PROVED (modulo geometric postulates):
+--   - IntermediateValueTheorem (~line 12819)
+--   - BrouwerFixedPointTheorem (~line 13150)
+--
+-- INFRASTRUCTURE PROVED:
+--   - InhabitedClosedSubSpaceClosedCHaus
+--   - closedIsStable (closed props are ¬¬-stable)
+--   - connected-1-to-set-constant (1-connected → constant to sets)
+--
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
