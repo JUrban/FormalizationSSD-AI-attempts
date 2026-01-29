@@ -23779,6 +23779,7 @@ module FormalizationStatusTC where
   -- 13. StoneSeparatedTC - Stone separation property (tex 1824)
   -- 14. CHausFiniteIntersectionPropertyTC - FIP for CHaus (tex 1981)
   -- 15. CHausSeperationOfClosedByOpensTC - CHaus normality (tex 2058)
+  -- 16. StonePropertiesTC - foundational Stone lemmas (tex 251, 1636, 1628, 1613, 1770, 1906, 1930)
 
 -- =============================================================================
 -- Module: OmnisciencePrinciplesTC
@@ -24149,6 +24150,145 @@ module CHausSeperationOfClosedByOpensTC where
         ((x : fst X) → fst (B x) → fst (V x)) ×
         ((x : fst X) → fst (U x) → fst (V x) → ⊥) ∥₁
   CHausSeperationOfClosedByOpens-postulate = CHausSeperationOfClosedByOpens
+
+-- =============================================================================
+-- StonePropertiesTC - Foundational Stone Space Properties
+-- =============================================================================
+--
+-- Type-Checked Documentation Module
+--
+-- This module documents foundational Stone space lemmas that support the
+-- main theorems of Synthetic Stone Duality.
+
+module StonePropertiesTC where
+  open import Axioms.StoneDuality using (Stone)
+
+  -- =========================================================================
+  -- TEX LEMMA 251 - ClosedPropAsSpectrum
+  -- =========================================================================
+  --
+  -- STATEMENT: Any closed proposition P can be represented as Sp(B) for some B.
+  --
+  -- This is fundamental: closed propositions ARE spectra of Boolean algebras.
+  -- A proposition P is closed iff P ≃ Sp(B) for some B : Booleω.
+  --
+  -- TYPE-CHECKED AT: ClosedPropAsSpectrumModule (line ~8251)
+  --
+  -- This establishes the deep connection between:
+  -- - Logical closedness (under countable conjunctions)
+  -- - Topological closedness (spectrum of a Boolean algebra)
+
+  -- =========================================================================
+  -- TEX LEMMA 1636 - StoneEqualityClosed
+  -- =========================================================================
+  --
+  -- STATEMENT: Equality in Stone spaces is closed.
+  -- For S : Stone and x,y : S, the proposition (x ≡ y) is closed.
+  --
+  -- PROOF SKETCH (from tex):
+  -- 1. S = Sp(B) for some B : Booleω
+  -- 2. x,y are Boolean homomorphisms B → 2
+  -- 3. x ≡ y ↔ ∀b:B. x(b) = y(b)
+  -- 4. Each x(b) = y(b) is decidable (equality in Bool)
+  -- 5. Countable conjunction of decidable is closed
+  --
+  -- TYPE-CHECKED AT: StoneEqualityClosedModule.StoneEqualityClosed (line ~9153)
+
+  -- =========================================================================
+  -- TEX COROLLARY 1628 - PropositionsClosedIffStone
+  -- =========================================================================
+  --
+  -- STATEMENT: A proposition P is closed iff P is Stone.
+  --
+  -- Forward: P closed → P is Stone (via ClosedPropAsSpectrum)
+  -- Backward: P : Stone → P closed (Stone spaces have closed equality)
+  --
+  -- TYPE-CHECKED AT: PropositionsClosedIffStoneModule (line ~8354)
+
+  -- =========================================================================
+  -- TEX COROLLARY 1613 - TruncationStoneClosed
+  -- =========================================================================
+  --
+  -- STATEMENT: For S : Stone, the truncation ||S|| is closed.
+  --
+  -- PROOF SKETCH:
+  -- 1. By SpectrumEmptyIff01Equal: ¬S ↔ 0=1 in B where S = Sp(B)
+  -- 2. 0=1 in B is open (because B is overtly discrete)
+  -- 3. Therefore ¬¬S is closed
+  -- 4. By LemSurjectionsFormalToCompleteness: ||S|| ↔ ¬¬S for Stone
+  --
+  -- TYPE-CHECKED AT: TruncationStoneClosedModule (line ~8608)
+  --
+  -- This is crucial for the proof of InhabitedClosedSubSpaceClosedCHaus.
+
+  -- =========================================================================
+  -- TEX LEMMA 1770/1776 - ClosedInStoneIsStone
+  -- =========================================================================
+  --
+  -- STATEMENT: Closed subsets of Stone spaces are Stone.
+  -- For S : Stone and A ⊆ S closed, the Σ-type Σ_{x:S} A(x) is Stone.
+  --
+  -- PROOF SKETCH (from tex):
+  -- 1. A closed in S means A = ⋂_n D_n for decidable D_n
+  -- 2. By StoneClosedSubsets, A ≃ Sp(B/d_n) for some d_n : B
+  -- 3. B/d_n is still Booleω (quotient of Booleω is Booleω)
+  -- 4. Hence A is a spectrum, therefore Stone
+  --
+  -- TYPE-CHECKED AT: ClosedInStoneIsStoneProof.ClosedInStoneIsStone-proved (line ~13253)
+  -- POSTULATE: ClosedInStoneIsStone at line ~8974 (kept for forward reference)
+  --
+  -- This is a key lemma for CHaus separation properties.
+
+  -- =========================================================================
+  -- TEX LEMMA 1906 - CompactHausdorffClosed
+  -- =========================================================================
+  --
+  -- STATEMENT: Images of closed sets under CHaus maps are closed.
+  -- For f : S → X with S : Stone and X : CHaus, if A ⊆ S is closed, then f(A) is closed in X.
+  --
+  -- TYPE-CHECKED AT: CompactHausdorffModule.CompactHausdorffClosed (line ~11891)
+  --
+  -- This extends the Stone property to compact Hausdorff spaces.
+
+  -- =========================================================================
+  -- TEX COROLLARY 1930 - InhabitedClosedSubSpaceClosedCHaus
+  -- =========================================================================
+  --
+  -- STATEMENT: For X : CHaus and A ⊆ X closed, if ¬¬(A inhabited) then A is inhabited.
+  -- Equivalently: ||A|| ↔ ¬¬||A|| for A closed in CHaus.
+  --
+  -- This is the ¬¬-stability of inhabitedness for closed subsets.
+  --
+  -- TYPE-CHECKED AT: InhabitedClosedSubSpaceClosedCHausModule (line ~11930)
+  --
+  -- CRUCIAL FOR: IVT and BFT proofs (allows proof by contradiction)
+
+  -- =========================================================================
+  -- SUMMARY: Stone Space Property Chain
+  -- =========================================================================
+  --
+  -- The key lemmas form a dependency chain:
+  --
+  -- 1. ClosedPropAsSpectrum (tex 251)
+  --    "Closed props are spectra"
+  --         ↓
+  -- 2. PropositionsClosedIffStone (tex 1628)
+  --    "Closed props are Stone"
+  --         ↓
+  -- 3. StoneEqualityClosed (tex 1636)
+  --    "Stone equality is closed"
+  --         ↓
+  -- 4. ClosedInStoneIsStone (tex 1770)
+  --    "Closed in Stone is Stone"
+  --         ↓
+  -- 5. CompactHausdorffClosed (tex 1906)
+  --    "CHaus preserves closedness"
+  --         ↓
+  -- 6. InhabitedClosedSubSpaceClosedCHaus (tex 1930)
+  --    "Closed CHaus subsets have ¬¬-stable inhabitedness"
+  --         ↓
+  -- 7. IVT, BFT (tex 3082, 3099)
+  --    "Main topological applications"
 
 -- =============================================================================
 -- End of current formalization
