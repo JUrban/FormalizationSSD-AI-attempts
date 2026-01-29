@@ -22891,5 +22891,120 @@ module BZILocalTC where
   -- - The no-retraction theorem for S¹ → D²
 
 -- =============================================================================
+-- Module: PathConnectedContractibleTC
+-- tex Lemma 3035: continuously-path-connected-contractible
+-- =============================================================================
+
+module PathConnectedContractibleTC where
+  -- This module documents tex Lemma 3035:
+  -- "Assume X a type with x:X such that for all y:X we have f:I→X such that
+  --  f(0)=x and f(1)=y. Then X is I-contractible."
+  --
+  -- The hypothesis says X is "continuously path-connected from x":
+  -- every point can be reached from x via a path in I.
+
+  open IntervalIsCHausModule using (UnitInterval)
+  open IntervalTopologyModule using (0I; 1I)
+
+  -- =========================================================================
+  -- DEFINITIONS
+  -- =========================================================================
+
+  -- A type is continuously path-connected from x if every point y can be
+  -- reached from x by a path f : I → X with f(0) = x and f(1) = y.
+  --
+  -- This is stronger than mere path-connectedness because the path is
+  -- continuous in the synthetic sense (any map I → X is continuous).
+
+  -- I-contractibility: The I-localization L_I(X) is contractible.
+  -- A type X is I-contractible if the unit η_X : X → L_I(X) makes L_I(X) contractible.
+  --
+  -- In HoTT/Cubical terms: X is I-contractible if the modal unit [·] : X → ∥X∥_I
+  -- makes ∥X∥_I contractible, where ∥·∥_I is I-localization.
+
+  -- =========================================================================
+  -- TEX PROOF STRUCTURE (Lemma 3035)
+  -- =========================================================================
+  --
+  -- Given: X type, x : X, and ∀(y : X). Σ(f : I → X). f(0) = x × f(1) = y
+  --
+  -- Goal: X is I-contractible (L_I(X) is contractible)
+  --
+  -- Proof:
+  -- 1. For all y : X, we get a map g : I → L_I(X) with g(0) = [x] and g(1) = [y].
+  --    (Just compose the path f with the unit η_X)
+  --
+  -- 2. Since L_I(X) is I-local, g is constant, so g(0) = g(1), i.e., [x] = [y].
+  --
+  -- 3. Thus ∀(y : X). [x] = [y] in L_I(X).
+  --
+  -- 4. By the elimination principle for the I-localization modality,
+  --    this extends to ∀(z : L_I(X)). [x] = z.
+  --
+  -- 5. This means L_I(X) is contractible with center [x].
+
+  -- =========================================================================
+  -- TYPE-CHECKED HELPERS
+  -- =========================================================================
+
+  -- A path in X from x to y
+  ContinuousPath : {X : Type ℓ-zero} → X → X → Type ℓ-zero
+  ContinuousPath {X} x y = Σ[ f ∈ (UnitInterval → X) ] (f 0I ≡ x) × (f 1I ≡ y)
+
+  -- X is continuously path-connected from x
+  isContPathConnectedFrom : (X : Type ℓ-zero) → X → Type ℓ-zero
+  isContPathConnectedFrom X x = (y : X) → ContinuousPath x y
+
+  -- =========================================================================
+  -- MAIN STATEMENT (as postulate)
+  -- =========================================================================
+
+  -- For I-localization, we would need:
+  -- - L_I : Type ℓ-zero → Type ℓ-zero (I-localization functor)
+  -- - η_I : X → L_I X (unit of the localization)
+  -- - L_I is I-local: (f : I → L_I X) → (i j : I) → f i ≡ f j
+  -- - Modality elimination: statements true on X extend to L_I X
+
+  -- The full proof requires the I-localization modality infrastructure.
+  -- For now, we document the proof structure with a postulate.
+
+  -- POSTULATE: Continuously path-connected types are I-contractible
+  -- This would follow from the proof structure above with I-localization.
+
+  -- =========================================================================
+  -- APPLICATION: The unit interval I is I-contractible
+  -- =========================================================================
+
+  -- I is continuously path-connected from any point:
+  -- Given x, y : I, the path t ↦ (1-t)·x + t·y connects x to y.
+  -- Since 0 ↦ (1-0)·x + 0·y = x and 1 ↦ (1-1)·x + 1·y = y.
+  --
+  -- This is the linear interpolation in the convex structure of [0,1].
+  --
+  -- Therefore, I is I-contractible by Lemma 3035.
+  --
+  -- This is related to is-1-connected-I from IntervalConnectednessDerivedTC:
+  -- - 1-connected = isContr ∥I∥₁ (propositional truncation is contractible)
+  -- - I-contractible = isContr (L_I(I)) (I-localization is contractible)
+  --
+  -- For I, these are closely related via the shape modality L_I.
+
+  -- =========================================================================
+  -- SUMMARY (tex Lemma 3035)
+  -- =========================================================================
+  --
+  -- This lemma is key for:
+  -- 1. Showing that I has trivial shape (L_I(I) ≃ 1)
+  -- 2. Proving that shapes of contractible types are contractible
+  -- 3. The shape computation for S¹ = R/Z (tex Proposition 3051)
+  --
+  -- The proof uses:
+  -- - I-locality of L_I(X) (modal types are I-local)
+  -- - Elimination principle for the I-localization modality
+  --
+  -- Combined with BZ-I-local (tex Lemma 3027), this gives the tools
+  -- needed for shape computations in the synthetic setting.
+
+-- =============================================================================
 -- End of current formalization
 -- =============================================================================
