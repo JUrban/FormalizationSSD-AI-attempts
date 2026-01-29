@@ -13650,27 +13650,61 @@ module CohomologyModule where
   --
   -- This means Čech cohomology is independent of the choice of cover S.
 
+  -- The theorem states H^1(X,ℤ) = Ȟ^1(X,S,ℤ) as abelian groups.
+  -- For the "vanishes" formulation, this means:
+  --   H¹-vanishes X ↔ Ȟ¹-vanishes X T (λ _ → ℤAbGroup)
+  --
+  -- More precisely:
+  -- 1. If Ȟ¹-vanishes (all Čech cocycles are coboundaries), then H¹-vanishes
+  --    This follows from exact-cech-complex-vanishing-cohomology
+  -- 2. Conversely, if H¹-vanishes, then Ȟ¹-vanishes
+  --    This requires the long exact sequence argument
+  --
+  -- The tex proof uses cech-eilenberg-0-agree, eilenberg-exact, cech-exact.
+
   postulate
     cech-eilenberg-1-agree : (cover : CechCover) →
       let X = fst (CechCover.X cover)
-      in H¹ X ≃ CechComplex.Ȟ¹-vanishes X
-               (λ x → StoneType (CechCover.S cover x))
-               (λ _ → ℤAbGroup)
-               → Type₀  -- TODO: proper quotient formulation
+          T = λ x → StoneType (CechCover.S cover x)
+      in H¹-vanishes X ↔ CechComplex.Ȟ¹-vanishes X T (λ _ → ℤAbGroup)
 
   -- =========================================================================
-  -- Cohomology of the interval (tex Section 2955)
+  -- Cohomology of the interval (tex Section 2955, Proposition 2991)
   -- =========================================================================
   --
-  -- We show H¹(I,ℤ) = 0 where I is the unit interval.
+  -- We show H⁰(I,ℤ) = ℤ and H¹(I,ℤ) = 0 where I is the unit interval.
   --
-  -- The proof uses contractibility: I is contractible, so H¹(I) = 0.
-  -- In the Cubical library:
+  -- TEX PROOF STRUCTURE (Proposition cohomology-I):
+  --
+  -- 1. Consider cs : 2^ℕ → I and the associated Čech cover T defined by:
+  --    T_x = Σ_{y:2^ℕ} (x =_I cs(y))
+  --
+  -- 2. Define Iₙ = 2^n with relation ~_n where (Iₙ,~_n) ≃ (Fin(2^n), |·-·| ≤ 1)
+  --
+  -- 3. For l = 2,3: lim_n Iₙ^{~l} = Σ_{x:I} T_x^l (sequential limit)
+  --
+  -- 4. By Cn-exact-sequence (tex Lemma 2973), each Čech complex for Iₙ is exact:
+  --    0 → ℤ → ℤ^{Iₙ} → ℤ^{Iₙ^{~2}} → ℤ^{Iₙ^{~3}}
+  --
+  -- 5. Sequential colimits preserve exactness, so we get exact:
+  --    0 → ℤ → colim_n ℤ^{Iₙ} → colim_n ℤ^{Iₙ^{~2}} → colim_n ℤ^{Iₙ^{~3}}
+  --
+  -- 6. By Scott continuity, this is equivalent to:
+  --    0 → ℤ → Π_{x:I} ℤ^{T_x} → Π_{x:I} ℤ^{T_x²} → Π_{x:I} ℤ^{T_x³}
+  --
+  -- 7. Exactness implies Ȟ⁰(I,T,ℤ) = ℤ and Ȟ¹(I,T,ℤ) = 0
+  --
+  -- 8. By cech-eilenberg-0-agree and cech-eilenberg-1-agree, we conclude
+  --    H⁰(I,ℤ) = ℤ and H¹(I,ℤ) = 0.
+  --
+  -- ALTERNATIVE: The Cubical library approach uses contractibility:
   --   - isContrHⁿ-Unit : (n : ℕ) → isContr (coHom (suc n) Unit)
   --   - Hⁿ-contrType≅0 : isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
   --
   -- If we had isContr UnitInterval, we could use Hⁿ-contrType≅0 directly.
   -- The interval [0,1] is contractible (via retraction to any point).
+  --
+  -- KEY DEPENDENCY: Cn-exact-sequence (tex Lemma 2973) - finite approximation exactness
 
   postulate
     interval-cohomology-vanishes : H¹ IntervalIsCHausModule.UnitInterval ≡ 0ₕ 1
