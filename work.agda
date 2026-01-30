@@ -7097,6 +7097,70 @@ module ℕ∞⊎ℕ∞IsStoneModule where
 open ℕ∞⊎ℕ∞IsStoneModule public
 
 -- =============================================================================
+-- BoolIsStoneModule: Bool is a Stone space (tex line 1527)
+-- =============================================================================
+-- The tex states: "finite sets are Stone" (line 1527)
+-- This includes Bool (2-element set) = Sp(BoolBR × BoolBR)
+
+module BoolIsStoneModule where
+  open import Axioms.StoneDuality using (hasStoneStr; Stone)
+  open StoneSigmaClosedModule using (StoneSigmaClosed; StoneΣ; SigmaStoneType)
+  open import Cubical.Data.Sum as ⊎
+
+  -- tex line 1527: "finite sets are Stone"
+  -- Bool = Sp(BoolBR × BoolBR) since Sp(A × B) = Sp(A) ⊎ Sp(B) = 1 ⊎ 1 = Bool
+  postulate
+    Bool-has-StoneStr : hasStoneStr Bool
+
+  -- Construct Stone objects from hasStoneStr witnesses
+  Bool-Stone : Stone
+  Bool-Stone = Bool , Bool-has-StoneStr
+
+  ℕ∞-Stone : Stone
+  ℕ∞-Stone = ℕ∞ , ℕ∞-has-StoneStr
+
+  -- For StoneSigmaClosed, we need T : Bool → Stone
+  -- T(b) = ℕ∞ for all b (constant family)
+  ℕ∞-const-family : Bool → Stone
+  ℕ∞-const-family _ = ℕ∞-Stone
+
+  -- The Σ type: Σ Bool (λ _ → ℕ∞) = SigmaStoneType Bool-Stone ℕ∞-const-family
+  -- Note: SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x) = Σ[ b ∈ Bool ] ℕ∞
+
+  -- By StoneSigmaClosed, Σ Bool (λ _ → ℕ∞) is Stone
+  ΣBool-ℕ∞-has-StoneStr : hasStoneStr (Σ Bool (λ _ → ℕ∞))
+  ΣBool-ℕ∞-has-StoneStr = StoneSigmaClosed Bool-Stone ℕ∞-const-family
+
+  -- Key equivalence: ℕ∞ ⊎ ℕ∞ ≃ Σ Bool (λ _ → ℕ∞)
+  -- Standard fact: A ⊎ B ≃ Σ Bool (λ b → if b then A else B)
+  -- For the constant case: A ⊎ A ≃ Σ Bool (λ _ → A)
+  ⊎-as-Σ : (A : Type₀) → A ⊎.⊎ A ≃ Σ Bool (λ _ → A)
+  ⊎-as-Σ A = isoToEquiv (iso to from to-from from-to)
+    where
+    to : A ⊎.⊎ A → Σ Bool (λ _ → A)
+    to (⊎.inl a) = true , a
+    to (⊎.inr a) = false , a
+    from : Σ Bool (λ _ → A) → A ⊎.⊎ A
+    from (true , a) = ⊎.inl a
+    from (false , a) = ⊎.inr a
+    to-from : (x : Σ Bool (λ _ → A)) → to (from x) ≡ x
+    to-from (true , a) = refl
+    to-from (false , a) = refl
+    from-to : (x : A ⊎.⊎ A) → from (to x) ≡ x
+    from-to (⊎.inl a) = refl
+    from-to (⊎.inr a) = refl
+
+  ℕ∞⊎ℕ∞≃ΣBool-ℕ∞ : ℕ∞ ⊎.⊎ ℕ∞ ≃ Σ Bool (λ _ → ℕ∞)
+  ℕ∞⊎ℕ∞≃ΣBool-ℕ∞ = ⊎-as-Σ ℕ∞
+
+  -- Transport Stone structure across the equivalence
+  -- hasStoneStr is path-transported via ua
+  ℕ∞⊎ℕ∞-has-StoneStr-alt : hasStoneStr (ℕ∞ ⊎.⊎ ℕ∞)
+  ℕ∞⊎ℕ∞-has-StoneStr-alt = subst hasStoneStr (sym (ua ℕ∞⊎ℕ∞≃ΣBool-ℕ∞)) ΣBool-ℕ∞-has-StoneStr
+
+open BoolIsStoneModule public
+
+-- =============================================================================
 -- Normal Form Operations - Building blocks for normalFormExists
 -- =============================================================================
 
