@@ -23198,6 +23198,12 @@ module PostulateStatusTC where
   --   * interval-cohomology-vanishes → derived from isContrUnitInterval (CHANGES0323)
   --   * disk-cohomology-vanishes → derived from isContrDisk2 (CHANGES0323)
   --
+  -- ELIMINATED PLACEHOLDERS (this session, CHANGES0325-0326): 2
+  --   * Cn-exact-sequence (was line 14155) → orphan placeholder for Čech approach
+  --     (no longer needed since interval-cohomology-vanishes derived directly)
+  --   * R-I-contractible (was line 23843) → trivial Type₀ placeholder
+  --     (actual statement would be isContr (L_I R), tex Corollary 3047)
+  --
   -- MODULE-LEVEL POSTULATES (inside specialized modules):
   -- - B∞×B∞≃quotient (line 5503): requires correct presentation
   -- - evens-odds-disjoint (line 6451): local to LLPO proof
