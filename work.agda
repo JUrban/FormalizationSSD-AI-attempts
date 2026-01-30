@@ -17335,8 +17335,8 @@ module TexTheoremsDoc where
   --
   -- tex Proposition 2991: H⁰(I,ℤ) = ℤ, H¹(I,ℤ) = 0
   -- Cohomology of the interval
-  -- STATUS: POSTULATED (interval-cohomology-vanishes)
-  -- Would follow from Čech computation with Bool-I-local
+  -- STATUS: DERIVED from isContrUnitInterval (CHANGES0323)
+  --        (interval-cohomology-vanishes-derived uses isContr-Hⁿ⁺¹)
   --
   -- tex Lemma 3015: ℤ and Bool are I-local
   -- STATUS: Z-I-local and Bool-I-local DERIVED (CHANGES0332)
@@ -24254,9 +24254,9 @@ module IntervalCohomologyTC where
   -- =================================================================
   --
   -- EXISTING INFRASTRUCTURE:
-  -- 1. interval-cohomology-vanishes : H¹ UnitInterval ≡ 0ₕ 1 (POSTULATED)
-  -- 2. Z-I-local-derived (TYPE-CHECKED from is-1-connected-I)
-  -- 3. Bool-I-local-derived (TYPE-CHECKED from Z-I-local-derived)
+  -- 1. interval-cohomology-vanishes : DERIVED from isContrUnitInterval (CHANGES0323)
+  -- 2. Z-I-local-derived (DERIVED from is-1-connected-I)
+  -- 3. Bool-I-local-derived (DERIVED from is-1-connected-I)
   --
   -- TEX PROOF DEPENDENCIES:
   -- 1. cs : 2^N → I (surjection from Cantor space)
@@ -24264,9 +24264,9 @@ module IntervalCohomologyTC where
   -- 3. scott-continuity - NOT YET FORMALIZED
   -- 4. cech-eilenberg-0-agree, cech-eilenberg-1-agree - POSTULATED
   --
-  -- STATUS: PARTIALLY TYPE-CHECKED
+  -- STATUS: TYPE-CHECKED (CHANGES0323)
   -- - H⁰ part: COMPLETE via Z-I-local-derived
-  -- - H¹ part: POSTULATED as interval-cohomology-vanishes
+  -- - H¹ part: DERIVED via interval-cohomology-vanishes-derived
 
 -- =============================================================================
 -- Module: NoRetractionTC
@@ -24461,17 +24461,17 @@ module FormalizationStatusTC where
   -- =========================================================================
   --
   -- ✓ circle-cohomology: H¹(S¹) ≃ ℤ - TYPE-CHECKED via H¹-S¹≃ℤ-witness
-  -- ○ disk-cohomology-vanishes: H¹(D²) ≃ 0 - POSTULATED
-  -- ○ interval-cohomology-vanishes: H¹(I) ≃ 0 - POSTULATED (tex Prop 2991)
+  -- ✓ disk-cohomology-vanishes: H¹(D²) ≃ 0 - DERIVED from isContrDisk2 (CHANGES0323)
+  -- ✓ interval-cohomology-vanishes: H¹(I) ≃ 0 - DERIVED from isContrUnitInterval (CHANGES0323)
 
   -- =========================================================================
   -- SHAPE THEORY (tex Section 3.3)
   -- =========================================================================
   --
-  -- ✓ Z-I-local: TYPE-CHECKED in IntervalConnectednessDerivedTC
-  -- ✓ Bool-I-local: TYPE-CHECKED in IntervalConnectednessDerivedTC
-  -- ✓ Stone-I-local: TYPE-CHECKED in StoneILocalTC
-  -- ○ BZ-I-local: POSTULATED in BZILocalTC (uses interval-cohomology-vanishes)
+  -- ✓ Z-I-local: DERIVED from isContrUnitInterval (CHANGES0332)
+  -- ✓ Bool-I-local: DERIVED from isContrUnitInterval (CHANGES0332)
+  -- ✓ Stone-I-local: DERIVED in StoneILocalTC (from Bool-I-local-derived)
+  -- ✓ BZ-I-local: DERIVED from isContrUnitInterval (CHANGES0329)
   --
   -- DOCUMENTED (partially type-checked):
   -- - PathConnectedContractibleTC (tex Lemma 3035)
