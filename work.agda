@@ -14155,11 +14155,36 @@ module CohomologyModule where
     postulate
       Cn-exact-sequence : (n : ℕ) → Type₀
 
-  -- NOTE: This postulate is NOW DERIVABLE from isContrUnitInterval!
-  -- See: IntervalCohomologyFromContr.interval-cohomology-vanishes-derived
-  -- The derivation uses isContrUnitInterval via transport from H¹(Unit) = 0.
-  postulate
-    interval-cohomology-vanishes : H¹ IntervalIsCHausModule.UnitInterval ≡ 0ₕ 1
+  -- ELIMINATED POSTULATE (CHANGES0323):
+  -- Was: postulate interval-cohomology-vanishes : ...
+  -- Now: Derived inline from isContrUnitInterval
+  --
+  -- The derivation uses:
+  -- 1. isContrUnitInterval : isContr UnitInterval
+  -- 2. isContr→≃Unit : isContr A → A ≃ Unit
+  -- 3. Univalence: UnitInterval ≡ Unit
+  -- 4. isContr-Hⁿ⁺¹[Unit,G]: H^{n+1}(Unit, G) is contractible
+  private
+    module IntervalCohomologyInline where
+      open import Cubical.Cohomology.EilenbergMacLane.Groups.Unit
+        using (isContr-Hⁿ⁺¹[Unit,G])
+      open import Cubical.Data.Unit.Properties using (isContr→≃Unit)
+      open import Cubical.Foundations.Univalence using (ua)
+      open IntervalIsCHausModule using (UnitInterval; isContrUnitInterval)
+
+      UnitInterval≃Unit : UnitInterval ≃ Unit
+      UnitInterval≃Unit = isContr→≃Unit isContrUnitInterval
+
+      UnitInterval≡Unit : UnitInterval ≡ Unit
+      UnitInterval≡Unit = ua UnitInterval≃Unit
+
+      isContr-H¹-UnitInterval : isContr (coHom 1 ℤAbGroup UnitInterval)
+      isContr-H¹-UnitInterval = subst (λ X → isContr (coHom 1 ℤAbGroup X))
+                                      (sym UnitInterval≡Unit)
+                                      (isContr-Hⁿ⁺¹[Unit,G] {G = ℤAbGroup} 0)
+
+  interval-cohomology-vanishes : H¹ IntervalIsCHausModule.UnitInterval ≡ 0ₕ 1
+  interval-cohomology-vanishes = isContr→isProp IntervalCohomologyInline.isContr-H¹-UnitInterval _ _
 
   -- =========================================================================
   -- no-retraction from cohomology (completing BFP proof)
@@ -14230,11 +14255,36 @@ module CohomologyModule where
   -- Key imports needed:
   --   open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-contrType≅0)
   --
-  -- NOTE: This postulate is NOW DERIVABLE from isContrDisk2!
-  -- See: DiskCohomologyFromContr.disk-cohomology-vanishes-derived
-  -- The derivation uses isContrDisk2 via transport from H¹(Unit) = 0.
-  postulate
-    disk-cohomology-vanishes : H¹ BrouwerFixedPointTheoremModule.Disk2 ≡ 0ₕ 1
+  -- ELIMINATED POSTULATE (CHANGES0323):
+  -- Was: postulate disk-cohomology-vanishes : ...
+  -- Now: Derived inline from isContrDisk2
+  --
+  -- The derivation uses:
+  -- 1. isContrDisk2 : isContr Disk2
+  -- 2. isContr→≃Unit : isContr A → A ≃ Unit
+  -- 3. Univalence: Disk2 ≡ Unit
+  -- 4. isContr-Hⁿ⁺¹[Unit,G]: H^{n+1}(Unit, G) is contractible
+  private
+    module DiskCohomologyInline where
+      open import Cubical.Cohomology.EilenbergMacLane.Groups.Unit
+        using (isContr-Hⁿ⁺¹[Unit,G])
+      open import Cubical.Data.Unit.Properties using (isContr→≃Unit)
+      open import Cubical.Foundations.Univalence using (ua)
+      open BrouwerFixedPointTheoremModule using (Disk2; isContrDisk2)
+
+      Disk2≃Unit : Disk2 ≃ Unit
+      Disk2≃Unit = isContr→≃Unit isContrDisk2
+
+      Disk2≡Unit : Disk2 ≡ Unit
+      Disk2≡Unit = ua Disk2≃Unit
+
+      isContr-H¹-Disk2 : isContr (coHom 1 ℤAbGroup Disk2)
+      isContr-H¹-Disk2 = subst (λ X → isContr (coHom 1 ℤAbGroup X))
+                               (sym Disk2≡Unit)
+                               (isContr-Hⁿ⁺¹[Unit,G] {G = ℤAbGroup} 0)
+
+  disk-cohomology-vanishes : H¹ BrouwerFixedPointTheoremModule.Disk2 ≡ 0ₕ 1
+  disk-cohomology-vanishes = isContr→isProp DiskCohomologyInline.isContr-H¹-Disk2 _ _
 
   -- This completes the justification for the no-retraction postulate
   -- in BrouwerFixedPointTheoremModule
@@ -23136,11 +23186,13 @@ module PostulateStatusTC where
   -- - External proof: 1
   --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- DERIVED (no longer postulates): 3
+  -- DERIVED (no longer postulates): 5
   --   * countableChoice → derived from dependentChoice-axiom (line 1485)
   --   * LemSurjectionsFormalToCompleteness-equiv → derived from surj-formal-axiom
   --     (tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁ for Booleω B)
   --   * is-1-connected-I → derived from isContrUnitInterval (CHANGES0322)
+  --   * interval-cohomology-vanishes → derived from isContrUnitInterval (CHANGES0323)
+  --   * disk-cohomology-vanishes → derived from isContrDisk2 (CHANGES0323)
   --
   -- MODULE-LEVEL POSTULATES (inside specialized modules):
   -- - B∞×B∞≃quotient (line 5503): requires correct presentation
