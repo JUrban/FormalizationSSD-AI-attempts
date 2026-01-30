@@ -14859,16 +14859,18 @@ module CohomologyModule where
     -- Bool is I-local as a retract of ℤ (via 0 ↦ false, n>0 ↦ true).
     --
     -- CONNECTION TO IVT:
-    -- Bool-I-local (postulated at line ~12677) is exactly this fact!
-    -- The tex proof derives it from cohomology-I, which we have as:
-    --   interval-cohomology-vanishes : H¹ UnitInterval ≡ 0ₕ 1
+    -- Bool-I-local and Z-I-local are now DERIVED (CHANGES0332)!
     --
-    -- The H⁰ part (ℤ → ℤ^I is equiv) is the zeroth cohomology statement.
-    -- Bool-I-local follows because Bool is a retract of ℤ.
+    -- OUR DERIVATION is simpler than the tex cohomology proof:
+    -- - We use isContrUnitInterval directly via contr-map-const-local
+    -- - No need for cohomology calculations!
     --
-    -- CURRENT STATUS: Bool-I-local is postulated, but could be derived from:
-    --   1. H⁰(I,ℤ) = ℤ (zeroth cohomology of interval)
-    --   2. Bool ↪ ℤ → Bool (retract construction)
+    -- KEY INSIGHT: If the DOMAIN is contractible, then ANY function is constant,
+    -- regardless of the codomain's properties. This is why ALL I-local statements
+    -- follow trivially from isContrUnitInterval.
+    --
+    -- CURRENT STATUS (CHANGES0332): Z-I-local and Bool-I-local DERIVED from
+    -- isContrUnitInterval using contr-map-const-local (see ZILocalModule ~line 12850)
 
     -- =========================================================================
     -- COROLLARY: Stone spaces are I-local (tex Remark after 3015)
@@ -15479,12 +15481,12 @@ module ConnectednessForBoolILocal where
   -- Special case for Bool: if I is 1-connected, then f : I → Bool is constant
   -- This is exactly what Bool-I-local says!
 
-  -- For reference, Bool-I-local (postulated at line ~12677) has type:
+  -- For reference, Bool-I-local (NOW DERIVED at line ~12875) has type:
   --   Bool-I-local : (f : I → Bool) → (x y : I) → f x ≡ f y
   --
-  -- The above lemma shows: if we prove is-1-connected UnitInterval,
-  -- then Bool-I-local follows immediately from connected-1-to-set-constant
-  -- since Bool is a set (isSetBool from Cubical.Data.Bool).
+  -- DERIVATION (CHANGES0332): Bool-I-local is now derived from
+  -- isContrUnitInterval using contr-map-const-local. This is simpler
+  -- than the 1-connectedness approach described above.
 
   -- =========================================================================
   -- CONCRETE APPLICATION: Deriving Bool-I-local from 1-connectedness
@@ -16750,7 +16752,7 @@ module CompleteProofStatus where
 -- - ℝ is I-contractible (tex Corollary 3047)
 -- - D² is I-contractible (tex Corollary 3047)
 --
--- The I-locality of Bool is captured by our Bool-I-local postulate.
+-- The I-locality of Bool is captured by Bool-I-local (DERIVED, CHANGES0332).
 
 module ILocalizationDoc where
   open import Cubical.Data.Int using (ℤ)
@@ -16759,8 +16761,8 @@ module ILocalizationDoc where
   -- Here we document its connection to the tex file.
 
   -- tex Lemma 3015: Bool is I-local
-  -- This is exactly our Bool-I-local postulate (line ~12677)
-  -- Bool-I-local : (f : I → Bool) → Σ[ b ∈ Bool ] ((i : I) → f i ≡ b)
+  -- This is exactly our Bool-I-local (DERIVED at line ~12875, CHANGES0332)
+  -- Bool-I-local : (f : I → Bool) → (x y : I) → f x ≡ f y
 
   -- tex Lemma 3015: ℤ is I-local
   -- This follows from H⁰(I,ℤ) = ℤ (tex Proposition 2991)
@@ -17337,8 +17339,8 @@ module TexTheoremsDoc where
   -- Would follow from Čech computation with Bool-I-local
   --
   -- tex Lemma 3015: ℤ and Bool are I-local
-  -- STATUS: Bool-I-local is POSTULATED (fundamental axiom)
-  --        Z-I-local follows from H⁰(I,ℤ) = ℤ
+  -- STATUS: Z-I-local and Bool-I-local DERIVED (CHANGES0332)
+  --        Uses contr-map-const-local from isContrUnitInterval
   --
   -- tex Lemma 3027: Bℤ is I-local
   -- STATUS: Follows from H¹(I,ℤ) = 0 (documented)
@@ -23324,16 +23326,16 @@ module IntervalConnectednessDerivedTC where
   -- SUMMARY: Postulate Reduction
   -- =========================================================================
   --
-  -- BEFORE (in ZILocalModule):
-  --   postulate Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
-  --   postulate Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  -- BEFORE: Z-I-local and Bool-I-local were postulates
   --
-  -- AFTER (this module):
-  --   postulate is-1-connected-I : is-1-connected UnitInterval
-  --   (Bool-I-local-derived and Z-I-local-derived follow by proof)
+  -- AFTER (CHANGES0332): Z-I-local and Bool-I-local are DERIVED from
+  -- isContrUnitInterval using contr-map-const-local lemma!
   --
-  -- This reduces 2 postulates to 1, with the single postulate capturing
-  -- the geometric content (convexity/path-connectedness of I).
+  -- The derivation is simpler than the 1-connectedness approach above:
+  -- Since isContr I provides contractibility, any function from I is constant,
+  -- regardless of the codomain (no need to check if codomain is a set!).
+  --
+  -- This eliminates 2 postulates using the existing isContrUnitInterval.
   --
   -- BENEFIT: The proof that connected types have constant maps to sets
   -- (connected-1-to-set-constant) is now TYPE-CHECKED, so the only
