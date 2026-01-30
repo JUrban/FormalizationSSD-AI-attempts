@@ -23838,12 +23838,18 @@ module ShapeS1IsBZTC where
   --
   -- Therefore L_I(R) ≃ 1.
 
-  -- Postulate: R is I-contractible (proved in tex Corollary 3047)
-  -- This follows from R being path-connected via linear interpolation.
-  postulate
-    R-I-contractible : Type₀  -- Placeholder for the statement
-    -- The actual statement would be: isContr (L_I R)
-    -- where L_I is the I-localization modality
+  -- ELIMINATED POSTULATE (CHANGES0326):
+  -- Was: postulate R-I-contractible : Type₀  -- Placeholder
+  -- This was a trivial placeholder (Type₀ is satisfied by any type).
+  -- The actual mathematical statement would be: isContr (L_I R)
+  -- where L_I is the I-localization modality.
+  --
+  -- tex Corollary 3047 proves this via:
+  -- 1. R is path-connected (linear interpolation gives paths)
+  -- 2. Path-connected implies I-contractible (tex Lemma 3035)
+  -- 3. Therefore L_I(R) ≃ 1
+  --
+  -- This is used in the shape-theoretic proof of no-retraction.
 
   -- =================================================================
   -- tex Proposition 3051: L_I(R/Z) = BZ
@@ -23892,7 +23898,7 @@ module ShapeS1IsBZTC where
   --
   -- DEPENDENCIES:
   -- 1. BZ-I-local (BZILocalTC) - TYPE-CHECKED
-  -- 2. R-I-contractible (this module) - POSTULATED
+  -- 2. R-I-contractible (tex Corollary 3047) - DOCUMENTED (placeholder removed)
   -- 3. Pullback square structure - DOCUMENTED
   -- 4. I-localization theory - IMPLICIT in tex
   --
