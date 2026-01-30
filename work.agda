@@ -4106,20 +4106,27 @@ freeBool→Bool²-hom = inducedBAHom Bool Bool² freeBool→Bool²-on-gens
 -- Note: The map Bool² → freeBA Bool cannot use inducedBAHom (wrong direction).
 -- A full proof of Bool² ≅ freeBA Bool would require explicit HIT reasoning.
 
--- Proof of Bool² ≅ freeBA Bool (incomplete, kept as documentation)
--- =================================================================
--- The approach: use universal property of freeBA Bool to show:
--- - freeBool→Bool²-hom ∘ Bool²→freeBool-hom = id
--- - Bool²→freeBool-hom ∘ freeBool→Bool²-hom = id
--- However, inducedBAHom gives freeBA A → B, not the other direction.
--- A full proof requires either:
--- (1) Explicit enumeration of freeBA Bool elements (complex HIT reasoning), or
--- (2) Using abstract structure theorems about finite Boolean rings
+-- Direct presentation of Bool² as a countably presented Boolean ring
+-- ===================================================================
+-- Bool² has 4 elements with 2 complementary atoms: e₀ = (true,false), e₁ = (false,true)
+-- Note: freeBA Bool has 16 elements (2^(2^2)), so Bool² ≠ freeBA Bool.
+-- Instead: Bool² ≃ freeBA ℕ /Im relBool² where:
+--   relBool² 0 = generator 0 · generator 1         (atoms have trivial meet)
+--   relBool² 1 = 1 + generator 0 + generator 1     (atoms sum to 1)
+--   relBool² (n+2) = generator (n+2)               (kill extra generators)
 --
--- For now, we keep Bool²-has-Boole-ω' as a justified postulate:
--- Finite Boolean rings are finitely presented, hence countably presented.
--- Bool² has 4 elements (2 atoms), so it equals freeBA Bool / trivial-ideal.
--- Since Bool is countable, this is Booleω.
+-- The proof that Bool² ≃ freeBA ℕ /Im relBool² requires:
+-- (1) Forward map: Bool² → quotient sending (a,b) to [appropriate combination]
+-- (2) Backward map: quotient → Bool² induced by generator 0 ↦ (1,0), generator 1 ↦ (0,1)
+-- (3) Showing both compositions are identity (tedious but mechanical)
+--
+-- Mathematical justification for postulate:
+-- - Finite Boolean rings are finitely presented (standard algebra result)
+-- - Bool² has 4 elements with 2 atoms, so it's presented by 2 generators + 2 relations
+-- - This is a countable presentation (finite is countable)
+-- - The postulate doesn't introduce logical inconsistency
+--
+-- TODO: Implement full proof using explicit presentation relBool² above
 postulate
   Bool²-has-Boole-ω' : has-Boole-ω' Bool²
 
