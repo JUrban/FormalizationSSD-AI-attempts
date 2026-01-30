@@ -14507,6 +14507,53 @@ module CohomologyModule where
     -- =======================================================================
 
   -- =========================================================================
+  -- f-injective equality: postulated = derived
+  -- =========================================================================
+  --
+  -- This module proves that the postulated f-injective equals
+  -- f-injective-from-trunc. The proof works because:
+  -- 1. B∞ is a Boolean ring, so its carrier is a set
+  -- 2. For a set S, paths x ≡ y are propositions
+  -- 3. Therefore (fst f x ≡ fst f y → x ≡ y) is a proposition for any x, y
+  -- 4. Π of propositions is a proposition
+  -- 5. So f-injective and f-injective-from-trunc are both in a proposition type
+  -- 6. Therefore they are equal
+
+  module FInjectiveEqualityProof where
+    open import Cubical.Foundations.HLevels using (isPropΠ; isPropΠ2)
+
+    -- B∞ carrier is a set (from BooleanRingStr)
+    isSet-B∞ : isSet ⟨ B∞ ⟩
+    isSet-B∞ = BooleanRingStr.is-set (snd B∞)
+
+    -- For elements of a set, paths are propositions
+    isProp-B∞-path : (x y : ⟨ B∞ ⟩) → isProp (x ≡ y)
+    isProp-B∞-path = isSet-B∞
+
+    -- The function type (fst f x ≡ fst f y → x ≡ y) is a proposition
+    isProp-f-inj-pointwise : (x y : ⟨ B∞ ⟩) → isProp (fst f x ≡ fst f y → x ≡ y)
+    isProp-f-inj-pointwise x y = isPropΠ (λ _ → isProp-B∞-path x y)
+
+    -- The full f-injective type is a proposition
+    isProp-f-injective-type : isProp ((x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y)
+    isProp-f-injective-type = isPropΠ2 (λ x y → isPropΠ (λ _ → isProp-B∞-path x y))
+
+    -- THE KEY THEOREM: f-injective equals f-injective-from-trunc
+    f-injective-equality : f-injective ≡ f-injective-from-trunc
+    f-injective-equality = isProp-f-injective-type f-injective f-injective-from-trunc
+
+    -- =======================================================================
+    -- SUMMARY: Explicit type-checked equality
+    -- =======================================================================
+    --
+    -- f-injective-equality:
+    --   f-injective ≡ f-injective-from-trunc
+    --
+    -- This proves that the postulate is CONSISTENT with the derivation.
+    -- They are propositionally equal!
+    -- =======================================================================
+
+  -- =========================================================================
   -- Circle cohomology: Using H¹-S¹≅ℤ from Cubical library
   -- =========================================================================
   --
@@ -25023,6 +25070,11 @@ module FoundationalAxiomsTC where
 --    - Uses: isContr→isProp, isProp→isSet from Cubical.Foundations.HLevels
 --    - KEY INSIGHT: H¹(X) is contractible for contractible X (from Hⁿ-contrType≅0)
 --
+-- 4. FInjectiveEqualityProof (~line 14508):
+--    - f-injective-equality : f-injective ≡ f-injective-from-trunc
+--    - Uses: isPropΠ, isPropΠ2 from Cubical.Foundations.HLevels
+--    - KEY INSIGHT: B∞ is a set (BooleanRingStr.is-set), so injectivity type is a proposition
+--
 -- SUMMARY OF TYPE-CHECKED CONSISTENCY PROOFS:
 -- ============================================
 -- | Postulate                    | Derived Version                        | Equality Proof              |
@@ -25030,6 +25082,7 @@ module FoundationalAxiomsTC where
 -- | is-1-connected-I             | is-1-connected-I-derived               | is-1-connected-unique       |
 -- | disk-cohomology-vanishes     | disk-cohomology-vanishes-derived       | disk-cohomology-equality    |
 -- | interval-cohomology-vanishes | interval-cohomology-vanishes-derived   | interval-cohomology-equality|
+-- | f-injective                  | f-injective-from-trunc                 | f-injective-equality        |
 --
 -- =========================================================================
 -- THEOREM STATUS
@@ -25048,6 +25101,7 @@ module FoundationalAxiomsTC where
 --   - is-1-connected-I consistency (via isPropIsContr)
 --   - disk-cohomology-vanishes consistency (via isContr→isProp→isSet)
 --   - interval-cohomology-vanishes consistency (via isContr→isProp→isSet)
+--   - f-injective consistency (via isPropΠ2 on sets)
 --
 -- =============================================================================
 -- End of current formalization
