@@ -6934,6 +6934,23 @@ SpB∞≃ℕ∞ : Sp B∞-Booleω ≃ ℕ∞
 SpB∞≃ℕ∞ = isoToEquiv SpB∞≅ℕ∞
 
 -- =============================================================================
+-- ℕ∞ is Stone: the one-point compactification of ℕ is a Stone space
+-- =============================================================================
+-- This is a key fact: ℕ∞ = Sp B∞, so ℕ∞ is the spectrum of a countably
+-- presented Boolean algebra. This connects the synthetic definition of ℕ∞
+-- (as an algebraically compact space) with the Stone duality framework.
+
+module ℕ∞IsStoneModule where
+  open import Axioms.StoneDuality using (hasStoneStr)
+
+  -- ℕ∞ has Stone structure witnessed by B∞-Booleω
+  -- hasStoneStr S = Σ[ B ∈ Booleω ] Sp B ≡ S
+  ℕ∞-has-StoneStr : hasStoneStr ℕ∞
+  ℕ∞-has-StoneStr = B∞-Booleω , ua SpB∞≃ℕ∞
+
+open ℕ∞IsStoneModule public
+
+-- =============================================================================
 -- Normal Form Operations - Building blocks for normalFormExists
 -- =============================================================================
 
