@@ -17998,9 +17998,18 @@ module PostulateStatusSummary where
   --    - Tex line 324: AxDependentChoice
   --    - For constructing sequences over towers of surjections
   --
-  -- 5. countableChoice : CountableChoiceAxiom (line 1457)
-  --    - Follows from dependent choice
+  -- DERIVED FROM AXIOMS (no longer postulates):
+  -- 5. countableChoice : CountableChoiceAxiom (line ~1485)
+  --    - DERIVED from dependentChoice-axiom (CHANGES0318)
   --    - Used for countable products
+  --
+  -- 6. LemSurjectionsFormalToCompleteness-equiv (line ~8935)
+  --    - DERIVED from surj-formal-axiom (CHANGES0321)
+  --    - tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁
+  --
+  -- 7. is-1-connected-I (line ~23209)
+  --    - DERIVED from isContrUnitInterval (CHANGES0322)
+  --    - Used for Bool-I-local and Z-I-local
 
   -- FORWARD REFERENCE POSTULATES (proved later in file):
   -- 6. BoolQuotientEquiv (line 81)
@@ -23127,10 +23136,11 @@ module PostulateStatusTC where
   -- - External proof: 1
   --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- DERIVED (no longer postulates): 2
+  -- DERIVED (no longer postulates): 3
   --   * countableChoice → derived from dependentChoice-axiom (line 1485)
   --   * LemSurjectionsFormalToCompleteness-equiv → derived from surj-formal-axiom
   --     (tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁ for Booleω B)
+  --   * is-1-connected-I → derived from isContrUnitInterval (CHANGES0322)
   --
   -- MODULE-LEVEL POSTULATES (inside specialized modules):
   -- - B∞×B∞≃quotient (line 5503): requires correct presentation
@@ -23197,13 +23207,16 @@ module IntervalConnectednessDerivedTC where
   --
   -- This postulate captures the convex structure of I ⊂ ℝ.
   --
-  -- NOTE: This postulate is NOW DERIVABLE from isContrUnitInterval!
-  -- See: IntervalConnectedFromContr.is-1-connected-I-derived
+  -- DERIVED from isContrUnitInterval!
+  -- Uses IntervalConnectedFromContr.is-1-connected-I-derived
   -- The derivation uses the fact that contractible types are 1-connected:
   --   isContr A → isContr ∥ A ∥₁
 
-  postulate
-    is-1-connected-I : is-1-connected UnitInterval
+  -- ELIMINATED POSTULATE (CHANGES0322):
+  -- Was: postulate is-1-connected-I : is-1-connected UnitInterval
+  -- Now: Definition using the derived version
+  is-1-connected-I : is-1-connected UnitInterval
+  is-1-connected-I = CohomologyModule.IntervalConnectedFromContr.is-1-connected-I-derived
 
   -- =========================================================================
   -- DERIVED: Bool-I-local from 1-connectedness
