@@ -25484,6 +25484,7 @@ module SpAntiequivalenceTC where
 --   - InhabitedClosedSubSpaceClosedCHaus
 --   - closedIsStable (closed props are ¬¬-stable)
 --   - connected-1-to-set-constant (1-connected → constant to sets)
+--   - BZ-I-local (via contr-map-const from isContrUnitInterval, CHANGES0329)
 --
 -- CONSISTENCY PROVED (postulates = derived versions):
 --   - is-1-connected-I consistency (via isPropIsContr)
