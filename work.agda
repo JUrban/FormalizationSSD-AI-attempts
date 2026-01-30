@@ -40,6 +40,7 @@ open import Cubical.Algebra.CommRing
 open import Cubical.Algebra.CommRing.DirectProd
 open import Cubical.Algebra.BooleanRing
 open import Cubical.Algebra.BooleanRing.Instances.Bool
+open import Cubical.Algebra.BooleanRing.Initial using (BoolBR→; BoolBR→IsUnique)
 
 -- Stone Duality infrastructure (library fixes enabled this import)
 open import Axioms.StoneDuality using (StoneDualityAxiom; Sp; Booleω; SpEmbedding)
@@ -8734,14 +8735,76 @@ module LemSurjectionsFormalToCompleteness where
   ¬¬Sp→0≢1 : (B : Booleω) → ¬ ¬ Sp B → ¬ (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
   ¬¬Sp→0≢1 B ¬¬SpB 0≡1 = ¬¬SpB (TruncationStoneClosed.0=1→¬Sp B 0≡1)
 
-  -- For the full proof of ¬¬S → ||S||, we need SurjectionsAreFormalSurjections
-  -- which states: if f : B → C is injective, then Sp(f) : Sp(C) → Sp(B) is surjective
-  -- This requires more infrastructure from tex section on formal surjections.
-  --
-  -- For now, we note that the key pieces are in place:
-  -- 1. ¬¬Sp(B) → 0 ≠ 1 [PROVED above]
-  -- 2. 0 ≠ 1 → canonicalMap is injective [PROVED above]
-  -- 3. SurjectionsAreFormalSurjections: injective → Sp is surjective [NEEDS WORK]
+  -- =========================================================================
+  -- Full derivation of ¬¬Sp(B) ↔ ∥Sp(B)∥₁ using surj-formal-axiom
+  -- =========================================================================
+
+  -- The canonical homomorphism BoolBR → B is given by BoolBR→
+  -- It sends false ↦ 0, true ↦ 1
+  canonical-hom : (B : BooleanRing ℓ-zero) → BoolHom BoolBR B
+  canonical-hom B = BoolBR→ B
+
+  -- The canonical hom is injective when 0 ≠ 1
+  -- Direct proof using the fact that BoolBR→ sends false ↦ 0, true ↦ 1
+  canonical-hom-injective : (B : BooleanRing ℓ-zero)
+    → ¬ (BooleanRingStr.𝟘 (snd B) ≡ BooleanRingStr.𝟙 (snd B))
+    → (b₁ b₂ : Bool) → fst (canonical-hom B) b₁ ≡ fst (canonical-hom B) b₂ → b₁ ≡ b₂
+  canonical-hom-injective B 0≢1 false false _ = refl
+  canonical-hom-injective B 0≢1 false true  p = ex-falso (0≢1 p)
+  canonical-hom-injective B 0≢1 true  false p = ex-falso (0≢1 (sym p))
+  canonical-hom-injective B 0≢1 true  true  _ = refl
+
+  -- Injectivity of BoolHom for Booleω (adapting to the types)
+  canonical-hom-is-injective : (B : Booleω)
+    → ¬ (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+    → isInjectiveBoolHom Bool-Booleω B (canonical-hom (fst B))
+  canonical-hom-is-injective B 0≢1 b₁ b₂ = canonical-hom-injective (fst B) 0≢1 b₁ b₂
+
+  -- The Sp homomorphism induced by canonical-hom
+  -- Sp-hom : Sp B → Sp BoolBR, sending h : BoolHom B BoolBR to h ∘ canonical-hom
+  Sp-canonical : (B : Booleω) → Sp B → Sp Bool-Booleω
+  Sp-canonical B h = h ∘cr canonical-hom (fst B)
+
+  -- By surj-formal-axiom, when canonical-hom is injective, Sp-canonical is surjective
+  Sp-canonical-surjective : (B : Booleω)
+    → ¬ (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+    → isSurjectiveSpHom Bool-Booleω B (canonical-hom (fst B))
+  Sp-canonical-surjective B 0≢1 =
+    injective→Sp-surjective Bool-Booleω B (canonical-hom (fst B)) (canonical-hom-is-injective B 0≢1)
+
+  -- Key lemma: ¬¬Sp(B) → ∥Sp(B)∥₁
+  -- Strategy:
+  -- 1. ¬¬Sp(B) → 0 ≠ 1 (by ¬¬Sp→0≢1)
+  -- 2. By Sp-canonical-surjective, Sp-canonical is surjective
+  -- 3. Sp-Bool-inhabited gives us ∥ Sp Bool-Booleω ∥₁
+  -- 4. Surjectivity gives us a preimage in Sp B
+  ¬¬Sp→truncSp : (B : Booleω) → ¬ ¬ Sp B → ∥ Sp B ∥₁
+  ¬¬Sp→truncSp B ¬¬SpB = PT.rec squash₁ step1 Sp-Bool-inhabited
+    where
+    0≢1 : ¬ (BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B)))
+    0≢1 = ¬¬Sp→0≢1 B ¬¬SpB
+
+    surj : isSurjectiveSpHom Bool-Booleω B (canonical-hom (fst B))
+    surj = Sp-canonical-surjective B 0≢1
+
+    -- Given a point in Sp Bool-Booleω, get a preimage in Sp B
+    step1 : Sp Bool-Booleω → ∥ Sp B ∥₁
+    step1 pt = PT.rec squash₁ (λ preimg → ∣ fst preimg ∣₁) (surj pt)
+
+  -- Trivial direction: ∥Sp(B)∥₁ → ¬¬Sp(B)
+  truncSp→¬¬Sp : (B : Booleω) → ∥ Sp B ∥₁ → ¬ ¬ Sp B
+  truncSp→¬¬Sp B = PT.rec (isProp¬ _) (λ pt ¬SpB → ¬SpB pt)
+
+  -- The full equivalence: ¬¬Sp(B) ≃ ∥Sp(B)∥₁
+  -- This is tex Corollary 415 (LemSurjectionsFormalToCompleteness)
+  LemSurjectionsFormalToCompleteness-derived : (B : Booleω)
+    → ⟨ ¬hProp ((¬ Sp B) , isProp¬ (Sp B)) ⟩ ≃ ∥ Sp B ∥₁
+  LemSurjectionsFormalToCompleteness-derived B =
+    propBiimpl→Equiv
+      (isProp¬ (¬ Sp B))
+      squash₁
+      (¬¬Sp→truncSp B)
+      (truncSp→¬¬Sp B)
 
 -- =============================================================================
 -- ODisc Infrastructure (tex Definition 918, Lemma 1336)
@@ -8867,16 +8930,12 @@ module TruncationStoneClosedComplete where
   ¬¬Sp-isClosed : (B : Booleω) → isClosedProp (¬¬Sp-hProp B)
   ¬¬Sp-isClosed B = ¬-of-open-is-closed (¬Sp-hProp B) (¬Sp-isOpen B)
 
-  -- For the full TruncationStoneClosed, we need:
-  -- LemSurjectionsFormalToCompleteness: ||Sp(B)|| ↔ ¬¬Sp(B)
-  --
-  -- This requires SurjectionsAreFormalSurjections infrastructure.
-  -- For now, we postulate this equivalence.
-
-  postulate
-    -- tex Corollary 415: For Stone S, ¬¬S ↔ ||S||
-    LemSurjectionsFormalToCompleteness-equiv : (B : Booleω)
-      → ⟨ ¬¬Sp-hProp B ⟩ ≃ ∥ Sp B ∥₁
+  -- Use the derived version from LemSurjectionsFormalToCompleteness module
+  -- tex Corollary 415: For Stone S, ¬¬S ↔ ||S||
+  LemSurjectionsFormalToCompleteness-equiv : (B : Booleω)
+    → ⟨ ¬¬Sp-hProp B ⟩ ≃ ∥ Sp B ∥₁
+  LemSurjectionsFormalToCompleteness-equiv B =
+    LemSurjectionsFormalToCompleteness.LemSurjectionsFormalToCompleteness-derived B
 
   -- Final result: ||Sp(B)|| is closed
   truncSp-isClosed : (B : Booleω) → isClosedProp (∥ Sp B ∥₁ , squash₁)
@@ -23068,13 +23127,15 @@ module PostulateStatusTC where
   -- - External proof: 1
   --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- DERIVED (no longer postulates): 1
+  -- DERIVED (no longer postulates): 2
   --   * countableChoice → derived from dependentChoice-axiom (line 1485)
+  --   * LemSurjectionsFormalToCompleteness-equiv → derived from surj-formal-axiom
+  --     (tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁ for Booleω B)
   --
   -- MODULE-LEVEL POSTULATES (inside specialized modules):
   -- - B∞×B∞≃quotient (line 5503): requires correct presentation
   -- - evens-odds-disjoint (line 6451): local to LLPO proof
-  -- - booleω-equality-open (line 8771): would follow from ODisc formalization
+  -- - booleω-equality-open (line 8833): would follow from ODisc formalization
   -- - Geometric postulates (lines 12xxx): CHaus/interval topology axioms
   --
   -- EFFECTIVELY ELIMINABLE: 4 top-level postulates (3 forward refs + 1 external)
