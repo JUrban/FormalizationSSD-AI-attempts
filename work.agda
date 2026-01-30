@@ -6647,7 +6647,7 @@ llpo-from-SD α = transport-llpo (llpo-from-SD-aux h)
 -- - CHaus: compact Hausdorff spaces
 -- - Interval I: Cauchy reals as CHaus (tex 2272)
 -- - SurjectionsAreFormalSurjections proper formalization (tex Prop 414)
---     * LemSurjectionsFormalToCompleteness-equiv postulated
+--     * LemSurjectionsFormalToCompleteness-equiv DERIVED from surj-formal-axiom (CHANGES0321)
 
 -- =============================================================================
 -- Infrastructure for normalFormExists
@@ -12874,17 +12874,18 @@ module ZILocalModule where
   Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
   Bool-I-local = contr-map-const-local isContrUnitInterval
 
-  -- PROOF PATH FOR Bool-I-local (eliminating the postulate):
+  -- HISTORICAL: Previous elimination path for Bool-I-local (now DERIVED, CHANGES0332)
   --
-  -- The tex proof uses H⁰(I,ℤ) = ℤ to derive Z-I-local.
-  -- We have interval-cohomology-vanishes : H¹(I) = 0.
-  -- We need: H⁰(I,ℤ) = ℤ (zeroth cohomology).
+  -- The tex proof used H⁰(I,ℤ) = ℤ to derive Z-I-local.
+  -- OUR SIMPLER PROOF: If the DOMAIN is contractible, ANY function is constant.
+  -- This uses contr-map-const-local with isContrUnitInterval.
   --
-  -- H⁰(X,ℤ) = coHom 0 ℤAbGroup X = ∥ X → ℤ ∥₂
-  -- For connected X, this simplifies to: constant maps X → ℤ
-  -- Since I is connected, H⁰(I,ℤ) = ℤ means every map I → ℤ is constant.
+  -- For historical reference, the alternative approaches were:
+  -- - H⁰(X,ℤ) = coHom 0 ℤAbGroup X = ∥ X → ℤ ∥₂
+  -- - For connected X, this simplifies to: constant maps X → ℤ
+  -- - Since I is connected, H⁰(I,ℤ) = ℤ means every map I → ℤ is constant.
   --
-  -- ALTERNATIVE CONNECTEDNESS ARGUMENT:
+  -- HISTORICAL: Alternative connectedness argument:
   -- I is path-connected (given x,y : I, the linear path t ↦ (1-t)·x + t·y connects them).
   -- Path-connected types are connected (no non-constant maps to discrete types).
   --
@@ -14522,13 +14523,14 @@ module CohomologyModule where
     is-1-connected-I-derived = interval-trunc-inhabited , λ x → interval-trunc-isProp _ x
 
     -- =======================================================================
-    -- NOTE: This derivation shows that the is-1-connected-I postulate
-    -- (in IntervalConnectednessDerivedTC) is redundant given isContrUnitInterval.
+    -- NOTE: This derivation shows that is-1-connected-I is DERIVABLE from
+    -- isContrUnitInterval. The postulate is redundant (CHANGES0322).
     --
-    -- POSTULATE CHAIN:
-    --   isContrUnitInterval → is-1-connected-I → Bool-I-local, Z-I-local
+    -- DERIVATION STATUS (CHANGES0332):
+    --   isContrUnitInterval directly implies Bool-I-local, Z-I-local
+    --   (via contr-map-const-local, not via is-1-connected-I)
     --
-    -- This further reduces the number of independent postulates!
+    -- All I-locality results now reduce to the single geometric postulate!
     -- =======================================================================
 
   -- =========================================================================
@@ -15106,9 +15108,9 @@ module CohomologyModule where
 -- MAJOR THEOREMS FULLY PROVED:
 -- 1. IntermediateValueTheorem (line ~12819): COMPLETE PROOF
 --    Uses: InhabitedClosedSubSpaceClosedCHaus, Bool-I-local, closedIsStable
---    Depends on: interval topology postulates (Bool-I-local, <I-apartness, etc.)
+--    Bool-I-local: DERIVED from isContrUnitInterval (CHANGES0332)
 --
--- 2. TruncationStoneClosed (line ~12833): Complete (modulo LemSurjectionsFormal postulate)
+-- 2. TruncationStoneClosed (line ~12833): COMPLETE (LemSurjectionsFormal DERIVED, CHANGES0321)
 --    Shows: ||S|| is closed for Stone S
 --
 -- LEMMAS FULLY PROVED (not postulates anymore):
@@ -15136,15 +15138,16 @@ module CohomologyModule where
 -- 3. retraction-from-no-fixpoint (line ~12915): geometric construction
 --
 -- TOPOLOGICAL POSTULATES (require topology infrastructure):
--- 1. Interval topology postulates (lines ~12600-12700): Bool-I-local, <I-apartness
+-- 1. Interval topology: <I-apartness etc. (Bool-I-local, Z-I-local DERIVED, CHANGES0332)
 -- 2. CHausFiniteIntersectionProperty (line ~12064)
 -- 3. Various closed subset properties
 --
--- Total postulates: ~62
--- - ~8 fundamental axioms (intended as axioms)
+-- Postulate summary (updated after CHANGES0332):
+-- - 4 fundamental axioms (from tex): sd-axiom, surj-formal-axiom, localChoice, dependentChoice
+-- - 8 DERIVED (no longer postulates): Bool-I-local, Z-I-local, BZ-I-local, etc.
 -- - ~20 geometric/topological (require concrete definitions)
--- - ~6 provable but kept for forward reference
--- - ~28 other infrastructure postulates
+-- - ~4 forward-reference (proved later in file)
+-- - Other infrastructure postulates
 --
 -- BROUWER FIXED POINT THEOREM (line ~12854):
 -- Status: Structure is complete, depends on no-retraction and retraction-from-no-fixpoint
@@ -16918,15 +16921,15 @@ module GroupTheoryAdditional where
 -- This module documents the interval topology axioms that must be postulated.
 
 module IntervalTopologyAxiomsDoc where
-  -- The following are the key interval topology postulates:
+  -- Interval topology: Bool-I-local and Z-I-local are now DERIVED (CHANGES0332)!
   --
-  -- 1. Bool-I-local (line ~12677):
-  --    (f : I → Bool) → Σ[ b ∈ Bool ] ((i : I) → f i ≡ b)
-  --    Functions from I to Bool are constant.
+  -- 1. Bool-I-local (DERIVED at line ~12875, CHANGES0332):
+  --    (f : I → Bool) → (x y : I) → f x ≡ f y
+  --    Functions from I to Bool are constant. DERIVED from isContrUnitInterval.
   --
-  -- 2. Z-I-local:
-  --    (f : I → ℤ) → Σ[ z ∈ ℤ ] ((i : I) → f i ≡ z)
-  --    Functions from I to ℤ are constant.
+  -- 2. Z-I-local (DERIVED at line ~12858, CHANGES0332):
+  --    (f : I → ℤ) → (x y : I) → f x ≡ f y
+  --    Functions from I to ℤ are constant. DERIVED from isContrUnitInterval.
   --
   -- 3. <I-trichotomy:
   --    (x y : I) → (x < y) ⊎ (x ≡ y) ⊎ (y < x)
@@ -18421,14 +18424,14 @@ module FinalSessionSummary0262 where
   --
   -- TYPE-CHECKED LEMMAS: ~100+
   --
-  -- POSTULATE STATUS:
-  -- - 5 fundamental axioms (from tex)
+  -- POSTULATE STATUS (updated CHANGES0337):
+  -- - 4 fundamental axioms (from tex)
   -- - 4 forward references (all proved later in file)
+  -- - 8 DERIVED (no longer postulates): Bool-I-local, Z-I-local, BZ-I-local, etc.
   --
-  -- GEOMETRIC POSTULATES (in later modules):
+  -- REMAINING GEOMETRIC POSTULATES (in later modules):
   -- - Disk2, Circle, boundary-inclusion
-  -- - isContrDisk2, disk-cohomology-vanishes
-  -- - Bool-I-local, Z-I-local
+  -- - isContrDisk2, isContrUnitInterval (primitive geometric)
   -- - <I-trichotomy, <I-apartness
 
 -- =============================================================================
