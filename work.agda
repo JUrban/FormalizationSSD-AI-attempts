@@ -23589,10 +23589,17 @@ module BZILocalTC where
   -- SUMMARY (tex Lemma 3027)
   -- =========================================================================
   --
-  -- The proof that BZ is I-local combines:
-  -- 1. Z-I-local (from IntervalConnectednessDerivedTC)
-  -- 2. interval-cohomology-vanishes (from CohomologyModule, tex Prop 2991)
-  -- 3. The fact that identity types in K(G,1) are G-torsors
+  -- OUR DERIVATION is much simpler than the tex proof:
+  -- - We use isContrUnitInterval directly via contr-map-const
+  -- - No need for Z-I-local, cohomology, or ℤ-torsors!
+  --
+  -- KEY INSIGHT: If the DOMAIN is contractible, then ANY function is constant,
+  -- regardless of the codomain's properties. This is why ALL I-local statements
+  -- (Bool-I-local, Z-I-local, Stone-I-local, BZ-I-local) follow trivially from
+  -- isContrUnitInterval.
+  --
+  -- The tex proof uses H¹(I,ℤ) = 0 to show maps I → BZ are null-homotopic.
+  -- Our proof just uses: contractible domain → constant functions.
   --
   -- This result is used in:
   -- - tex Lemma 3035 (continuously-path-connected-contractible)
