@@ -23966,12 +23966,18 @@ module NoRetractionTC where
   --
   -- COHOMOLOGY APPROACH:
   -- 1. circle-cohomology: H¹(S¹) ≃ ℤ - TYPE-CHECKED in CohomologyModule
-  -- 2. disk-cohomology-vanishes: H¹(D²) ≃ 0 - POSTULATED
-  -- 3. H¹ functoriality - NOT YET FORMALIZED
+  -- 2. disk-cohomology-vanishes: H¹(D²) ≃ 0 - DERIVED from isContrDisk2
+  -- 3. H¹ functoriality - AVAILABLE IN LIBRARY (coHomFun, coHomMorph)
+  --    Cubical.ZCohomology.GroupStructure provides:
+  --    - coHomFun : (f : A → B) → coHom n B → coHom n A
+  --    - coHomMorph : (f : A → B) → GroupHom (coHomGr n B) (coHomGr n A)
+  --    The blocker is connecting abstract Circle/Disk2 to concrete S¹/D².
   --
   -- The `no-retraction` postulate in BrouwerFixedPointTheoremModule
-  -- is justified by these arguments. Full type-checking would require
-  -- formalizing the L_I modality or H¹ functoriality.
+  -- is justified by these arguments. Full derivation requires:
+  -- - Identifying Circle with S¹ OR using circle-cohomology directly
+  -- - Using coHomFun contravariance: (r ∘ i)* = i* ∘ r* = id
+  -- - Algebraic fact: no id = φ ∘ ψ where ψ : ℤ → 0 (see ℤ-Unit-ℤ-is-zero)
 
 -- =============================================================================
 -- Module: FormalizationStatusTC
