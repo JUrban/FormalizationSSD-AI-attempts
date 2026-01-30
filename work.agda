@@ -4114,21 +4114,344 @@ freeBool→Bool²-hom = inducedBAHom Bool Bool² freeBool→Bool²-on-gens
 --   relBool² 0 = generator 0 · generator 1         (atoms have trivial meet)
 --   relBool² 1 = 1 + generator 0 + generator 1     (atoms sum to 1)
 --   relBool² (n+2) = generator (n+2)               (kill extra generators)
---
--- The proof that Bool² ≃ freeBA ℕ /Im relBool² requires:
--- (1) Forward map: Bool² → quotient sending (a,b) to [appropriate combination]
--- (2) Backward map: quotient → Bool² induced by generator 0 ↦ (1,0), generator 1 ↦ (0,1)
--- (3) Showing both compositions are identity (tedious but mechanical)
---
--- Mathematical justification for postulate:
--- - Finite Boolean rings are finitely presented (standard algebra result)
--- - Bool² has 4 elements with 2 atoms, so it's presented by 2 generators + 2 relations
--- - This is a countable presentation (finite is countable)
--- - The postulate doesn't introduce logical inconsistency
---
--- TODO: Implement full proof using explicit presentation relBool² above
-postulate
-  Bool²-has-Boole-ω' : has-Boole-ω' Bool²
+
+-- Local module for Bool² presentation
+module Bool²-presentation where
+  open BooleanRingStr (snd (freeBA ℕ)) using (_+_ ; 𝟙) renaming (_·_ to _·free_)
+
+  -- The generators in freeBA ℕ
+  g₀ : ⟨ freeBA ℕ ⟩
+  g₀ = generator 0
+
+  g₁ : ⟨ freeBA ℕ ⟩
+  g₁ = generator 1
+
+  -- The relations for Bool²
+  -- relBool² 0 = g₀ · g₁ (atoms are orthogonal)
+  -- relBool² 1 = 𝟙 + g₀ + g₁ (atoms sum to 1 in Boolean ring means g₀ ⊕ g₁ = 1)
+  -- relBool² (n+2) = generator (n+2) (kill extra generators)
+  relBool² : ℕ → ⟨ freeBA ℕ ⟩
+  relBool² 0 = g₀ ·free g₁
+  relBool² 1 = 𝟙 + g₀ + g₁
+  relBool² (suc (suc n)) = generator (suc (suc n))
+
+  -- The quotient ring: Bool²-quotient = freeBA ℕ /Im relBool²
+  Bool²-quotient : BooleanRing ℓ-zero
+  Bool²-quotient = freeBA ℕ QB./Im relBool²
+
+  -- The quotient map
+  π : BoolHom (freeBA ℕ) Bool²-quotient
+  π = QB.quotientImageHom
+
+  -- The backward map: generator 0 ↦ (true, false), generator 1 ↦ (false, true)
+  gens→Bool² : ℕ → ⟨ Bool² ⟩
+  gens→Bool² 0 = (true , false)   -- e₀
+  gens→Bool² 1 = (false , true)   -- e₁
+  gens→Bool² (suc (suc n)) = (false , false)  -- killed generators map to 0
+
+  -- The induced homomorphism freeBA ℕ → Bool² via universal property
+  freeBool→Bool² : BoolHom (freeBA ℕ) Bool²
+  freeBool→Bool² = inducedBAHom ℕ Bool² gens→Bool²
+
+  -- Need to show that relBool² n maps to 0 in Bool² for all n
+  -- This allows us to factor through the quotient
+  private
+    open BooleanRingStr (snd Bool²) using () renaming (_+_ to _+²_ ; _·_ to _·²_ ; 𝟘 to 𝟘² ; 𝟙 to 𝟙²)
+    open IsCommRingHom (snd freeBool→Bool²)
+
+  freeBool→Bool²-on-rels : (n : ℕ) → fst freeBool→Bool² (relBool² n) ≡ 𝟘²
+  freeBool→Bool²-on-rels 0 =
+    -- g₀ · g₁ ↦ (true,false) · (false,true) = (false,false) = 0
+    fst freeBool→Bool² (g₀ ·free g₁)
+      ≡⟨ pres· g₀ g₁ ⟩
+    fst freeBool→Bool² g₀ ·² fst freeBool→Bool² g₁
+      ≡⟨ cong₂ _·²_ (evalBAInduce ℕ Bool² gens→Bool² ≡$ 0) (evalBAInduce ℕ Bool² gens→Bool² ≡$ 1) ⟩
+    (true , false) ·² (false , true)
+      ≡⟨ refl ⟩
+    (true ∧ false , false ∧ true)
+      ≡⟨ refl ⟩
+    (false , false)
+      ≡⟨ refl ⟩
+    𝟘² ∎
+  freeBool→Bool²-on-rels 1 =
+    -- 𝟙 + g₀ + g₁ ↦ (true,true) + (true,false) + (false,true)
+    --             = (true ⊕ true ⊕ false, true ⊕ false ⊕ true) = (false, false) = 0
+    fst freeBool→Bool² (𝟙 + g₀ + g₁)
+      ≡⟨ pres+ 𝟙 (g₀ + g₁) ⟩
+    fst freeBool→Bool² 𝟙 +² fst freeBool→Bool² (g₀ + g₁)
+      ≡⟨ cong₂ _+²_ pres1 (pres+ g₀ g₁) ⟩
+    𝟙² +² (fst freeBool→Bool² g₀ +² fst freeBool→Bool² g₁)
+      ≡⟨ cong (λ x → 𝟙² +² (x +² fst freeBool→Bool² g₁)) (evalBAInduce ℕ Bool² gens→Bool² ≡$ 0) ⟩
+    𝟙² +² ((true , false) +² fst freeBool→Bool² g₁)
+      ≡⟨ cong (λ x → 𝟙² +² ((true , false) +² x)) (evalBAInduce ℕ Bool² gens→Bool² ≡$ 1) ⟩
+    (true , true) +² ((true , false) +² (false , true))
+      ≡⟨ refl ⟩
+    (true , true) +² (true ⊕ false , false ⊕ true)
+      ≡⟨ refl ⟩
+    (true , true) +² (true , true)
+      ≡⟨ refl ⟩
+    (true ⊕ true , true ⊕ true)
+      ≡⟨ refl ⟩
+    (false , false)
+      ≡⟨ refl ⟩
+    𝟘² ∎
+  freeBool→Bool²-on-rels (suc (suc n)) =
+    -- generator (n+2) ↦ (false, false) = 0
+    fst freeBool→Bool² (generator (suc (suc n)))
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ (suc (suc n)) ⟩
+    (false , false)
+      ≡⟨ refl ⟩
+    𝟘² ∎
+
+  -- The induced homomorphism from the quotient to Bool²
+  quotient→Bool² : BoolHom Bool²-quotient Bool²
+  quotient→Bool² = QB.inducedHom Bool² freeBool→Bool² freeBool→Bool²-on-rels
+
+  -- The forward map: Bool² → quotient
+  -- (true,false) ↦ [g₀], (false,true) ↦ [g₁], etc.
+  Bool²→quotient-fun : ⟨ Bool² ⟩ → ⟨ Bool²-quotient ⟩
+  Bool²→quotient-fun (false , false) = BooleanRingStr.𝟘 (snd Bool²-quotient)
+  Bool²→quotient-fun (false , true)  = fst π g₁
+  Bool²→quotient-fun (true , false)  = fst π g₀
+  Bool²→quotient-fun (true , true)   = BooleanRingStr.𝟙 (snd Bool²-quotient)
+
+  private
+    open BooleanRingStr (snd Bool²-quotient) using () renaming (_+_ to _+Q_ ; _·_ to _·Q_ ; 𝟘 to 𝟘Q ; 𝟙 to 𝟙Q)
+
+  -- The forward map is a homomorphism
+  Bool²→quotient-pres1 : Bool²→quotient-fun 𝟙² ≡ 𝟙Q
+  Bool²→quotient-pres1 = refl
+
+  Bool²→quotient-pres+ : (x y : ⟨ Bool² ⟩) → Bool²→quotient-fun (x +² y) ≡ Bool²→quotient-fun x +Q Bool²→quotient-fun y
+  Bool²→quotient-pres+ (false , false) (false , false) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (false , true) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (true , false) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (true , true) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , true) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , true) (false , true) =
+    -- (false, true) + (false, true) = (false, false) = 0
+    -- π(g₁) + π(g₁) = 0 (in Boolean ring, x + x = 0)
+    sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₁))
+  Bool²→quotient-pres+ (false , true) (true , false) =
+    -- (false, true) + (true, false) = (true, true) = 1
+    -- We need: π(g₁) + π(g₀) = 1
+    -- From relation: 𝟙 + g₀ + g₁ = 0 in quotient, so g₀ + g₁ = 1 (in Boolean ring -1 = 1)
+    sym (
+      𝟙Q
+        ≡⟨ sym (BooleanRingStr.+IdR (snd Bool²-quotient) 𝟙Q) ⟩
+      𝟙Q +Q 𝟘Q
+        ≡⟨ cong (𝟙Q +Q_) (sym (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 1)) ⟩
+      𝟙Q +Q fst π (relBool² 1)
+        ≡⟨ cong (𝟙Q +Q_) (cong (fst π) refl) ⟩
+      𝟙Q +Q fst π (𝟙 + g₀ + g₁)
+        ≡⟨ cong (𝟙Q +Q_) (IsCommRingHom.pres+ (snd π) 𝟙 (g₀ + g₁)) ⟩
+      𝟙Q +Q (fst π 𝟙 +Q fst π (g₀ + g₁))
+        ≡⟨ cong (λ x → 𝟙Q +Q (x +Q fst π (g₀ + g₁))) (IsCommRingHom.pres1 (snd π)) ⟩
+      𝟙Q +Q (𝟙Q +Q fst π (g₀ + g₁))
+        ≡⟨ cong (λ x → 𝟙Q +Q (𝟙Q +Q x)) (IsCommRingHom.pres+ (snd π) g₀ g₁) ⟩
+      𝟙Q +Q (𝟙Q +Q (fst π g₀ +Q fst π g₁))
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₁ +Q fst π g₀ ∎)
+  Bool²→quotient-pres+ (false , true) (true , true) =
+    -- (false, true) + (true, true) = (true, false)
+    -- π(g₁) + 1 = π(g₀)?  Actually in Boolean ring: 1 + x = complement of x
+    -- We need: π(g₁) + 1 = π(g₀)
+    -- From relation: 1 + g₀ + g₁ = 0, so g₀ + g₁ = 1, and g₁ + 1 = g₁ + g₀ + g₁ = g₀
+    sym (
+      fst π g₀
+        ≡⟨ sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
+      fst π g₀ +Q 𝟘Q
+        ≡⟨ cong (fst π g₀ +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₁))) ⟩
+      fst π g₀ +Q (fst π g₁ +Q fst π g₁)
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₁ +Q (fst π g₀ +Q fst π g₁)
+        ≡⟨ cong (fst π g₁ +Q_) (sym (IsCommRingHom.pres+ (snd π) g₀ g₁)) ⟩
+      fst π g₁ +Q fst π (g₀ + g₁)
+        ≡⟨ cong (fst π g₁ +Q_) (sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)) ⟩
+      fst π g₁ +Q (𝟘Q +Q fst π (g₀ + g₁))
+        ≡⟨ cong (λ x → fst π g₁ +Q (x +Q fst π (g₀ + g₁))) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)) ⟩
+      fst π g₁ +Q ((𝟙Q +Q 𝟙Q) +Q fst π (g₀ + g₁))
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₁ +Q (𝟙Q +Q (𝟙Q +Q fst π (g₀ + g₁)))
+        ≡⟨ cong (λ x → fst π g₁ +Q (𝟙Q +Q (x +Q fst π (g₀ + g₁)))) (sym (IsCommRingHom.pres1 (snd π))) ⟩
+      fst π g₁ +Q (𝟙Q +Q (fst π 𝟙 +Q fst π (g₀ + g₁)))
+        ≡⟨ cong (λ x → fst π g₁ +Q (𝟙Q +Q x)) (sym (IsCommRingHom.pres+ (snd π) 𝟙 (g₀ + g₁))) ⟩
+      fst π g₁ +Q (𝟙Q +Q fst π (𝟙 + g₀ + g₁))
+        ≡⟨ cong (λ x → fst π g₁ +Q (𝟙Q +Q x)) (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 1) ⟩
+      fst π g₁ +Q (𝟙Q +Q 𝟘Q)
+        ≡⟨ cong (fst π g₁ +Q_) (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
+      fst π g₁ +Q 𝟙Q ∎)
+  Bool²→quotient-pres+ (true , false) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (true , false) (false , true) =
+    -- Symmetric to (false, true) + (true, false)
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true false) (⊕-comm false true)) ∙
+    Bool²→quotient-pres+ (false , true) (true , false) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) (fst π g₀)
+  Bool²→quotient-pres+ (true , false) (true , false) =
+    sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₀))
+  Bool²→quotient-pres+ (true , false) (true , true) =
+    -- (true, false) + (true, true) = (false, true)
+    -- π(g₀) + 1 = π(g₁)
+    -- From: g₀ + g₁ = 1, so g₀ + 1 = g₀ + g₀ + g₁ = g₁
+    sym (
+      fst π g₁
+        ≡⟨ sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
+      fst π g₁ +Q 𝟘Q
+        ≡⟨ cong (fst π g₁ +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₀))) ⟩
+      fst π g₁ +Q (fst π g₀ +Q fst π g₀)
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₀ +Q (fst π g₀ +Q fst π g₁)
+        ≡⟨ cong (fst π g₀ +Q_) (sym (IsCommRingHom.pres+ (snd π) g₀ g₁)) ⟩
+      fst π g₀ +Q fst π (g₀ + g₁)
+        ≡⟨ cong (fst π g₀ +Q_) (sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)) ⟩
+      fst π g₀ +Q (𝟘Q +Q fst π (g₀ + g₁))
+        ≡⟨ cong (λ x → fst π g₀ +Q (x +Q fst π (g₀ + g₁))) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)) ⟩
+      fst π g₀ +Q ((𝟙Q +Q 𝟙Q) +Q fst π (g₀ + g₁))
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₀ +Q (𝟙Q +Q (𝟙Q +Q fst π (g₀ + g₁)))
+        ≡⟨ cong (λ x → fst π g₀ +Q (𝟙Q +Q (x +Q fst π (g₀ + g₁)))) (sym (IsCommRingHom.pres1 (snd π))) ⟩
+      fst π g₀ +Q (𝟙Q +Q (fst π 𝟙 +Q fst π (g₀ + g₁)))
+        ≡⟨ cong (λ x → fst π g₀ +Q (𝟙Q +Q x)) (sym (IsCommRingHom.pres+ (snd π) 𝟙 (g₀ + g₁))) ⟩
+      fst π g₀ +Q (𝟙Q +Q fst π (𝟙 + g₀ + g₁))
+        ≡⟨ cong (λ x → fst π g₀ +Q (𝟙Q +Q x)) (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 1) ⟩
+      fst π g₀ +Q (𝟙Q +Q 𝟘Q)
+        ≡⟨ cong (fst π g₀ +Q_) (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
+      fst π g₀ +Q 𝟙Q ∎)
+  Bool²→quotient-pres+ (true , true) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (true , true) (false , true) =
+    -- Symmetric case
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true false) (⊕-comm true true)) ∙
+    Bool²→quotient-pres+ (false , true) (true , true) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) 𝟙Q
+  Bool²→quotient-pres+ (true , true) (true , false) =
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true true) (⊕-comm true false)) ∙
+    Bool²→quotient-pres+ (true , false) (true , true) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₀) 𝟙Q
+  Bool²→quotient-pres+ (true , true) (true , true) =
+    sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)
+
+  Bool²→quotient-pres· : (x y : ⟨ Bool² ⟩) → Bool²→quotient-fun (x ·² y) ≡ Bool²→quotient-fun x ·Q Bool²→quotient-fun y
+  Bool²→quotient-pres· (false , false) y = sym (BooleanRingStr.AnnihilL (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (false , true) (false , false) = sym (BooleanRingStr.AnnihilR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (false , true) (false , true) =
+    sym (BooleanRingStr.·Idem (snd Bool²-quotient) (fst π g₁))
+  Bool²→quotient-pres· (false , true) (true , false) =
+    -- (false, true) · (true, false) = (false, false) = 0
+    -- π(g₁) · π(g₀) = 0 (from relation g₀ · g₁ = 0)
+    sym (
+      𝟘Q
+        ≡⟨ sym (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 0) ⟩
+      fst π (relBool² 0)
+        ≡⟨ refl ⟩
+      fst π (g₀ ·free g₁)
+        ≡⟨ IsCommRingHom.pres· (snd π) g₀ g₁ ⟩
+      fst π g₀ ·Q fst π g₁
+        ≡⟨ BooleanRingStr.·Comm (snd Bool²-quotient) (fst π g₀) (fst π g₁) ⟩
+      fst π g₁ ·Q fst π g₀ ∎)
+  Bool²→quotient-pres· (false , true) (true , true) =
+    -- (false, true) · (true, true) = (false, true)
+    -- π(g₁) · 1 = π(g₁)
+    sym (BooleanRingStr.·IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (true , false) (false , false) = sym (BooleanRingStr.AnnihilR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (true , false) (false , true) =
+    cong Bool²→quotient-fun (cong₂ _,_ (∧-comm true false) (∧-comm false true)) ∙
+    Bool²→quotient-pres· (false , true) (true , false) ∙
+    BooleanRingStr.·Comm (snd Bool²-quotient) _ _
+  Bool²→quotient-pres· (true , false) (true , false) =
+    sym (BooleanRingStr.·Idem (snd Bool²-quotient) (fst π g₀))
+  Bool²→quotient-pres· (true , false) (true , true) =
+    sym (BooleanRingStr.·IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (true , true) y = sym (BooleanRingStr.·IdL (snd Bool²-quotient) _)
+
+  Bool²→quotient : BoolHom Bool² Bool²-quotient
+  Bool²→quotient = Bool²→quotient-fun , record
+    { pres0 = refl
+    ; pres1 = refl
+    ; pres+ = Bool²→quotient-pres+
+    ; pres· = Bool²→quotient-pres·
+    ; pres- = λ x → sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ∙
+                    cong (Bool²→quotient-fun x +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) _)) ∙
+                    sym (Bool²→quotient-pres+ x x) ∙
+                    cong Bool²→quotient-fun (BooleanRingStr.+Idem (snd Bool²) x)
+    }
+
+  -- Now we prove the two maps are inverses
+
+  -- quotient→Bool² ∘ Bool²→quotient = id
+  roundtrip-Bool² : (x : ⟨ Bool² ⟩) → fst quotient→Bool² (Bool²→quotient-fun x) ≡ x
+  roundtrip-Bool² (false , false) = IsCommRingHom.pres0 (snd quotient→Bool²)
+  roundtrip-Bool² (false , true) =
+    fst quotient→Bool² (fst π g₁)
+      ≡⟨ cong (fst quotient→Bool²) refl ⟩
+    fst (quotient→Bool² ∘cr π) g₁
+      ≡⟨ cong (λ h → fst h g₁) (QB.evalInduce Bool² {freeBool→Bool²} {freeBool→Bool²-on-rels}) ⟩
+    fst freeBool→Bool² g₁
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ 1 ⟩
+    (false , true) ∎
+  roundtrip-Bool² (true , false) =
+    fst quotient→Bool² (fst π g₀)
+      ≡⟨ cong (fst quotient→Bool²) refl ⟩
+    fst (quotient→Bool² ∘cr π) g₀
+      ≡⟨ cong (λ h → fst h g₀) (QB.evalInduce Bool² {freeBool→Bool²} {freeBool→Bool²-on-rels}) ⟩
+    fst freeBool→Bool² g₀
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ 0 ⟩
+    (true , false) ∎
+  roundtrip-Bool² (true , true) = IsCommRingHom.pres1 (snd quotient→Bool²)
+
+  -- Bool²→quotient ∘ quotient→Bool² = id (on the quotient)
+  -- This requires showing the composite is the identity on generators and using uniqueness
+
+  -- The composite Bool²→quotient ∘ quotient→Bool² when applied to π(gen n)
+  composite-on-gens : (n : ℕ) → fst Bool²→quotient (fst quotient→Bool² (fst π (generator n))) ≡ fst π (generator n)
+  composite-on-gens 0 =
+    fst Bool²→quotient (fst quotient→Bool² (fst π g₀))
+      ≡⟨ cong (fst Bool²→quotient) (roundtrip-Bool² (true , false)) ⟩
+    fst Bool²→quotient (true , false)
+      ≡⟨ refl ⟩
+    fst π g₀ ∎
+  composite-on-gens 1 =
+    fst Bool²→quotient (fst quotient→Bool² (fst π g₁))
+      ≡⟨ cong (fst Bool²→quotient) (roundtrip-Bool² (false , true)) ⟩
+    fst Bool²→quotient (false , true)
+      ≡⟨ refl ⟩
+    fst π g₁ ∎
+  composite-on-gens (suc (suc n)) =
+    fst Bool²→quotient (fst quotient→Bool² (fst π (generator (suc (suc n)))))
+      ≡⟨ cong (fst Bool²→quotient ∘ fst quotient→Bool²) (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} (suc (suc n))) ⟩
+    fst Bool²→quotient (fst quotient→Bool² 𝟘Q)
+      ≡⟨ cong (fst Bool²→quotient) (IsCommRingHom.pres0 (snd quotient→Bool²)) ⟩
+    fst Bool²→quotient 𝟘²
+      ≡⟨ IsCommRingHom.pres0 (snd Bool²→quotient) ⟩
+    𝟘Q
+      ≡⟨ sym (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} (suc (suc n))) ⟩
+    fst π (generator (suc (suc n))) ∎
+
+  -- The composite as a homomorphism freeBA ℕ → Bool²-quotient
+  composite-hom-on-gens : (n : ℕ) → fst (Bool²→quotient ∘cr quotient→Bool² ∘cr π) (generator n) ≡ fst π (generator n)
+  composite-hom-on-gens = composite-on-gens
+
+  -- By universal property, composite-hom = π (both extend gens ↦ π(gens))
+  composite-eq-π : Bool²→quotient ∘cr quotient→Bool² ∘cr π ≡ π
+  composite-eq-π = sym (inducedBAHomUnique ℕ Bool²-quotient (fst π ∘ generator) π refl) ∙
+                   inducedBAHomUnique ℕ Bool²-quotient (fst π ∘ generator)
+                                      (Bool²→quotient ∘cr quotient→Bool² ∘cr π)
+                                      (funExt composite-on-gens)
+
+  -- Since π is surjective, this means Bool²→quotient ∘ quotient→Bool² = id
+  roundtrip-quotient : (x : ⟨ Bool²-quotient ⟩) → fst Bool²→quotient (fst quotient→Bool² x) ≡ x
+  roundtrip-quotient = SQ.elimProp (λ _ → BooleanRingStr.is-set (snd Bool²-quotient) _ _)
+                       (λ a → cong (λ h → fst h a) composite-eq-π)
+
+  -- The equivalence
+  Bool²≃quotient : BooleanRingEquiv Bool² Bool²-quotient
+  Bool²≃quotient = (fst Bool²→quotient , isoToIsEquiv (iso (fst Bool²→quotient) (fst quotient→Bool²) roundtrip-quotient roundtrip-Bool²)) ,
+                   snd Bool²→quotient
+
+open Bool²-presentation
+
+-- The proof that Bool² has a countable presentation
+Bool²-has-Boole-ω' : has-Boole-ω' Bool²
+Bool²-has-Boole-ω' = relBool² , Bool²≃quotient
 
 Bool²-Booleω : Booleω
 Bool²-Booleω = Bool² , ∣ Bool²-has-Boole-ω' ∣₁
