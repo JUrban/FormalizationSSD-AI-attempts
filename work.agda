@@ -23468,6 +23468,58 @@ module BZILocalTC where
   ℤ-I-local-from-derived = Z-I-local-derived
 
   -- =========================================================================
+  -- TYPE-CHECKED HELPER: Loop space of BZ is ℤ
+  -- =========================================================================
+
+  -- BZ is the Eilenberg-MacLane space K(ℤ,1) = EM₁ ℤGroup
+  -- By EM≃ΩEM+1, we have: EM ℤGroup 0 ≃ Ω(EM ℤGroup 1) = Ω(BZ, bz₀)
+  -- Since EM ℤGroup 0 ≃ ℤ, we get Ω(BZ, bz₀) ≃ ℤ
+
+  open import Cubical.Homotopy.EilenbergMacLane.Properties as EMProp
+    using (EM≃ΩEM+1; ΩEM+1→EM; EM→ΩEM+1)
+  open import Cubical.Data.Int.Properties using (isSetℤ)
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+
+  -- The loop space Ω(BZ, bz₀) is equivalent to ℤ
+  ΩBZ≃ℤ : (bz₀ ≡ bz₀) ≃ ℤ
+  ΩBZ≃ℤ = invEquiv (EM≃ΩEM+1 {G = ℤGroup} 0)
+
+  -- Convert a path in BZ at bz₀ to an integer
+  path-to-int : bz₀ ≡ bz₀ → ℤ
+  path-to-int = fst ΩBZ≃ℤ
+
+  -- Convert an integer to a path in BZ at bz₀
+  int-to-path : ℤ → bz₀ ≡ bz₀
+  int-to-path = invEq ΩBZ≃ℤ
+
+  -- =========================================================================
+  -- TYPE-CHECKED: Paths at bz₀ in BZ are I-local
+  -- =========================================================================
+
+  -- If g : I → (bz₀ ≡ bz₀), then g is constant
+  -- Proof: g composed with path-to-int gives a map I → ℤ
+  --        By Z-I-local-derived, this map is constant
+  --        By equivalence, g is constant
+
+  paths-at-bz₀-I-local : (g : UnitInterval → (bz₀ ≡ bz₀)) → (x y : UnitInterval) → g x ≡ g y
+  paths-at-bz₀-I-local g x y = path-eq
+    where
+    -- Compose with path-to-int to get a map I → ℤ
+    g' : UnitInterval → ℤ
+    g' i = path-to-int (g i)
+
+    -- This map is constant by Z-I-local-derived
+    g'-const : g' x ≡ g' y
+    g'-const = ℤ-I-local-from-derived g' x y
+
+    -- Transport back to show g is constant
+    -- Use that int-to-path ∘ path-to-int ≡ id (by retEq)
+    -- So: int-to-path (g' x) ≡ int-to-path (g' y)
+    --     g x                ≡ g y  (using retEq)
+    path-eq : g x ≡ g y
+    path-eq = sym (retEq ΩBZ≃ℤ (g x)) ∙ cong int-to-path g'-const ∙ retEq ΩBZ≃ℤ (g y)
+
+  -- =========================================================================
   -- STEP 2: BZ → BZ^I is an embedding
   -- =========================================================================
 
