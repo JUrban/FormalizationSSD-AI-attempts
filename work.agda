@@ -23055,15 +23055,17 @@ module PostulateStatusTC where
   -- SUMMARY STATISTICS
   -- =================================================================
   --
-  -- Total postulates: ~9 keyword occurrences
-  -- - Fundamental axioms (intentional): 5 (sd-axiom, surj-formal, localChoice,
-  --   dependentChoice, countableChoice)
+  -- Total postulates: ~8 keyword occurrences
+  -- - Fundamental axioms (intentional): 4 (sd-axiom, surj-formal, localChoice,
+  --   dependentChoice)
+  -- - Derived (no longer postulates): 1 (countableChoice from dependentChoice)
   -- - Forward reference (proved in file): 3 (closedSigmaClosed, f-injective, llpo)
   -- - External proof: 1 (BoolQuotientEquiv)
   -- - Geometric: 3 (ImageDecidable..., complementClosed..., IntervalTopology...)
   --
   -- EFFECTIVELY ELIMINABLE: 4 postulates (the 3 forward refs + 1 external)
-  -- INTENTIONALLY PERMANENT: 5 postulates (fundamental axioms)
+  -- INTENTIONALLY PERMANENT: 4 postulates (fundamental axioms)
+  -- DERIVED: 1 (countableChoice from dependentChoice-axiom)
   -- GEOMETRIC GAPS: 3 postulates (require topology axioms)
   --
   -- =================================================================
