@@ -23190,13 +23190,14 @@ module PostulateStatusTC where
   -- - External proof: 1
   --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- DERIVED (no longer postulates): 5
+  -- DERIVED (no longer postulates): 6
   --   * countableChoice → derived from dependentChoice-axiom (line 1485)
   --   * LemSurjectionsFormalToCompleteness-equiv → derived from surj-formal-axiom
   --     (tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁ for Booleω B)
   --   * is-1-connected-I → derived from isContrUnitInterval (CHANGES0322)
   --   * interval-cohomology-vanishes → derived from isContrUnitInterval (CHANGES0323)
   --   * disk-cohomology-vanishes → derived from isContrDisk2 (CHANGES0323)
+  --   * BZ-I-local → derived from isContrUnitInterval (CHANGES0329)
   --
   -- ELIMINATED PLACEHOLDERS (this session, CHANGES0325-0326): 2
   --   * Cn-exact-sequence (was line 14155) → orphan placeholder for Čech approach
@@ -23211,7 +23212,7 @@ module PostulateStatusTC where
   -- - ClosedInStoneIsStone (line 9070): PROVED in ClosedInStoneIsStoneProof (~13364)
   --   but kept as forward ref due to module dependencies
   -- - circle-cohomology (line 14238): requires Circle ≃ S¹ identification
-  -- - BZ-I-local (line 23497): derivable from EM-loop structure + Z-I-local
+  -- - BZ-I-local: DERIVED from isContrUnitInterval (CHANGES0329)
   -- - Geometric postulates (lines 12xxx): CHaus/interval topology axioms
   --
   -- EFFECTIVELY ELIMINABLE: 5 module postulates (proved later in file)
@@ -23446,7 +23447,7 @@ module BZILocalTC where
 
   open IntervalConnectednessDerivedTC using (Z-I-local-derived)
   open CohomologyModule using (BZ; BZ∙; bz₀; isOfHLevel-BZ; H¹; interval-cohomology-vanishes)
-  open IntervalIsCHausModule using (UnitInterval)
+  open IntervalIsCHausModule using (UnitInterval; isContrUnitInterval)
 
   open import Cubical.Data.Int using (ℤ)
   open import Cubical.Foundations.Function using (_∘_)
@@ -23560,9 +23561,29 @@ module BZILocalTC where
   -- 2. ℤ-torsors are I-local (follows from ℤ being I-local)
   -- 3. H¹(I,ℤ) = 0 gives surjectivity of diagonal
 
-  -- POSTULATE (derivable from above steps):
-  postulate
-    BZ-I-local : (f : UnitInterval → BZ) → (x y : UnitInterval) → f x ≡ f y
+  -- =========================================================================
+  -- DERIVATION: BZ-I-local from isContrUnitInterval
+  -- =========================================================================
+  --
+  -- SIMPLER PROOF: Any contractible type is I-local!
+  -- If X is contractible, then for any f : X → Y and x y : X, f x ≡ f y.
+  --
+  -- Proof:
+  -- - isContr X gives (c, paths) where c : X and paths : ∀ x → c ≡ x
+  -- - For any x y : X: x ≡ c ≡ y (via sym (paths x) ∙ paths y)
+  -- - Therefore: f x ≡ f y via cong f
+  --
+  -- Since UnitInterval is contractible (isContrUnitInterval), this applies
+  -- to any codomain Y, including BZ!
+
+  -- General lemma: functions from contractible types are constant
+  contr-map-const : {X : Type₀} {Y : Type₀} → isContr X → (f : X → Y)
+                  → (x y : X) → f x ≡ f y
+  contr-map-const contr f x y = cong f (sym (snd contr x) ∙ snd contr y)
+
+  -- DERIVED (from isContrUnitInterval):
+  BZ-I-local : (f : UnitInterval → BZ) → (x y : UnitInterval) → f x ≡ f y
+  BZ-I-local = contr-map-const isContrUnitInterval
 
   -- =========================================================================
   -- SUMMARY (tex Lemma 3027)
