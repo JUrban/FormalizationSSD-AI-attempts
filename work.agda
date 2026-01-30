@@ -4217,14 +4217,16 @@ module Bool²-presentation where
 
   private
     open BooleanRingStr (snd Bool²-quotient) using () renaming (_+_ to _+Q_ ; _·_ to _·Q_ ; 𝟘 to 𝟘Q ; 𝟙 to 𝟙Q)
+    open BooleanAlgebraStr Bool²-quotient using () renaming (characteristic2 to char2Q-raw)
+    open BooleanAlgebraStr Bool² using () renaming (characteristic2 to char2²-raw)
 
     -- Characteristic 2 property: x + x = 0 in any Boolean ring
     char2Q : (x : ⟨ Bool²-quotient ⟩) → x +Q x ≡ 𝟘Q
-    char2Q x = BooleanAlgebraStr.characteristic2 (BooleanRing→BooleanAlgebra Bool²-quotient .snd) {x}
+    char2Q x = char2Q-raw {x}
 
     -- Characteristic 2 for Bool²
     char2² : (x : ⟨ Bool² ⟩) → x +² x ≡ 𝟘²
-    char2² x = BooleanAlgebraStr.characteristic2 (BooleanRing→BooleanAlgebra Bool² .snd) {x}
+    char2² x = char2²-raw {x}
 
   -- The forward map is a homomorphism
   Bool²→quotient-pres1 : Bool²→quotient-fun 𝟙² ≡ 𝟙Q
