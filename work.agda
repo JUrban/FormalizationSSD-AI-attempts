@@ -23198,9 +23198,14 @@ module PostulateStatusTC where
   -- - B∞×B∞≃quotient (line 5503): requires correct presentation
   -- - evens-odds-disjoint (line 6451): local to LLPO proof
   -- - booleω-equality-open (line 8833): would follow from ODisc formalization
+  -- - ClosedInStoneIsStone (line 9070): PROVED in ClosedInStoneIsStoneProof (~13364)
+  --   but kept as forward ref due to module dependencies
+  -- - circle-cohomology (line 14238): requires Circle ≃ S¹ identification
+  -- - BZ-I-local (line 23497): derivable from EM-loop structure + Z-I-local
   -- - Geometric postulates (lines 12xxx): CHaus/interval topology axioms
   --
-  -- EFFECTIVELY ELIMINABLE: 4 top-level postulates (3 forward refs + 1 external)
+  -- EFFECTIVELY ELIMINABLE: 5 module postulates (proved later in file)
+  --   - ClosedInStoneIsStone, llpo, closedSigmaClosed, f-injective + 1 external
   -- INTENTIONALLY PERMANENT: 4 postulates (fundamental axioms from tex)
   -- GEOMETRIC GAPS: Various module-level postulates (topology axioms)
   --
