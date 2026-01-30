@@ -7104,7 +7104,6 @@ open ℕ∞⊎ℕ∞IsStoneModule public
 
 module BoolIsStoneModule where
   open import Axioms.StoneDuality using (hasStoneStr; Stone)
-  open StoneSigmaClosedModule using (StoneSigmaClosed; StoneΣ; SigmaStoneType)
   open import Cubical.Data.Sum as ⊎
 
   -- ==========================================================================
@@ -7146,6 +7145,17 @@ module BoolIsStoneModule where
   postulate
     Bool-has-StoneStr : hasStoneStr Bool
 
+  -- Local forward declaration of StoneSigmaClosed (defined later in StoneSigmaClosedModule)
+  -- tex Theorem 2214: If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
+  -- Note: definitions duplicated here with private names to avoid forward reference
+  private
+    LocalSigmaStoneType : (S : Stone) → (T : fst S → Stone) → Type₀
+    LocalSigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x)
+
+    postulate
+      LocalStoneSigmaClosed : (S : Stone) (T : fst S → Stone)
+        → hasStoneStr (LocalSigmaStoneType S T)
+
   -- Construct Stone objects from hasStoneStr witnesses
   Bool-Stone : Stone
   Bool-Stone = Bool , Bool-has-StoneStr
@@ -7153,17 +7163,17 @@ module BoolIsStoneModule where
   ℕ∞-Stone : Stone
   ℕ∞-Stone = ℕ∞ , ℕ∞-has-StoneStr
 
-  -- For StoneSigmaClosed, we need T : Bool → Stone
+  -- For LocalStoneSigmaClosed, we need T : Bool → Stone
   -- T(b) = ℕ∞ for all b (constant family)
   ℕ∞-const-family : Bool → Stone
   ℕ∞-const-family _ = ℕ∞-Stone
 
-  -- The Σ type: Σ Bool (λ _ → ℕ∞) = SigmaStoneType Bool-Stone ℕ∞-const-family
-  -- Note: SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x) = Σ[ b ∈ Bool ] ℕ∞
+  -- The Σ type: Σ Bool (λ _ → ℕ∞) = LocalSigmaStoneType Bool-Stone ℕ∞-const-family
+  -- Note: LocalSigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x) = Σ[ b ∈ Bool ] ℕ∞
 
-  -- By StoneSigmaClosed, Σ Bool (λ _ → ℕ∞) is Stone
+  -- By LocalStoneSigmaClosed, Σ Bool (λ _ → ℕ∞) is Stone
   ΣBool-ℕ∞-has-StoneStr : hasStoneStr (Σ Bool (λ _ → ℕ∞))
-  ΣBool-ℕ∞-has-StoneStr = StoneSigmaClosed Bool-Stone ℕ∞-const-family
+  ΣBool-ℕ∞-has-StoneStr = LocalStoneSigmaClosed Bool-Stone ℕ∞-const-family
 
   -- Key equivalence: ℕ∞ ⊎ ℕ∞ ≃ Σ Bool (λ _ → ℕ∞)
   -- Standard fact: A ⊎ B ≃ Σ Bool (λ b → if b then A else B)
