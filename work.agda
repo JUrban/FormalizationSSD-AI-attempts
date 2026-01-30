@@ -7321,13 +7321,14 @@ module BoolIsStoneModule where
   -- - Bool = 2 = {false, true} is a finite set
   -- - The proof above constructs the witness explicitly
   --
-  -- Full proof would require:
-  -- - BoolBR×BoolBR-has-Boole-ω' : has-Boole-ω' (BoolBR ×BR BoolBR)
-  -- - Sp-BoolBR×BoolBR≃Bool : Sp (BoolBR ×BR BoolBR , _) ≃ Bool
-  -- - Bool-has-StoneStr = (BoolBR ×BR BoolBR , _) , ua Sp-BoolBR×BoolBR≃Bool
+  -- Full proof (now implemented!):
+  -- - Bool²-Booleω : Booleω = (BoolBR ×BR BoolBR , ∣ Bool²-has-Boole-ω' ∣₁)
+  -- - Sp-Bool²≃Bool : Sp Bool²-Booleω ≃ Bool
+  -- - Bool-has-StoneStr = Bool²-Booleω , sym (ua Sp-Bool²≃Bool)
   --
-  postulate
-    Bool-has-StoneStr : hasStoneStr Bool
+  -- This eliminates the previous postulate with an actual proof!
+  Bool-has-StoneStr : hasStoneStr Bool
+  Bool-has-StoneStr = Bool²-Booleω , sym (ua Sp-Bool²≃Bool)
 
   -- Local forward declaration of StoneSigmaClosed (defined later in StoneSigmaClosedModule)
   -- tex Theorem 2214: If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
