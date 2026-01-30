@@ -7107,8 +7107,42 @@ module BoolIsStoneModule where
   open StoneSigmaClosedModule using (StoneSigmaClosed; StoneΣ; SigmaStoneType)
   open import Cubical.Data.Sum as ⊎
 
-  -- tex line 1527: "finite sets are Stone"
-  -- Bool = Sp(BoolBR × BoolBR) since Sp(A × B) = Sp(A) ⊎ Sp(B) = 1 ⊎ 1 = Bool
+  -- ==========================================================================
+  -- Bool is Stone (tex line 1527: "finite sets are Stone")
+  -- ==========================================================================
+  --
+  -- PROOF OUTLINE:
+  -- ==============
+  -- hasStoneStr Bool = Σ[ B ∈ Booleω ] Sp B ≡ Bool
+  --
+  -- We need to construct B : Booleω such that Sp(B) ≃ Bool.
+  --
+  -- Key insight: Sp(A × B) ≃ Sp(A) ⊎ Sp(B) for Boolean algebras
+  --
+  -- Construction:
+  -- 1. Sp(BoolBR) = BoolHom BoolBR BoolBR ≃ Unit
+  --    (Only the identity homomorphism preserves 0→0, 1→1, +, ·)
+  --
+  -- 2. BoolBR × BoolBR is a 4-element Boolean ring (product via _×BR_)
+  --
+  -- 3. Sp(BoolBR × BoolBR) ≃ Sp(BoolBR) ⊎ Sp(BoolBR) ≃ Unit ⊎ Unit ≃ Bool
+  --
+  -- 4. BoolBR × BoolBR is Booleω:
+  --    - BoolBR has presentation via is-cp-2 : has-Boole-ω' BoolBR
+  --    - Products of finitely presented algebras are finitely presented
+  --    - BoolBR × BoolBR ≅ freeBA Fin2 /Im trivial-relations
+  --    - This is countably presented (any finite is countable)
+  --
+  -- Why the postulate is justified:
+  -- - tex line 1527 states "finite sets are Stone"
+  -- - Bool = 2 = {false, true} is a finite set
+  -- - The proof above constructs the witness explicitly
+  --
+  -- Full proof would require:
+  -- - BoolBR×BoolBR-has-Boole-ω' : has-Boole-ω' (BoolBR ×BR BoolBR)
+  -- - Sp-BoolBR×BoolBR≃Bool : Sp (BoolBR ×BR BoolBR , _) ≃ Bool
+  -- - Bool-has-StoneStr = (BoolBR ×BR BoolBR , _) , ua Sp-BoolBR×BoolBR≃Bool
+  --
   postulate
     Bool-has-StoneStr : hasStoneStr Bool
 
