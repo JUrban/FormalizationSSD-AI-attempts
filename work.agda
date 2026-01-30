@@ -49,7 +49,7 @@ open import Axioms.StoneDuality using (StoneDualityAxiom; Sp; Booleω; SpEmbeddi
 import OmnisciencePrinciples.Markov as MarkovLib
 
 -- Imports for quotientPreservesBooleω
-open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv; idBoolEquiv)
+open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; _is-presented-by_/_; BooleanRingEquiv; invBooleanRingEquiv; idBoolEquiv; has-Countability-structure)
 open import CountablyPresentedBooleanRings.Examples.Bool using (is-cp-2)
 open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA)
 import QuotientBool as QB
@@ -4046,11 +4046,80 @@ Bool²-unit-left = true , false
 Bool²-unit-right : ⟨ Bool² ⟩
 Bool²-unit-right = false , true
 
--- BoolBR × BoolBR is Booleω (finite Boolean rings are countably presented)
--- Since BoolBR has a presentation via is-cp-2, and products of finitely presented
--- algebras are finitely presented, BoolBR × BoolBR is also Booleω.
--- For finite Boolean algebras (with n atoms), they can be presented as
--- freeBA Fin_n / trivial-relations, which is countably presented.
+-- =============================================================================
+-- Proof that Bool² = BoolBR × BoolBR is Booleω
+-- =============================================================================
+-- Strategy: Bool² ≅ freeBA Bool (free Boolean ring on 2 generators)
+-- Since Bool is countable, freeBA Bool is Booleω by replacementFreeOnCountable
+-- Therefore Bool² is Booleω
+
+-- Step 1: Bool has a countability structure (Bool ≅ Fin 2)
+countBool : has-Countability-structure Bool
+countBool = α , iso fun' inv' sec' ret'
+  where
+  -- α n = true iff n = 0 or n = 1 (encodes {0,1} ⊆ ℕ)
+  α : binarySequence
+  α 0 = true
+  α 1 = true
+  α (suc (suc _)) = false
+
+  fun' : Bool → Σ[ n ∈ ℕ ] α n ≡ true
+  fun' false = 0 , refl
+  fun' true = 1 , refl
+
+  inv' : Σ[ n ∈ ℕ ] α n ≡ true → Bool
+  inv' (0 , _) = false
+  inv' (1 , _) = true
+  inv' (suc (suc n) , p) = ex-falso (false≢true p)
+
+  sec' : (x : Σ[ n ∈ ℕ ] α n ≡ true) → fun' (inv' x) ≡ x
+  sec' (0 , p) = Σ≡Prop (λ _ → isSetBool _ _) refl
+  sec' (1 , p) = Σ≡Prop (λ _ → isSetBool _ _) refl
+  sec' (suc (suc n) , p) = ex-falso (false≢true p)
+
+  ret' : (b : Bool) → inv' (fun' b) ≡ b
+  ret' false = refl
+  ret' true = refl
+
+-- Step 2: freeBA Bool has a countable presentation
+open import CountablyPresentedBooleanRings.Examples.FreeCase using (replacementFreeOnCountable)
+
+is-cp-freeBool : has-Boole-ω' (freeBA Bool)
+is-cp-freeBool = replacementFreeOnCountable Bool countBool
+
+-- Step 3: Construct the equivalence freeBA Bool ≅ Bool²
+-- The free Boolean ring on 2 generators is the 4-element Boolean ring
+-- with atoms e₁ = generator true and e₂ = generator false
+
+open import BooleanRing.FreeBooleanRing.FreeBool using (generator; freeBA-universal-property; inducedBAHom)
+
+-- The map freeBA Bool → Bool² sends generators to atoms
+-- Note: inducedBAHom extends A → ⟨B⟩ to BoolHom (freeBA A) B (not the reverse!)
+freeBool→Bool²-on-gens : Bool → ⟨ Bool² ⟩
+freeBool→Bool²-on-gens true = (true , false)  -- e₁ = Bool²-unit-left
+freeBool→Bool²-on-gens false = (false , true) -- e₂ = Bool²-unit-right
+
+-- By universal property, this extends to a homomorphism freeBA Bool → Bool²
+freeBool→Bool²-hom : BoolHom (freeBA Bool) Bool²
+freeBool→Bool²-hom = inducedBAHom Bool Bool² freeBool→Bool²-on-gens
+
+-- Note: The map Bool² → freeBA Bool cannot use inducedBAHom (wrong direction).
+-- A full proof of Bool² ≅ freeBA Bool would require explicit HIT reasoning.
+
+-- Proof of Bool² ≅ freeBA Bool (incomplete, kept as documentation)
+-- =================================================================
+-- The approach: use universal property of freeBA Bool to show:
+-- - freeBool→Bool²-hom ∘ Bool²→freeBool-hom = id
+-- - Bool²→freeBool-hom ∘ freeBool→Bool²-hom = id
+-- However, inducedBAHom gives freeBA A → B, not the other direction.
+-- A full proof requires either:
+-- (1) Explicit enumeration of freeBA Bool elements (complex HIT reasoning), or
+-- (2) Using abstract structure theorems about finite Boolean rings
+--
+-- For now, we keep Bool²-has-Boole-ω' as a justified postulate:
+-- Finite Boolean rings are finitely presented, hence countably presented.
+-- Bool² has 4 elements (2 atoms), so it equals freeBA Bool / trivial-ideal.
+-- Since Bool is countable, this is Booleω.
 postulate
   Bool²-has-Boole-ω' : has-Boole-ω' Bool²
 
@@ -4091,14 +4160,13 @@ proj₂-Bool²-hom = proj₂-Bool² , record
 -- In Bool with ⊕ and ∧, the only solutions are (1,0) and (0,1)
 
 -- Classification of homomorphisms: any h equals proj₁ or proj₂
+-- Using helper function pattern instead of inspect (Cubical Agda compatible)
 classify-Bool²-hom : (h : Sp Bool²-Booleω) → (h ≡ proj₁-Bool²-hom) ⊎.⊎ (h ≡ proj₂-Bool²-hom)
-classify-Bool²-hom h with fst h Bool²-unit-left | inspect (fst h) Bool²-unit-left
-... | true | [ eq ] = ⊎.inl (h≡proj₁ eq)
+classify-Bool²-hom h = helper (fst h Bool²-unit-left) refl
   where
   h≡proj₁ : fst h Bool²-unit-left ≡ true → h ≡ proj₁-Bool²-hom
-  h≡proj₁ h-ul-true = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) funEq
+  h≡proj₁ h-ul-true = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) (sym funEq)
     where
-    open IsCommRingHom (snd h)
     -- h(0,1) = h((1,1) + (1,0)) = h(1,1) + h(1,0) = 1 + h(1,0) = 1 ⊕ true = false
     h-ur : fst h Bool²-unit-right ≡ false
     h-ur =
@@ -4107,26 +4175,22 @@ classify-Bool²-hom h with fst h Bool²-unit-left | inspect (fst h) Bool²-unit-
       fst h (false , true ⊕ false)
         ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
       fst h ((true ⊕ true) , (true ⊕ false))
-        ≡⟨ pres+ (true , true) (true , false) ⟩
+        ≡⟨ IsCommRingHom.pres+ (snd h) (true , true) (true , false) ⟩
       (fst h (true , true)) ⊕ (fst h (true , false))
-        ≡⟨ cong₂ _⊕_ pres1 h-ul-true ⟩
+        ≡⟨ cong₂ _⊕_ (IsCommRingHom.pres1 (snd h)) h-ul-true ⟩
       true ⊕ true
         ≡⟨ ⊕-comm true true ⟩
       false ∎
-    -- For any (a,b), h(a,b) = h((a,0) + (0,b)) = h(a,0) + h(0,b)
-    -- h(a,0) = h((a,0) · (1,0)) = h(a,0) · h(1,0) = h(a,0) · 1 = h(a,0)  [need differently]
-    -- Actually: h(true,false) = true, h(false,true) = false means h = π₁
+    -- h(true,false) = true, h(false,true) = false means h = π₁
     funEq : proj₁-Bool² ≡ fst h
     funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
                      ; (false , true) → sym h-ur
                      ; (true , false) → sym h-ul-true
-                     ; (true , true) → sym pres1 }
-... | false | [ eq ] = ⊎.inr (h≡proj₂ eq)
-  where
+                     ; (true , true) → sym (IsCommRingHom.pres1 (snd h)) }
+
   h≡proj₂ : fst h Bool²-unit-left ≡ false → h ≡ proj₂-Bool²-hom
-  h≡proj₂ h-ul-false = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) funEq
+  h≡proj₂ h-ul-false = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) (sym funEq)
     where
-    open IsCommRingHom (snd h)
     -- h(0,1) = 1 ⊕ h(1,0) = 1 ⊕ false = true
     h-ur : fst h Bool²-unit-right ≡ true
     h-ur =
@@ -4135,9 +4199,9 @@ classify-Bool²-hom h with fst h Bool²-unit-left | inspect (fst h) Bool²-unit-
       fst h (false , true ⊕ false)
         ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
       fst h ((true ⊕ true) , (true ⊕ false))
-        ≡⟨ pres+ (true , true) (true , false) ⟩
+        ≡⟨ IsCommRingHom.pres+ (snd h) (true , true) (true , false) ⟩
       (fst h (true , true)) ⊕ (fst h (true , false))
-        ≡⟨ cong₂ _⊕_ pres1 h-ul-false ⟩
+        ≡⟨ cong₂ _⊕_ (IsCommRingHom.pres1 (snd h)) h-ul-false ⟩
       true ⊕ false
         ≡⟨ ⊕-comm true false ⟩
       true ∎
@@ -4145,7 +4209,11 @@ classify-Bool²-hom h with fst h Bool²-unit-left | inspect (fst h) Bool²-unit-
     funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
                      ; (false , true) → sym h-ur
                      ; (true , false) → sym h-ul-false
-                     ; (true , true) → sym pres1 }
+                     ; (true , true) → sym (IsCommRingHom.pres1 (snd h)) }
+
+  helper : (b : Bool) → fst h Bool²-unit-left ≡ b → (h ≡ proj₁-Bool²-hom) ⊎.⊎ (h ≡ proj₂-Bool²-hom)
+  helper true = λ eq → ⊎.inl (h≡proj₁ eq)
+  helper false = λ eq → ⊎.inr (h≡proj₂ eq)
 
 -- Forward direction: Sp(Bool²) → Bool
 Sp-Bool²→Bool : Sp Bool²-Booleω → Bool
@@ -7324,11 +7392,11 @@ module BoolIsStoneModule where
   -- Full proof (now implemented!):
   -- - Bool²-Booleω : Booleω = (BoolBR ×BR BoolBR , ∣ Bool²-has-Boole-ω' ∣₁)
   -- - Sp-Bool²≃Bool : Sp Bool²-Booleω ≃ Bool
-  -- - Bool-has-StoneStr = Bool²-Booleω , sym (ua Sp-Bool²≃Bool)
+  -- - Bool-has-StoneStr = Bool²-Booleω , ua Sp-Bool²≃Bool
   --
   -- This eliminates the previous postulate with an actual proof!
   Bool-has-StoneStr : hasStoneStr Bool
-  Bool-has-StoneStr = Bool²-Booleω , sym (ua Sp-Bool²≃Bool)
+  Bool-has-StoneStr = Bool²-Booleω , ua Sp-Bool²≃Bool
 
   -- Local forward declaration of StoneSigmaClosed (defined later in StoneSigmaClosedModule)
   -- tex Theorem 2214: If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
