@@ -13518,7 +13518,7 @@ module ClosedInStoneIsStoneProof where
 -- - eilenberg-stone-vanish: H^1(S,Z) = 0 for Stone S (tex 2887) - postulate with proof deps
 -- - stone-commute-delooping: B(Z^S) ≃ (BZ)^S (tex 2895) - postulate
 -- - cech-eilenberg-1-agree: H^1(X,Z) = Ȟ^1(X,S,Z) (tex 2945) - postulate
--- - interval-cohomology-vanishes (tex Prop 2991) - postulate with tex proof structure
+-- - interval-cohomology-vanishes (tex Prop 2991) - DERIVED from isContrUnitInterval (CHANGES0323)
 -- - Cn-exact-sequence (tex Lemma 2973) - finite approx module added
 
 module CohomologyModule where
@@ -16829,7 +16829,7 @@ module ContractibleCohomologyExtended where
   -- KEY APPLICATION FOR NO-RETRACTION:
   -- Since D² is contractible:
   --   H¹(D²) ≅ H¹(Unit) ≅ 0
-  -- This is captured by our disk-cohomology-vanishes postulate.
+  -- This is captured by disk-cohomology-vanishes (DERIVED from isContrDisk2, CHANGES0323).
 
 -- =============================================================================
 -- Cohomology Long Exact Sequence Documentation
