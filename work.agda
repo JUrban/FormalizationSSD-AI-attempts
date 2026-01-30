@@ -12841,8 +12841,18 @@ module ZILocalModule where
   -- - H⁰(I,ℤ) = ℤ (from interval-cohomology-vanishes or explicit calculation)
   -- - Alternatively: connectedness of I and discreteness of ℤ
   --
-  postulate
-    Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
+  -- DERIVATION (CHANGES0332):
+  -- Since isContrUnitInterval gives us contractibility of UnitInterval,
+  -- any function from UnitInterval to ANY type is constant!
+  -- This is simpler than the tex cohomology argument.
+  --
+  -- General lemma: functions from contractible types are constant
+  contr-map-const-local : {X : Type₀} {Y : Type₀} → isContr X → (f : X → Y)
+                        → (x y : X) → f x ≡ f y
+  contr-map-const-local contr f x y = cong f (sym (snd contr x) ∙ snd contr y)
+
+  Z-I-local : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
+  Z-I-local = contr-map-const-local isContrUnitInterval
 
   -- Any map I → Bool is constant (tex Lemma 3015, corollary)
   --
@@ -12860,8 +12870,9 @@ module ZILocalModule where
   -- The IVT proof constructs a characteristic function I → Bool that would
   -- be non-constant if no solution exists, contradicting Bool-I-local.
   --
-  postulate
-    Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  -- DERIVATION (CHANGES0332): Same as Z-I-local, using contractibility of I
+  Bool-I-local : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
+  Bool-I-local = contr-map-const-local isContrUnitInterval
 
   -- PROOF PATH FOR Bool-I-local (eliminating the postulate):
   --
@@ -23190,7 +23201,7 @@ module PostulateStatusTC where
   -- - External proof: 1
   --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- DERIVED (no longer postulates): 6
+  -- DERIVED (no longer postulates): 8
   --   * countableChoice → derived from dependentChoice-axiom (line 1485)
   --   * LemSurjectionsFormalToCompleteness-equiv → derived from surj-formal-axiom
   --     (tex Corollary 415: ¬¬Sp(B) ≃ ∥Sp(B)∥₁ for Booleω B)
@@ -23198,6 +23209,8 @@ module PostulateStatusTC where
   --   * interval-cohomology-vanishes → derived from isContrUnitInterval (CHANGES0323)
   --   * disk-cohomology-vanishes → derived from isContrDisk2 (CHANGES0323)
   --   * BZ-I-local → derived from isContrUnitInterval (CHANGES0329)
+  --   * Z-I-local → derived from isContrUnitInterval (CHANGES0332)
+  --   * Bool-I-local → derived from isContrUnitInterval (CHANGES0332)
   --
   -- ELIMINATED PLACEHOLDERS (this session, CHANGES0325-0326): 2
   --   * Cn-exact-sequence (was line 14155) → orphan placeholder for Čech approach
@@ -25485,6 +25498,8 @@ module SpAntiequivalenceTC where
 --   - closedIsStable (closed props are ¬¬-stable)
 --   - connected-1-to-set-constant (1-connected → constant to sets)
 --   - BZ-I-local (via contr-map-const from isContrUnitInterval, CHANGES0329)
+--   - Z-I-local (via contr-map-const from isContrUnitInterval, CHANGES0332)
+--   - Bool-I-local (via contr-map-const from isContrUnitInterval, CHANGES0332)
 --
 -- CONSISTENCY PROVED (postulates = derived versions):
 --   - is-1-connected-I consistency (via isPropIsContr)
