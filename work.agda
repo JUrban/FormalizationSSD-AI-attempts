@@ -4091,7 +4091,7 @@ is-cp-freeBool = replacementFreeOnCountable Bool countBool
 -- The free Boolean ring on 2 generators is the 4-element Boolean ring
 -- with atoms e₁ = generator true and e₂ = generator false
 
-open import BooleanRing.FreeBooleanRing.FreeBool using (generator; freeBA-universal-property; inducedBAHom)
+open import BooleanRing.FreeBooleanRing.FreeBool using (generator; freeBA-universal-property; inducedBAHom; evalBAInduce; inducedBAHomUnique)
 
 -- The map freeBA Bool → Bool² sends generators to atoms
 -- Note: inducedBAHom extends A → ⟨B⟩ to BoolHom (freeBA A) B (not the reverse!)
@@ -4218,6 +4218,14 @@ module Bool²-presentation where
   private
     open BooleanRingStr (snd Bool²-quotient) using () renaming (_+_ to _+Q_ ; _·_ to _·Q_ ; 𝟘 to 𝟘Q ; 𝟙 to 𝟙Q)
 
+    -- Characteristic 2 property: x + x = 0 in any Boolean ring
+    char2Q : (x : ⟨ Bool²-quotient ⟩) → x +Q x ≡ 𝟘Q
+    char2Q x = BooleanAlgebraStr.characteristic2 (BooleanRing→BooleanAlgebra Bool²-quotient .snd) {x}
+
+    -- Characteristic 2 for Bool²
+    char2² : (x : ⟨ Bool² ⟩) → x +² x ≡ 𝟘²
+    char2² x = BooleanAlgebraStr.characteristic2 (BooleanRing→BooleanAlgebra Bool² .snd) {x}
+
   -- The forward map is a homomorphism
   Bool²→quotient-pres1 : Bool²→quotient-fun 𝟙² ≡ 𝟙Q
   Bool²→quotient-pres1 = refl
@@ -4231,7 +4239,7 @@ module Bool²-presentation where
   Bool²→quotient-pres+ (false , true) (false , true) =
     -- (false, true) + (false, true) = (false, false) = 0
     -- π(g₁) + π(g₁) = 0 (in Boolean ring, x + x = 0)
-    sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₁))
+    sym (char2Q (fst π g₁))
   Bool²→quotient-pres+ (false , true) (true , false) =
     -- (false, true) + (true, false) = (true, true) = 1
     -- We need: π(g₁) + π(g₀) = 1
@@ -4261,7 +4269,7 @@ module Bool²-presentation where
       fst π g₀
         ≡⟨ sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
       fst π g₀ +Q 𝟘Q
-        ≡⟨ cong (fst π g₀ +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₁))) ⟩
+        ≡⟨ cong (fst π g₀ +Q_) (sym (char2Q (fst π g₁))) ⟩
       fst π g₀ +Q (fst π g₁ +Q fst π g₁)
         ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
       fst π g₁ +Q (fst π g₀ +Q fst π g₁)
@@ -4269,7 +4277,7 @@ module Bool²-presentation where
       fst π g₁ +Q fst π (g₀ + g₁)
         ≡⟨ cong (fst π g₁ +Q_) (sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)) ⟩
       fst π g₁ +Q (𝟘Q +Q fst π (g₀ + g₁))
-        ≡⟨ cong (λ x → fst π g₁ +Q (x +Q fst π (g₀ + g₁))) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)) ⟩
+        ≡⟨ cong (λ x → fst π g₁ +Q (x +Q fst π (g₀ + g₁))) (sym (char2Q 𝟙Q)) ⟩
       fst π g₁ +Q ((𝟙Q +Q 𝟙Q) +Q fst π (g₀ + g₁))
         ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
       fst π g₁ +Q (𝟙Q +Q (𝟙Q +Q fst π (g₀ + g₁)))
@@ -4288,7 +4296,7 @@ module Bool²-presentation where
     Bool²→quotient-pres+ (false , true) (true , false) ∙
     BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) (fst π g₀)
   Bool²→quotient-pres+ (true , false) (true , false) =
-    sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₀))
+    sym (char2Q (fst π g₀))
   Bool²→quotient-pres+ (true , false) (true , true) =
     -- (true, false) + (true, true) = (false, true)
     -- π(g₀) + 1 = π(g₁)
@@ -4297,7 +4305,7 @@ module Bool²-presentation where
       fst π g₁
         ≡⟨ sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ⟩
       fst π g₁ +Q 𝟘Q
-        ≡⟨ cong (fst π g₁ +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) (fst π g₀))) ⟩
+        ≡⟨ cong (fst π g₁ +Q_) (sym (char2Q (fst π g₀))) ⟩
       fst π g₁ +Q (fst π g₀ +Q fst π g₀)
         ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
       fst π g₀ +Q (fst π g₀ +Q fst π g₁)
@@ -4305,7 +4313,7 @@ module Bool²-presentation where
       fst π g₀ +Q fst π (g₀ + g₁)
         ≡⟨ cong (fst π g₀ +Q_) (sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)) ⟩
       fst π g₀ +Q (𝟘Q +Q fst π (g₀ + g₁))
-        ≡⟨ cong (λ x → fst π g₀ +Q (x +Q fst π (g₀ + g₁))) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)) ⟩
+        ≡⟨ cong (λ x → fst π g₀ +Q (x +Q fst π (g₀ + g₁))) (sym (char2Q 𝟙Q)) ⟩
       fst π g₀ +Q ((𝟙Q +Q 𝟙Q) +Q fst π (g₀ + g₁))
         ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
       fst π g₀ +Q (𝟙Q +Q (𝟙Q +Q fst π (g₀ + g₁)))
@@ -4328,7 +4336,7 @@ module Bool²-presentation where
     Bool²→quotient-pres+ (true , false) (true , true) ∙
     BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₀) 𝟙Q
   Bool²→quotient-pres+ (true , true) (true , true) =
-    sym (BooleanRingStr.+Idem (snd Bool²-quotient) 𝟙Q)
+    sym (char2Q 𝟙Q)
 
   Bool²→quotient-pres· : (x y : ⟨ Bool² ⟩) → Bool²→quotient-fun (x ·² y) ≡ Bool²→quotient-fun x ·Q Bool²→quotient-fun y
   Bool²→quotient-pres· (false , false) y = sym (BooleanRingStr.AnnihilL (snd Bool²-quotient) _)
@@ -4370,9 +4378,9 @@ module Bool²-presentation where
     ; pres+ = Bool²→quotient-pres+
     ; pres· = Bool²→quotient-pres·
     ; pres- = λ x → sym (BooleanRingStr.+IdR (snd Bool²-quotient) _) ∙
-                    cong (Bool²→quotient-fun x +Q_) (sym (BooleanRingStr.+Idem (snd Bool²-quotient) _)) ∙
+                    cong (Bool²→quotient-fun x +Q_) (sym (char2Q _)) ∙
                     sym (Bool²→quotient-pres+ x x) ∙
-                    cong Bool²→quotient-fun (BooleanRingStr.+Idem (snd Bool²) x)
+                    cong Bool²→quotient-fun (char2² x)
     }
 
   -- Now we prove the two maps are inverses
