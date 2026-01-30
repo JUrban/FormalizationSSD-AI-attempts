@@ -5693,9 +5693,36 @@ inject-right-unit-left h = IsCommRingHom.pres0 (snd h)
 --              and restrict-to-left (inject-left h) pf should equal h
 -- For ⊎.inr h: similar
 
--- The roundtrip proof requires showing that restrict-to-left and inject-left are inverses
--- This is involved because we need equality of Σ-types (function + proof of homomorphism)
--- For now, we just state the isomorphism fact (the key insight is mathematically clear)
+-- Helper: restrict-to-left ∘ inject-left ≡ id on Sp B∞
+-- The key is that the underlying functions are equal: (inject-left h) $cr (x, 𝟘∞) = h $cr x
+restrict-inject-left : (h : Sp B∞-Booleω) → (pf : inject-left h $cr unit-left ≡ true)
+                     → restrict-to-left (inject-left h) pf ≡ h
+restrict-inject-left h pf = Σ≡Prop
+  (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing B∞)) f (snd (BooleanRing→CommRing BoolBR)))
+  refl  -- The functions are definitionally equal: λ x → h $cr x = λ x → h $cr x
+
+-- Helper: restrict-to-right ∘ inject-right ≡ id on Sp B∞
+restrict-inject-right : (h : Sp B∞-Booleω) → (pf : inject-right h $cr unit-left ≡ false)
+                      → restrict-to-right (inject-right h) pf ≡ h
+restrict-inject-right h pf = Σ≡Prop
+  (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing B∞)) f (snd (BooleanRing→CommRing BoolBR)))
+  refl  -- The functions are definitionally equal: λ x → h $cr x = λ x → h $cr x
+
+-- Roundtrip proof: Sp-prod-to-sum ∘ Sp-sum-to-prod = id
+-- The full roundtrip proof is more complex due to nested with-abstractions.
+-- For now, we document the key facts that enable the proof:
+--
+-- For inject-left h:
+--   inject-left-unit-left: inject-left h $cr unit-left ≡ true
+--   restrict-inject-left: restrict-to-left (inject-left h) pf ≡ h
+--   Therefore Sp-prod-to-sum (inject-left h) evaluates to ⊎.inl h
+--
+-- For inject-right h:
+--   inject-right-unit-left: inject-right h $cr unit-left ≡ false
+--   restrict-inject-right: restrict-to-right (inject-right h) pf ≡ h
+--   Therefore Sp-prod-to-sum (inject-right h) evaluates to ⊎.inr h
+--
+-- The isomorphism Sp(B∞ × B∞) ≅ Sp(B∞) ⊎ Sp(B∞) follows from these facts.
 
 -- =============================================================================
 -- LLPO from Stone Duality
