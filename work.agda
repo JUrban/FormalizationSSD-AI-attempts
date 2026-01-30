@@ -25038,15 +25038,23 @@ module SpAntiequivalenceTC where
   --
   -- GENERAL CATEGORY THEORY:
   --   ✓ CounitIsoImpliesEquivalence (CategoryTheory/Adjunction.agda)
-  --     General theorem: If F ⊣ G and counit ε is a nat iso, then:
-  --       - G is fully faithful
+  --     General theorem: If F ⊣ G and both ε and η are nat isos, then
+  --     F and G form an adjoint equivalence. Also proves:
+  --       - G is fully faithful (when ε is nat iso)
   --       - F(η c) is an iso for all c
-  --       - The adjunction is an equivalence (with additional assumptions)
+  --       - F is fully faithful (when η is nat iso)
+  --
+  --   ✓ CounitIsoImpliesUnitIso (CategoryTheory/Adjunction.agda)
+  --     Derives η being a nat iso from:
+  --       1. ε is a nat iso
+  --       2. Every c ∈ C is in the essential image of G (c ≅ Gd for some d)
+  --     Key proof technique: naturality of η at the iso φ : c ≅ Gd transfers
+  --     the iso property from η(Gd) to η(c).
   --
   --     For Stone duality, we use the direct approach: StoneDualityAxiom states
   --     that η (the evaluation map) is an equivalence, from which we derive
-  --     SpFullyFaithful. The general theorem could alternatively be used if we
-  --     proved ε is an iso at all Stone spaces.
+  --     SpFullyFaithful. Alternatively, CounitIsoImpliesUnitIso applies since
+  --     every Stone space S is by definition in the image of Sp.
 
 -- =============================================================================
 -- COMPREHENSIVE DERIVABILITY SUMMARY
