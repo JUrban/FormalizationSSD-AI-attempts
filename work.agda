@@ -15176,12 +15176,11 @@ module CohomologyModule where
 -- 4. Use H¹-S¹≅ℤ from Cubical library → circle-cohomology
 -- 5. Formalize H¹ functoriality → no-retraction theorem
 --
--- ELIMINATION PATH FOR Bool-I-local POSTULATE (lines ~12733-12790):
--- 1. Prove UnitInterval is 0-connected (path-connected → connected)
---    Use: Cubical.Homotopy.Connected.isConnected
--- 2. Use: connected types have constant maps to discrete types
--- 3. Apply to get Bool-I-local from I being 0-connected
--- Alternative: Use H⁰(I,ℤ) = ℤ from cohomology-I (tex Prop 2991)
+-- Bool-I-local: NOW DERIVED from isContrUnitInterval (CHANGES0332)!
+-- Previous elimination path was more complex (connectedness, cohomology).
+-- OUR SIMPLER PROOF: If the DOMAIN is contractible, ANY function is constant.
+-- This uses: contr-map-const-local isContrUnitInterval
+-- See: Z-I-local and Bool-I-local at lines ~12845-12875
 --
 -- TYPE-CHECKED CODE IN THIS FILE (15 verified lemmas):
 -- 1. H¹-S¹≃ℤ-witness : GroupIso (coHomGr 1 S¹) ℤGroup (line ~14109)
@@ -22843,7 +22842,7 @@ module FullBrouwerProofDocTC where
   -- Statement: ℤ and 2 are I-local
   -- Proof: From H⁰(I,ℤ) = ℤ we get ℤ → ℤ^I is an equivalence,
   --        so ℤ is I-local. 2 is a retract of ℤ.
-  -- STATUS: Bool-I-local and Z-I-local are FUNDAMENTAL AXIOMS (~line 12713, 12732)
+  -- STATUS: Z-I-local and Bool-I-local are DERIVED from isContrUnitInterval (CHANGES0332)
   --
   -- COROLLARY: Since 2 is I-local, any Stone space is I-local.
   --
@@ -22940,10 +22939,10 @@ module FullBrouwerProofDocTC where
   -- ✓ ℤ-not-retract-of-Unit, ℤ-not-retract-of-0
   -- ✓ BZ-not-contractible (isContr S¹ → ⊥)
   --
-  -- FUNDAMENTAL AXIOMS (intentionally postulates):
-  -- • Bool-I-local: Functions I → Bool are constant
-  -- • Z-I-local: Functions I → ℤ are constant
-  -- • Stone Duality Axiom, Local Choice, etc.
+  -- DERIVED FROM isContrUnitInterval (CHANGES0332):
+  -- ✓ Bool-I-local: Functions I → Bool are constant
+  -- ✓ Z-I-local: Functions I → ℤ are constant
+  -- FUNDAMENTAL AXIOMS: Stone Duality, Local Choice, Dependent Choice, etc.
   --
   -- GEOMETRIC POSTULATES (unavoidable without R² structure):
   -- • Disk2, boundary-inclusion: Actual D² ⊆ ℝ² and its boundary
