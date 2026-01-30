@@ -1480,9 +1480,46 @@ CountableChoiceAxiom = (A : ℕ → Type ℓ-zero)
   → ((n : ℕ) → ∥ A n ∥₁)
   → ∥ ((n : ℕ) → A n) ∥₁
 
--- Postulate countable choice (follows from dependent choice in tex)
-postulate
-  countableChoice : CountableChoiceAxiom
+-- Derive countable choice from dependent choice
+-- Strategy: Use E n = prefix sequences of length n, p n = truncation
+countableChoice : CountableChoiceAxiom
+countableChoice A witnesses = PT.map extract seqLim-exists
+  where
+  -- E n is the type of prefix sequences: values at 0, 1, ..., n-1
+  -- We encode this as a function that works for indices < n
+  -- E 0 = Unit (no values needed)
+  -- E (suc n) = E n × A n (add value at position n)
+  E : ℕ → Type ℓ-zero
+  E zero = Unit
+  E (suc n) = E n × A n
+
+  -- Projection: drop the last element
+  p : (n : ℕ) → E (suc n) → E n
+  p n (e , _) = e
+
+  -- Each p n is surjective (truncated)
+  -- Given e : E n and ∥ A n ∥₁, produce ∥ (e , a) for some a ∥₁
+  p-surj : (n : ℕ) → (y : E n) → ∥ Σ[ x ∈ E (suc n) ] p n x ≡ y ∥₁
+  p-surj n y = PT.map (λ a → (y , a) , refl) (witnesses n)
+
+  -- E 0 has a canonical element
+  e₀ : E 0
+  e₀ = tt
+
+  -- Apply dependent choice: get a truncated sequential limit starting at e₀
+  seqLim-exists : ∥ Σ[ s ∈ SeqLimit E p ] seqLim-proj₀ E p s ≡ e₀ ∥₁
+  seqLim-exists = dependentChoice-axiom E p p-surj e₀
+
+  -- Extract the full sequence from a sequential limit
+  -- A seq limit gives us: f 0 : Unit, f 1 : Unit × A 0, f 2 : (Unit × A 0) × A 1, etc.
+  -- with coherence: p n (f (suc n)) = f n
+  -- We extract value at position n by looking at f (suc n) which has type E n × A n
+  extractAt : SeqLimit E p → (n : ℕ) → A n
+  extractAt (f , coh) n = snd (f (suc n))
+
+  -- The extracted function
+  extract : Σ[ s ∈ SeqLimit E p ] seqLim-proj₀ E p s ≡ e₀ → (n : ℕ) → A n
+  extract (s , _) = extractAt s
 
 mp : MarkovPrinciple
 mp = mp-from-SD sd-axiom
@@ -22959,8 +22996,9 @@ module PostulateStatusTC where
   -- 4. dependentChoice-axiom : DependentChoiceAxiom (line 1444)
   --    Dependent choice for sequential limits.
   --
-  -- 5. countableChoice : CountableChoiceAxiom (line 1456)
-  --    Countable choice (follows from dependent choice in tex).
+  -- 5. countableChoice : CountableChoiceAxiom (line ~1485)
+  --    DERIVED from dependentChoice-axiom (not a postulate anymore!)
+  --    The derivation uses prefix sequences: E n = Unit × A 0 × ... × A (n-1)
   --
   -- 6. llpo : LLPO (line 1693)
   --    Lesser Limited Principle of Omniscience.
@@ -24913,15 +24951,16 @@ module FoundationalAxiomsTC where
   -- IMPLICATION: Countable Choice (countableChoice at line ~1485)
 
   -- =========================================================================
-  -- AXIOM 5: Countable Choice
+  -- DERIVED: Countable Choice (from Dependent Choice)
   -- =========================================================================
   --
   -- STATEMENT: (∀n:ℕ. ||A_n||) → ||(∀n:ℕ. A_n)||
   --
-  -- STATUS: POSTULATED (countableChoice at line ~1485)
+  -- STATUS: DERIVED from dependentChoice-axiom (line ~1485)
   --
   -- Given pointwise truncated existence over ℕ, produce a truncated
-  -- uniform section. This follows from Dependent Choice.
+  -- uniform section. The derivation uses prefix sequences:
+  -- E n = Unit × A 0 × ... × A (n-1), with projections dropping last element.
 
   -- =========================================================================
   -- SUMMARY: Axiom Dependencies
@@ -24946,8 +24985,8 @@ module FoundationalAxiomsTC where
   --    ├── Independent of Stone infrastructure
   --    └── Used for inverse limit constructions
   --
-  -- 5. countableChoice (follows from 4)
-  --    └── Convenience axiom for ℕ-indexed families
+  -- 5. countableChoice (DERIVED from 4)
+  --    └── Now derived from dependentChoice-axiom (no longer a postulate)
 
 -- =============================================================================
 -- Sp Antiequivalence: Booleω^op ≃ Stone
