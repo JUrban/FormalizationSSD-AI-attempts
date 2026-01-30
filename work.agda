@@ -698,11 +698,12 @@ commRingPath→boolRingEquiv A B p = commRingEquivToEquiv , snd commRingEquivToE
 Bool-Booleω : Booleω
 Bool-Booleω = BoolBR , ∣ is-cp-2 ∣₁
 
--- Sp(Bool-Booleω) ≅ Bool (spectrum of the 2-element Boolean ring is Bool itself)
+-- Sp(Bool-Booleω) ≅ Unit (spectrum of the 2-element Boolean ring is a singleton)
 -- The spectrum Sp(B) consists of Boolean ring homomorphisms B → 2
--- For B = 2, this is BoolHom BoolBR BoolBR which has exactly 2 elements:
--- - The identity homomorphism
--- - The trivial homomorphism (λ _ → false)
+-- For B = 2 (BoolBR), the ONLY homomorphism BoolBR → BoolBR is the identity:
+-- - A ring homomorphism must preserve 1: h(1) = 1, so h(true) = true
+-- - A ring homomorphism must preserve 0: h(0) = 0, so h(false) = false
+-- - Therefore h = id, and Sp(BoolBR) ≃ Unit
 -- This shows ∥ Sp Bool-Booleω ∥₁ (the spectrum is inhabited)
 Sp-Bool-inhabited : ∥ Sp Bool-Booleω ∥₁
 Sp-Bool-inhabited = ∣ idBoolHom ∣₁
@@ -711,6 +712,46 @@ Sp-Bool-inhabited = ∣ idBoolHom ∣₁
   idBoolHom : BoolHom BoolBR BoolBR
   idBoolHom = idfun Bool ,
     record { pres1 = refl ; pres+ = λ _ _ → refl ; pres· = λ _ _ → refl }
+
+-- Sp(BoolBR) is contractible: there is exactly one Boolean ring homomorphism BoolBR → BoolBR
+-- This is the identity homomorphism, because any h must preserve 1 and 0.
+Sp-Bool-isContr : isContr (Sp Bool-Booleω)
+Sp-Bool-isContr = idBoolHom , path-to-id
+  where
+  idBoolHom : BoolHom BoolBR BoolBR
+  idBoolHom = idfun Bool ,
+    record { pres1 = refl ; pres+ = λ _ _ → refl ; pres· = λ _ _ → refl }
+
+  -- IsCommRingHom is a proposition (it consists of equalities in a set)
+  isProp-IsCommRingHom : (f : Bool → Bool) → isProp (IsCommRingHom (BooleanRing→CommRing BoolBR .snd) f (BooleanRing→CommRing BoolBR .snd))
+  isProp-IsCommRingHom f = isPropIsCommRingHom (snd (BooleanRing→CommRing BoolBR)) f (snd (BooleanRing→CommRing BoolBR))
+
+  -- Any Boolean ring hom h : BoolBR → BoolBR equals the identity
+  path-to-id : (h : Sp Bool-Booleω) → idBoolHom ≡ h
+  path-to-id h = Σ≡Prop isProp-IsCommRingHom funEq
+    where
+    open IsCommRingHom (snd h)
+
+    -- h must preserve 1: h(true) = true
+    h-true : fst h true ≡ true
+    h-true = pres1
+
+    -- h must preserve 0: h(false) = false
+    h-false : fst h false ≡ false
+    h-false = IsCommRingHom.pres0 (snd h)
+
+    -- Function extensionality: id ≡ fst h
+    funEq : idfun Bool ≡ fst h
+    funEq = funExt λ { false → sym h-false ; true → sym h-true }
+
+-- Equivalence Sp(BoolBR) ≃ Unit
+-- isContrUnit : isContr Unit (locally defined to avoid import issues)
+private
+  local-isContrUnit : isContr Unit
+  local-isContrUnit = tt , λ { tt → refl }
+
+Sp-Bool≃Unit : Sp Bool-Booleω ≃ Unit
+Sp-Bool≃Unit = isContr→Equiv Sp-Bool-isContr local-isContrUnit
 
 -- =============================================================================
 -- Quotients preserve Booleω (key lemma for MP proof)
