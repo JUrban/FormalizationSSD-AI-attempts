@@ -4028,6 +4028,149 @@ A ×BR B = DirectProd-BooleanRing.DirectProd-BooleanRing A B
 B∞×B∞ : BooleanRing ℓ-zero
 B∞×B∞ = B∞ ×BR B∞
 
+-- =============================================================================
+-- BoolBR × BoolBR: Product of the 2-element Boolean ring with itself
+-- =============================================================================
+-- This is a 4-element Boolean ring: {(0,0), (0,1), (1,0), (1,1)}
+-- Its spectrum Sp(BoolBR × BoolBR) has exactly 2 elements: the projections π₁ and π₂
+-- Therefore Sp(BoolBR × BoolBR) ≃ Bool
+
+-- The product Boolean ring BoolBR × BoolBR
+Bool² : BooleanRing ℓ-zero
+Bool² = BoolBR ×BR BoolBR
+
+-- Unit elements for the product (idempotents that sum to 1)
+Bool²-unit-left : ⟨ Bool² ⟩
+Bool²-unit-left = true , false
+
+Bool²-unit-right : ⟨ Bool² ⟩
+Bool²-unit-right = false , true
+
+-- BoolBR × BoolBR is Booleω (finite Boolean rings are countably presented)
+-- Since BoolBR has a presentation via is-cp-2, and products of finitely presented
+-- algebras are finitely presented, BoolBR × BoolBR is also Booleω.
+-- For finite Boolean algebras (with n atoms), they can be presented as
+-- freeBA Fin_n / trivial-relations, which is countably presented.
+postulate
+  Bool²-has-Boole-ω' : has-Boole-ω' Bool²
+
+Bool²-Booleω : Booleω
+Bool²-Booleω = Bool² , ∣ Bool²-has-Boole-ω' ∣₁
+
+-- The two homomorphisms BoolBR × BoolBR → BoolBR are the projections
+-- π₁ : (a, b) ↦ a
+-- π₂ : (a, b) ↦ b
+
+proj₁-Bool² : ⟨ Bool² ⟩ → Bool
+proj₁-Bool² = fst
+
+proj₂-Bool² : ⟨ Bool² ⟩ → Bool
+proj₂-Bool² = snd
+
+-- π₁ is a Boolean ring homomorphism
+proj₁-Bool²-hom : BoolHom Bool² BoolBR
+proj₁-Bool²-hom = proj₁-Bool² , record
+  { pres1 = refl
+  ; pres+ = λ _ _ → refl
+  ; pres· = λ _ _ → refl
+  }
+
+-- π₂ is a Boolean ring homomorphism
+proj₂-Bool²-hom : BoolHom Bool² BoolBR
+proj₂-Bool²-hom = proj₂-Bool² , record
+  { pres1 = refl
+  ; pres+ = λ _ _ → refl
+  ; pres· = λ _ _ → refl
+  }
+
+-- Sp(BoolBR × BoolBR) has exactly 2 elements: proj₁ and proj₂
+-- This is because any h : Bool² → BoolBR is determined by h(1,0) and h(0,1)
+-- which must satisfy:
+-- - h(1,0) + h(0,1) = h(1,1) = 1  (h preserves 1)
+-- - h(1,0) · h(0,1) = h(0,0) = 0  (h preserves 0 and multiplication)
+-- In Bool with ⊕ and ∧, the only solutions are (1,0) and (0,1)
+
+-- Classification of homomorphisms: any h equals proj₁ or proj₂
+classify-Bool²-hom : (h : Sp Bool²-Booleω) → (h ≡ proj₁-Bool²-hom) ⊎.⊎ (h ≡ proj₂-Bool²-hom)
+classify-Bool²-hom h with fst h Bool²-unit-left | inspect (fst h) Bool²-unit-left
+... | true | [ eq ] = ⊎.inl (h≡proj₁ eq)
+  where
+  h≡proj₁ : fst h Bool²-unit-left ≡ true → h ≡ proj₁-Bool²-hom
+  h≡proj₁ h-ul-true = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) funEq
+    where
+    open IsCommRingHom (snd h)
+    -- h(0,1) = h((1,1) + (1,0)) = h(1,1) + h(1,0) = 1 + h(1,0) = 1 ⊕ true = false
+    h-ur : fst h Bool²-unit-right ≡ false
+    h-ur =
+      fst h (false , true)
+        ≡⟨ cong (fst h) (cong₂ _,_ refl (sym (⊕-comm false true))) ⟩
+      fst h (false , true ⊕ false)
+        ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
+      fst h ((true ⊕ true) , (true ⊕ false))
+        ≡⟨ pres+ (true , true) (true , false) ⟩
+      (fst h (true , true)) ⊕ (fst h (true , false))
+        ≡⟨ cong₂ _⊕_ pres1 h-ul-true ⟩
+      true ⊕ true
+        ≡⟨ ⊕-comm true true ⟩
+      false ∎
+    -- For any (a,b), h(a,b) = h((a,0) + (0,b)) = h(a,0) + h(0,b)
+    -- h(a,0) = h((a,0) · (1,0)) = h(a,0) · h(1,0) = h(a,0) · 1 = h(a,0)  [need differently]
+    -- Actually: h(true,false) = true, h(false,true) = false means h = π₁
+    funEq : proj₁-Bool² ≡ fst h
+    funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
+                     ; (false , true) → sym h-ur
+                     ; (true , false) → sym h-ul-true
+                     ; (true , true) → sym pres1 }
+... | false | [ eq ] = ⊎.inr (h≡proj₂ eq)
+  where
+  h≡proj₂ : fst h Bool²-unit-left ≡ false → h ≡ proj₂-Bool²-hom
+  h≡proj₂ h-ul-false = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) funEq
+    where
+    open IsCommRingHom (snd h)
+    -- h(0,1) = 1 ⊕ h(1,0) = 1 ⊕ false = true
+    h-ur : fst h Bool²-unit-right ≡ true
+    h-ur =
+      fst h (false , true)
+        ≡⟨ cong (fst h) (cong₂ _,_ refl (sym (⊕-comm false true))) ⟩
+      fst h (false , true ⊕ false)
+        ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
+      fst h ((true ⊕ true) , (true ⊕ false))
+        ≡⟨ pres+ (true , true) (true , false) ⟩
+      (fst h (true , true)) ⊕ (fst h (true , false))
+        ≡⟨ cong₂ _⊕_ pres1 h-ul-false ⟩
+      true ⊕ false
+        ≡⟨ ⊕-comm true false ⟩
+      true ∎
+    funEq : proj₂-Bool² ≡ fst h
+    funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
+                     ; (false , true) → sym h-ur
+                     ; (true , false) → sym h-ul-false
+                     ; (true , true) → sym pres1 }
+
+-- Forward direction: Sp(Bool²) → Bool
+Sp-Bool²→Bool : Sp Bool²-Booleω → Bool
+Sp-Bool²→Bool h = fst h Bool²-unit-left
+
+-- Backward direction: Bool → Sp(Bool²)
+Bool→Sp-Bool² : Bool → Sp Bool²-Booleω
+Bool→Sp-Bool² true = proj₁-Bool²-hom
+Bool→Sp-Bool² false = proj₂-Bool²-hom
+
+-- Roundtrip 1: Bool→Sp-Bool² ∘ Sp-Bool²→Bool = id
+Sp-Bool²→Bool→Sp-Bool² : (h : Sp Bool²-Booleω) → Bool→Sp-Bool² (Sp-Bool²→Bool h) ≡ h
+Sp-Bool²→Bool→Sp-Bool² h with classify-Bool²-hom h
+... | ⊎.inl h≡proj₁ = cong Bool→Sp-Bool² (cong (λ g → fst g Bool²-unit-left) h≡proj₁) ∙ sym h≡proj₁
+... | ⊎.inr h≡proj₂ = cong Bool→Sp-Bool² (cong (λ g → fst g Bool²-unit-left) h≡proj₂) ∙ sym h≡proj₂
+
+-- Roundtrip 2: Sp-Bool²→Bool ∘ Bool→Sp-Bool² = id
+Bool→Sp-Bool²→Bool : (b : Bool) → Sp-Bool²→Bool (Bool→Sp-Bool² b) ≡ b
+Bool→Sp-Bool²→Bool true = refl
+Bool→Sp-Bool²→Bool false = refl
+
+-- The equivalence Sp(BoolBR × BoolBR) ≃ Bool
+Sp-Bool²≃Bool : Sp Bool²-Booleω ≃ Bool
+Sp-Bool²≃Bool = isoToEquiv (iso Sp-Bool²→Bool Bool→Sp-Bool² Bool→Sp-Bool²→Bool Sp-Bool²→Bool→Sp-Bool²)
+
 -- Projections and zero elements for the product
 module B∞×B∞-Operations where
   open BooleanRingStr (snd B∞×B∞) renaming (_·_ to _·×_ ; 𝟘 to 𝟘× ; 𝟙 to 𝟙×)
