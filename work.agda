@@ -14152,8 +14152,12 @@ module CohomologyModule where
     -- sequential colimits: each finite approximation has exact Čech complex,
     -- and exactness is preserved under sequential colimits.
     --
-    postulate
-      Cn-exact-sequence : (n : ℕ) → Type₀
+    -- ELIMINATED POSTULATE (CHANGES0325):
+    -- Was: postulate Cn-exact-sequence : (n : ℕ) → Type₀
+    -- This postulate was a placeholder for the Čech cohomology approach.
+    -- Since interval-cohomology-vanishes is now derived directly from
+    -- isContrUnitInterval (via contractibility → Unit → cohomology), this
+    -- Čech approach is no longer needed. The postulate is removed.
 
   -- ELIMINATED POSTULATE (CHANGES0323):
   -- Was: postulate interval-cohomology-vanishes : ...
