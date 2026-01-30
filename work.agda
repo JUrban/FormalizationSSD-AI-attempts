@@ -23055,18 +23055,31 @@ module PostulateStatusTC where
   -- SUMMARY STATISTICS
   -- =================================================================
   --
-  -- Total postulates: ~8 keyword occurrences
-  -- - Fundamental axioms (intentional): 4 (sd-axiom, surj-formal, localChoice,
-  --   dependentChoice)
-  -- - Derived (no longer postulates): 1 (countableChoice from dependentChoice)
-  -- - Forward reference (proved in file): 3 (closedSigmaClosed, f-injective, llpo)
-  -- - External proof: 1 (BoolQuotientEquiv)
-  -- - Geometric: 3 (ImageDecidable..., complementClosed..., IntervalTopology...)
+  -- TOP-LEVEL POSTULATES (lines 80-4778): 8
+  -- - Fundamental axioms (intentional): 4
+  --   * sd-axiom (line 1373)
+  --   * surj-formal-axiom (line 1401)
+  --   * localChoice-axiom (line 1443)
+  --   * dependentChoice-axiom (line 1472)
+  -- - Forward reference (proved later in file): 3
+  --   * llpo (line 1758) → proved as llpo-from-SD
+  --   * closedSigmaClosed (line 3343) → proved as closedSigmaClosed-derived
+  --   * f-injective (line 4778) → proved as f-injective-from-trunc
+  -- - External proof: 1
+  --   * BoolQuotientEquiv (line 80) → proved in QuotientConclusions.agda
   --
-  -- EFFECTIVELY ELIMINABLE: 4 postulates (the 3 forward refs + 1 external)
-  -- INTENTIONALLY PERMANENT: 4 postulates (fundamental axioms)
-  -- DERIVED: 1 (countableChoice from dependentChoice-axiom)
-  -- GEOMETRIC GAPS: 3 postulates (require topology axioms)
+  -- DERIVED (no longer postulates): 1
+  --   * countableChoice → derived from dependentChoice-axiom (line 1485)
+  --
+  -- MODULE-LEVEL POSTULATES (inside specialized modules):
+  -- - B∞×B∞≃quotient (line 5503): requires correct presentation
+  -- - evens-odds-disjoint (line 6451): local to LLPO proof
+  -- - booleω-equality-open (line 8771): would follow from ODisc formalization
+  -- - Geometric postulates (lines 12xxx): CHaus/interval topology axioms
+  --
+  -- EFFECTIVELY ELIMINABLE: 4 top-level postulates (3 forward refs + 1 external)
+  -- INTENTIONALLY PERMANENT: 4 postulates (fundamental axioms from tex)
+  -- GEOMETRIC GAPS: Various module-level postulates (topology axioms)
   --
   -- =================================================================
   -- KEY ACHIEVEMENT
