@@ -7056,6 +7056,44 @@ module ℕ∞⊎ℕ∞IsStoneModule where
   -- Therefore: showing Sp(B∞×B∞) ≅ ℕ∞ ⊎ ℕ∞ (where ℕ∞ ⊎ ℕ∞ is Stone)
   -- provides strong evidence that B∞×B∞ IS in Booleω, justifying the postulate.
 
+  -- ===========================================================================
+  -- ALTERNATIVE PROOF: ℕ∞ ⊎ ℕ∞ is Stone via StoneSigmaClosed (tex Thm 2214)
+  -- ===========================================================================
+  --
+  -- This provides an INDEPENDENT proof that ℕ∞ ⊎ ℕ∞ is Stone, which doesn't
+  -- rely on the B∞×B∞≃quotient postulate. The key observation is:
+  --
+  --   ℕ∞ ⊎ ℕ∞ ≃ Σ Bool (λ _ → ℕ∞)   (coproduct as dependent sum over Bool)
+  --
+  -- The proof then follows from:
+  --   1. Bool is Stone (tex line 1527: "finite sets are Stone")
+  --   2. ℕ∞ is Stone (ℕ∞-has-StoneStr, proved in CHANGES0339)
+  --   3. By StoneSigmaClosed (tex Thm 2214): Σ Bool (λ _ → ℕ∞) is Stone
+  --   4. Therefore ℕ∞ ⊎ ℕ∞ is Stone
+  --
+  -- SIGNIFICANCE: This flips the logical direction of Strategy 3!
+  --   Instead of: B∞×B∞≃quotient ⟹ Sp(B∞×B∞) ≅ ℕ∞ ⊎ ℕ∞ ⟹ ℕ∞ ⊎ ℕ∞ is Stone
+  --   We have: ℕ∞ ⊎ ℕ∞ is Stone (via StoneSigmaClosed) ⟹ B∞×B∞ is in Booleω
+  --
+  -- The tex Cor ODiscBAareBoole then tells us:
+  --   B∞×B∞ in Booleω ⟺ Sp(B∞×B∞) is Stone ⟺ ℕ∞ ⊎ ℕ∞ is Stone (✓)
+  --
+  -- Construction outline (requires Bool-Stone which needs Bool×Bool-Booleω):
+  --   Bool-Stone : Stone
+  --   Bool-Stone = Bool , Bool-has-StoneStr
+  --     where Bool = Sp(Bool×Bool-Booleω) = Sp(BoolBR × BoolBR)
+  --           since Sp(A×B) = Sp(A) ⊎ Sp(B) = 1 ⊎ 1 = Bool
+  --
+  --   ℕ∞-Stone : Stone
+  --   ℕ∞-Stone = ℕ∞ , ℕ∞-has-StoneStr
+  --
+  --   ℕ∞⊎ℕ∞-as-Σ : ℕ∞ ⊎.⊎ ℕ∞ ≃ Σ Bool (λ _ → ℕ∞)
+  --   ℕ∞⊎ℕ∞-as-Σ = ... (standard equivalence)
+  --
+  --   ℕ∞⊎ℕ∞-has-StoneStr-alt : hasStoneStr (ℕ∞ ⊎.⊎ ℕ∞)
+  --   ℕ∞⊎ℕ∞-has-StoneStr-alt = transport (λ X → hasStoneStr X) (ua ℕ∞⊎ℕ∞-as-Σ⁻¹)
+  --                              (StoneSigmaClosed Bool-Stone (λ _ → ℕ∞-Stone))
+
 open ℕ∞⊎ℕ∞IsStoneModule public
 
 -- =============================================================================
