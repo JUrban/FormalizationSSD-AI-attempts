@@ -146,7 +146,12 @@ While doing the above, keep the following principles in mind:
 
 ## Compilation Checking
 - **Run the checking frequently** to check for compilation errors
-- After any significant change, run: `timeout 60 /project/agda work.agda`
+- After any significant change, check your work like this: 
+  # Quick check (scope/parse errors - note that this will time out when no quick errors are there):
+`timeout 60 /project/agda work.agda 2>&1; RC=$?; if [ $RC -eq 124 ]; then echo "TIMEOUT after 1min"; elif [ $RC -eq 0 ]; then echo "SUCCESS"; else echo "FAILED with code $RC"; fi`
+  # Full verification (expensive, only when needed):
+`timeout 1800 /project/agda work.agda 2>&1; RC=$?; if [ $RC -eq 124 ]; then echo "TIMEOUT after 30min"; elif [ $RC -eq 0 ]; then echo "SUCCESS"; else echo "FAILED with code $RC"; fi`
+
 - Often do numbered backups of work.agda like bck0007. Even when work.agda doesn't compile. Saving you partial attempts is important for not running in circles!
 - With each numbered backup, also write the numbered summary changes file like CHANGES0007 (it should really be a summary, not just a simple diff).
 - You can lookup your previous work in these CHANGES files when unsure how to continue.
