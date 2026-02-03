@@ -687,12 +687,13 @@ module CohomologyContractibleTypeChecked where
   open import Cubical.ZCohomology.GroupStructure using (coHomGr)
   open import Cubical.Algebra.Group.Base using (Group)
   open import Cubical.Algebra.Group.Morphisms using (GroupIso)
-  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup)
+  open import Cubical.Algebra.Group.Instances.Unit using (UnitGroup; UnitGroup₀)
   open import Cubical.Data.Nat using (ℕ; zero; suc)
+  open import Cubical.ZCohomology.Groups.Unit using (Hⁿ-Unit≅0)
 
   -- The key theorem from the Cubical library:
   --
-  -- Hⁿ-contrType≅0 : ∀ {A : Type} (n : ℕ) → isContr A → GroupIso (coHomGr (suc n) A) UnitGroup
+  -- Hⁿ-contrType≅0 : ∀ {A : Type} (n : ℕ) → isContr A → GroupIso (coHomGr (suc n) A) UnitGroup₀
   --
   -- In words: For any contractible type A, Hⁿ(A) ≅ 0 for all n ≥ 1.
 
@@ -700,7 +701,7 @@ module CohomologyContractibleTypeChecked where
   -- We can instantiate this for the disk D² once we have isContr Disk2.
   -- For now, we document the connection:
   --
-  -- disk-cohomology-vanishes-witness : isContr Disk2 → GroupIso (coHomGr 1 Disk2) UnitGroup
+  -- disk-cohomology-vanishes-witness : isContr Disk2 → GroupIso (coHomGr 1 Disk2) UnitGroup₀
   -- disk-cohomology-vanishes-witness = Hⁿ-contrType≅0 0
 
   -- This is exactly what we need for the no-retraction proof!
@@ -714,10 +715,12 @@ module CohomologyContractibleTypeChecked where
   -- =========================================================================
 
   -- Unit is contractible, so its cohomology should vanish
-  -- POSTULATED: Unit vs Lift Unit mismatch with library definitions
-  postulate
-    H¹-Unit≅0 : GroupIso {ℓ-zero} {ℓ-zero} (coHomGr 1 Unit) UnitGroup
-    H²-Unit≅0 : GroupIso {ℓ-zero} {ℓ-zero} (coHomGr 2 Unit) UnitGroup
+  -- PROVED: Using Hⁿ-Unit≅0 from Cubical.ZCohomology.Groups.Unit
+  H¹-Unit≅0 : GroupIso {ℓ-zero} {ℓ-zero} (coHomGr 1 Unit) UnitGroup₀
+  H¹-Unit≅0 = Hⁿ-Unit≅0 0
+
+  H²-Unit≅0 : GroupIso {ℓ-zero} {ℓ-zero} (coHomGr 2 Unit) UnitGroup₀
+  H²-Unit≅0 = Hⁿ-Unit≅0 1
 
   -- These type-check and confirm the library is working correctly.
 
