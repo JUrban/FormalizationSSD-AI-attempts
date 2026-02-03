@@ -738,10 +738,26 @@ module NotWLPOTC where
     elem-c = decPred→elem' (decide-fn ∘ Iso.fun Sp-freeBA-ℕ-Iso)
 
     -- The Stone Duality property: decide-fn α = evaluate α $cr elem-c
-    -- This uses the universal property of freeBA and the SD axiom
-    -- Proof postulated: involves showing evaluate α corresponds to Iso.fun Sp-freeBA-ℕ-Iso α
-    postulate
-      SD-property : (α : binarySequence) → decide-fn α ≡ WLPOmod.evaluate α $cr elem-c
+    -- PROVED: Uses the fact that Iso.inv Sp-freeBA-ℕ-Iso = inducedBAHom = evaluate
+    -- and the decPred→elem-property' which gives the round-trip property
+    SD-property : (α : binarySequence) → decide-fn α ≡ WLPOmod.evaluate α $cr elem-c
+    SD-property α = sym (
+      WLPOmod.evaluate α $cr elem-c
+        ≡⟨ refl ⟩  -- by def of evaluationMap
+      evaluationMap freeBA-ℕ-Booleω elem-c (WLPOmod.evaluate α)
+        ≡⟨ cong (evaluationMap freeBA-ℕ-Booleω elem-c) evaluate-is-Iso-inv ⟩
+      evaluationMap freeBA-ℕ-Booleω elem-c (Iso.inv Sp-freeBA-ℕ-Iso α)
+        ≡⟨ decPred→elem-property' (decide-fn ∘ Iso.fun Sp-freeBA-ℕ-Iso) (Iso.inv Sp-freeBA-ℕ-Iso α) ⟩
+      decide-fn (Iso.fun Sp-freeBA-ℕ-Iso (Iso.inv Sp-freeBA-ℕ-Iso α))
+        ≡⟨ cong decide-fn (Iso.sec Sp-freeBA-ℕ-Iso α) ⟩
+      decide-fn α ∎)
+      where
+      -- Key: WLPOmod.evaluate α = Iso.inv Sp-freeBA-ℕ-Iso α
+      -- evaluate = inducedBAHom, and Iso.inv Sp-freeBA-ℕ-Iso = Iso.fun (freeBA-universal-property) = inducedBAHom
+      open import BooleanRing.FreeBooleanRing.FreeBool using (inducedBAHom; freeBA-universal-property)
+
+      evaluate-is-Iso-inv : WLPOmod.evaluate α ≡ Iso.inv Sp-freeBA-ℕ-Iso α
+      evaluate-is-Iso-inv = refl  -- Both are definitionally inducedBAHom ℕ BoolBR α
 
     -- Open the PlayingWithWLPO' module with our parameters to get the contradiction
     open WLPOmod.PlayingWithWLPO' decide-fn WLPOf elem-c SD-property
