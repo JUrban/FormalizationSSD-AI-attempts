@@ -361,10 +361,11 @@ module FiberTC where
     → isEquiv f → (y : B) → isContr (fiber-tc f y)
   isEquiv→isContrFiber {f = f} eq y = equiv-proof eq y
 
-  -- A map with contractible fibers is an equivalence
-  postulate
-    isContrFiber→isEquiv : {A B : Type ℓ-zero} {f : A → B}
-      → ((y : B) → isContr (fiber-tc f y)) → isEquiv f
+  -- PROVED: A map with contractible fibers is an equivalence
+  -- This is exactly the definition of isEquiv (equiv-proof field)
+  isContrFiber→isEquiv : {A B : Type ℓ-zero} {f : A → B}
+    → ((y : B) → isContr (fiber-tc f y)) → isEquiv f
+  isContrFiber→isEquiv contrFibers .equiv-proof = contrFibers
 
 -- =============================================================================
 -- Module: Session0274ExtendedSummary

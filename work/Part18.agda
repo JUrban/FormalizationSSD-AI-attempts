@@ -47,19 +47,17 @@ module ILocalityConsequencesTC where
       0≡1 = all-ℤ-equal (pos 0) (pos 1)
 
   -- =================================================================
-  -- COROLLARY: No section of Unit → ℤ (TYPE-CHECKED!)
+  -- NOTE ON SECTIONS: The statement "no section of Unit → ℤ" is trivially false!
   -- =================================================================
-  -- Note: If f : Unit → ℤ has a section s, then s ∘ f = id on Unit.
-  -- Since Unit is contractible, this is always true.
-  -- The real obstruction is that ℤ → Unit → ℤ cannot be id on ℤ.
-  -- Actually this corollary is not directly derivable from the retract lemma,
-  -- but follows from Unit having only one element.
-
-  postulate
-    no-section-Unit→ℤ :
-      (f : Unit → ℤ) (s : ℤ → Unit)
-      → ((u : Unit) → s (f u) ≡ u)
-      → ⊥
+  -- A section of f : Unit → ℤ is an s : ℤ → Unit with s ∘ f = id on Unit.
+  -- Since Unit is contractible, ANY s : ℤ → Unit satisfies s (f u) ≡ u.
+  --
+  -- What IS true (and proved above as ℤ-not-retract-of-Unit) is:
+  -- There is no RETRACTION of i : ℤ → Unit, i.e., no r : Unit → ℤ with r ∘ i = id on ℤ.
+  --
+  -- The retract result follows from the fact that r would be constant (since
+  -- Unit has one element), but then r (i z) = r tt for all z, so r ∘ i ≠ id
+  -- unless all integers are equal, contradicting 0 ≠ 1.
 
   -- =================================================================
   -- KEY LEMMA: Bℤ (= S¹) is not contractible (TYPE-CHECKED!)
@@ -777,7 +775,6 @@ module TypeCheckedLemmasIndexTC where
   -- • one-not-zero-ℤ : 1 ≢ 0 in ℤ
   -- • ℤ-not-retract-of-Unit : ℤ cannot be retract of Unit
   -- • ℤ-not-retract-of-0 : ℤ cannot be retract of trivial group
-  -- • no-section-Unit→ℤ : No section of Unit → ℤ
   --
   -- HOMOTOPY LEMMAS:
   -- ----------------

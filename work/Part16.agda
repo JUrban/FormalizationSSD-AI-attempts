@@ -886,17 +886,19 @@ module SumPropertiesTC where
   open import Cubical.Foundations.Equiv
   open import Cubical.Foundations.Isomorphism
   open import Cubical.Data.Sum.Base
+  open import Cubical.Data.Sum.Properties using (isEmbedding-inl; isEmbedding-inr)
+  open import Cubical.Functions.Embedding using (isEmbedding→Inj)
   open import Cubical.Data.Empty as ⊥
 
-  -- TYPE-CHECKED: inl is injective (via Cubical library's isEmbedding-inl)
-  postulate
-    inl-injective-witness : {A B : Type ℓ-zero} {x y : A}
-      → inl {B = B} x ≡ inl y → x ≡ y
+  -- PROVED: inl is injective (via Cubical library's isEmbedding-inl)
+  inl-injective-witness : {A B : Type ℓ-zero} {x y : A}
+    → inl {B = B} x ≡ inl y → x ≡ y
+  inl-injective-witness = isEmbedding→Inj isEmbedding-inl _ _
 
-  -- TYPE-CHECKED: inr is injective (via Cubical library's isEmbedding-inr)
-  postulate
-    inr-injective-witness : {A B : Type ℓ-zero} {x y : B}
-      → inr {A = A} x ≡ inr y → x ≡ y
+  -- PROVED: inr is injective (via Cubical library's isEmbedding-inr)
+  inr-injective-witness : {A B : Type ℓ-zero} {x y : B}
+    → inr {A = A} x ≡ inr y → x ≡ y
+  inr-injective-witness = isEmbedding→Inj isEmbedding-inr _ _
 
   -- TYPE-CHECKED: inl ≠ inr (direct proof)
   inl≢inr-witness : {A B : Type ℓ-zero} {a : A} {b : B}
@@ -1271,10 +1273,10 @@ module TransportPropertiesTC where
   transportRefl-witness : {A : Type ℓ-zero} (x : A) → transport refl x ≡ x
   transportRefl-witness x = transportRefl x
 
-  -- TYPE-CHECKED: subst with refl
-  postulate
-    substRefl-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero}
-      {x : A} (bx : B x) → subst B refl bx ≡ bx
+  -- PROVED: subst with refl (via Cubical library's substRefl)
+  substRefl-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero}
+    {x : A} (bx : B x) → subst B refl bx ≡ bx
+  substRefl-witness {B = B} bx = substRefl {B = B} bx
 
 -- =============================================================================
 -- Isomorphism Properties Extended
@@ -1875,10 +1877,10 @@ module SubstPropertiesTC where
   open import Cubical.Foundations.Prelude
   open import Cubical.Foundations.Transport
 
-  -- Substitution along refl is identity
-  postulate
-    substRefl-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero}
-      {a : A} (x : B a) → subst B refl x ≡ x
+  -- PROVED: Substitution along refl is identity (via Cubical library's substRefl)
+  substRefl-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero}
+    {a : A} (x : B a) → subst B refl x ≡ x
+  substRefl-witness {B = B} x = substRefl {B = B} x
 
   -- Transport along refl is identity (re-export)
   transportRefl-witness : {A : Type ℓ-zero} (x : A) → transport refl x ≡ x
@@ -2942,10 +2944,10 @@ module TransportPropertiesExtendedTC where
   transportRefl' : {A : Type ℓ-zero} (x : A) → transport refl x ≡ x
   transportRefl' = transportRefl
 
-  -- subst in constant family
-  postulate
-    substConstFamily : {A : Type ℓ-zero} {B : Type ℓ-zero} {a a' : A}
-      (p : a ≡ a') (b : B) → subst (λ _ → B) p b ≡ b
+  -- PROVED: subst in constant family (transport along constant family is identity)
+  substConstFamily : {A : Type ℓ-zero} {B : Type ℓ-zero} {a a' : A}
+    (p : a ≡ a') (b : B) → subst (λ _ → B) p b ≡ b
+  substConstFamily p b = transportRefl b
 
   -- pathToEquiv and ua roundtrip
   -- ua-pathToEquiv is defined in Cubical.Foundations.Univalence
@@ -3385,6 +3387,7 @@ module SigmaPropertiesTC where
   open import Cubical.Foundations.HLevels
   open import Cubical.Foundations.Equiv
   open import Cubical.Data.Sigma
+  open import Cubical.Data.Sigma.Properties using (curryEquiv)
 
   -- isProp of Sigma where second component is prop
   isPropΣ-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero}
@@ -3408,10 +3411,10 @@ module SigmaPropertiesTC where
     → x ≡ y
   ΣPathP-witness p q = ΣPathP (p , q)
 
-  -- Currying equivalence
-  postulate
-    Σ-Π-≃-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero} {C : Σ A B → Type ℓ-zero}
-      → ((x : Σ A B) → C x) ≃ ((a : A) (b : B a) → C (a , b))
+  -- PROVED: Currying equivalence (via Cubical library's curryEquiv)
+  Σ-Π-≃-witness : {A : Type ℓ-zero} {B : A → Type ℓ-zero} {C : Σ A B → Type ℓ-zero}
+    → ((x : Σ A B) → C x) ≃ ((a : A) (b : B a) → C (a , b))
+  Σ-Π-≃-witness {C = C} = curryEquiv {C = λ a b → C (a , b)}
 
 -- =============================================================================
 -- Module: GroupHomExtendedTC
@@ -3743,11 +3746,12 @@ module EquivPreservationTC where
   isGroupoid-≃ : {A B : Type ℓ-zero} → A ≃ B → isGroupoid A → isGroupoid B
   isGroupoid-≃ e isGroupoidA = isOfHLevelRespectEquiv 3 e isGroupoidA
 
-  -- Path types preserve h-level (n-types have (n-1)-type path spaces)
+  -- PROVED: Path types preserve h-level (n-types have (n-1)-type path spaces)
   -- This is a standard fact: if A is (n+1)-truncated, path spaces are n-truncated
-  postulate
-    Path-hlevel : {n : ℕ} {A : Type ℓ-zero} → isOfHLevel (suc n) A →
-      (x y : A) → isOfHLevel n (x ≡ y)
+  -- Uses Cubical library's isOfHLevelPath'
+  Path-hlevel : {n : ℕ} {A : Type ℓ-zero} → isOfHLevel (suc n) A →
+    (x y : A) → isOfHLevel n (x ≡ y)
+  Path-hlevel = isOfHLevelPath' _
 
 -- =============================================================================
 -- Module: Session0271Summary
