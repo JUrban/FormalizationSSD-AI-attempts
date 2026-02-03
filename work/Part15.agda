@@ -536,6 +536,7 @@ module CohomologyFunctorialityTypeChecked where
   open import Cubical.Algebra.Group.Morphisms using (GroupHom; compGroupHom)
   open import Cubical.Algebra.Group.MorphismProperties using (compGroupHomId)
   open import Cubical.Data.Nat using (ℕ; zero; suc)
+  open import Cubical.HITs.SetTruncation as ST using (∥_∥₂; ∣_∣₂; squash₂; isSetPathImplicit)
 
   -- TYPE-CHECKED: Contravariant functoriality of cohomology
   -- A map f : A → B induces a group homomorphism coHom n B → coHom n A
@@ -561,19 +562,24 @@ module CohomologyFunctorialityTypeChecked where
   -- that equals id on ℤ (by functoriality), contradicting ℤ-not-retract-of-Unit-STF.
 
   -- =========================================================================
-  -- Functoriality composition lemma (type-checked)
+  -- Functoriality composition lemma (PROVED)
   -- =========================================================================
 
   -- If g ∘ f = id, then f* ∘ g* is the identity on cohomology
   -- (using contravariance: (g ∘ f)* = f* ∘ g*)
 
-  -- POSTULATED: The proof has contravariance type issues
-  postulate
-    coHom-functorial-comp : {A : Type ℓ-zero} {B : Type ℓ-zero} (n : ℕ)
-      → (f : A → B) → (g : B → A)
-      → ((a : A) → g (f a) ≡ a)
-      → (x : fst (coHomGr n A))
-      → fst (coHomMorph n f) (fst (coHomMorph n g) x) ≡ x
+  -- PROVED: Using set truncation elimination and function extensionality
+  -- The key insight is that coHomFun n f acts by precomposition: β ↦ β ∘ f
+  -- So coHomFun n f (coHomFun n g ∣β∣₂) = ∣(β ∘ g) ∘ f∣₂ = ∣β ∘ (g ∘ f)∣₂
+  -- When g ∘ f = id pointwise, this equals ∣β∣₂
+  coHom-functorial-comp : {A : Type ℓ-zero} {B : Type ℓ-zero} (n : ℕ)
+    → (f : A → B) → (g : B → A)
+    → ((a : A) → g (f a) ≡ a)
+    → (x : fst (coHomGr n A))
+    → fst (coHomMorph n f) (fst (coHomMorph n g) x) ≡ x
+  coHom-functorial-comp n f g gf≡id =
+    ST.elim (λ _ → isSetPathImplicit)
+      (λ β → cong ∣_∣₂ (funExt λ a → cong β (gf≡id a)))
 
   -- This is the KEY: For a retraction D² → S¹, the induced maps on H¹ compose to identity
 
