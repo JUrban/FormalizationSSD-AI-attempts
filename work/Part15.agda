@@ -504,9 +504,17 @@ module SimplyConnectedTypes where
   -- For the disk D², simple connectivity follows from contractibility:
   -- An contractible type is automatically simply connected.
 
-  -- POSTULATED: The proof has type matching issues with the is-simply-connected definition
-  postulate
-    isContr→is-simply-connected : {X : Type ℓ-zero} → isContr X → is-simply-connected X
+  -- PROVED: Contractibility implies simply connected
+  isContr→is-simply-connected : {X : Type ℓ-zero} → isContr X → is-simply-connected X
+  isContr→is-simply-connected {X} (c , paths) x y = ∣ sym (paths x) ∙ paths y ∣₁ , loops-trivial
+    where
+    open import Cubical.Foundations.HLevels using (isContr→isProp; isProp→isSet)
+    isPropX : isProp X
+    isPropX = isContr→isProp (c , paths)
+    isSetX : isSet X
+    isSetX = isProp→isSet isPropX
+    loops-trivial : (x₁ : X) → isProp (x₁ ≡ x₁)
+    loops-trivial x₁ = isSetX x₁ x₁
 
   -- The key fact for no-retraction:
   -- D² is contractible (geometric axiom), hence simply connected.
@@ -1368,15 +1376,20 @@ module EquivalenceInfrastructure where
 -- =============================================================================
 
 module PathSpaceProperties where
+  open import Cubical.Foundations.GroupoidLaws using (lUnit; rUnit; assoc)
   -- Infrastructure for path spaces, which are fundamental to homotopy theory.
 
-  -- POSTULATED: Cubical GroupoidLaws types differ from expected types
-  postulate
-    path-lUnit : {A : Type ℓ-zero} {x y : A} (p : x ≡ y) → refl ∙ p ≡ p
-    path-rUnit : {A : Type ℓ-zero} {x y : A} (p : x ≡ y) → p ∙ refl ≡ p
-    path-assoc : {A : Type ℓ-zero} {w x y z : A}
-      (p : w ≡ x) (q : x ≡ y) (r : y ≡ z)
-      → (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+  -- PROVED: Using Cubical GroupoidLaws (with sym to flip direction)
+  path-lUnit : {A : Type ℓ-zero} {x y : A} (p : x ≡ y) → refl ∙ p ≡ p
+  path-lUnit p = sym (lUnit p)
+
+  path-rUnit : {A : Type ℓ-zero} {x y : A} (p : x ≡ y) → p ∙ refl ≡ p
+  path-rUnit p = sym (rUnit p)
+
+  path-assoc : {A : Type ℓ-zero} {w x y z : A}
+    (p : w ≡ x) (q : x ≡ y) (r : y ≡ z)
+    → (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+  path-assoc p q r = sym (assoc p q r)
 
   -- =========================================================================
   -- Connection to Ω(S¹)
