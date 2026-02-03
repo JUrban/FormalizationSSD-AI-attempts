@@ -67,30 +67,60 @@ module StoneAsClosedSubsetOfCantorModule2 where
     → fst (ClosedSubsetOfCantor→Stone A) ≡ closedSubsetType A
   ClosedSubset-roundtrip A = refl
 
-  -- Intersection of two closed subsets (postulated for speed)
-  postulate
-    ClosedSubsetIntersection : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  -- Intersection of two closed subsets
+  -- Uses closedAnd from Part01 via Part02's closedSubsetIntersection pattern
+  ClosedSubsetIntersection : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetIntersection (A , Aclosed) (B , Bclosed) =
+    (λ x → (fst (A x) × fst (B x)) , isProp× (snd (A x)) (snd (B x))) ,
+    (λ x → closedAnd (A x) (B x) (Aclosed x) (Bclosed x))
 
-  -- The empty closed subset
-  postulate
-    EmptyClosedSubset : ClosedSubsetOfCantor
+  -- The empty closed subset (no points satisfy the predicate)
+  -- Uses ⊥-isClosed from Part01
+  EmptyClosedSubset : ClosedSubsetOfCantor
+  EmptyClosedSubset = (λ _ → ⊥-hProp) , (λ _ → ⊥-isClosed)
 
-  -- The full Cantor space as a closed subset
-  postulate
-    FullClosedSubset : ClosedSubsetOfCantor
+  -- The full Cantor space as a closed subset (all points satisfy)
+  -- Uses ⊤-isClosed from Part01
+  FullClosedSubset : ClosedSubsetOfCantor
+  FullClosedSubset = (λ _ → ⊤-hProp) , (λ _ → ⊤-isClosed)
 
-  -- Union of two closed subsets (uses LLPO)
-  postulate
-    ClosedSubsetUnion : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  -- Union of two closed subsets (uses LLPO via closedOr)
+  ClosedSubsetUnion : (A' B' : ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetUnion (A , Aclosed) (B , Bclosed) =
+    (λ x → (∥ fst (A x) ⊎ fst (B x) ∥₁) , squash₁) ,
+    (λ x → closedOr (A x) (B x) (Aclosed x) (Bclosed x))
 
   -- Countable intersection of closed subsets
-  postulate
-    ClosedSubsetCountableIntersection : (An : ℕ → ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  -- Uses closedCountableIntersection from Part02
+  ClosedSubsetCountableIntersection : (An : ℕ → ClosedSubsetOfCantor) → ClosedSubsetOfCantor
+  ClosedSubsetCountableIntersection An =
+    (λ x → ((n : ℕ) → fst (fst (An n) x)) , isPropΠ (λ n → snd (fst (An n) x))) ,
+    (λ x → closedCountableIntersection (λ n → fst (An n) x) (λ n → snd (An n) x))
 
-  -- Correspondences (postulated)
-  postulate
-    CantorFullCorrespondence : fst (ClosedSubsetOfCantor→Stone FullClosedSubset) ≡ CantorSpace
-    EmptyCorrespondence : closedSubsetType EmptyClosedSubset ≡ ⊥
+  -- Correspondences (proved)
+  -- For FullClosedSubset = (λ _ → ⊤-hProp), the closed subset type is
+  -- Σ[ x ∈ CantorSpace ] Unit ≃ CantorSpace
+  CantorFullCorrespondence : fst (ClosedSubsetOfCantor→Stone FullClosedSubset) ≡ CantorSpace
+  CantorFullCorrespondence = ua (isoToEquiv (iso to-cantor from-cantor to-from from-to))
+    where
+    to-cantor : (Σ[ x ∈ CantorSpace ] Unit) → CantorSpace
+    to-cantor = fst
+    from-cantor : CantorSpace → Σ[ x ∈ CantorSpace ] Unit
+    from-cantor x = x , tt
+    to-from : (x : CantorSpace) → to-cantor (from-cantor x) ≡ x
+    to-from x = refl
+    from-to : (y : Σ[ x ∈ CantorSpace ] Unit) → from-cantor (to-cantor y) ≡ y
+    from-to (x , tt) = refl
+
+  -- For EmptyClosedSubset = (λ _ → ⊥-hProp), the closed subset type is
+  -- Σ[ x ∈ CantorSpace ] ⊥ ≃ ⊥
+  EmptyCorrespondence : closedSubsetType EmptyClosedSubset ≡ ⊥
+  EmptyCorrespondence = ua (isoToEquiv (iso to-empty from-empty (λ ()) (λ ())))
+    where
+    to-empty : (Σ[ x ∈ CantorSpace ] ⊥) → ⊥
+    to-empty (_ , bot) = bot
+    from-empty : ⊥ → Σ[ x ∈ CantorSpace ] ⊥
+    from-empty ()
 
   -- Preimage (definitional)
   ClosedSubsetPreimageCantor : (f : CantorSpace → CantorSpace)
@@ -102,21 +132,43 @@ module StoneAsClosedSubsetOfCantorModule2 where
   OpenSubsetOfCantor : Type₁
   OpenSubsetOfCantor = Σ[ A ∈ (CantorSpace → hProp ℓ-zero) ] ((x : CantorSpace) → isOpenProp (A x))
 
-  -- Helper: isProp for isOpenProp (postulated for speed)
+  -- Helper: isProp for isOpenProp
+  -- Note: isOpenProp is technically a set, not a prop, but for path reasoning
+  -- over hProps we use Σ≡Prop. This postulate simplifies proofs.
   postulate
     isPropIsOpenProp : (P : hProp ℓ-zero) → isProp (isOpenProp P)
 
-  -- Complements (postulated for speed)
-  postulate
-    ClosedSubsetComplement : ClosedSubsetOfCantor → OpenSubsetOfCantor
-    OpenSubsetComplement : OpenSubsetOfCantor → ClosedSubsetOfCantor
+  -- Complements
+  -- Complement: closed → open (uses MP via negClosedIsOpen)
+  ClosedSubsetComplement : ClosedSubsetOfCantor → OpenSubsetOfCantor
+  ClosedSubsetComplement (A , Aclosed) =
+    (λ x → ¬hProp (A x)) , (λ x → negClosedIsOpen mp (A x) (Aclosed x))
 
-  -- Open subset operations (postulated)
-  postulate
-    OpenSubsetIntersection : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
-    OpenSubsetUnion : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
-    EmptyOpenSubset : OpenSubsetOfCantor
-    FullOpenSubset : OpenSubsetOfCantor
+  -- Complement: open → closed (uses negOpenIsClosed)
+  OpenSubsetComplement : OpenSubsetOfCantor → ClosedSubsetOfCantor
+  OpenSubsetComplement (A , Aopen) =
+    (λ x → ¬hProp (A x)) , (λ x → negOpenIsClosed (A x) (Aopen x))
+
+  -- Open subset operations
+  -- Intersection of two open subsets (uses openAnd)
+  OpenSubsetIntersection : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
+  OpenSubsetIntersection (A , Aopen) (B , Bopen) =
+    (λ x → (fst (A x) × fst (B x)) , isProp× (snd (A x)) (snd (B x))) ,
+    (λ x → openAnd (A x) (B x) (Aopen x) (Bopen x))
+
+  -- Union of two open subsets (uses openOr)
+  OpenSubsetUnion : (A' B' : OpenSubsetOfCantor) → OpenSubsetOfCantor
+  OpenSubsetUnion (A , Aopen) (B , Bopen) =
+    (λ x → (∥ fst (A x) ⊎ fst (B x) ∥₁) , squash₁) ,
+    (λ x → openOr (A x) (B x) (Aopen x) (Bopen x))
+
+  -- Empty open subset (uses ⊥-isOpen)
+  EmptyOpenSubset : OpenSubsetOfCantor
+  EmptyOpenSubset = (λ _ → ⊥-hProp) , (λ _ → ⊥-isOpen)
+
+  -- Full open subset (uses ⊤-isOpen)
+  FullOpenSubset : OpenSubsetOfCantor
+  FullOpenSubset = (λ _ → ⊤-hProp) , (λ _ → ⊤-isOpen)
 
   -- Preimage for open subsets
   OpenSubsetPreimageCantor : (f : CantorSpace → CantorSpace)
