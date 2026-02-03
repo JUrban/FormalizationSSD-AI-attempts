@@ -16,12 +16,13 @@ import Cubical.Data.Sum as ⊎
 -- =============================================================================
 
 module IntervalIsCHausModule where
+  open import Cubical.Foundations.Prelude using (Type; ℓ-zero)
   open CompactHausdorffModule
   open CantorIsStoneModule
 
   -- The unit interval (abstract, to be connected to Cubical.Data.Rationals or similar)
   postulate
-    UnitInterval : Type₀
+    UnitInterval : Type ℓ-zero
     isSetUnitInterval : isSet UnitInterval
 
   -- Cantor sum function cs : 2^ℕ → I
