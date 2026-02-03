@@ -342,11 +342,13 @@ module HomotopyGroupInfrastructure where
   -- 4. loop ∙ loop corresponds to 2 ∈ ℤ, etc.
 
   -- The homotopy group π₁(S¹) as a type
-  -- POSTULATED: π' returns Group but type extraction has import issues
-  postulate
-    π₁-S¹ : Type ℓ-zero
+  -- PROVED: Using set truncation of the loop space
+  open import Cubical.HITs.SetTruncation using (∥_∥₂)
 
-  -- This is equivalent to ∥ base ≡ base ∥₂ (2-truncation of loops)
+  π₁-S¹ : Type ℓ-zero
+  π₁-S¹ = ∥ base ≡ base ∥₂
+
+  -- This is the 2-truncation of loops at base.
   -- The group structure is given by path concatenation.
 
 -- =============================================================================
