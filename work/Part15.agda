@@ -1821,10 +1821,10 @@ module EMSpaceTypeChecked where
 
   -- TYPE-CHECKED: EM(G,n) ≃ Ω(EM(G,n+1))
   -- This is the fundamental delooping equivalence for EM-spaces.
-  -- POSTULATED: EM≃ΩEM+1 signature differs from expected type
-  postulate
-    EM-loop-equiv-witness : (G : AbGroup ℓ-zero) (n : ℕ)
-      → EM G n ≃ fst (Ω (EM∙ G (suc n)))
+  -- PROVED: Using EM≃ΩEM+1 from Cubical.Homotopy.EilenbergMacLane.Properties
+  EM-loop-equiv-witness : (G : AbGroup ℓ-zero) (n : ℕ)
+    → EM G n ≃ fst (Ω (EM∙ G (suc n)))
+  EM-loop-equiv-witness G n = EM≃ΩEM+1 {G = G} n
 
   -- This equivalence is key because:
   -- - EM G 0 = underlying set of G
