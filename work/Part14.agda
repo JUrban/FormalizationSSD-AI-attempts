@@ -103,21 +103,21 @@ module CohomologyModule where
 
     -- Boundary map d₀ : C⁰ → C¹
     -- d₀(α)_x(u,v) = α_x(v) - α_x(u)
-    -- POSTULATED: definition has type inference issues in Part14 context
-    postulate
-      d₀ : C⁰ → C¹
+    -- PROVED: Direct definition using AbGroup operations
+    d₀ : C⁰ → C¹
+    d₀ α x u v = AGx._-_ x (α x v) (α x u)
 
     -- Boundary map d₁ : C¹ → C²
     -- d₁(β)_x(u,v,w) = β_x(v,w) - β_x(u,w) + β_x(u,v)
-    -- POSTULATED: definition has type inference issues in Part14 context
-    postulate
-      d₁ : C¹ → C²
+    -- PROVED: Direct definition using AbGroup operations
+    d₁ : C¹ → C²
+    d₁ β x u v w = AGx._+_ x (AGx._-_ x (β x v w) (β x u w)) (β x u v)
 
     -- A 1-cocycle is β : C¹ such that d₁(β) = 0
     -- i.e., β_x(u,v) + β_x(v,w) = β_x(u,w) for all x,u,v,w
-    -- POSTULATED: definition has type inference issues in Part14 context
-    postulate
-      is1Cocycle : C¹ → Type ℓ
+    -- PROVED: Direct definition - d₁(β) = 0 means pointwise zero
+    is1Cocycle : C¹ → Type ℓ
+    is1Cocycle β = (x : S) (u v w : T x) → d₁ β x u v w ≡ AGx.0g x
 
     -- A 1-coboundary is β such that β = d₀(α) for some α
     is1Coboundary : C¹ → Type ℓ
@@ -1254,11 +1254,28 @@ module CohomologyModule where
 
     -- The factorization lemma (pure group theory):
     -- Any composition ℤ → Unit → ℤ is the zero homomorphism
-    -- POSTULATED: This requires proving ψ(tt) = 0 which needs group hom properties
-    postulate
-      ℤ-Unit-ℤ-is-zero : (φ : GroupHom ℤGroup UnitGroup₀)
-                       → (ψ : GroupHom UnitGroup₀ ℤGroup)
-                       → (n : fst ℤGroup) → fst ψ (fst φ n) ≡ pos 0
+    -- PROVED: ψ(tt) = 0 because group homs preserve identity, and tt is the identity in UnitGroup₀
+    ℤ-Unit-ℤ-is-zero : (φ : GroupHom ℤGroup UnitGroup₀)
+                     → (ψ : GroupHom UnitGroup₀ ℤGroup)
+                     → (n : fst ℤGroup) → fst ψ (fst φ n) ≡ pos 0
+    ℤ-Unit-ℤ-is-zero φ ψ n = goal
+      where
+      -- The underlying map of ψ
+      ψ-map : Unit → ℤ
+      ψ-map = fst ψ
+
+      -- ψ preserves identity: ψ(0_Unit) = 0_ℤ
+      -- The identity of UnitGroup₀ is tt
+      -- The identity of ℤGroup is pos 0
+      ψ-pres-id : ψ-map tt ≡ pos 0
+      ψ-pres-id = IsGroupHom.pres1 (snd ψ)
+
+      -- φ(n) lands in Unit, which has only tt
+      φn-is-tt : fst φ n ≡ tt
+      φn-is-tt = refl  -- Unit has definitional η: any element of Unit is tt
+
+      goal : ψ-map (fst φ n) ≡ pos 0
+      goal = ψ-pres-id  -- since φ(n) = tt by η-expansion of Unit
 
     -- =======================================================================
     -- FULL PROOF STRUCTURE (if we had concrete Circle/Disk2)
