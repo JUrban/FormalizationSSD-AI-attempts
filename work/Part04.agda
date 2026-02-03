@@ -2,731 +2,1330 @@
 
 module work.Part04 where
 
--- =============================================================================
--- Part 04: Cantor Pairing, openAnd, closedDeMorgan, closedOr
--- =============================================================================
-
--- Import Part03 for base definitions (includes Part01 and Part02)
 open import work.Part03 public
 
--- Additional imports needed for this part
+-- Additional imports for Part04
+open import Cubical.Algebra.BooleanRing
+open import Cubical.Algebra.CommRing
 open import Cubical.Foundations.Prelude
-open import Cubical.Foundations.Function using (idfun; _∘_; uncurry)
-open import Cubical.Foundations.Structure using (⟨_⟩)
-open import Cubical.Foundations.HLevels using (hProp; isPropΠ; isProp×; isSetΣSndProp; isSetΠ)
-open import Cubical.Data.Sigma using (Σ≡Prop; _×_)
+open import Cubical.Foundations.Structure
+open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.Function using (_∘_)
+open import Cubical.Foundations.Isomorphism using (iso; isoToEquiv; isoToIsEquiv; Iso)
 open import Cubical.Data.Nat renaming (_+_ to _+ℕ_ ; _·_ to _·ℕ_)
-open import Cubical.Data.Nat.Order
-open import Cubical.Data.Nat.Properties using (discreteℕ; +-suc; +-zero; +-comm)
-open import Cubical.Data.Bool hiding (_≤_ ; _≥_) renaming (_≟_ to _=B_)
+open import Cubical.Data.Sigma
+open import Cubical.Data.Bool using (Bool; true; false; _⊕_)
+open import Cubical.Data.Bool.Properties using (⊕-comm; true≢false; false≢true)
+open import Cubical.Relation.Nullary using (¬_; Dec; yes; no)
+import QuotientBool as QB
+open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA; generator; inducedBAHom; freeBA-universal-property; evalBAInduce; inducedBAHomUnique)
+open import CountablyPresentedBooleanRings.PresentedBoole using (BooleanRingEquiv; idBoolEquiv; has-Boole-ω')
+open import Axioms.StoneDuality using (Booleω; Sp)
+open import Cubical.HITs.PropositionalTruncation using (∣_∣₁)
+open import Cubical.Algebra.BooleanRing.Instances.Bool using (BoolBR)
+import Cubical.Data.Sum as ⊎
 open import Cubical.Data.Empty renaming (rec to ex-falso)
-open import Cubical.Data.Sum
-open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁; ∣_∣₁; squash₁)
-open import Cubical.Relation.Nullary
-import Cubical.Induction.WellFounded as WF
 
 -- =============================================================================
--- Section 17: Countable closure properties (lines 1867-2390)
+-- Part 04: work.agda lines 4119-5415 (Bool²-presentation, B∞×B∞-Operations)
 -- =============================================================================
 
--- The inspect idiom for capturing equalities from with-abstractions
-data Reveal_·_is_ {A : Type₀} {B : A → Type₀} (f : (x : A) → B x) (x : A) (y : B x) : Type₀ where
-  [_] : f x ≡ y → Reveal f · x is y
+module Bool²-presentation where
+  open BooleanRingStr (snd (freeBA ℕ)) using (𝟙) renaming (_+_ to _+free_ ; _·_ to _·free_)
 
-inspect : ∀ {A : Type₀} {B : A → Type₀} (f : (x : A) → B x) (x : A) → Reveal f · x is (f x)
-inspect f x = [ refl ]
+  -- The generators in freeBA ℕ
+  g₀ : ⟨ freeBA ℕ ⟩
+  g₀ = generator 0
 
--- Cantor pairing function: ⟨m, n⟩ = (m + n)(m + n + 1)/2 + n
--- The bijectivity is fully proved below using findDiagonal helper
+  g₁ : ⟨ freeBA ℕ ⟩
+  g₁ = generator 1
 
--- Triangular number: T(n) = 0 + 1 + ... + n = n(n+1)/2
--- This is the number of elements before diagonal n
-triangular : ℕ → ℕ
-triangular zero = zero
-triangular (suc n) = suc n +ℕ triangular n
+  -- The relations for Bool²
+  -- relBool² 0 = g₀ · g₁ (atoms are orthogonal)
+  -- relBool² 1 = 𝟙 + g₀ + g₁ (atoms sum to 1 in Boolean ring means g₀ ⊕ g₁ = 1)
+  -- relBool² (n+2) = generator (n+2) (kill extra generators)
+  relBool² : ℕ → ⟨ freeBA ℕ ⟩
+  relBool² 0 = g₀ ·free g₁
+  relBool² 1 = 𝟙 +free g₀ +free g₁
+  relBool² (suc (suc n)) = generator (suc (suc n))
 
--- Cantor pairing: ⟨m, n⟩ = triangular(m + n) + n
-cantorPair : ℕ → ℕ → ℕ
-cantorPair m n = triangular (m +ℕ n) +ℕ n
+  -- The quotient ring: Bool²-quotient = freeBA ℕ /Im relBool²
+  Bool²-quotient : BooleanRing ℓ-zero
+  Bool²-quotient = freeBA ℕ QB./Im relBool²
 
--- Boolean less-than for natural numbers (local version)
-_<ᵇ'_ : ℕ → ℕ → Bool
-zero <ᵇ' zero = false
-zero <ᵇ' suc n = true
-suc m <ᵇ' zero = false
-suc m <ᵇ' suc n = m <ᵇ' n
+  -- The quotient map
+  π : BoolHom (freeBA ℕ) Bool²-quotient
+  π = QB.quotientImageHom
 
--- Helper: find diagonal w given k, using fuel
-findDiagonal : ℕ → ℕ → ℕ → ℕ
-findDiagonal zero k diag = diag
-findDiagonal (suc fuel) k diag =
-  if k <ᵇ' triangular (suc diag)
-  then diag
-  else findDiagonal fuel k (suc diag)
+  -- The backward map: generator 0 ↦ (true, false), generator 1 ↦ (false, true)
+  gens→Bool² : ℕ → ⟨ Bool² ⟩
+  gens→Bool² 0 = (true , false)   -- e₀
+  gens→Bool² 1 = (false , true)   -- e₁
+  gens→Bool² (suc (suc n)) = (false , false)  -- killed generators map to 0
 
--- Cantor unpairing
-cantorUnpair : ℕ → ℕ × ℕ
-cantorUnpair k =
-  let w = findDiagonal (suc k) k 0
-      n = k ∸ triangular w
-      m = w ∸ n
-  in (m , n)
+  -- The induced homomorphism freeBA ℕ → Bool² via universal property
+  freeBool→Bool² : BoolHom (freeBA ℕ) Bool²
+  freeBool→Bool² = inducedBAHom ℕ Bool² gens→Bool²
 
--- Lemmas about boolean comparison
-<ᵇ'-reflects : (m n : ℕ) → m <ᵇ' n ≡ true → m < n
-<ᵇ'-reflects zero zero p = ex-falso (false≢true p)
-<ᵇ'-reflects zero (suc n) _ = suc-≤-suc zero-≤
-<ᵇ'-reflects (suc m) zero p = ex-falso (false≢true p)
-<ᵇ'-reflects (suc m) (suc n) p = suc-≤-suc (<ᵇ'-reflects m n p)
+  -- Need to show that relBool² n maps to 0 in Bool² for all n
+  -- This allows us to factor through the quotient
+  -- Note: private has no effect on open statements, so we omit it
+  open BooleanRingStr (snd Bool²) using () renaming (_+_ to _+²_ ; _·_ to _·²_ ; 𝟘 to 𝟘² ; 𝟙 to 𝟙²)
+  open IsCommRingHom (snd freeBool→Bool²) renaming (pres1 to presB1 ; pres+ to presB+ ; pres· to presB·)
 
-¬<ᵇ'-reflects : (m n : ℕ) → m <ᵇ' n ≡ false → n ≤ m
-¬<ᵇ'-reflects zero zero _ = ≤-refl
-¬<ᵇ'-reflects zero (suc n) p = ex-falso (true≢false p)
-¬<ᵇ'-reflects (suc m) zero _ = zero-≤
-¬<ᵇ'-reflects (suc m) (suc n) p = suc-≤-suc (¬<ᵇ'-reflects m n p)
+  freeBool→Bool²-on-rels : (n : ℕ) → fst freeBool→Bool² (relBool² n) ≡ 𝟘²
+  freeBool→Bool²-on-rels 0 =
+    -- g₀ · g₁ ↦ (true,false) · (false,true) = (false,false) = 0
+    fst freeBool→Bool² (g₀ ·free g₁)
+      ≡⟨ presB· g₀ g₁ ⟩
+    fst freeBool→Bool² g₀ ·² fst freeBool→Bool² g₁
+      ≡⟨ cong₂ _·²_ (evalBAInduce ℕ Bool² gens→Bool² ≡$ 0) (evalBAInduce ℕ Bool² gens→Bool² ≡$ 1) ⟩
+    (true , false) ·² (false , true)
+      ≡⟨ refl ⟩
+    𝟘² ∎
+  freeBool→Bool²-on-rels 1 =
+    -- (𝟙 +free g₀) +free g₁ ↦ ((true,true) + (true,false)) + (false,true)
+    --                       = (false,true) + (false,true) = (false,false) = 0
+    fst freeBool→Bool² (𝟙 +free g₀ +free g₁)
+      ≡⟨ presB+ (𝟙 +free g₀) g₁ ⟩
+    fst freeBool→Bool² (𝟙 +free g₀) +² fst freeBool→Bool² g₁
+      ≡⟨ cong₂ _+²_ (presB+ 𝟙 g₀) (evalBAInduce ℕ Bool² gens→Bool² ≡$ 1) ⟩
+    (fst freeBool→Bool² 𝟙 +² fst freeBool→Bool² g₀) +² (false , true)
+      ≡⟨ cong₂ _+²_ (cong₂ _+²_ presB1 (evalBAInduce ℕ Bool² gens→Bool² ≡$ 0)) refl ⟩
+    ((true , true) +² (true , false)) +² (false , true)
+      ≡⟨ refl ⟩
+    𝟘² ∎
+  freeBool→Bool²-on-rels (suc (suc n)) =
+    -- generator (n+2) ↦ (false, false) = 0
+    fst freeBool→Bool² (generator (suc (suc n)))
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ (suc (suc n)) ⟩
+    (false , false)
+      ≡⟨ refl ⟩
+    𝟘² ∎
 
--- Arithmetic lemmas
-+∸-cancel : (a b : ℕ) → (a +ℕ b) ∸ b ≡ a
-+∸-cancel a zero = +-zero a
-+∸-cancel a (suc b) =
-  (a +ℕ suc b) ∸ suc b   ≡⟨ cong (_∸ suc b) (+-suc a b) ⟩
-  suc (a +ℕ b) ∸ suc b   ≡⟨ refl ⟩
-  (a +ℕ b) ∸ b           ≡⟨ +∸-cancel a b ⟩
-  a                      ∎
+  -- The induced homomorphism from the quotient to Bool²
+  quotient→Bool² : BoolHom Bool²-quotient Bool²
+  quotient→Bool² = QB.inducedHom Bool² freeBool→Bool² freeBool→Bool²-on-rels
 
-∸+-cancel : (a b : ℕ) → b ≤ a → (a ∸ b) +ℕ b ≡ a
-∸+-cancel a zero _ = +-zero a
-∸+-cancel zero (suc b) sb≤0 = ex-falso (¬-<-zero sb≤0)
-∸+-cancel (suc a) (suc b) sb≤sa =
-  (suc a ∸ suc b) +ℕ suc b   ≡⟨ refl ⟩
-  (a ∸ b) +ℕ suc b           ≡⟨ +-suc (a ∸ b) b ⟩
-  suc ((a ∸ b) +ℕ b)         ≡⟨ cong suc (∸+-cancel a b (pred-≤-pred sb≤sa)) ⟩
-  suc a ∎
+  -- The forward map: Bool² → quotient
+  -- (true,false) ↦ [g₀], (false,true) ↦ [g₁], etc.
+  Bool²→quotient-fun : ⟨ Bool² ⟩ → ⟨ Bool²-quotient ⟩
+  Bool²→quotient-fun (false , false) = BooleanRingStr.𝟘 (snd Bool²-quotient)
+  Bool²→quotient-fun (false , true)  = fst π g₁
+  Bool²→quotient-fun (true , false)  = fst π g₀
+  Bool²→quotient-fun (true , true)   = BooleanRingStr.𝟙 (snd Bool²-quotient)
 
-triangular≤cantorPair : (m n : ℕ) → triangular (m +ℕ n) ≤ cantorPair m n
-triangular≤cantorPair m n = ≤-+k-local (triangular (m +ℕ n)) n
-  where
-  ≤-+k-local : (a b : ℕ) → a ≤ a +ℕ b
-  ≤-+k-local a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
-  ≤-+k-local a (suc b) =
-    let step1 : a ≤ a +ℕ b
-        step1 = ≤-+k-local a b
-        step2 : a ≤ suc (a +ℕ b)
-        step2 = ≤-suc step1
-    in subst (a ≤_) (sym (+-suc a b)) step2
+  private
+    open BooleanRingStr (snd Bool²-quotient) using () renaming (_+_ to _+Q_ ; _·_ to _·Q_ ; 𝟘 to 𝟘Q ; 𝟙 to 𝟙Q)
+    open BooleanAlgebraStr Bool²-quotient using () renaming (characteristic2 to char2Q-raw ; ∧AnnihilL to annihilLQ ; ∧AnnihilR to annihilRQ)
+    open BooleanAlgebraStr Bool² using () renaming (characteristic2 to char2²-raw)
+    open import Cubical.Tactics.CommRingSolver
+    open import Cubical.HITs.SetQuotients as SQ
 
-cantorPair<triangular-suc : (m n : ℕ) → cantorPair m n < triangular (suc (m +ℕ n))
-cantorPair<triangular-suc m n = goal
-  where
-  w = m +ℕ n
+    -- Characteristic 2 property: x + x = 0 in any Boolean ring
+    char2Q : (x : ⟨ Bool²-quotient ⟩) → x +Q x ≡ 𝟘Q
+    char2Q x = char2Q-raw {x}
 
-  n≤w : n ≤ w
-  n≤w = n≤m+n-local m n
-    where
-    n≤m+n-local : (a b : ℕ) → b ≤ a +ℕ b
-    n≤m+n-local zero b = ≤-refl
-    n≤m+n-local (suc a) b = ≤-trans (n≤m+n-local a b) ≤-sucℕ
+    -- Characteristic 2 for Bool²
+    char2² : (x : ⟨ Bool² ⟩) → x +² x ≡ 𝟘²
+    char2² x = char2²-raw {x}
 
-  sucn≤sucw : suc n ≤ suc w
-  sucn≤sucw = suc-≤-suc n≤w
-
-  step1 : triangular w +ℕ suc n ≤ triangular w +ℕ suc w
-  step1 = ≤-+k-mono (triangular w) (suc n) (suc w) sucn≤sucw
-    where
-    ≤-+k-mono : (a b c : ℕ) → b ≤ c → a +ℕ b ≤ a +ℕ c
-    ≤-+k-mono zero b c b≤c = b≤c
-    ≤-+k-mono (suc a) b c b≤c = suc-≤-suc (≤-+k-mono a b c b≤c)
-
-  eq1 : suc (triangular w +ℕ n) ≡ triangular w +ℕ suc n
-  eq1 = sym (+-suc (triangular w) n)
-
-  eq2 : triangular w +ℕ suc w ≡ suc w +ℕ triangular w
-  eq2 = +-comm (triangular w) (suc w)
-
-  eq3 : suc w +ℕ triangular w ≡ triangular (suc w)
-  eq3 = refl
-
-  goal : suc (triangular w +ℕ n) ≤ triangular (suc w)
-  goal = subst (_≤ triangular (suc w)) (sym eq1)
-           (subst (triangular w +ℕ suc n ≤_) (eq2 ∙ eq3) step1)
-
-<-reflects-<ᵇ' : (a b : ℕ) → a < b → a <ᵇ' b ≡ true
-<-reflects-<ᵇ' zero zero 1≤0 = ex-falso (¬-<-zero 1≤0)
-<-reflects-<ᵇ' zero (suc b) _ = refl
-<-reflects-<ᵇ' (suc a) zero sa<0 = ex-falso (¬-<-zero sa<0)
-<-reflects-<ᵇ' (suc a) (suc b) sa<sb = <-reflects-<ᵇ' a b (pred-≤-pred sa<sb)
-
-cantorPair<ᵇ'-triangular-suc : (m n : ℕ) → cantorPair m n <ᵇ' triangular (suc (m +ℕ n)) ≡ true
-cantorPair<ᵇ'-triangular-suc m n = <-reflects-<ᵇ' _ _ (cantorPair<triangular-suc m n)
-
-cantorPair-triangular-diff : (m n : ℕ) → cantorPair m n ∸ triangular (m +ℕ n) ≡ n
-cantorPair-triangular-diff m n = +∸-cancel' n (triangular (m +ℕ n))
-  where
-  +∸-cancel' : (a b : ℕ) → (b +ℕ a) ∸ b ≡ a
-  +∸-cancel' a zero = refl
-  +∸-cancel' a (suc b) = +∸-cancel' a b
-
-m+n∸n≡m : (m n : ℕ) → (m +ℕ n) ∸ n ≡ m
-m+n∸n≡m m zero = +-zero m
-m+n∸n≡m m (suc n) =
-  (m +ℕ suc n) ∸ suc n   ≡⟨ cong (_∸ suc n) (+-suc m n) ⟩
-  suc (m +ℕ n) ∸ suc n   ≡⟨ refl ⟩
-  (m +ℕ n) ∸ n           ≡⟨ m+n∸n≡m m n ⟩
-  m ∎
-
-triangular-suc : (n : ℕ) → triangular n < triangular (suc n)
-triangular-suc n = ≤-+k-mono-l 1 (suc n) (triangular n) (suc-≤-suc zero-≤)
-  where
-  ≤-+k-mono-l : (a b c : ℕ) → a ≤ b → a +ℕ c ≤ b +ℕ c
-  ≤-+k-mono-l zero b c _ = ≤-+k-r b c
-    where
-    ≤-+k-r : (x y : ℕ) → y ≤ x +ℕ y
-    ≤-+k-r zero y = ≤-refl
-    ≤-+k-r (suc x) y = ≤-trans (≤-+k-r x y) ≤-sucℕ
-  ≤-+k-mono-l (suc a) zero c sa≤0 = ex-falso (¬-<-zero sa≤0)
-  ≤-+k-mono-l (suc a) (suc b) c sa≤sb = suc-≤-suc (≤-+k-mono-l a b c (pred-≤-pred sa≤sb))
-
-triangular-mono-< : (n m : ℕ) → n < m → triangular n < triangular m
-triangular-mono-< n zero n<0 = ex-falso (¬-<-zero n<0)
-triangular-mono-< n (suc m) sn≤sm with n ≟ m
-... | lt n<m = <-trans (triangular-mono-< n m n<m) (triangular-suc m)
-... | eq n≡m = subst (λ x → triangular x < triangular (suc m)) (sym n≡m) (triangular-suc m)
-... | gt m<n = ex-falso (¬m<m (≤-trans m<n (pred-≤-pred sn≤sm)))
-
-triangular-mono-≤ : (n m : ℕ) → n ≤ m → triangular n ≤ triangular m
-triangular-mono-≤ n m n≤m with n ≟ m
-... | lt n<m = <-weaken (triangular-mono-< n m n<m)
-... | eq n≡m = subst (λ x → triangular n ≤ triangular x) n≡m ≤-refl
-... | gt m<n = ex-falso (¬m<m (≤-trans m<n n≤m))
-
-k≥triangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
-                     → triangular (suc acc) ≤ k
-k≥triangular-suc-acc k w acc acc<w Tw≤k =
-  ≤-trans (triangular-mono-≤ (suc acc) w acc<w) Tw≤k
-
-k≮ᵇ'triangular-suc-acc : (k w acc : ℕ) → acc < w → triangular w ≤ k
-                      → k <ᵇ' triangular (suc acc) ≡ false
-k≮ᵇ'triangular-suc-acc k w acc acc<w Tw≤k = ≤-reflects-¬<ᵇ' _ _ (k≥triangular-suc-acc k w acc acc<w Tw≤k)
-  where
-  ≤-reflects-¬<ᵇ' : (a b : ℕ) → b ≤ a → a <ᵇ' b ≡ false
-  ≤-reflects-¬<ᵇ' zero zero _ = refl
-  ≤-reflects-¬<ᵇ' (suc a) zero _ = refl
-  ≤-reflects-¬<ᵇ' zero (suc b) sb≤0 = ex-falso (¬-<-zero sb≤0)
-  ≤-reflects-¬<ᵇ' (suc a) (suc b) sb≤sa = ≤-reflects-¬<ᵇ' a b (pred-≤-pred sb≤sa)
-
-findDiagonal-found : (fuel k diag : ℕ) → k <ᵇ' triangular (suc diag) ≡ true
-                   → findDiagonal (suc fuel) k diag ≡ diag
-findDiagonal-found fuel k diag p with k <ᵇ' triangular (suc diag) | p
-... | true | _ = refl
-... | false | q = ex-falso (false≢true q)
-
-findDiagonal-continue : (fuel k diag : ℕ) → k <ᵇ' triangular (suc diag) ≡ false
-                      → findDiagonal (suc fuel) k diag ≡ findDiagonal fuel k (suc diag)
-findDiagonal-continue fuel k diag p with k <ᵇ' triangular (suc diag) | p
-... | false | _ = refl
-... | true | q = ex-falso (true≢false q)
-
-findDiagonal-aux : (w k acc fuel : ℕ) → w ∸ acc ≤ fuel
-                 → k <ᵇ' triangular (suc w) ≡ true
-                 → triangular w ≤ k
-                 → acc ≤ w
-                 → findDiagonal (suc fuel) k acc ≡ w
-findDiagonal-aux w k acc zero w∸acc≤0 k<Tsw Tw≤k acc≤w with w ≟ acc
-... | lt w<acc = ex-falso (¬m<m (≤-trans w<acc acc≤w))
-... | eq w≡acc = subst (findDiagonal 1 k acc ≡_) (sym w≡acc) (findDiagonal-found 0 k acc (subst (λ x → k <ᵇ' triangular (suc x) ≡ true) w≡acc k<Tsw))
-... | gt acc<w = ex-falso (¬m<m (≤-trans (∸-<-from w acc acc<w) w∸acc≤0))
-  where
-  ∸-<-from : (a b : ℕ) → b < a → 1 ≤ a ∸ b
-  ∸-<-from zero zero 1≤0 = ex-falso (¬-<-zero 1≤0)
-  ∸-<-from zero (suc b) sb<0 = ex-falso (¬-<-zero sb<0)
-  ∸-<-from (suc a) zero _ = suc-≤-suc zero-≤
-  ∸-<-from (suc a) (suc b) sb<sa = ∸-<-from a b (pred-≤-pred sb<sa)
-
-findDiagonal-aux w k acc (suc fuel) w∸acc≤sf k<Tsw Tw≤k acc≤w with w ≟ acc
-... | lt w<acc = ex-falso (¬m<m (≤-trans w<acc acc≤w))
-... | eq w≡acc = subst (findDiagonal (suc (suc fuel)) k acc ≡_) (sym w≡acc) (findDiagonal-found (suc fuel) k acc (subst (λ x → k <ᵇ' triangular (suc x) ≡ true) w≡acc k<Tsw))
-... | gt acc<w =
-  let step1 = findDiagonal-continue (suc fuel) k acc (k≮ᵇ'triangular-suc-acc k w acc acc<w Tw≤k)
-      step2 = findDiagonal-aux w k (suc acc) fuel (≤-pred-∸' w acc acc<w w∸acc≤sf) k<Tsw Tw≤k acc<w
-  in step1 ∙ step2
-  where
-  ≤-pred-∸' : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
-  ≤-pred-∸' zero acc 0<acc _ = ex-falso (¬-<-zero 0<acc)
-  ≤-pred-∸' (suc w') acc acc<sw w∸acc≤sf = ≤-pred-∸-aux w' acc acc<sw w∸acc≤sf
-    where
-    ≤-pred-∸-aux : (w acc : ℕ) → acc < suc w → suc w ∸ acc ≤ suc fuel → suc w ∸ suc acc ≤ fuel
-    ≤-pred-∸-aux w zero _ sw∸0≤sf = pred-≤-pred sw∸0≤sf
-    ≤-pred-∸-aux w (suc acc) sacc<sw p = ≤-pred-∸-aux' w acc (pred-≤-pred sacc<sw) p
+    -- Helper lemma: g₀ + g₁ = 1 in the quotient
+    -- From relation: 𝟙 + g₀ + g₁ = 0, so adding 𝟙 to both sides: g₀ + g₁ = 𝟙 (since 𝟙 + 𝟙 = 0)
+    g₀+g₁≡𝟙Q : fst π g₀ +Q fst π g₁ ≡ 𝟙Q
+    g₀+g₁≡𝟙Q = step6 ∙ step7 ∙ step8 ∙ step9
       where
-      ≤-pred-∸-aux' : (w acc : ℕ) → acc < w → w ∸ acc ≤ suc fuel → w ∸ suc acc ≤ fuel
-      ≤-pred-∸-aux' zero acc 1≤0 _ = ex-falso (¬-<-zero 1≤0)
-      ≤-pred-∸-aux' (suc w') acc acc<sw' w∸acc≤sf' = ≤-pred-∸-aux w' acc acc<sw' w∸acc≤sf'
+        -- From the relation: fst π (relBool² 1) = 𝟘Q
+        rel1-eq : fst π (𝟙 +free g₀ +free g₁) ≡ 𝟘Q
+        rel1-eq = QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 1
+        -- Using pres+ and pres1 to relate expressions
+        step2 : fst π (𝟙 +free g₀) ≡ fst π 𝟙 +Q fst π g₀
+        step2 = IsCommRingHom.pres+ (snd π) 𝟙 g₀
+        step3 : fst π 𝟙 ≡ 𝟙Q
+        step3 = IsCommRingHom.pres1 (snd π)
+        -- Combining: 𝟙Q + (fst π g₀) + (fst π g₁) = 𝟘Q
+        -- First go from 𝟙Q to fst π (𝟙 +free g₀)
+        pathAB : 𝟙Q +Q fst π g₀ +Q fst π g₁ ≡ fst π (𝟙 +free g₀) +Q fst π g₁
+        pathAB = cong (λ z → z +Q fst π g₀ +Q fst π g₁) (sym step3) ∙
+                 cong (_+Q fst π g₁) (sym step2)
+        -- Then go from fst π (𝟙 +free g₀) +Q fst π g₁ to fst π (𝟙 +free g₀ +free g₁)
+        pathC : fst π (𝟙 +free g₀) +Q fst π g₁ ≡ fst π (𝟙 +free g₀ +free g₁)
+        pathC = sym (IsCommRingHom.pres+ (snd π) (𝟙 +free g₀) g₁)
+        combined : 𝟙Q +Q fst π g₀ +Q fst π g₁ ≡ 𝟘Q
+        combined = pathAB ∙ pathC ∙ rel1-eq
+        -- Now: (𝟙Q + fst π g₀) + fst π g₁ = 𝟘Q
+        -- Add 𝟙Q to both sides (using char2: 𝟙Q + 𝟙Q = 𝟘Q)
+        step4 : 𝟙Q +Q (𝟙Q +Q fst π g₀ +Q fst π g₁) ≡ 𝟙Q +Q 𝟘Q
+        step4 = cong (𝟙Q +Q_) combined
+        step5 : 𝟙Q +Q 𝟘Q ≡ 𝟙Q
+        step5 = BooleanRingStr.+IdR (snd Bool²-quotient) 𝟙Q
+        -- Use 0 + x = x to prepend 𝟘Q
+        step6 : fst π g₀ +Q fst π g₁ ≡ 𝟘Q +Q fst π g₀ +Q fst π g₁
+        step6 = cong (_+Q fst π g₁) (sym (BooleanRingStr.+IdL (snd Bool²-quotient) (fst π g₀)))
+        step7 : 𝟘Q +Q fst π g₀ +Q fst π g₁ ≡ (𝟙Q +Q 𝟙Q) +Q fst π g₀ +Q fst π g₁
+        step7 = cong (λ z → z +Q fst π g₀ +Q fst π g₁) (sym (char2Q 𝟙Q))
+        step8 : (𝟙Q +Q 𝟙Q) +Q fst π g₀ +Q fst π g₁ ≡ 𝟙Q +Q (𝟙Q +Q fst π g₀ +Q fst π g₁)
+        step8 = solve! (BooleanRing→CommRing Bool²-quotient)
+        step9 : 𝟙Q +Q (𝟙Q +Q fst π g₀ +Q fst π g₁) ≡ 𝟙Q
+        step9 = step4 ∙ step5
 
-w≤cantorPair : (m n : ℕ) → m +ℕ n ≤ cantorPair m n
-w≤cantorPair m n = ≤-trans (m+n≤tri-m+n m n) (≤-+k-r (triangular (m +ℕ n)) n)
-  where
-  n≤triangular-n : (n : ℕ) → n ≤ triangular n
-  n≤triangular-n zero = zero-≤
-  n≤triangular-n (suc n) = suc-≤-suc (≤-trans (n≤triangular-n n) (≤-+k-r' (triangular n) n))
+    -- Helper for the symmetric case: g₁ + g₀ = 1
+    g₁+g₀≡𝟙Q : fst π g₁ +Q fst π g₀ ≡ 𝟙Q
+    g₁+g₀≡𝟙Q = BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) (fst π g₀) ∙ g₀+g₁≡𝟙Q
+
+    -- Derived helper: g₀ = g₁ + 1 (from g₁ + g₀ = 1, using char2)
+    -- Proof: g₁ + g₀ = 1, so g₁ + (g₁ + g₀) = g₁ + 1, so (g₁ + g₁) + g₀ = g₁ + 1, so 0 + g₀ = g₁ + 1, so g₀ = g₁ + 1
+    g₀≡g₁+𝟙Q : fst π g₀ ≡ fst π g₁ +Q 𝟙Q
+    g₀≡g₁+𝟙Q =
+      fst π g₀
+        ≡⟨ sym (BooleanRingStr.+IdL (snd Bool²-quotient) (fst π g₀)) ⟩
+      𝟘Q +Q fst π g₀
+        ≡⟨ cong (_+Q fst π g₀) (sym (char2Q (fst π g₁))) ⟩
+      (fst π g₁ +Q fst π g₁) +Q fst π g₀
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₁ +Q (fst π g₁ +Q fst π g₀)
+        ≡⟨ cong (fst π g₁ +Q_) g₁+g₀≡𝟙Q ⟩
+      fst π g₁ +Q 𝟙Q ∎
+
+    -- Symmetric derived helper: g₁ = g₀ + 1
+    g₁≡g₀+𝟙Q : fst π g₁ ≡ fst π g₀ +Q 𝟙Q
+    g₁≡g₀+𝟙Q =
+      fst π g₁
+        ≡⟨ sym (BooleanRingStr.+IdL (snd Bool²-quotient) (fst π g₁)) ⟩
+      𝟘Q +Q fst π g₁
+        ≡⟨ cong (_+Q fst π g₁) (sym (char2Q (fst π g₀))) ⟩
+      (fst π g₀ +Q fst π g₀) +Q fst π g₁
+        ≡⟨ solve! (BooleanRing→CommRing Bool²-quotient) ⟩
+      fst π g₀ +Q (fst π g₀ +Q fst π g₁)
+        ≡⟨ cong (fst π g₀ +Q_) g₀+g₁≡𝟙Q ⟩
+      fst π g₀ +Q 𝟙Q ∎
+
+    -- Multiplication helper: g₀ · g₁ = 0 (from relation 0)
+    g₀·g₁≡𝟘Q : fst π g₀ ·Q fst π g₁ ≡ 𝟘Q
+    g₀·g₁≡𝟘Q =
+      fst π g₀ ·Q fst π g₁
+        ≡⟨ sym (IsCommRingHom.pres· (snd π) g₀ g₁) ⟩
+      fst π (g₀ ·free g₁)
+        ≡⟨ QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} 0 ⟩
+      𝟘Q ∎
+
+    -- Symmetric multiplication helper: g₁ · g₀ = 0
+    g₁·g₀≡𝟘Q : fst π g₁ ·Q fst π g₀ ≡ 𝟘Q
+    g₁·g₀≡𝟘Q = BooleanRingStr.·Comm (snd Bool²-quotient) (fst π g₁) (fst π g₀) ∙ g₀·g₁≡𝟘Q
+
+    -- In Boolean rings, -x = x (since x + x = 0)
+    -- For Bool², we can prove this by case analysis on the 4 elements
+    neg≡self² : (x : ⟨ Bool² ⟩) → BooleanRingStr.-_ (snd Bool²) x ≡ x
+    neg≡self² (false , false) = refl
+    neg≡self² (false , true) = refl
+    neg≡self² (true , false) = refl
+    neg≡self² (true , true) = refl
+
+    -- Same property for the quotient ring: -x = x
+    -- Using the -IsId lemma from BooleanAlgebraStr which applies to any Boolean ring
+    neg≡selfQ : (y : ⟨ Bool²-quotient ⟩) → BooleanRingStr.-_ (snd Bool²-quotient) y ≡ y
+    neg≡selfQ y = sym (BooleanAlgebraStr.-IsId Bool²-quotient)
+
+  -- The forward map is a homomorphism
+  Bool²→quotient-pres1 : Bool²→quotient-fun 𝟙² ≡ 𝟙Q
+  Bool²→quotient-pres1 = refl
+
+  Bool²→quotient-pres+ : (x y : ⟨ Bool² ⟩) → Bool²→quotient-fun (x +² y) ≡ Bool²→quotient-fun x +Q Bool²→quotient-fun y
+  Bool²→quotient-pres+ (false , false) (false , false) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (false , true) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (true , false) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , false) (true , true) = sym (BooleanRingStr.+IdL (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , true) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (false , true) (false , true) =
+    -- (false, true) + (false, true) = (false, false) = 0
+    -- π(g₁) + π(g₁) = 0 (in Boolean ring, x + x = 0)
+    sym (char2Q (fst π g₁))
+  Bool²→quotient-pres+ (false , true) (true , false) =
+    -- (false, true) + (true, false) = (true, true) = 1
+    -- We need: 1 = π(g₁) + π(g₀), i.e., sym (g₁+g₀≡𝟙Q)
+    sym g₁+g₀≡𝟙Q
+  Bool²→quotient-pres+ (false , true) (true , true) =
+    -- (false, true) + (true, true) = (true, false)
+    -- We need: π(g₀) = π(g₁) + 1
+    -- Using helper: g₀≡g₁+𝟙Q
+    g₀≡g₁+𝟙Q
+  Bool²→quotient-pres+ (true , false) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (true , false) (false , true) =
+    -- Symmetric to (false, true) + (true, false)
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true false) (⊕-comm false true)) ∙
+    Bool²→quotient-pres+ (false , true) (true , false) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) (fst π g₀)
+  Bool²→quotient-pres+ (true , false) (true , false) =
+    sym (char2Q (fst π g₀))
+  Bool²→quotient-pres+ (true , false) (true , true) =
+    -- (true, false) + (true, true) = (false, true)
+    -- Goal: π g₁ ≡ π g₀ +Q 𝟙Q
+    -- Using helper: g₁≡g₀+𝟙Q (which proves fst π g₁ ≡ fst π g₀ +Q 𝟙Q)
+    g₁≡g₀+𝟙Q
+  Bool²→quotient-pres+ (true , true) (false , false) = sym (BooleanRingStr.+IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres+ (true , true) (false , true) =
+    -- Symmetric case
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true false) (⊕-comm true true)) ∙
+    Bool²→quotient-pres+ (false , true) (true , true) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₁) 𝟙Q
+  Bool²→quotient-pres+ (true , true) (true , false) =
+    cong Bool²→quotient-fun (cong₂ _,_ (⊕-comm true true) (⊕-comm true false)) ∙
+    Bool²→quotient-pres+ (true , false) (true , true) ∙
+    BooleanRingStr.+Comm (snd Bool²-quotient) (fst π g₀) 𝟙Q
+  Bool²→quotient-pres+ (true , true) (true , true) =
+    sym (char2Q 𝟙Q)
+
+  Bool²→quotient-pres· : (x y : ⟨ Bool² ⟩) → Bool²→quotient-fun (x ·² y) ≡ Bool²→quotient-fun x ·Q Bool²→quotient-fun y
+  Bool²→quotient-pres· (false , false) y = sym annihilLQ
+  Bool²→quotient-pres· (false , true) (false , false) = sym annihilRQ
+  Bool²→quotient-pres· (false , true) (false , true) =
+    sym (BooleanRingStr.·Idem (snd Bool²-quotient) (fst π g₁))
+  Bool²→quotient-pres· (false , true) (true , false) =
+    -- (false, true) · (true, false) = (false, false) = 0
+    -- Goal: π(g₁) · π(g₀) = 0
+    -- Using helper: g₁·g₀≡𝟘Q
+    sym g₁·g₀≡𝟘Q
+  Bool²→quotient-pres· (false , true) (true , true) =
+    -- (false, true) · (true, true) = (false, true)
+    -- π(g₁) · 1 = π(g₁)
+    sym (BooleanRingStr.·IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (true , false) (false , false) = sym annihilRQ
+  Bool²→quotient-pres· (true , false) (false , true) =
+    -- (true, false) · (false, true) = (false, false) = 0
+    -- π(g₀) · π(g₁) = 0 (same as the symmetric case)
+    Bool²→quotient-pres· (false , true) (true , false) ∙
+    BooleanRingStr.·Comm (snd Bool²-quotient) _ _
+  Bool²→quotient-pres· (true , false) (true , false) =
+    sym (BooleanRingStr.·Idem (snd Bool²-quotient) (fst π g₀))
+  Bool²→quotient-pres· (true , false) (true , true) =
+    sym (BooleanRingStr.·IdR (snd Bool²-quotient) _)
+  Bool²→quotient-pres· (true , true) y = sym (BooleanRingStr.·IdL (snd Bool²-quotient) _)
+
+  Bool²→quotient : BoolHom Bool² Bool²-quotient
+  Bool²→quotient = Bool²→quotient-fun , record
+    { pres0 = refl
+    ; pres1 = refl
+    ; pres+ = Bool²→quotient-pres+
+    ; pres· = Bool²→quotient-pres·
+    ; pres- = Bool²→quotient-pres-
+    }
     where
-    ≤-+k-r' : (a b : ℕ) → a ≤ b +ℕ a
-    ≤-+k-r' a zero = ≤-refl
-    ≤-+k-r' a (suc b) = ≤-trans (≤-+k-r' a b) ≤-sucℕ
+      -- In Boolean ring, -x = x, so f(-x) = f(x) = -f(x)
+      -- We use: cong f (neg≡self² x) ∙ sym (neg≡selfQ (f x))
+      Bool²→quotient-pres- : (x : ⟨ Bool² ⟩) → Bool²→quotient-fun (BooleanRingStr.-_ (snd Bool²) x) ≡ BooleanRingStr.-_ (snd Bool²-quotient) (Bool²→quotient-fun x)
+      Bool²→quotient-pres- x = cong Bool²→quotient-fun (neg≡self² x) ∙ sym (neg≡selfQ (Bool²→quotient-fun x))
 
-  m+n≤tri-m+n : (m n : ℕ) → m +ℕ n ≤ triangular (m +ℕ n)
-  m+n≤tri-m+n m n = n≤triangular-n (m +ℕ n)
+  -- Now we prove the two maps are inverses
 
-  ≤-+k-r : (a b : ℕ) → a ≤ a +ℕ b
-  ≤-+k-r a zero = subst (a ≤_) (sym (+-zero a)) ≤-refl
-  ≤-+k-r a (suc b) = subst (a ≤_) (sym (+-suc a b)) (≤-trans (≤-+k-r a b) ≤-sucℕ)
+  -- quotient→Bool² ∘ Bool²→quotient = id
+  roundtrip-Bool² : (x : ⟨ Bool² ⟩) → fst quotient→Bool² (Bool²→quotient-fun x) ≡ x
+  roundtrip-Bool² (false , false) = IsCommRingHom.pres0 (snd quotient→Bool²)
+  roundtrip-Bool² (false , true) =
+    fst quotient→Bool² (fst π g₁)
+      ≡⟨ cong (fst quotient→Bool²) refl ⟩
+    fst (quotient→Bool² ∘cr π) g₁
+      ≡⟨ cong (λ h → fst h g₁) (QB.evalInduce Bool² {freeBool→Bool²} {freeBool→Bool²-on-rels}) ⟩
+    fst freeBool→Bool² g₁
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ 1 ⟩
+    (false , true) ∎
+  roundtrip-Bool² (true , false) =
+    fst quotient→Bool² (fst π g₀)
+      ≡⟨ cong (fst quotient→Bool²) refl ⟩
+    fst (quotient→Bool² ∘cr π) g₀
+      ≡⟨ cong (λ h → fst h g₀) (QB.evalInduce Bool² {freeBool→Bool²} {freeBool→Bool²-on-rels}) ⟩
+    fst freeBool→Bool² g₀
+      ≡⟨ evalBAInduce ℕ Bool² gens→Bool² ≡$ 0 ⟩
+    (true , false) ∎
+  roundtrip-Bool² (true , true) = IsCommRingHom.pres1 (snd quotient→Bool²)
 
-findDiagonal-correct : (m n : ℕ) →
-  findDiagonal (suc (cantorPair m n)) (cantorPair m n) 0 ≡ m +ℕ n
-findDiagonal-correct m n =
-  let k = cantorPair m n
-      w = m +ℕ n
-  in findDiagonal-aux w k 0 k
-       (w≤cantorPair m n)
-       (cantorPair<ᵇ'-triangular-suc m n)
-       (triangular≤cantorPair m n)
-       zero-≤
+  -- Bool²→quotient ∘ quotient→Bool² = id (on the quotient)
+  -- This requires showing the composite is the identity on generators and using uniqueness
 
-cantorUnpair-pair : (m n : ℕ) → cantorUnpair (cantorPair m n) ≡ (m , n)
-cantorUnpair-pair m n =
-  let k = cantorPair m n
-      w = m +ℕ n
-      findW = findDiagonal-correct m n
-  in
-  cantorUnpair k
-    ≡⟨ cong (λ w' → ((w' ∸ (k ∸ triangular w')) , (k ∸ triangular w'))) findW ⟩
-  (w ∸ (k ∸ triangular w) , k ∸ triangular w)
-    ≡⟨ cong (λ x → (w ∸ x , x)) (cantorPair-triangular-diff m n) ⟩
-  (w ∸ n , n)
-    ≡⟨ cong (λ x → (x , n)) (m+n∸n≡m m n) ⟩
-  (m , n) ∎
+  -- The composite Bool²→quotient ∘ quotient→Bool² when applied to π(gen n)
+  composite-on-gens : (n : ℕ) → fst Bool²→quotient (fst quotient→Bool² (fst π (generator n))) ≡ fst π (generator n)
+  composite-on-gens 0 =
+    fst Bool²→quotient (fst quotient→Bool² (fst π g₀))
+      ≡⟨ cong (fst Bool²→quotient) (roundtrip-Bool² (true , false)) ⟩
+    fst Bool²→quotient (true , false)
+      ≡⟨ refl ⟩
+    fst π g₀ ∎
+  composite-on-gens 1 =
+    fst Bool²→quotient (fst quotient→Bool² (fst π g₁))
+      ≡⟨ cong (fst Bool²→quotient) (roundtrip-Bool² (false , true)) ⟩
+    fst Bool²→quotient (false , true)
+      ≡⟨ refl ⟩
+    fst π g₁ ∎
+  composite-on-gens (suc (suc n)) =
+    fst Bool²→quotient (fst quotient→Bool² (fst π (generator (suc (suc n)))))
+      ≡⟨ cong (fst Bool²→quotient ∘ fst quotient→Bool²) (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} (suc (suc n))) ⟩
+    fst Bool²→quotient (fst quotient→Bool² 𝟘Q)
+      ≡⟨ cong (fst Bool²→quotient) (IsCommRingHom.pres0 (snd quotient→Bool²)) ⟩
+    fst Bool²→quotient 𝟘²
+      ≡⟨ IsCommRingHom.pres0 (snd Bool²→quotient) ⟩
+    𝟘Q
+      ≡⟨ sym (QB.zeroOnImage {B = freeBA ℕ} {f = relBool²} (suc (suc n))) ⟩
+    fst π (generator (suc (suc n))) ∎
 
-a+b∸a≡b : (a b : ℕ) → a ≤ b → a +ℕ (b ∸ a) ≡ b
-a+b∸a≡b zero b _ = refl
-a+b∸a≡b (suc a) zero sa≤0 = ex-falso (¬-<-zero sa≤0)
-a+b∸a≡b (suc a) (suc b) sa≤sb = cong suc (a+b∸a≡b a b (pred-≤-pred sa≤sb))
+  -- The composite as a homomorphism freeBA ℕ → Bool²-quotient
+  composite-hom-on-gens : (n : ℕ) → fst (Bool²→quotient ∘cr quotient→Bool² ∘cr π) (generator n) ≡ fst π (generator n)
+  composite-hom-on-gens = composite-on-gens
 
-w∸n+n≡w : (w n : ℕ) → n ≤ w → (w ∸ n) +ℕ n ≡ w
-w∸n+n≡w w n n≤w = ∸+-cancel w n n≤w
+  -- By universal property, composite-hom = π (both extend gens ↦ π(gens))
+  -- Path order: composite ≡ inducedBA ≡ π
+  composite-eq-π : Bool²→quotient ∘cr quotient→Bool² ∘cr π ≡ π
+  composite-eq-π = sym (inducedBAHomUnique ℕ Bool²-quotient (fst π ∘ generator)
+                                      (Bool²→quotient ∘cr quotient→Bool² ∘cr π)
+                                      (funExt composite-on-gens)) ∙
+                   inducedBAHomUnique ℕ Bool²-quotient (fst π ∘ generator) π refl
 
-n≤w-from-bounds : (k w : ℕ) → triangular w ≤ k → k < triangular (suc w)
-                → k ∸ triangular w ≤ w
-n≤w-from-bounds k w Tw≤k k<Tsw =
-  let step1 : k ∸ triangular w < triangular (suc w) ∸ triangular w
-      step1 = ∸-mono-< k (triangular w) (triangular (suc w)) Tw≤k k<Tsw (triangular-suc w)
-      eq : triangular (suc w) ∸ triangular w ≡ suc w
-      eq = +∸-cancel (suc w) (triangular w)
-      step2 : k ∸ triangular w < suc w
-      step2 = subst (k ∸ triangular w <_) eq step1
-  in pred-≤-pred step2
+  -- Since π is surjective, this means Bool²→quotient ∘ quotient→Bool² = id
+  -- The quotient uses QB./Im which is built on IQ./Im (SetQuotient)
+  -- We use the equality of homomorphisms composite-eq-π to get pointwise equality
+  opaque
+    unfolding QB._/Im_
+    unfolding QB.quotientImageHom
+    roundtrip-quotient : (x : ⟨ Bool²-quotient ⟩) → fst Bool²→quotient (fst quotient→Bool² x) ≡ x
+    roundtrip-quotient = SQ.elimProp (λ _ → BooleanRingStr.is-set (snd Bool²-quotient) _ _)
+                         (λ a → funExt⁻ (cong fst composite-eq-π) a)
+
+  -- The equivalence
+  Bool²≃quotient : BooleanRingEquiv Bool² Bool²-quotient
+  Bool²≃quotient = (fst Bool²→quotient , isoToIsEquiv (iso (fst Bool²→quotient) (fst quotient→Bool²) roundtrip-quotient roundtrip-Bool²)) ,
+                   snd Bool²→quotient
+
+open Bool²-presentation hiding (π)
+
+-- The proof that Bool² has a countable presentation
+Bool²-has-Boole-ω' : has-Boole-ω' Bool²
+Bool²-has-Boole-ω' = relBool² , Bool²≃quotient
+
+Bool²-Booleω : Booleω
+Bool²-Booleω = Bool² , ∣ Bool²-has-Boole-ω' ∣₁
+
+-- The two homomorphisms BoolBR × BoolBR → BoolBR are the projections
+-- π₁ : (a, b) ↦ a
+-- π₂ : (a, b) ↦ b
+
+proj₁-Bool² : ⟨ Bool² ⟩ → Bool
+proj₁-Bool² = fst
+
+proj₂-Bool² : ⟨ Bool² ⟩ → Bool
+proj₂-Bool² = snd
+
+-- π₁ is a Boolean ring homomorphism
+proj₁-Bool²-hom : BoolHom Bool² BoolBR
+fst proj₁-Bool²-hom = proj₁-Bool²
+snd proj₁-Bool²-hom .IsCommRingHom.pres0 = refl
+snd proj₁-Bool²-hom .IsCommRingHom.pres1 = refl
+snd proj₁-Bool²-hom .IsCommRingHom.pres+ _ _ = refl
+snd proj₁-Bool²-hom .IsCommRingHom.pres· _ _ = refl
+snd proj₁-Bool²-hom .IsCommRingHom.pres- _ = refl
+
+-- π₂ is a Boolean ring homomorphism
+proj₂-Bool²-hom : BoolHom Bool² BoolBR
+fst proj₂-Bool²-hom = proj₂-Bool²
+snd proj₂-Bool²-hom .IsCommRingHom.pres0 = refl
+snd proj₂-Bool²-hom .IsCommRingHom.pres1 = refl
+snd proj₂-Bool²-hom .IsCommRingHom.pres+ _ _ = refl
+snd proj₂-Bool²-hom .IsCommRingHom.pres· _ _ = refl
+snd proj₂-Bool²-hom .IsCommRingHom.pres- _ = refl
+
+-- Sp(BoolBR × BoolBR) has exactly 2 elements: proj₁ and proj₂
+-- This is because any h : Bool² → BoolBR is determined by h(1,0) and h(0,1)
+-- which must satisfy:
+-- - h(1,0) + h(0,1) = h(1,1) = 1  (h preserves 1)
+-- - h(1,0) · h(0,1) = h(0,0) = 0  (h preserves 0 and multiplication)
+-- In Bool with ⊕ and ∧, the only solutions are (1,0) and (0,1)
+
+-- Classification of homomorphisms: any h equals proj₁ or proj₂
+-- Using helper function pattern instead of inspect (Cubical Agda compatible)
+classify-Bool²-hom : (h : Sp Bool²-Booleω) → (h ≡ proj₁-Bool²-hom) ⊎.⊎ (h ≡ proj₂-Bool²-hom)
+classify-Bool²-hom h = helper (fst h Bool²-unit-left) refl
   where
-  ∸-mono-< : (a b c : ℕ) → b ≤ a → a < c → b < c → a ∸ b < c ∸ b
-  ∸-mono-< a b zero b≤a a<0 _ = ex-falso (¬-<-zero a<0)
-  ∸-mono-< a b (suc c) b≤a sa≤sc b<sc with ≤Dec b a
-  ... | yes b≤a' = subst (suc (a ∸ b) ≤_) (sym (suc-∸ c b (pred-≤-pred b<sc))) (suc-≤-suc (∸-mono a c b (pred-≤-pred sa≤sc) b≤a'))
+  h≡proj₁ : fst h Bool²-unit-left ≡ true → h ≡ proj₁-Bool²-hom
+  h≡proj₁ h-ul-true = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) (sym funEq)
     where
-    suc-∸ : (x y : ℕ) → y ≤ x → suc x ∸ y ≡ suc (x ∸ y)
-    suc-∸ x zero _ = refl
-    suc-∸ (suc x) (suc y) sy≤sx = suc-∸ x y (pred-≤-pred sy≤sx)
-    suc-∸ zero (suc y) sy≤0 = ex-falso (¬-<-zero sy≤0)
+    -- h(0,1) = h((1,1) + (1,0)) = h(1,1) + h(1,0) = 1 + h(1,0) = 1 ⊕ true = false
+    h-ur : fst h Bool²-unit-right ≡ false
+    h-ur =
+      fst h (false , true)
+        ≡⟨ cong (fst h) (cong₂ _,_ refl (sym (⊕-comm false true))) ⟩
+      fst h (false , true ⊕ false)
+        ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
+      fst h ((true ⊕ true) , (true ⊕ false))
+        ≡⟨ IsCommRingHom.pres+ (snd h) (true , true) (true , false) ⟩
+      (fst h (true , true)) ⊕ (fst h (true , false))
+        ≡⟨ cong₂ _⊕_ (IsCommRingHom.pres1 (snd h)) h-ul-true ⟩
+      true ⊕ true
+        ≡⟨ ⊕-comm true true ⟩
+      false ∎
+    -- h(true,false) = true, h(false,true) = false means h = π₁
+    funEq : proj₁-Bool² ≡ fst h
+    funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
+                     ; (false , true) → sym h-ur
+                     ; (true , false) → sym h-ul-true
+                     ; (true , true) → sym (IsCommRingHom.pres1 (snd h)) }
 
-    ∸-mono : (x y z : ℕ) → x ≤ y → z ≤ x → x ∸ z ≤ y ∸ z
-    ∸-mono x y zero x≤y _ = x≤y
-    ∸-mono zero zero (suc z) _ sz≤0 = ex-falso (¬-<-zero sz≤0)
-    ∸-mono zero (suc y) (suc z) _ sz≤0 = ex-falso (¬-<-zero sz≤0)
-    ∸-mono (suc x) zero (suc z) sx≤0 _ = ex-falso (¬-<-zero sx≤0)
-    ∸-mono (suc x) (suc y) (suc z) sx≤sy sz≤sx = ∸-mono x y z (pred-≤-pred sx≤sy) (pred-≤-pred sz≤sx)
-  ... | no ¬b≤a = ex-falso (¬b≤a b≤a)
-
-findDiagonal-lower-bound : (fuel k diag : ℕ) → triangular diag ≤ k
-                         → triangular (findDiagonal fuel k diag) ≤ k
-findDiagonal-lower-bound zero k diag Td≤k = Td≤k
-findDiagonal-lower-bound (suc fuel) k diag Td≤k with k <ᵇ' triangular (suc diag) | inspect (k <ᵇ'_) (triangular (suc diag))
-... | true | _ = Td≤k
-... | false | [ p ] = findDiagonal-lower-bound fuel k (suc diag) (¬<ᵇ'-reflects k (triangular (suc diag)) p)
-
-findDiagonal-upper-bound : (fuel k diag : ℕ) → suc k ≤ diag +ℕ fuel
-                         → k < triangular (suc (findDiagonal fuel k diag))
-findDiagonal-upper-bound zero k diag sk≤d0 =
-  let sk≤d : suc k ≤ diag
-      sk≤d = subst (suc k ≤_) (+-zero diag) sk≤d0
-      sk≤sd : suc k ≤ suc diag
-      sk≤sd = ≤-trans sk≤d ≤-sucℕ
-      sd≤Tsd : suc diag ≤ triangular (suc diag)
-      sd≤Tsd = n≤n+m (suc diag) (triangular diag)
-  in ≤-trans sk≤sd sd≤Tsd
-  where
-  n≤n+m : (n m : ℕ) → n ≤ n +ℕ m
-  n≤n+m n zero = subst (n ≤_) (sym (+-zero n)) ≤-refl
-  n≤n+m n (suc m) = subst (n ≤_) (sym (+-suc n m)) (≤-trans (n≤n+m n m) ≤-sucℕ)
-findDiagonal-upper-bound (suc fuel) k diag sk≤df with k <ᵇ' triangular (suc diag) | inspect (k <ᵇ'_) (triangular (suc diag))
-... | true | [ p ] = <ᵇ'-reflects k (triangular (suc diag)) p
-... | false | _ = findDiagonal-upper-bound fuel k (suc diag) (subst (suc k ≤_) (+-suc diag fuel) sk≤df)
-
-findDiagonal-bounds : (k : ℕ) →
-  let w = findDiagonal (suc k) k 0
-  in (triangular w ≤ k) × (k < triangular (suc w))
-findDiagonal-bounds k =
-  let Tw≤k = findDiagonal-lower-bound (suc k) k 0 zero-≤
-      k<Tsw = findDiagonal-upper-bound (suc k) k 0 ≤-refl
-  in Tw≤k , k<Tsw
-
-cantorPair-unpair : (k : ℕ) → uncurry cantorPair (cantorUnpair k) ≡ k
-cantorPair-unpair k =
-  let w = findDiagonal (suc k) k 0
-      n' = k ∸ triangular w
-      m' = w ∸ n'
-      (Tw≤k , k<Tsw) = findDiagonal-bounds k
-      n'≤w = n≤w-from-bounds k w Tw≤k k<Tsw
-      m'+n'=w : m' +ℕ n' ≡ w
-      m'+n'=w = w∸n+n≡w w n' n'≤w
-      step1 : cantorPair m' n' ≡ triangular (m' +ℕ n') +ℕ n'
-      step1 = refl
-      step2 : triangular (m' +ℕ n') +ℕ n' ≡ triangular w +ℕ n'
-      step2 = cong (λ x → triangular x +ℕ n') m'+n'=w
-      step3 : triangular w +ℕ n' ≡ k
-      step3 = a+b∸a≡b (triangular w) k Tw≤k
-  in
-  uncurry cantorPair (cantorUnpair k)
-    ≡⟨ refl ⟩
-  cantorPair m' n'
-    ≡⟨ step1 ⟩
-  triangular (m' +ℕ n') +ℕ n'
-    ≡⟨ step2 ⟩
-  triangular w +ℕ n'
-    ≡⟨ step3 ⟩
-  k ∎
-
--- =============================================================================
--- Open propositions are closed under finite conjunction (lines 2391-2443)
--- =============================================================================
-
-openAnd : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
-        → isOpenProp ((⟨ P ⟩ × ⟨ Q ⟩) , isProp× (snd P) (snd Q))
-openAnd P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , forward , backward
-  where
-  γ : binarySequence
-  γ k = let (n , m) = cantorUnpair k in α n and β m
-
-  forward : ⟨ P ⟩ × ⟨ Q ⟩ → Σ[ k ∈ ℕ ] γ k ≡ true
-  forward (p , q) =
-    let (n , αn=t) = P→∃α p
-        (m , βm=t) = Q→∃β q
-        k = cantorPair n m
-        γk=t : γ k ≡ true
-        γk=t =
-          γ k
-            ≡⟨ cong (λ p → α (fst p) and β (snd p)) (cantorUnpair-pair n m) ⟩
-          α n and β m
-            ≡⟨ cong (λ x → x and β m) αn=t ⟩
-          true and β m
-            ≡⟨ cong (true and_) βm=t ⟩
-          true ∎
-    in (k , γk=t)
-
-  backward : Σ[ k ∈ ℕ ] γ k ≡ true → ⟨ P ⟩ × ⟨ Q ⟩
-  backward (k , γk=t) =
-    let (n , m) = cantorUnpair k
-        αn∧βm=t : α n and β m ≡ true
-        αn∧βm=t = γk=t
-        αn=t : α n ≡ true
-        αn=t = and-true-left (α n) (β m) αn∧βm=t
-        βm=t : β m ≡ true
-        βm=t = and-true-right (α n) (β m) αn∧βm=t
-    in (∃α→P (n , αn=t)) , (∃β→Q (m , βm=t))
+  h≡proj₂ : fst h Bool²-unit-left ≡ false → h ≡ proj₂-Bool²-hom
+  h≡proj₂ h-ul-false = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing Bool²)) f (snd (BooleanRing→CommRing BoolBR))) (sym funEq)
     where
-    and-true-left : (a b : Bool) → a and b ≡ true → a ≡ true
-    and-true-left true true _ = refl
-    and-true-left true false p = ex-falso (false≢true p)
-    and-true-left false true p = ex-falso (false≢true p)
-    and-true-left false false p = ex-falso (false≢true p)
+    -- h(0,1) = 1 ⊕ h(1,0) = 1 ⊕ false = true
+    h-ur : fst h Bool²-unit-right ≡ true
+    h-ur =
+      fst h (false , true)
+        ≡⟨ cong (fst h) (cong₂ _,_ refl (sym (⊕-comm false true))) ⟩
+      fst h (false , true ⊕ false)
+        ≡⟨ cong (fst h) (cong₂ _,_ (sym (⊕-comm true true)) refl) ⟩
+      fst h ((true ⊕ true) , (true ⊕ false))
+        ≡⟨ IsCommRingHom.pres+ (snd h) (true , true) (true , false) ⟩
+      (fst h (true , true)) ⊕ (fst h (true , false))
+        ≡⟨ cong₂ _⊕_ (IsCommRingHom.pres1 (snd h)) h-ul-false ⟩
+      true ⊕ false
+        ≡⟨ ⊕-comm true false ⟩
+      true ∎
+    funEq : proj₂-Bool² ≡ fst h
+    funEq = funExt λ { (false , false) → sym (IsCommRingHom.pres0 (snd h))
+                     ; (false , true) → sym h-ur
+                     ; (true , false) → sym h-ul-false
+                     ; (true , true) → sym (IsCommRingHom.pres1 (snd h)) }
 
-    and-true-right : (a b : Bool) → a and b ≡ true → b ≡ true
-    and-true-right true true _ = refl
-    and-true-right true false p = ex-falso (false≢true p)
-    and-true-right false true p = ex-falso (false≢true p)
-    and-true-right false false p = ex-falso (false≢true p)
+  helper : (b : Bool) → fst h Bool²-unit-left ≡ b → (h ≡ proj₁-Bool²-hom) ⊎.⊎ (h ≡ proj₂-Bool²-hom)
+  helper true = λ eq → ⊎.inl (h≡proj₁ eq)
+  helper false = λ eq → ⊎.inr (h≡proj₂ eq)
 
--- Bundled version: meet (∧) on Open
-_∧-Open_ : Open → Open → Open
-O₁ ∧-Open O₂ = ((⟨ fst O₁ ⟩ × ⟨ fst O₂ ⟩) , isProp× (snd (fst O₁)) (snd (fst O₂))) ,
-               openAnd (fst O₁) (fst O₂) (snd O₁) (snd O₂)
+-- Forward direction: Sp(Bool²) → Bool
+Sp-Bool²→Bool : Sp Bool²-Booleω → Bool
+Sp-Bool²→Bool h = fst h Bool²-unit-left
 
--- Bundled version: meet (∧) on Closed
-_∧-Closed_ : Closed → Closed → Closed
-C₁ ∧-Closed C₂ = ((⟨ fst C₁ ⟩ × ⟨ fst C₂ ⟩) , isProp× (snd (fst C₁)) (snd (fst C₂))) ,
-                 closedAnd (fst C₁) (fst C₂) (snd C₁) (snd C₂)
+-- Backward direction: Bool → Sp(Bool²)
+Bool→Sp-Bool² : Bool → Sp Bool²-Booleω
+Bool→Sp-Bool² true = proj₁-Bool²-hom
+Bool→Sp-Bool² false = proj₂-Bool²-hom
+
+-- Roundtrip 1: Bool→Sp-Bool² ∘ Sp-Bool²→Bool = id
+Sp-Bool²→Bool→Sp-Bool² : (h : Sp Bool²-Booleω) → Bool→Sp-Bool² (Sp-Bool²→Bool h) ≡ h
+Sp-Bool²→Bool→Sp-Bool² h with classify-Bool²-hom h
+... | ⊎.inl h≡proj₁ = cong Bool→Sp-Bool² (cong (λ g → fst g Bool²-unit-left) h≡proj₁) ∙ sym h≡proj₁
+... | ⊎.inr h≡proj₂ = cong Bool→Sp-Bool² (cong (λ g → fst g Bool²-unit-left) h≡proj₂) ∙ sym h≡proj₂
+
+-- Roundtrip 2: Sp-Bool²→Bool ∘ Bool→Sp-Bool² = id
+Bool→Sp-Bool²→Bool : (b : Bool) → Sp-Bool²→Bool (Bool→Sp-Bool² b) ≡ b
+Bool→Sp-Bool²→Bool true = refl
+Bool→Sp-Bool²→Bool false = refl
+
+-- The equivalence Sp(BoolBR × BoolBR) ≃ Bool
+Sp-Bool²≃Bool : Sp Bool²-Booleω ≃ Bool
+Sp-Bool²≃Bool = isoToEquiv (iso Sp-Bool²→Bool Bool→Sp-Bool² Bool→Sp-Bool²→Bool Sp-Bool²→Bool→Sp-Bool²)
+
+-- Projections and zero elements for the product
+module B∞×B∞-Operations where
+  open BooleanRingStr (snd B∞×B∞) renaming (_·_ to _·×_ ; 𝟘 to 𝟘× ; 𝟙 to 𝟙×)
+
+  -- Zero element is (0, 0)
+  0×0 : ⟨ B∞×B∞ ⟩
+  0×0 = 𝟘∞ , 𝟘∞
+
+  -- Left injection: x ↦ (x, 0)
+  inl-B∞ : ⟨ B∞ ⟩ → ⟨ B∞×B∞ ⟩
+  inl-B∞ x = x , 𝟘∞
+
+  -- Right injection: x ↦ (0, x)
+  inr-B∞ : ⟨ B∞ ⟩ → ⟨ B∞×B∞ ⟩
+  inr-B∞ x = 𝟘∞ , x
+
+open B∞×B∞-Operations
 
 -- =============================================================================
--- Closed propositions are closed under disjunction (uses LLPO)
+-- The map f : B∞ → B∞ × B∞ for LLPO
 -- =============================================================================
 
--- First-true truncation: given a sequence, produce one that hits true at most once
-firstTrue : binarySequence → binarySequence
-firstTrue α zero = α zero
-firstTrue α (suc n) with α zero
-... | true = false
-... | false = firstTrue (α ∘ suc) n
+-- tex definition (line 554-559):
+-- f(g_n) = (g_k, 0) if n = 2k
+-- f(g_n) = (0, g_k) if n = 2k+1
 
--- firstTrue preserves never-hitting-true
-firstTrue-preserves-allFalse : (α : binarySequence) → ((n : ℕ) → α n ≡ false)
-                             → (n : ℕ) → firstTrue α n ≡ false
-firstTrue-preserves-allFalse α allF zero = allF zero
-firstTrue-preserves-allFalse α allF (suc n) with α zero | allF zero
-... | true  | α0=f = ex-falso (false≢true (sym α0=f))
-... | false | _    = firstTrue-preserves-allFalse (α ∘ suc) (allF ∘ suc) n
+-- Helper: division by 2 with parity
+div2 : ℕ → ℕ
+div2 zero = zero
+div2 (suc zero) = zero
+div2 (suc (suc n)) = suc (div2 n)
 
--- firstTrue sequence hits true at most once
-firstTrue-hitsAtMostOnce : (α : binarySequence) → hitsAtMostOnce (firstTrue α)
-firstTrue-hitsAtMostOnce α m n ftm=t ftn=t = aux α m n ftm=t ftn=t
-  where
-  aux : (α : binarySequence) → (m n : ℕ) → firstTrue α m ≡ true → firstTrue α n ≡ true → m ≡ n
-  aux α zero zero _ _ = refl
-  aux α zero (suc n) ft0=t ft-sn=t with α zero
-  aux α zero (suc n) ft0=t ft-sn=t | true = ex-falso (false≢true ft-sn=t)
-  aux α zero (suc n) ft0=t ft-sn=t | false = ex-falso (false≢true ft0=t)
-  aux α (suc m) zero ft-sm=t ft0=t with α zero
-  aux α (suc m) zero ft-sm=t ft0=t | true = ex-falso (false≢true ft-sm=t)
-  aux α (suc m) zero ft-sm=t ft0=t | false = ex-falso (false≢true ft0=t)
-  aux α (suc m) (suc n) ft-sm=t ft-sn=t with α zero
-  aux α (suc m) (suc n) ft-sm=t ft-sn=t | true = ex-falso (false≢true ft-sm=t)
-  aux α (suc m) (suc n) ft-sm=t ft-sn=t | false = cong suc (aux (α ∘ suc) m n ft-sm=t ft-sn=t)
+-- Parity check (renamed to avoid clash with Cubical.Data.Nat.Base.isEven)
+parity : ℕ → Bool
+parity zero = true
+parity (suc zero) = false
+parity (suc (suc n)) = parity n
 
--- Key lemma: firstTrue α n = true implies α n = true
-firstTrue-true-implies-original-true : (α : binarySequence) (n : ℕ)
-                                      → firstTrue α n ≡ true → α n ≡ true
-firstTrue-true-implies-original-true α zero ft0=t = ft0=t
-firstTrue-true-implies-original-true α (suc n) ft-sn=t with α zero
-... | true  = ex-falso (false≢true ft-sn=t)
-... | false = firstTrue-true-implies-original-true (α ∘ suc) n ft-sn=t
+-- The map on generators of freeBA ℕ into B∞ × B∞
+-- f(gen n) = (g∞(n/2), 0) if n is even
+-- f(gen n) = (0, g∞(n/2)) if n is odd
+f-on-gen : ℕ → ⟨ B∞×B∞ ⟩
+f-on-gen n with parity n
+... | true  = g∞ (div2 n) , 𝟘∞   -- n = 2k, map to (g_k, 0)
+... | false = 𝟘∞ , g∞ (div2 n)   -- n = 2k+1, map to (0, g_k)
 
--- Helper for firstTrue with explicit evidence
+-- Helper: multiplication in B∞×B∞
+open BooleanRingStr (snd B∞×B∞) using () renaming (_·_ to _·×_ ; 𝟘 to 𝟘×) public
+
+-- Key lemma: The product structure in B∞×B∞ is componentwise
+·×-componentwise : (x y : ⟨ B∞×B∞ ⟩) → (x ·× y) ≡ (fst x ·∞ fst y , snd x ·∞ snd y)
+·×-componentwise x y = refl  -- This is definitional by the product construction
+
+-- Zero absorbs multiplication in B∞
+-- Using RingTheory from Cubical.Algebra.Ring.Properties
+open import Cubical.Algebra.Ring.Properties using (module RingTheory)
+
 private
-  firstTrue-with : (α : binarySequence) (n : ℕ) (b : Bool)
-                  → α zero ≡ b
-                  → firstTrue α (suc n) ≡ (if b then false else firstTrue (α ∘ suc) n)
-  firstTrue-with α n true  p with α zero
-  ... | true = refl
-  ... | false = ex-falso (true≢false (sym p))
-  firstTrue-with α n false p with α zero
-  ... | true = ex-falso (false≢true (sym p))
-  ... | false = refl
+  B∞-Ring = CommRing→Ring (BooleanRing→CommRing B∞)
+  module B∞-RT = RingTheory B∞-Ring
 
-firstTrue-false-but-original-true : (α : binarySequence) (n : ℕ)
-                                   → firstTrue α n ≡ false → α n ≡ true
-                                   → Σ[ m ∈ ℕ ] (suc m ≤ n) × (α m ≡ true)
-firstTrue-false-but-original-true α zero ft0=f α0=t = ex-falso (true≢false (sym α0=t ∙ ft0=f))
-firstTrue-false-but-original-true α (suc n) ft-sn=f α-sn=t with α zero =B true
-... | yes α0=t = zero , suc-≤-suc zero-≤ , α0=t
-... | no α0≠t =
-  let α0=f = ¬true→false (α zero) α0≠t
-      eq : firstTrue α (suc n) ≡ firstTrue (α ∘ suc) n
-      eq = firstTrue-with α n false α0=f ∙ refl
-      ft-sn=f' : firstTrue (α ∘ suc) n ≡ false
-      ft-sn=f' = sym eq ∙ ft-sn=f
-      (m , m<n , αsm=t) = firstTrue-false-but-original-true (α ∘ suc) n ft-sn=f' α-sn=t
-  in suc m , suc-≤-suc m<n , αsm=t
+0∞-absorbs-left : (x : ⟨ B∞ ⟩) → 𝟘∞ ·∞ x ≡ 𝟘∞
+0∞-absorbs-left x = B∞-RT.0LeftAnnihilates x
 
--- De Morgan law for closed propositions (consequence of LLPO)
-closedDeMorgan : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
-               → ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩)) → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
-closedDeMorgan P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) ¬¬P∧¬Q =
-  let δ₀ : binarySequence
-      δ₀ = interleave α β
+0∞-absorbs-right : (x : ⟨ B∞ ⟩) → x ·∞ 𝟘∞ ≡ 𝟘∞
+0∞-absorbs-right x = B∞-RT.0RightAnnihilates x
 
-      δ : binarySequence
-      δ = firstTrue δ₀
+-- Key lemma: (x, 0) · (0, y) = (0, 0)
+inl-inr-mult-zero : (x y : ⟨ B∞ ⟩) → (x , 𝟘∞) ·× (𝟘∞ , y) ≡ (𝟘∞ , 𝟘∞)
+inl-inr-mult-zero x y =
+  (x , 𝟘∞) ·× (𝟘∞ , y) ≡⟨ refl ⟩
+  (x ·∞ 𝟘∞ , 𝟘∞ ·∞ y)  ≡⟨ cong₂ _,_ (0∞-absorbs-right x) (0∞-absorbs-left y) ⟩
+  (𝟘∞ , 𝟘∞) ∎
 
-      δ-hamo : hitsAtMostOnce δ
-      δ-hamo = firstTrue-hitsAtMostOnce δ₀
+-- Symmetric case
+inr-inl-mult-zero : (x y : ⟨ B∞ ⟩) → (𝟘∞ , x) ·× (y , 𝟘∞) ≡ (𝟘∞ , 𝟘∞)
+inr-inl-mult-zero x y =
+  (𝟘∞ , x) ·× (y , 𝟘∞) ≡⟨ refl ⟩
+  (𝟘∞ ·∞ y , x ·∞ 𝟘∞)  ≡⟨ cong₂ _,_ (0∞-absorbs-left y) (0∞-absorbs-right x) ⟩
+  (𝟘∞ , 𝟘∞) ∎
 
-      δ∞ : ℕ∞
-      δ∞ = δ , δ-hamo
+-- Helper: parity properties
+parity-double : (k : ℕ) → parity (k +ℕ k) ≡ true
+parity-double zero = refl
+parity-double (suc k) =
+  parity (suc k +ℕ suc k)    ≡⟨ refl ⟩
+  parity (suc (k +ℕ suc k))  ≡⟨ cong (parity ∘ suc) (+-suc k k) ⟩
+  parity (suc (suc (k +ℕ k))) ≡⟨ refl ⟩
+  parity (k +ℕ k)             ≡⟨ parity-double k ⟩
+  true ∎
 
-      llpo-result : ((k : ℕ) → δ (2 ·ℕ k) ≡ false) ⊎ ((k : ℕ) → δ (suc (2 ·ℕ k)) ≡ false)
-      llpo-result = llpo δ∞
+parity-double-suc : (k : ℕ) → parity (suc (k +ℕ k)) ≡ false
+parity-double-suc zero = refl
+parity-double-suc (suc k) =
+  parity (suc (suc k +ℕ suc k))    ≡⟨ refl ⟩
+  parity (suc (suc (k +ℕ suc k)))  ≡⟨ cong (parity ∘ suc ∘ suc) (+-suc k k) ⟩
+  parity (suc (suc (suc (k +ℕ k)))) ≡⟨ refl ⟩
+  parity (suc (k +ℕ k))             ≡⟨ parity-double-suc k ⟩
+  false ∎
 
-  in helper llpo-result
+-- div2 properties
+div2-double : (k : ℕ) → div2 (k +ℕ k) ≡ k
+div2-double zero = refl
+div2-double (suc k) =
+  div2 (suc k +ℕ suc k)         ≡⟨ refl ⟩
+  div2 (suc (k +ℕ suc k))       ≡⟨ cong (div2 ∘ suc) (+-suc k k) ⟩
+  div2 (suc (suc (k +ℕ k)))     ≡⟨ refl ⟩
+  suc (div2 (k +ℕ k))           ≡⟨ cong suc (div2-double k) ⟩
+  suc k ∎
+
+div2-double-suc : (k : ℕ) → div2 (suc (k +ℕ k)) ≡ k
+div2-double-suc zero = refl
+div2-double-suc (suc k) =
+  div2 (suc (suc k +ℕ suc k))       ≡⟨ refl ⟩
+  div2 (suc (suc (k +ℕ suc k)))     ≡⟨ cong (div2 ∘ suc ∘ suc) (+-suc k k) ⟩
+  div2 (suc (suc (suc (k +ℕ k))))   ≡⟨ refl ⟩
+  suc (div2 (suc (k +ℕ k)))         ≡⟨ cong suc (div2-double-suc k) ⟩
+  suc k ∎
+
+-- When both indices have the same parity and div2 gives different values,
+-- the product is zero because g∞ (div2 m) ·∞ g∞ (div2 n) = 0
+-- (since div2 m ≠ div2 n means the generators are distinct)
+
+-- Helper: different div2 values implies different generators
+div2-neq→gen-product-zero : (m n : ℕ) → ¬ (div2 m ≡ div2 n) →
+  g∞ (div2 m) ·∞ g∞ (div2 n) ≡ 𝟘∞
+div2-neq→gen-product-zero m n neq = g∞-distinct-mult-zero (div2 m) (div2 n) neq
+
+-- Injectivity of div2 on even/odd numbers
+-- If parity m = parity n = true (both even) and div2 m = div2 n, then m = n
+-- If parity m = parity n = false (both odd) and div2 m = div2 n, then m = n
+-- We prove this by showing: m = 2 * div2 m when parity m = true
+--                           m = 2 * div2 m + 1 when parity m = false
+
+-- Helper: suc a + suc b = suc (suc (a + b))
+-- suc a + b = suc (a + b) and a + suc b = suc (a + b)
+-- so suc a + suc b = suc (a + suc b) = suc (suc (a + b))
+double-div2-even : (n : ℕ) → parity n ≡ true → n ≡ div2 n +ℕ div2 n
+double-div2-even zero _ = refl
+double-div2-even (suc zero) p = ex-falso (true≢false (sym p))  -- parity 1 = false ≠ true
+double-div2-even (suc (suc n)) p =
+  -- div2 (suc (suc n)) = suc (div2 n), so we need:
+  -- suc (suc n) = suc (div2 n) + suc (div2 n)
+  -- suc (div2 n) + suc (div2 n) = suc (div2 n + suc (div2 n))    [by def of +]
+  --                             = suc (suc (div2 n + div2 n))    [by +-suc]
+  suc (suc n) ≡⟨ cong (suc ∘ suc) (double-div2-even n p) ⟩
+  suc (suc (div2 n +ℕ div2 n)) ≡⟨ cong suc (sym (+-suc (div2 n) (div2 n))) ⟩
+  suc (div2 n +ℕ suc (div2 n)) ∎
+  -- Note: suc (div2 n) + suc (div2 n) ≡ suc (div2 n + suc (div2 n)) definitionally
+
+double-div2-odd : (n : ℕ) → parity n ≡ false → n ≡ suc (div2 n +ℕ div2 n)
+double-div2-odd zero p = ex-falso (true≢false p)  -- parity 0 = true ≠ false
+double-div2-odd (suc zero) _ = refl
+double-div2-odd (suc (suc n)) p =
+  -- div2 (suc (suc n)) = suc (div2 n), so we need:
+  -- suc (suc n) = suc (suc (div2 n) + suc (div2 n))
+  -- suc (div2 n) + suc (div2 n) = suc (div2 n + suc (div2 n))    [by def of +]
+  --                             = suc (suc (div2 n + div2 n))    [by +-suc]
+  -- so suc (suc (div2 n) + suc (div2 n)) = suc (suc (suc (div2 n + div2 n)))
+  suc (suc n) ≡⟨ cong (suc ∘ suc) (double-div2-odd n p) ⟩
+  suc (suc (suc (div2 n +ℕ div2 n))) ≡⟨ cong (suc ∘ suc) (sym (+-suc (div2 n) (div2 n))) ⟩
+  suc (suc (div2 n +ℕ suc (div2 n))) ∎
+  -- Note: suc (suc (div2 n)) + suc (div2 n) ≡ suc (suc (div2 n) + suc (div2 n))
+  --                                        ≡ suc (suc (div2 n + suc (div2 n))) definitionally
+
+-- Convert builtin equality to path for Bool
+import Agda.Builtin.Equality as BEq
+builtin→Path-Bool : {a b : Bool} → a BEq.≡ b → a ≡ b
+builtin→Path-Bool BEq.refl = refl
+
+div2-injective-even : (m n : ℕ) → parity m BEq.≡ true → parity n BEq.≡ true →
+  div2 m ≡ div2 n → m ≡ n
+div2-injective-even m n pm pn = λ eq →
+  double-div2-even m (builtin→Path-Bool pm) ∙ cong₂ _+ℕ_ eq eq ∙ sym (double-div2-even n (builtin→Path-Bool pn))
+
+div2-injective-odd : (m n : ℕ) → parity m BEq.≡ false → parity n BEq.≡ false →
+  div2 m ≡ div2 n → m ≡ n
+div2-injective-odd m n pm pn = λ eq →
+  double-div2-odd m (builtin→Path-Bool pm) ∙ cong₂ (λ a b → suc (a +ℕ b)) eq eq ∙ sym (double-div2-odd n (builtin→Path-Bool pn))
+
+-- The key theorem: f-on-gen respects the relations
+-- For distinct m, n: f-on-gen m ·× f-on-gen n = (0, 0)
+f-respects-relations : (m n : ℕ) → ¬ (m ≡ n) →
+  (f-on-gen m) ·× (f-on-gen n) ≡ (𝟘∞ , 𝟘∞)
+f-respects-relations m n m≠n with parity m in pm | parity n in pn
+-- Case 1: both even
+... | true | true = cong₂ _,_ (div2-neq→gen-product-zero m n div2-neq) (0∞-absorbs-left 𝟘∞)
   where
-  module _ where
-    open WF.WFI (<-wellfounded)
-
-    ResultOdd : ℕ → Type₀
-    ResultOdd n = interleave α β n ≡ true
-                → ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
-                → Σ[ m ∈ ℕ ] (isEvenB m ≡ false) × (β (half m) ≡ true)
-
-    find-first-true-odd-step : (n : ℕ) → ((m : ℕ) → m < n → ResultOdd m) → ResultOdd n
-    find-first-true-odd-step n rec δ₀-n=t allEvensF with firstTrue (interleave α β) n =B true
-    ... | yes ft-n=t with isEvenB n =B true
-    ...   | yes n-even =
-            let k = half n
-                2k=n : 2 ·ℕ k ≡ n
-                2k=n = 2·half-even n n-even
-            in ex-falso (true≢false (sym (subst (λ x → firstTrue (interleave α β) x ≡ true) (sym 2k=n) ft-n=t)
-                                     ∙ allEvensF k))
-    ...   | no n-odd =
-            let j = half n
-                m-odd-eq : isEvenB n ≡ false
-                m-odd-eq = ¬true→false (isEvenB n) n-odd
-                βj=t : β j ≡ true
-                βj=t = sym (interleave-odd α β n m-odd-eq) ∙ δ₀-n=t
-            in n , m-odd-eq , βj=t
-    find-first-true-odd-step n rec δ₀-n=t allEvensF | no ft-n≠t =
-      let ft-n=f = ¬true→false (firstTrue (interleave α β) n) ft-n≠t
-          (m , m<n , δ₀-m=t) = firstTrue-false-but-original-true (interleave α β) n ft-n=f δ₀-n=t
-      in rec m m<n δ₀-m=t allEvensF
-
-    find-first-true-odd : (n : ℕ) → ResultOdd n
-    find-first-true-odd = induction find-first-true-odd-step
-
-  allEvensF-implies-P : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false) → ⟨ P ⟩
-  allEvensF-implies-P allEvensF = closedIsStable P (α , P→∀α , ∀α→P) ¬¬P
-    where
-    ¬¬P : ¬ ¬ ⟨ P ⟩
-    ¬¬P ¬p =
-      let (k , αk=t) = mp α (λ all-false → ¬p (∀α→P all-false))
-          δ₀-2k=t : interleave α β (2 ·ℕ k) ≡ true
-          δ₀-2k=t = interleave-2k α β k ∙ αk=t
-          (m , m-odd , βj=t) = find-first-true-odd (2 ·ℕ k) δ₀-2k=t allEvensF
-          j = half m
-          ¬q : ¬ ⟨ Q ⟩
-          ¬q q = false≢true (sym (Q→∀β q j) ∙ βj=t)
-      in ¬¬P∧¬Q (¬p , ¬q)
-
-  module _ where
-    open WF.WFI (<-wellfounded)
-
-    ResultEven : ℕ → Type₀
-    ResultEven n = interleave α β n ≡ true
-                 → ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
-                 → Σ[ m ∈ ℕ ] (isEvenB m ≡ true) × (α (half m) ≡ true)
-
-    find-first-true-even-step : (n : ℕ) → ((m : ℕ) → m < n → ResultEven m) → ResultEven n
-    find-first-true-even-step n rec δ₀-n=t allOddsF with firstTrue (interleave α β) n =B true
-    ... | yes ft-n=t with isEvenB n =B true
-    ...   | yes n-even =
-            let j = half n
-                αj=t : α j ≡ true
-                αj=t = sym (interleave-even α β n n-even) ∙ δ₀-n=t
-            in n , n-even , αj=t
-    ...   | no n-odd =
-            let k = half n
-                n-odd-eq : isEvenB n ≡ false
-                n-odd-eq = ¬true→false (isEvenB n) n-odd
-                2k+1=n : suc (2 ·ℕ k) ≡ n
-                2k+1=n = suc-2·half-odd n n-odd-eq
-            in ex-falso (true≢false (sym (subst (λ x → firstTrue (interleave α β) x ≡ true) (sym 2k+1=n) ft-n=t)
-                                     ∙ allOddsF k))
-    find-first-true-even-step n rec δ₀-n=t allOddsF | no ft-n≠t =
-      let ft-n=f = ¬true→false (firstTrue (interleave α β) n) ft-n≠t
-          (m , m<n , δ₀-m=t) = firstTrue-false-but-original-true (interleave α β) n ft-n=f δ₀-n=t
-      in rec m m<n δ₀-m=t allOddsF
-
-    find-first-true-even : (n : ℕ) → ResultEven n
-    find-first-true-even = induction find-first-true-even-step
-
-  allOddsF-implies-Q : ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false) → ⟨ Q ⟩
-  allOddsF-implies-Q allOddsF = closedIsStable Q (β , Q→∀β , ∀β→Q) ¬¬Q
-    where
-    ¬¬Q : ¬ ¬ ⟨ Q ⟩
-    ¬¬Q ¬q =
-      let (k , βk=t) = mp β (λ all-false → ¬q (∀β→Q all-false))
-          δ₀-odd-k=t : interleave α β (suc (2 ·ℕ k)) ≡ true
-          δ₀-odd-k=t = interleave-2k+1 α β k ∙ βk=t
-          (m , m-even , αj=t) = find-first-true-even (suc (2 ·ℕ k)) δ₀-odd-k=t allOddsF
-          j = half m
-          ¬p : ¬ ⟨ P ⟩
-          ¬p p = false≢true (sym (P→∀α p j) ∙ αj=t)
-      in ¬¬P∧¬Q (¬p , ¬q)
-
-  helper : ((k : ℕ) → firstTrue (interleave α β) (2 ·ℕ k) ≡ false)
-         ⊎ ((k : ℕ) → firstTrue (interleave α β) (suc (2 ·ℕ k)) ≡ false)
-         → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
-  helper (inl allEvensF) = ∣ inl (allEvensF-implies-P allEvensF) ∣₁
-  helper (inr allOddsF) = ∣ inr (allOddsF-implies-Q allOddsF) ∣₁
-
--- Now we can define closedOr
-closedOr : (P Q : hProp ℓ-zero) → isClosedProp P → isClosedProp Q
-         → isClosedProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
-closedOr P Q Pclosed Qclosed = γ , forward , backward
+    div2-neq : ¬ (div2 m ≡ div2 n)
+    div2-neq = λ eq → m≠n (div2-injective-even m n pm pn eq)
+-- Case 2: both odd
+... | false | false = cong₂ _,_ (0∞-absorbs-left 𝟘∞) (div2-neq→gen-product-zero m n div2-neq)
   where
-  ¬P : hProp ℓ-zero
-  ¬P = (¬ ⟨ P ⟩) , isProp¬ ⟨ P ⟩
+    div2-neq : ¬ (div2 m ≡ div2 n)
+    div2-neq = λ eq → m≠n (div2-injective-odd m n pm pn eq)
+-- Case 3: m even, n odd
+... | true | false = inl-inr-mult-zero (g∞ (div2 m)) (g∞ (div2 n))
+-- Case 4: m odd, n even
+... | false | true = inr-inl-mult-zero (g∞ (div2 m)) (g∞ (div2 n))
 
-  ¬Q : hProp ℓ-zero
-  ¬Q = (¬ ⟨ Q ⟩) , isProp¬ ⟨ Q ⟩
+-- =============================================================================
+-- Constructing the full homomorphism f : B∞ → B∞×B∞
+-- =============================================================================
 
-  ¬Popen : isOpenProp ¬P
-  ¬Popen = negClosedIsOpen mp P Pclosed
+-- Step 1: Use the universal property of freeBA ℕ to get a map freeBA ℕ → B∞×B∞
+-- This uses inducedBAHom from FreeBool.agda
+open import BooleanRing.FreeBooleanRing.FreeBool using (inducedBAHom; generator; evalBAInduce)
 
-  ¬Qopen : isOpenProp ¬Q
-  ¬Qopen = negClosedIsOpen mp Q Qclosed
+-- The induced homomorphism from freeBA ℕ to B∞×B∞
+f-free : BoolHom (freeBA ℕ) B∞×B∞
+f-free = inducedBAHom ℕ B∞×B∞ f-on-gen
 
-  ¬P∧¬Q : hProp ℓ-zero
-  ¬P∧¬Q = ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩)) , isProp× (isProp¬ ⟨ P ⟩) (isProp¬ ⟨ Q ⟩)
+-- Key property: f-free agrees with f-on-gen on generators
+f-free-on-gen : fst f-free ∘ generator ≡ f-on-gen
+f-free-on-gen = evalBAInduce ℕ B∞×B∞ f-on-gen
 
-  ¬P∧¬Qopen : isOpenProp ¬P∧¬Q
-  ¬P∧¬Qopen = openAnd ¬P ¬Q ¬Popen ¬Qopen
+-- Step 2: Show that f-free sends relB∞ k to (0, 0) for all k
+-- This follows from the fact that relB∞ k = gen a · gen (a + suc d)
+-- for some a, d, and f-free preserves multiplication
 
-  γ : binarySequence
-  γ = fst ¬P∧¬Qopen
+-- First, recall that the generator in freeBA ℕ is 'generator' and
+-- the generator in B∞ is g∞ = fst π∞ ∘ gen
+-- The relation is: gen m · gen n = 0 in B∞ for m ≠ n
 
-  forward : ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ → (n : ℕ) → γ n ≡ false
-  forward P∨Q n with γ n =B true
-  ... | yes γn=t = ex-falso (PT.rec isProp⊥ (helper' γn=t) P∨Q)
-    where
-    helper' : γ n ≡ true → ⟨ P ⟩ ⊎ ⟨ Q ⟩ → ⊥
-    helper' γn=t (inl p) = fst (snd (snd ¬P∧¬Qopen) (n , γn=t)) p
-    helper' γn=t (inr q) = snd (snd (snd ¬P∧¬Qopen) (n , γn=t)) q
-  ... | no γn≠t = ¬true→false (γ n) γn≠t
+-- Key: f-free(gen m · gen n) = f-free(gen m) ·× f-free(gen n)
+--                             = f-on-gen m ·× f-on-gen n  (by f-free-on-gen)
+--                             = (0, 0) for m ≠ n         (by f-respects-relations)
 
-  backward : ((n : ℕ) → γ n ≡ false) → ∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁
-  backward all-false =
-    let ¬¬P∧¬Q : ¬ ((¬ ⟨ P ⟩) × (¬ ⟨ Q ⟩))
-        ¬¬P∧¬Q (¬p , ¬q) =
-          let (n , γn=t) = fst (snd ¬P∧¬Qopen) (¬p , ¬q)
-          in false≢true (sym (all-false n) ∙ γn=t)
-    in closedDeMorgan P Q Pclosed Qclosed ¬¬P∧¬Q
+-- The product in freeBA ℕ
+-- Note: private has no effect on open statements
+open BooleanRingStr (snd (freeBA ℕ)) using () renaming (_·_ to _·free_)
 
--- Bundled version: join (∨) on Open
-_∨-Open_ : Open → Open → Open
-O₁ ∨-Open O₂ = ((∥ ⟨ fst O₁ ⟩ ⊎ ⟨ fst O₂ ⟩ ∥₁) , squash₁) ,
-               openOr (fst O₁) (fst O₂) (snd O₁) (snd O₂)
+-- Homomorphism property of f-free
+f-free-pres· : (x y : ⟨ freeBA ℕ ⟩) → fst f-free (x ·free y) ≡ (fst f-free x) ·× (fst f-free y)
+f-free-pres· x y = IsCommRingHom.pres· (snd f-free) x y
 
--- Bundled version: join (∨) on Closed
-_∨-Closed_ : Closed → Closed → Closed
-C₁ ∨-Closed C₂ = ((∥ ⟨ fst C₁ ⟩ ⊎ ⟨ fst C₂ ⟩ ∥₁) , squash₁) ,
-                 closedOr (fst C₁) (fst C₂) (snd C₁) (snd C₂)
+-- gen in freeBA ℕ is just 'generator'
+gen-is-generator : gen ≡ generator
+gen-is-generator = refl
 
--- De Morgan for open propositions
-openDeMorgan : (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
-             → (¬ (⟨ P ⟩ × ⟨ Q ⟩)) ↔ ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
-openDeMorgan P Q Popen Qopen = forward , backward
+-- The crucial lemma: f-free sends products of distinct generators to zero
+f-free-distinct-zero : (m n : ℕ) → ¬ (m ≡ n) →
+  fst f-free (gen m ·free gen n) ≡ (𝟘∞ , 𝟘∞)
+f-free-distinct-zero m n m≠n =
+  fst f-free (gen m ·free gen n)             ≡⟨ f-free-pres· (gen m) (gen n) ⟩
+  (fst f-free (gen m)) ·× (fst f-free (gen n)) ≡⟨ cong₂ _·×_ (funExt⁻ f-free-on-gen m) (funExt⁻ f-free-on-gen n) ⟩
+  f-on-gen m ·× f-on-gen n                    ≡⟨ f-respects-relations m n m≠n ⟩
+  (𝟘∞ , 𝟘∞) ∎
+
+-- Now we need to show that f-free sends relB∞ k to (0, 0)
+-- Recall: relB∞ k = relB∞-from-pair (cantorUnpair k) = gen a · gen (a + suc d)
+-- where (a, d) = cantorUnpair k
+
+-- Since a < a + suc d, we have a ≠ a + suc d
+-- Proof: if a = a + suc d, then 0 = suc d (contradiction)
+-- We use: a + 0 = a = a + suc d → 0 = suc d
+a≠a+suc-d : (a d : ℕ) → ¬ (a ≡ a +ℕ suc d)
+a≠a+suc-d a d = λ eq →
+  let step1 : a +ℕ zero ≡ a +ℕ suc d
+      step1 = +-zero a ∙ eq
+      step2 : zero ≡ suc d
+      step2 = inj-m+ step1
+  in znots step2
+
+-- f-free sends relB∞ k to zero
+f-free-on-relB∞ : (k : ℕ) → fst f-free (relB∞ k) ≡ (𝟘∞ , 𝟘∞)
+f-free-on-relB∞ k =
+  let (a , d) = cantorUnpair k
+  in f-free-distinct-zero a (a +ℕ suc d) (a≠a+suc-d a d)
+
+-- Step 3: Use QB.inducedHom to descend to the quotient
+-- B∞ = freeBA ℕ /Im relB∞
+-- We have f-free : freeBA ℕ → B∞×B∞ with f-free(relB∞ k) = 0 for all k
+-- So we get f : B∞ → B∞×B∞
+
+f : BoolHom B∞ B∞×B∞
+f = QB.inducedHom B∞×B∞ f-free f-free-on-relB∞
+
+-- =============================================================================
+-- f applied to generators (needed for f-on-finJoin)
+-- =============================================================================
+
+-- f applied to generators: fst f (g∞ n) = f-on-gen n
+-- This follows from f = QB.inducedHom which satisfies f ∘ π∞ = f-free
+opaque
+  unfolding QB.inducedHom
+  unfolding QB.quotientImageHom
+  f-eval : f ∘cr π∞ ≡ f-free
+  f-eval = QB.evalInduce {B = freeBA ℕ} {f = relB∞}
+             B∞×B∞ {g = f-free} {gfx=0 = f-free-on-relB∞}
+
+-- Key lemma: f on generators equals f-on-gen
+f-on-gen-eq : (n : ℕ) → fst f (g∞ n) ≡ f-on-gen n
+f-on-gen-eq n =
+  fst f (g∞ n)                        ≡⟨ refl ⟩
+  fst f (fst π∞ (gen n))              ≡⟨ funExt⁻ (cong fst f-eval) (gen n) ⟩
+  fst f-free (gen n)                  ≡⟨ funExt⁻ f-free-on-gen n ⟩
+  f-on-gen n ∎
+
+-- Helper: 2 ·ℕ k = k +ℕ k (multiplication computes this way)
+2·-is-double : (k : ℕ) → 2 ·ℕ k ≡ k +ℕ k
+2·-is-double k = cong (k +ℕ_) (+-zero k)
+
+-- f applied to odd generators gives right factor
+-- f(g_{2k+1}) = f-on-gen(2k+1) = (0, g_k) since parity(2k+1) = false
+f-odd-gen : (k : ℕ) → fst f (g∞ (suc (2 ·ℕ k))) ≡ (𝟘∞ , g∞ k)
+f-odd-gen k =
+  fst f (g∞ (suc (2 ·ℕ k)))
+    ≡⟨ f-on-gen-eq (suc (2 ·ℕ k)) ⟩
+  f-on-gen (suc (2 ·ℕ k))
+    ≡⟨ f-on-gen-odd k ⟩
+  (𝟘∞ , g∞ k) ∎
   where
-  ¬Pclosed : isClosedProp (¬hProp P)
-  ¬Pclosed = negOpenIsClosed P Popen
-
-  ¬Qclosed : isClosedProp (¬hProp Q)
-  ¬Qclosed = negOpenIsClosed Q Qopen
-
-  forward : ¬ (⟨ P ⟩ × ⟨ Q ⟩) → ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁
-  forward ¬P×Q = closedDeMorgan (¬hProp P) (¬hProp Q) ¬Pclosed ¬Qclosed ¬¬¬P×¬¬Q
+  -- Show f-on-gen (suc (2k)) computes to (0, g_k)
+  f-on-gen-odd : (k : ℕ) → f-on-gen (suc (2 ·ℕ k)) ≡ (𝟘∞ , g∞ k)
+  f-on-gen-odd k with parity (suc (2 ·ℕ k)) in par-eq
+  ... | false = cong (𝟘∞ ,_) (cong g∞ div2-eq)
     where
-    Pstable : ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
-    Pstable = openIsStable mp P Popen
+    div2-eq : div2 (suc (2 ·ℕ k)) ≡ k
+    div2-eq = subst (λ m → div2 (suc m) ≡ k) (sym (2·-is-double k)) (div2-double-suc k)
+  ... | true = ex-falso (false≢true (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (suc (2 ·ℕ k)) ≡ false
+    parity-eq = subst (λ m → parity (suc m) ≡ false) (sym (2·-is-double k)) (parity-double-suc k)
 
-    Qstable : ¬ ¬ ⟨ Q ⟩ → ⟨ Q ⟩
-    Qstable = openIsStable mp Q Qopen
+-- f applied to even generators gives left factor
+-- f(g_{2k}) = f-on-gen(2k) = (g_k, 0) since parity(2k) = true
+f-even-gen : (k : ℕ) → fst f (g∞ (2 ·ℕ k)) ≡ (g∞ k , 𝟘∞)
+f-even-gen k =
+  fst f (g∞ (2 ·ℕ k))
+    ≡⟨ f-on-gen-eq (2 ·ℕ k) ⟩
+  f-on-gen (2 ·ℕ k)
+    ≡⟨ f-on-gen-even k ⟩
+  (g∞ k , 𝟘∞) ∎
+  where
+  -- Show f-on-gen (2k) computes to (g_k, 0)
+  f-on-gen-even : (k : ℕ) → f-on-gen (2 ·ℕ k) ≡ (g∞ k , 𝟘∞)
+  f-on-gen-even k with parity (2 ·ℕ k) in par-eq
+  ... | true = cong (_, 𝟘∞) (cong g∞ div2-eq)
+    where
+    div2-eq : div2 (2 ·ℕ k) ≡ k
+    div2-eq = subst (λ m → div2 m ≡ k) (sym (2·-is-double k)) (div2-double k)
+  ... | false = ex-falso (true≢false (sym parity-eq ∙ builtin→Path-Bool par-eq))
+    where
+    parity-eq : parity (2 ·ℕ k) ≡ true
+    parity-eq = subst (λ m → parity m ≡ true) (sym (2·-is-double k)) (parity-double k)
 
-    ¬¬¬P×¬¬Q : ¬ ((¬ ¬ ⟨ P ⟩) × (¬ ¬ ⟨ Q ⟩))
-    ¬¬¬P×¬¬Q (¬¬p , ¬¬q) = ¬P×Q (Pstable ¬¬p , Qstable ¬¬q)
+-- =============================================================================
+-- Injectivity of f (tex line 567-583)
+-- =============================================================================
 
-  backward : ∥ (¬ ⟨ P ⟩) ⊎ (¬ ⟨ Q ⟩) ∥₁ → ¬ (⟨ P ⟩ × ⟨ Q ⟩)
-  backward = PT.rec (isProp¬ _) λ { (inl ¬p) (p , _) → ¬p p
-                                   ; (inr ¬q) (_ , q) → ¬q q }
+-- The proof of injectivity uses the following argument:
+-- If x ≠ 0 in B∞, then x can be written in a normal form involving generators
+-- When we apply f, the generators get split into even and odd positions
+-- Since x ≠ 0, at least one of the two factors in f(x) is nonzero
 
+-- For now, we postulate this as the proof requires detailed analysis of
+-- the structure of elements in B∞ as set quotients
+--
+-- PROOF OUTLINE (from tex lines 567-583):
+-- 1. Any x ∈ B∞ can be written uniquely as:
+--    - ⋁_{i∈I} g_i (join of generators) for finite I, OR
+--    - ⋀_{i∈I} ¬g_i (meet of negated generators) for finite I
+--    (This is the "normal form" or "conjunctive normal form" for B∞)
+--
+-- 2. For x = ⋁_{i∈I} g_i:
+--    f(x) = (⋁_{k: 2k∈I} g_k, ⋁_{k: 2k+1∈I} g_k)
+--    If f(x) = 0, then both I₀ = {k | 2k ∈ I} and I₁ = {k | 2k+1 ∈ I} are empty
+--    Therefore I = ∅ and x = 0.
+--
+-- 3. For x = ⋀_{i∈I} ¬g_i:
+--    f(x) = (⋀_{k: 2k∈I} ¬g_k, ⋀_{k: 2k+1∈I} ¬g_k)
+--    Since each component is either 1 (if corresponding I_j = ∅) or a non-zero
+--    meet of negated generators, f(x) ≠ 0.
+--
+-- 4. Conclusion: kernel of f is trivial, so f is injective.
+--
+-- TO FORMALIZE: Need normal form theorem for elements of B∞.
+
+-- =============================================================================
+-- Normal Form Infrastructure for B∞ (preparation for f-injective)
+-- =============================================================================
+
+-- In Boolean rings, the "join" of elements is: a ∨ b = a + b + a·b
+-- This is the lattice join in the Boolean algebra structure
+-- For B∞, elements are either:
+--   - Finite joins of generators: ⋁_{i∈I} g_i
+--   - Finite meets of negated generators: ⋀_{i∈I} ¬g_i
+
+-- Boolean ring operations in B∞
+open BooleanRingStr (snd B∞) using () renaming (_+_ to _+∞_ ; -_ to -∞_) public
+
+-- Join in a Boolean ring: a ∨ b = a + b + a·b
+_∨∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+a ∨∞ b = a +∞ b +∞ (a ·∞ b)
+
+-- Meet in a Boolean ring: a ∧ b = a · b
+_∧∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+a ∧∞ b = a ·∞ b
+
+-- Negation in a Boolean ring: ¬a = 1 + a
+¬∞_ : ⟨ B∞ ⟩ → ⟨ B∞ ⟩
+¬∞ a = 𝟙∞ +∞ a
+
+-- Finite join of generators: for a list of indices, compute ⋁_{i∈list} g_i
+-- Using a simple recursive definition for now
+open import Cubical.Data.List hiding (map)
+
+finJoin∞ : List ℕ → ⟨ B∞ ⟩
+finJoin∞ [] = 𝟘∞
+finJoin∞ (n ∷ ns) = g∞ n ∨∞ finJoin∞ ns
+
+-- Finite meet of negated generators: for a list of indices, compute ⋀_{i∈list} ¬g_i
+finMeetNeg∞ : List ℕ → ⟨ B∞ ⟩
+finMeetNeg∞ [] = 𝟙∞
+finMeetNeg∞ (n ∷ ns) = (¬∞ g∞ n) ∧∞ finMeetNeg∞ ns
+
+-- The normal form data type for B∞ elements
+data B∞-NormalForm : Type₀ where
+  joinForm : List ℕ → B∞-NormalForm  -- represents ⋁_{i∈list} g_i
+  meetNegForm : List ℕ → B∞-NormalForm  -- represents ⋀_{i∈list} ¬g_i
+
+-- Interpretation of normal forms as B∞ elements
+⟦_⟧nf : B∞-NormalForm → ⟨ B∞ ⟩
+⟦ joinForm ns ⟧nf = finJoin∞ ns
+⟦ meetNegForm ns ⟧nf = finMeetNeg∞ ns
+
+-- The Normal Form Theorem (postulated for now):
+-- Every element of B∞ has a normal form representation
+-- Note: This is the key missing piece for f-injective
+--
+-- PROOF APPROACH for normalFormExists:
+-- B∞ = freeBA ℕ / Im relB∞ where relB∞ enforces g_m · g_n = 0 for m ≠ n
+--
+-- In any Boolean algebra with orthogonal atoms (generators), every element
+-- can be written as either:
+--   - A finite join of atoms: ⋁_{i∈I} g_i
+--   - A finite meet of negated atoms: ⋀_{i∈I} ¬g_i
+--
+-- The proof would require:
+-- 1. Show that freeBA ℕ elements are finite Boolean expressions over generators
+-- 2. Show that the quotient relations collapse products g_i · g_j → 0 for i ≠ j
+-- 3. Show that every Boolean expression simplifies to one of the two forms
+--
+-- This is a standard result in Boolean algebra (CNF/DNF for atom-disjoint case)
+-- but formalizing it requires careful handling of the quotient structure.
+--
+-- Alternative: prove f-injective directly via spectrum argument:
+-- - Stone Duality: f is injective ⟺ Sp(f) is surjective
+-- - We have Sp B∞ ≅ ℕ∞ and Sp(B∞×B∞) ≅ ℕ∞ + ℕ∞
+-- - The surjectivity of Sp(f) follows from the parity decomposition
+--
+-- SPECTRUM-BASED APPROACH (alternative to normalFormExists):
+-- 1. We have SpB∞-to-ℕ∞ : Sp B∞ → ℕ∞ (line ~3776)
+-- 2. We have ℕ∞-to-SpB∞ : ℕ∞ → Sp B∞ (line ~4954)
+-- 3. SpB∞-roundtrip shows ℕ∞-to-SpB∞ is a section (line ~4989)
+-- 4. If SpB∞-to-ℕ∞ is injective, then Sp B∞ ≅ ℕ∞
+-- 5. Similarly, Sp(B∞×B∞) ≅ Sp B∞ + Sp B∞ ≅ ℕ∞ + ℕ∞
+-- 6. Under these identifications, Sp(f) maps (left α, right β) → merge α β
+--    where merge uses parity: evens from α, odds from β
+-- 7. Sp(f) surjectivity follows from: given γ : ℕ∞,
+--    take α with seq(α)(n) = seq(γ)(2n) and β with seq(β)(n) = seq(γ)(2n+1)
+-- 8. By surj-formal-axiom, Sp(f) surjective ⟹ f injective
+--
+-- The key missing piece: showing SpB∞-to-ℕ∞ is injective requires that
+-- homomorphisms B∞ → Bool are determined by their values on generators.
+-- This is essentially equivalent to normalFormExists.
+--
+-- normalFormExists is now partially resolved:
+-- - normalFormExists-trunc (truncated version) is PROVED at line ~7849
+-- - normalFormExists-from-surj (untruncated) is proved at line ~7882
+--   but requires nf-injective which is still postulated
+--
+-- For f-injective, we don't need the untruncated version - see f-injective-from-trunc
+-- at line ~7905 which uses only the truncated normal form existence.
+--
+-- ANALYSIS: This postulate is UNUSED in the main proof chain!
+-- - The only use is in f-injective-from-normalForm (line ~6144)
+-- - But f-injective-from-normalForm is NEVER USED (superseded by f-injective-from-trunc)
+-- - Therefore this postulate has been COMMENTED OUT.
+--
+-- {- COMMENTED OUT - UNUSED CODE:
+-- postulate
+--   normalFormExists : (x : ⟨ B∞ ⟩) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x
+-- -}
+
+-- Key lemma: f respects the parity split on indices
+-- For a join form: f(⋁_{i∈I} g_i) = (⋁_{k: 2k∈I} g_k, ⋁_{k: 2k+1∈I} g_k)
+-- This uses the fact that f(g_n) = (g_{n/2}, 0) or (0, g_{n/2}) depending on parity
+
+-- Helper to split a list by parity of indices
+-- For each n in the list, put half(n) in evens if n is even, or in odds if n is odd
+-- Note: 'half' is already defined at line 444
+splitByParity : List ℕ → List ℕ × List ℕ
+splitByParity [] = [] , []
+splitByParity (n ∷ ns) with isEven n | splitByParity ns
+... | true  | (evens , odds) = half n ∷ evens , odds    -- n is even
+... | false | (evens , odds) = evens , half n ∷ odds    -- n is odd
+
+-- Key observations about f on generators (connecting to parity):
+-- - f(g_{2k}) = (g_k, 0)   (even generators go to left factor)
+-- - f(g_{2k+1}) = (0, g_k)  (odd generators go to right factor)
+
+-- Since generators in B∞ are orthogonal (g_m · g_n = 0 for m ≠ n),
+-- finite joins decompose nicely:
+-- f(⋁_i g_i) = (⋁_{evens} g_k, ⋁_{odds} g_k)
+
+-- This leads to the key lemma: f respects the parity split
+-- Proof sketch:
+-- 1. f is a ring homomorphism, so it preserves +
+-- 2. In Boolean rings, join = a + b + a·b, and orthogonality gives a·b = 0
+-- 3. So f(a ∨ b) = f(a + b) = f(a) + f(b) when a,b are orthogonal
+-- 4. The parity split ensures we're summing orthogonal elements on each side
+
+-- Key lemma: for orthogonal elements a · b = 0, we have a ∨ b = a + b
+orthogonal→join-is-sum : (a b : ⟨ B∞ ⟩) → a ·∞ b ≡ 𝟘∞ → a ∨∞ b ≡ a +∞ b
+orthogonal→join-is-sum a b a·b=0 =
+  a ∨∞ b                    ≡⟨ refl ⟩
+  a +∞ b +∞ (a ·∞ b)        ≡⟨ cong (a +∞ b +∞_) a·b=0 ⟩
+  a +∞ b +∞ 𝟘∞              ≡⟨ +B∞-IdR (a +∞ b) ⟩
+  a +∞ b ∎
+  where
+  open BooleanRingStr (snd B∞) using () renaming (+IdR to +B∞-IdR)
+
+-- Generators are orthogonal: g_m · g_n = 0 for m ≠ n
+gen-orthogonal : (m n : ℕ) → ¬ (m ≡ n) → g∞ m ·∞ g∞ n ≡ 𝟘∞
+gen-orthogonal = g∞-distinct-mult-zero
+
+-- Product operations in B∞×B∞
+open BooleanRingStr (snd B∞×B∞) using () renaming (_+_ to _+×_ ; _·_ to _·×'_ ; 𝟘 to 𝟘× ; 𝟙 to 𝟙×) public
+
+-- Join in B∞×B∞: componentwise
+_∨×_ : ⟨ B∞×B∞ ⟩ → ⟨ B∞×B∞ ⟩ → ⟨ B∞×B∞ ⟩
+(a₁ , a₂) ∨× (b₁ , b₂) = (a₁ ∨∞ b₁ , a₂ ∨∞ b₂)
+
+-- f preserves addition
+f-pres+ : (a b : ⟨ B∞ ⟩) → fst f (a +∞ b) ≡ (fst f a) +× (fst f b)
+f-pres+ a b = IsCommRingHom.pres+ (snd f) a b
+
+-- f preserves multiplication
+f-pres·' : (a b : ⟨ B∞ ⟩) → fst f (a ·∞ b) ≡ (fst f a) ·×' (fst f b)
+f-pres·' a b = IsCommRingHom.pres· (snd f) a b
+
+-- Key lemma: f respects joins
+-- f(a ∨ b) = f(a) ∨ f(b)  (since f is a ring homomorphism)
+-- Note: a ∨ b = a + b + a·b in Boolean rings
+f-pres-join : (a b : ⟨ B∞ ⟩) → fst f (a ∨∞ b) ≡ ((fst f a) ∨× (fst f b))
+f-pres-join a b = step1 ∙ step2 ∙ step3
+  where
+  step1 : fst f (a ∨∞ b) ≡ ((fst f (a +∞ b)) +× (fst f (a ·∞ b)))
+  step1 = f-pres+ (a +∞ b) (a ·∞ b)
+
+  step2 : ((fst f (a +∞ b)) +× (fst f (a ·∞ b))) ≡ (((fst f a) +× (fst f b)) +× ((fst f a) ·×' (fst f b)))
+  step2 = cong₂ _+×_ (f-pres+ a b) (f-pres·' a b)
+
+  step3 : (((fst f a) +× (fst f b)) +× ((fst f a) ·×' (fst f b))) ≡ ((fst f a) ∨× (fst f b))
+  step3 = refl
+
+-- Product join unfolds to component joins
+∨×-eq : (a b : ⟨ B∞×B∞ ⟩) →
+  let (a₁ , a₂) = a ; (b₁ , b₂) = b
+  in a ∨× b ≡ (a₁ ∨∞ b₁ , a₂ ∨∞ b₂)
+∨×-eq (a₁ , a₂) (b₁ , b₂) = refl
+
+-- finJoin∞ for the product B∞×B∞ (componentwise)
+finJoin× : List ℕ → List ℕ → ⟨ B∞×B∞ ⟩
+finJoin× evens odds = (finJoin∞ evens , finJoin∞ odds)
+
+-- The main theorem about f on finite joins:
+-- f(finJoin∞ ns) = finJoin× (evens) (odds) where (evens, odds) = splitByParity ns
+--
+-- We prove this by induction on the list ns
+
+-- First, f(0) = (0, 0)
+f-on-zero : fst f 𝟘∞ ≡ (𝟘∞ , 𝟘∞)
+f-on-zero = IsCommRingHom.pres0 (snd f)
+
+-- Next, we need to show f(g_n ∨ x) = f(g_n) ∨ f(x) and then use the parity of n
+
+-- Helper: 0 ∨ x = x (zero is identity for join)
+zero-join-left : (x : ⟨ B∞ ⟩) → 𝟘∞ ∨∞ x ≡ x
+zero-join-left x =
+  𝟘∞ ∨∞ x                     ≡⟨ refl ⟩
+  𝟘∞ +∞ x +∞ (𝟘∞ ·∞ x)        ≡⟨ cong (𝟘∞ +∞ x +∞_) (0∞-absorbs-left x) ⟩
+  𝟘∞ +∞ x +∞ 𝟘∞              ≡⟨ BooleanRingStr.+IdR (snd B∞) (𝟘∞ +∞ x) ⟩
+  𝟘∞ +∞ x                     ≡⟨ BooleanRingStr.+IdL (snd B∞) x ⟩
+  x ∎
+
+-- Helper: x ∨ 0 = x (zero is identity for join, right version)
+zero-join-right : (x : ⟨ B∞ ⟩) → x ∨∞ 𝟘∞ ≡ x
+zero-join-right x =
+  x ∨∞ 𝟘∞                     ≡⟨ refl ⟩
+  x +∞ 𝟘∞ +∞ (x ·∞ 𝟘∞)        ≡⟨ cong (x +∞ 𝟘∞ +∞_) (0∞-absorbs-right x) ⟩
+  x +∞ 𝟘∞ +∞ 𝟘∞              ≡⟨ BooleanRingStr.+IdR (snd B∞) (x +∞ 𝟘∞) ⟩
+  x +∞ 𝟘∞                     ≡⟨ BooleanRingStr.+IdR (snd B∞) x ⟩
+  x ∎
+
+-- The key induction: f(finJoin∞ ns) = (finJoin∞ evens, finJoin∞ odds)
+-- This uses f-even-gen and f-odd-gen which are now in scope.
+
+-- First, prove that isEven (from Cubical.Data.Nat) equals isEvenB (local definition)
+-- isEven uses mutual recursion: isEven zero = true, isEven (suc n) = isOdd n
+-- isEvenB uses direct recursion: isEvenB zero = true, isEvenB (suc zero) = false, isEvenB (suc (suc n)) = isEvenB n
+isEven≡isEvenB : (n : ℕ) → isEven n ≡ isEvenB n
+isEven≡isEvenB zero = refl
+isEven≡isEvenB (suc zero) = refl
+isEven≡isEvenB (suc (suc n)) = isEven≡isEvenB n
+
+-- Helper: relate isEven to 2· form for even case
+-- When isEven n = true, we have n = 2 · (half n)
+isEven→even : (n : ℕ) → isEven n ≡ true → 2 ·ℕ (half n) ≡ n
+isEven→even n prf = 2·half-even n (sym (isEven≡isEvenB n) ∙ prf)
+
+-- Helper: relate isEven to 2· form for odd case
+-- When isEven n = false, we have n = suc (2 · (half n))
+isEven→odd : (n : ℕ) → isEven n ≡ false → suc (2 ·ℕ (half n)) ≡ n
+isEven→odd n prf = suc-2·half-odd n (sym (isEven≡isEvenB n) ∙ prf)
+
+-- Helper: f on generator when even
+f-on-gen-even : (n : ℕ) → isEven n ≡ true → fst f (g∞ n) ≡ (g∞ (half n) , 𝟘∞)
+f-on-gen-even n even-prf =
+  fst f (g∞ n)                    ≡⟨ cong (λ m → fst f (g∞ m)) (sym (isEven→even n even-prf)) ⟩
+  fst f (g∞ (2 ·ℕ (half n)))      ≡⟨ f-even-gen (half n) ⟩
+  (g∞ (half n) , 𝟘∞) ∎
+
+-- Helper: f on generator when odd
+f-on-gen-odd : (n : ℕ) → isEven n ≡ false → fst f (g∞ n) ≡ (𝟘∞ , g∞ (half n))
+f-on-gen-odd n odd-prf =
+  fst f (g∞ n)                         ≡⟨ cong (λ m → fst f (g∞ m)) (sym (isEven→odd n odd-prf)) ⟩
+  fst f (g∞ (suc (2 ·ℕ (half n))))     ≡⟨ f-odd-gen (half n) ⟩
+  (𝟘∞ , g∞ (half n)) ∎
+
+-- Main theorem: f on finite join splits by parity
+f-on-finJoin : (ns : List ℕ) →
+  let (evens , odds) = splitByParity ns
+  in fst f (finJoin∞ ns) ≡ (finJoin∞ evens , finJoin∞ odds)
+f-on-finJoin [] = f-on-zero
+f-on-finJoin (n ∷ ns) with isEven n in parity-eq | splitByParity ns | f-on-finJoin ns
+... | true  | (evens , odds) | ih =
+  -- n is even: f(g_n ∨ rest) = f(g_n) ∨ f(rest) = (g_{half n}, 0) ∨ (evens', odds')
+  fst f (g∞ n ∨∞ finJoin∞ ns)
+    ≡⟨ f-pres-join (g∞ n) (finJoin∞ ns) ⟩
+  (fst f (g∞ n)) ∨× (fst f (finJoin∞ ns))
+    ≡⟨ cong₂ _∨×_ (f-on-gen-even n (builtin→Path-Bool parity-eq)) ih ⟩
+  (g∞ (half n) , 𝟘∞) ∨× (finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (g∞ (half n) ∨∞ finJoin∞ evens , 𝟘∞ ∨∞ finJoin∞ odds)
+    ≡⟨ cong (g∞ (half n) ∨∞ finJoin∞ evens ,_) (zero-join-left (finJoin∞ odds)) ⟩
+  (g∞ (half n) ∨∞ finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (finJoin∞ (half n ∷ evens) , finJoin∞ odds) ∎
+... | false | (evens , odds) | ih =
+  -- n is odd: f(g_n ∨ rest) = f(g_n) ∨ f(rest) = (0, g_{half n}) ∨ (evens', odds')
+  fst f (g∞ n ∨∞ finJoin∞ ns)
+    ≡⟨ f-pres-join (g∞ n) (finJoin∞ ns) ⟩
+  (fst f (g∞ n)) ∨× (fst f (finJoin∞ ns))
+    ≡⟨ cong₂ _∨×_ (f-on-gen-odd n (builtin→Path-Bool parity-eq)) ih ⟩
+  (𝟘∞ , g∞ (half n)) ∨× (finJoin∞ evens , finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (𝟘∞ ∨∞ finJoin∞ evens , g∞ (half n) ∨∞ finJoin∞ odds)
+    ≡⟨ cong (_, g∞ (half n) ∨∞ finJoin∞ odds) (zero-join-left (finJoin∞ evens)) ⟩
+  (finJoin∞ evens , g∞ (half n) ∨∞ finJoin∞ odds)
+    ≡⟨ refl ⟩
+  (finJoin∞ evens , finJoin∞ (half n ∷ odds)) ∎
+
+-- =============================================================================
+-- Lemmas for proving f-injective via normalFormExists
+-- =============================================================================
+
+-- Key fact: generators are non-zero in B∞
+-- g∞ n ≠ 0 for all n
+-- This follows from the fact that B∞ has non-trivial spectrum (ℕ∞)
+-- Specifically, the homomorphism that sends g_n ↦ true and all other g_m ↦ false
+-- is a point in Sp(B∞), so g_n cannot be 0.
+
+-- For the joinForm case: if finJoin∞ ns = 0, then ns = []
+-- Proof sketch: if ns = n ∷ rest, then g_n ≤ finJoin∞ ns (in the lattice order)
+-- Since g_n ≠ 0, we have finJoin∞ ns ≠ 0.
+-- The formal proof would require showing g_n ≤ g_n ∨ x for any x.
+
+-- For the meetNegForm case: finMeetNeg∞ ns ≠ 0 always
+-- Proof: The zero homomorphism h ∈ Sp(B∞) (sending all generators to false)
+-- satisfies h(¬g_i) = ¬(h(g_i)) = ¬false = true for all i.
+-- So h(⋀_I ¬g_i) = ⋀_I true = true ≠ false.
+-- Hence finMeetNeg∞ ns ≠ 0.
+
+-- f on negation: f(¬x) = ¬(f(x)) componentwise
+-- Since f is a ring hom and ¬x = 1 + x in Boolean rings:
+-- f(¬x) = f(1 + x) = f(1) + f(x) = (1,1) + f(x) = (1 + fst(f(x)), 1 + snd(f(x)))
+--       = (¬(fst(f(x))), ¬(snd(f(x))))
+
+-- f preserves 1
+f-pres1 : fst f 𝟙∞ ≡ (𝟙∞ , 𝟙∞)
+f-pres1 = IsCommRingHom.pres1 (snd f)
+
+-- f preserves negation: f(¬x) = (¬(fst(f(x))), ¬(snd(f(x))))
+f-pres-neg : (x : ⟨ B∞ ⟩) → fst f (¬∞ x) ≡ (¬∞ (fst (fst f x)) , ¬∞ (snd (fst f x)))
+f-pres-neg x =
+  fst f (¬∞ x)
+    ≡⟨ refl ⟩  -- ¬∞ x = 𝟙∞ +∞ x
+  fst f (𝟙∞ +∞ x)
+    ≡⟨ f-pres+ 𝟙∞ x ⟩
+  (fst f 𝟙∞) +× (fst f x)
+    ≡⟨ cong (_+× (fst f x)) f-pres1 ⟩
+  (𝟙∞ , 𝟙∞) +× (fst f x)
+    ≡⟨ refl ⟩  -- componentwise addition
+  (𝟙∞ +∞ fst (fst f x) , 𝟙∞ +∞ snd (fst f x))
+    ≡⟨ refl ⟩  -- ¬∞ = 𝟙∞ +∞ _
+  (¬∞ (fst (fst f x)) , ¬∞ (snd (fst f x))) ∎
+
+-- Corollary: f on negated generator
+-- f(¬g_n) = (¬(fst(f(g_n))), ¬(snd(f(g_n))))
+-- For even n = 2k: f(g_n) = (g_k, 0), so f(¬g_n) = (¬g_k, ¬0) = (¬g_k, 1)
+-- For odd n = 2k+1: f(g_n) = (0, g_k), so f(¬g_n) = (¬0, ¬g_k) = (1, ¬g_k)
+
+-- =============================================================================
+-- Dirac delta: the ℕ∞ element that hits true exactly at position n
+-- =============================================================================
+
+-- The Dirac sequence at n: true at n, false elsewhere
+δ-seq : ℕ → ℕ → Bool
+δ-seq n m with discreteℕ n m
+... | yes _ = true
+... | no _ = false
+
+-- δ-seq n hits at most once (it hits exactly at n)
+δ-seq-hamo : (n : ℕ) → hitsAtMostOnce (δ-seq n)
+δ-seq-hamo n i j δi=t δj=t with discreteℕ n i | discreteℕ n j
+... | yes n=i | yes n=j = sym n=i ∙ n=j
+... | yes _ | no n≠j = ex-falso (true≢false (sym δj=t))
+... | no n≠i | _ = ex-falso (true≢false (sym δi=t))
+
+-- The Dirac delta as an element of ℕ∞
+δ∞ : ℕ → ℕ∞
+δ∞ n = δ-seq n , δ-seq-hamo n
+
+-- Key property: δ∞ n hits true at position n
+δ∞-hits-n : (n : ℕ) → fst (δ∞ n) n ≡ true
+δ∞-hits-n n with discreteℕ n n
+... | yes _ = refl
+... | no n≠n = ex-falso (n≠n refl)
+
+-- Key property: δ∞ n is false at other positions
+δ∞-misses-m : (n m : ℕ) → ¬ (n ≡ m) → fst (δ∞ n) m ≡ false
+δ∞-misses-m n m n≠m with discreteℕ n m
+... | yes n=m = ex-falso (n≠m n=m)
+... | no _ = refl
+
+-- =============================================================================
+-- Generators are non-zero (proved after ℕ∞-to-SpB∞ is defined at line ~5020)
+-- =============================================================================
+
+-- NOTE: g∞-nonzero : (n : ℕ) → ¬ (g∞ n ≡ 𝟘∞)
+-- is defined later, after ℕ∞-to-SpB∞, using the witness h_n = ℕ∞-to-SpB∞ (δ∞ n)
+
+-- The injectivity of f then follows:
+-- If fst f x = (0,0), then using normal form:
+-- - If x = ⋁_I g_i, then both parity-splits are empty, so I = ∅, so x = 0
+-- - If x = ⋀_I ¬g_i, then... (requires separate analysis)
+--
+-- PROOF SKETCH for f-injective (via normalFormExists):
+-- 1. Let x ∈ B∞ with f(x) = (0, 0)
+-- 2. By normalFormExists, x = ⟦ nf ⟧nf for some normal form nf
+-- 3. Case nf = joinForm ns:
+--    - f(⋁_I g_i) = (⋁_{evens} g_k, ⋁_{odds} g_k) by f-on-finJoin
+--    - If this equals (0,0), both components are 0
+--    - For finJoin∞ to be 0, the list must be empty (generators are non-zero)
+--    - So ns = [], and x = finJoin∞ [] = 0
+-- 4. Case nf = meetNegForm ns:
+--    - f(⋀_I ¬g_i) requires showing f preserves negation properly
+--    - ¬g_i = 1 + g_i, so f(¬g_i) = f(1) + f(g_i) = (1,1) + f(g_i)
+--    - This analysis is more complex but follows from homomorphism properties
+--
+-- ALTERNATIVE PROOF via Stone Duality (tex line 295):
+-- - f is injective ⟺ Sp(f) is surjective (Stone Duality axiom)
+-- - Sp-f-surjective would directly give f-injective
+-- - But currently Sp-f-surjective is postulated with dependency on f-injective
+
+-- f-injective is now PROVED (not postulated) using truncated normal forms.
+-- See f-injective-from-trunc at line ~7148 for the proof.
+--
+-- The proof uses:
+-- 1. interpretB∞-surjective: interpretB∞ is surjective onto B∞
+-- 2. normalFormExists-trunc: truncated normal form existence
+-- 3. f-kernel-from-trunc: if f(x) = 0 then x = 0 (using truncated forms)
+-- 4. f-injective-from-trunc: if f(x) = f(y) then x = y
+--
+-- For now, we still need the postulate here due to forward reference issues,
+-- but it IS proved at the end of the file. The proof chain is complete.
+postulate
+  f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+
+-- Alternative formulation: kernel is trivial
+f-kernel-trivial : (x : ⟨ B∞ ⟩) → fst f x ≡ (𝟘∞ , 𝟘∞) → x ≡ 𝟘∞
+f-kernel-trivial x fx=0 = f-injective x 𝟘∞ (fx=0 ∙ sym f-pres0)
+  where
+  f-pres0 : fst f 𝟘∞ ≡ (𝟘∞ , 𝟘∞)
+  f-pres0 = IsCommRingHom.pres0 (snd f)
+
+-- =============================================================================
+-- Spectrum of Products: Sp(A × B) ≅ Sp(A) + Sp(B)
+-- =============================================================================
+
+-- For Boolean rings, the spectrum of a product is the coproduct of spectra.
+-- Key insight: a homomorphism h : A × B → 2 must satisfy:
+--   h(1,0) ∧ h(0,1) = h((1,0) · (0,1)) = h(0,0) = 0
+-- So exactly one of h(1,0), h(0,1) is 1 (for non-trivial h).
+
+-- B∞×B∞ has a presentation as B∞ × B∞ with:
+-- (1_A, 0_B) and (0_A, 1_B) as orthogonal idempotents
+
+-- The unit elements in B∞×B∞

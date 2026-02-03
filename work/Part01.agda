@@ -3,9 +3,7 @@
 module work.Part01 where
 
 -- =============================================================================
--- Formalization of "A Foundation for Synthetic Stone Duality"
--- Part 01: Imports, Core Definitions, Open/Closed Props, Markov Basics
--- Lines 1-700 from work.agda
+-- Part 01: work.agda lines 1-641 (foundations, imports, axioms)
 -- =============================================================================
 
 -- Basic imports from Cubical Agda library
@@ -70,10 +68,10 @@ open import Cubical.ZCohomology.Groups.Unit using (isContrHⁿ-Unit; Hⁿ-contrT
 open import Cubical.ZCohomology.Groups.Sn using (H¹-S¹≅ℤ; Hⁿ-Sⁿ≅ℤ)
 open import Cubical.Algebra.AbGroup.Base using (AbGroup; AbGroupStr; IsAbGroup; AbGroup→Group; makeIsAbGroup)
 open import Cubical.Algebra.Group.Base using (Group; GroupStr)
-open import Cubical.Homotopy.Loopspace using (Ω; Ω→; isOfHLevelΩ)
+open import Cubical.Homotopy.Loopspace using (Ω; Ω→)
 open import Cubical.Foundations.Pointed using (Pointed; Pointed₀; _→∙_; pt)
 open import Cubical.HITs.SetTruncation as ST using (∥_∥₂; ∣_∣₂; squash₂)
-open import Cubical.HITs.EilenbergMacLane1 as EM₁ using (EM₁; emloop; embase; isGroupoidEM₁)
+open import Cubical.HITs.EilenbergMacLane1 as EM₁ using (EM₁; emloop; embase)
 
 -- BoolQuotientEquiv: quotient of (⊎.rec f g) equals iterated quotient
 -- NOTE: This is proven in QuotientConclusions.agda. We keep it as a local declaration
@@ -83,7 +81,6 @@ postulate
   BoolQuotientEquiv : (A : BooleanRing ℓ-zero) (f g : ℕ → ⟨ A ⟩) →
     BooleanRing→CommRing (A QB./Im (⊎.rec f g)) ≡
     BooleanRing→CommRing ((A QB./Im f) QB./Im (fst QB.quotientImageHom ∘ g))
-
 -- =============================================================================
 -- Section 1: Preliminaries and Basic Definitions
 -- =============================================================================
@@ -172,6 +169,9 @@ open→hProp = fst
 closed→hProp : Closed → hProp ℓ-zero
 closed→hProp = fst
 
+-- ⊥ and ⊤ as Open/Closed (defined later: ⊥-isOpen, ⊤-isOpen, ⊥-isClosed, ⊤-isClosed)
+-- Meet (∧) and Join (∨) operations on Open/Closed are defined after the basic lemmas
+
 -- =============================================================================
 -- Section 3: Basic properties of Open and Closed propositions
 -- =============================================================================
@@ -243,6 +243,10 @@ decIsClosed P (no ¬p) = (λ _ → true) , (λ p₁ → ex-falso (¬p p₁)) , (
 allFalseIsClosed : (α : binarySequence) → isClosedProp (((n : ℕ) → α n ≡ false) , isPropΠ (λ n → isSetBool (α n) false))
 allFalseIsClosed α = α , (λ p → p) , (λ p → p)
 
+-- Canonical open proposition: (∃n. α n ≡ true) is open with witness α
+-- This is the defining property of open propositions
+-- Note: someTrueIsOpen is defined after the mp postulate (requires MP)
+
 -- Equality in Bool is decidable (hence both open and closed)
 Bool-equality-decidable : (a b : Bool) → Dec (a ≡ b)
 Bool-equality-decidable = _=B_
@@ -265,6 +269,9 @@ Bool-equality-closed a b = decIsClosed ((a ≡ b) , isSetBool a b) (Bool-equalit
 
 -- Equality in CantorSpace (= binarySequence = 2^ℕ) is closed
 -- (Special case of: equality in Stone spaces is closed)
+-- Proof: α = β ↔ ∀n. α n = β n (pointwise equality)
+-- Each (α n = β n) is decidable (Bool has decidable equality)
+-- So α = β is a countable conjunction of decidable propositions, hence closed.
 CantorSpace-equality-closed : (α β : CantorSpace)
                              → isClosedProp ((α ≡ β) , isSetBinarySequence α β)
 CantorSpace-equality-closed α β = γ , forward , backward
@@ -300,6 +307,7 @@ decProd _ _ (yes _) (no ¬q) = no (λ pq → ¬q (snd pq))
 decProd _ _ (yes p) (yes q) = yes (p , q)
 
 -- Coproduct of decidable propositions is decidable (as ∥ P ⊎ Q ∥₁)
+-- Note: Without truncation, P ⊎ Q is not a proposition
 decCoprod : {P Q : Type₀} → isProp P → isProp Q → Dec P → Dec Q → Dec ∥ P ⊎ Q ∥₁
 decCoprod _ _ (yes p) _ = yes ∣ inl p ∣₁
 decCoprod _ _ (no _) (yes q) = yes ∣ inr q ∣₁
@@ -329,6 +337,9 @@ decCoprod _ _ (no ¬p) (no ¬q) = no (PT.rec isProp⊥ λ { (inl p) → ¬p p ; 
 
 -- =============================================================================
 -- Section 6: Markov's Principle (MP)
+--
+-- For all α : 2^ℕ, we have:
+-- ¬(∀ n : ℕ, α n = false) → Σ[ n ∈ ℕ ] α n = true
 -- =============================================================================
 
 -- Markov's Principle type
@@ -337,21 +348,46 @@ MarkovPrinciple = (α : binarySequence) → ¬ ((n : ℕ) → α n ≡ false) �
 
 -- =============================================================================
 -- Section 7: ¬WLPO (Negation of Weak Limited Principle of Omniscience)
+--
+-- ¬ ∀ α : 2^ℕ, ((∀ n, α n = false) ∨ ¬(∀ n, α n = false))
+--
+-- This is proved in WLPO.agda using Stone Duality
 -- =============================================================================
 
 -- Type for WLPO
 WLPO : Type₀
 WLPO = (α : binarySequence) → Dec ((n : ℕ) → α n ≡ false)
 
+-- ¬WLPO follows from Stone Duality (tex Theorem NotWLPO, line 475)
+--
+-- Proof sketch (from WLPO.agda):
+-- 1. Assume f : 2^ℕ → Bool decides "all zeros": f(α) = false ↔ ∀n. αn = false
+-- 2. By Stone Duality (Axiom 1), f is determined by some Boolean term c
+-- 3. The term c uses only finitely many generators g₀, ..., gₖ
+-- 4. Consider β = 0^ω (all zeros) and γ defined by γn = 0 if n ≤ k, else 1
+-- 5. β and γ agree on g₀, ..., gₖ, so f(β) = f(γ)
+-- 6. But f(β) should be false (β is all zeros) and f(γ) should be true
+-- 7. Contradiction: decidable properties can't distinguish infinite tails
+--
+-- This shows that "∀n. αn = false" is not decidable uniformly in α.
+-- The proof is formalized in WLPO.agda using Boolean ring infrastructure.
+
 -- =============================================================================
 -- Section 8: LLPO (Lesser Limited Principle of Omniscience)
+--
+-- For all α : ℕ_∞ (sequences hitting 1 at most once),
+-- (∀ k, α_{2k} = 0) ∨ (∀ k, α_{2k+1} = 0)
 -- =============================================================================
+
+-- ℕ_∞ is the type of sequences hitting true at most once
+-- This corresponds to Sp(B_∞) where B_∞ is generated by (g_n)
+-- with relations g_m ∧ g_n = 0 for m ≠ n
 
 -- A sequence hits true at most once
 hitsAtMostOnce : binarySequence → Type₀
 hitsAtMostOnce α = (m n : ℕ) → α m ≡ true → α n ≡ true → m ≡ n
 
--- hitsAtMostOnce is a proposition
+-- hitsAtMostOnce is a proposition (it's a Π-type into ℕ which is a set)
 isPropHitsAtMostOnce : (α : binarySequence) → isProp (hitsAtMostOnce α)
 isPropHitsAtMostOnce α = isPropΠ λ m → isPropΠ λ n → isPropΠ λ _ → isPropΠ λ _ → isSetℕ m n
 
@@ -368,6 +404,8 @@ LLPO = (α : ℕ∞) → ((k : ℕ) → fst α (2 ·ℕ k) ≡ false) ⊎ ((k : 
 -- =============================================================================
 
 -- The negation of a closed proposition is open (requires Markov's Principle)
+-- If P ↔ ∀ n, α n = false, then ¬P ↔ ∃ n, α n = true
+
 negClosedIsOpen : MarkovPrinciple → (P : hProp ℓ-zero) → isClosedProp P → isOpenProp (¬hProp P)
 negClosedIsOpen mp P (α , P→∀ , ∀→P) = α , forward , backward
   where
@@ -381,7 +419,11 @@ negClosedIsOpen mp P (α , P→∀ , ∀→P) = α , forward , backward
 ¬-Open : Open → Closed
 ¬-Open O = ¬hProp (fst O) , negOpenIsClosed (fst O) (snd O)
 
+-- Bundled negation: Closed → Open (requires MP)
+-- Note: ¬-Closed is defined after the mp postulate
+
 -- ¬¬-stability of closed propositions
+-- If P is closed, then ¬¬P → P
 closedIsStable : (P : hProp ℓ-zero) → isClosedProp P → ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
 closedIsStable P (α , P→∀ , ∀→P) ¬¬p = ∀→P all-false
   where
@@ -391,26 +433,35 @@ closedIsStable P (α , P→∀ , ∀→P) ¬¬p = ∀→P all-false
   ... | no αn≠t = ¬true→false (α n) αn≠t
 
 -- ¬¬-stability of open propositions (requires Markov's Principle)
+-- If P is open, then ¬¬P → P
 openIsStable : MarkovPrinciple → (P : hProp ℓ-zero) → isOpenProp P → ¬ ¬ ⟨ P ⟩ → ⟨ P ⟩
 openIsStable mp P (α , P→∃ , ∃→P) ¬¬p = ∃→P (mp α ¬all-false)
   where
   ¬all-false : ¬ ((n : ℕ) → α n ≡ false)
   ¬all-false all-false = ¬¬p (λ p → false≢true (sym (all-false (fst (P→∃ p))) ∙ snd (P→∃ p)))
 
--- Double negation hProp
+-- Double negation of open proposition is open (requires MP)
+-- P open → ¬P closed → ¬¬P open
 ¬¬hProp : hProp ℓ-zero → hProp ℓ-zero
 ¬¬hProp P = (¬ ¬ ⟨ P ⟩) , isProp¬ (¬ ⟨ P ⟩)
 
 doubleNegOpenIsOpen : MarkovPrinciple → (P : hProp ℓ-zero) → isOpenProp P → isOpenProp (¬¬hProp P)
 doubleNegOpenIsOpen mp P Popen = negClosedIsOpen mp (¬hProp P) (negOpenIsClosed P Popen)
 
+-- Double negation of closed proposition is closed
+-- P closed → ¬P open → ¬¬P closed
 doubleNegClosedIsClosed : MarkovPrinciple → (P : hProp ℓ-zero) → isClosedProp P → isClosedProp (¬¬hProp P)
 doubleNegClosedIsClosed mp P Pclosed = negOpenIsClosed (¬hProp P) (negClosedIsOpen mp P Pclosed)
 
 -- =============================================================================
--- Section 10: Closure properties - Interleaving
+-- Section 10: Closure properties
 -- =============================================================================
 
+-- We use the pairing function from Cubical.Data.Nat to interleave sequences
+-- For simplicity, we use a direct interleaving: γ (2k) = α k, γ (2k+1) = β k
+
+-- Helper definitions (were private in work.agda, made public for module splitting)
+-- Helper: extract the index from an interleaved sequence
 -- Given n, compute whether n = 2k (returning k) or n = 2k+1 (returning k)
 half : ℕ → ℕ
 half zero = zero
@@ -459,7 +510,7 @@ suc-2·half-odd (suc zero) _ = refl
 suc-2·half-odd (suc (suc n)) odd-ssn =
   suc (2 ·ℕ (suc (half n)))      ≡⟨ cong suc (2·suc (half n)) ⟩
   suc (suc (suc (2 ·ℕ (half n)))) ≡⟨ cong (suc ∘ suc) (suc-2·half-odd n odd-ssn) ⟩
-  suc (suc n)                    ∎
+    suc (suc n)                    ∎
 
 -- Interleave two sequences: γ(2k) = α(k), γ(2k+1) = β(k)
 interleave : binarySequence → binarySequence → binarySequence
@@ -524,6 +575,7 @@ closedAnd P Q (α , P→∀α , ∀α→P) (β , Q→∀β , ∀β→Q) = γ , f
     β-zero k = sym (interleave-2k+1 α β k) ∙ all-zero (suc (2 ·ℕ k))
 
 -- Open propositions are closed under finite disjunction (requires Markov's Principle)
+-- The forward direction needs MP to extract a concrete witness from ∥ P ⊎ Q ∥₁
 openOrMP : MarkovPrinciple → (P Q : hProp ℓ-zero) → isOpenProp P → isOpenProp Q
         → isOpenProp (∥ ⟨ P ⟩ ⊎ ⟨ Q ⟩ ∥₁ , squash₁)
 openOrMP mp P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) = γ , forward , backward
@@ -568,61 +620,24 @@ openOrNonTrunc P Q (α , P→∃α , ∃α→P) (β , Q→∃β , ∃β→Q) (in
   let (k , βk=t) = Q→∃β q
   in suc (2 ·ℕ k) , (interleave-2k+1 α β k ∙ βk=t)
 
--- =============================================================================
--- Section 11: SpectrumEmptyImpliesTrivial
--- =============================================================================
+-- Markov's Principle follows from Stone Duality
+-- The proof infrastructure is now available in:
+--   - MarkovLib.emptySp : shows Sp(2/α) is empty when α ≠ 0
+--   - MarkovLib.extract' : converts ∃[n] α n ≡ true → Σ[n] α n ≡ true
+--   - StoneDualityAxiom from Axioms.StoneDuality
+--   - SpEmbedding : StoneDualityAxiom → isEmbedding Sp
+--
+-- Full proof sketch:
+-- 1. If ¬(∀n. αn = false), then Sp(2/α) is empty (MarkovLib.emptySp)
+-- 2. By Stone Duality (Sp is an embedding), Sp(2/α) = ∅ = Sp(trivial) ⟹ 2/α = trivial
+-- 3. Hence 0 = 1 in 2/α, so true ∈ αI (CommRingQuotients.TrivialIdeal.trivialQuotient→1∈I)
+-- 4. By MarkovLib.t∈I→αn and MarkovLib.extract', this gives Σn. αn = true
 
 -- Key lemma: If Sp B is empty and Stone Duality holds, then B is trivial (0 = 1)
-module SpectrumEmptyImpliesTrivial (SD : StoneDualityAxiom) (B : Booleω) (spEmpty : Sp B → ⊥) where
-  open import Axioms.StoneDuality using (evaluationMap)
-
-  -- If Sp B is empty, the type (Sp B → Bool) is contractible (any two functions are equal)
-  emptyFunContr : isContr (Sp B → Bool)
-  emptyFunContr = (λ sp → ex-falso (spEmpty sp)) , λ f → funExt (λ sp → ex-falso (spEmpty sp))
-
-  -- Since evaluationMap B is an equivalence, ⟨ B ⟩ is contractible
-  B-contr : isContr ⟨ fst B ⟩
-  B-contr = isOfHLevelRespectEquiv 0 (invEquiv (evaluationMap B , SD B)) emptyFunContr
-
-  -- 0 = 1 follows from contractibility
-  0≡1-in-B : BooleanRingStr.𝟘 (snd (fst B)) ≡ BooleanRingStr.𝟙 (snd (fst B))
-  0≡1-in-B = isContr→isProp B-contr _ _
+-- Proof idea: evaluationMap B : ⟨ B ⟩ → (Sp B → Bool) is an equivalence.
+-- If Sp B = ∅, then (∅ → Bool) has exactly one element (the empty function).
+-- So ⟨ B ⟩ ≅ {*}, meaning all elements of B are equal, including 0 and 1.
 
 -- =============================================================================
--- Section 12: Helper lemmas for Boolean ring equivalences
+-- Re-exports for subsequent parts (names used in module signatures)
 -- =============================================================================
-
--- Composition of BooleanRing equivalences (adapting CommRingEquiv composition)
-open import Cubical.Algebra.CommRing.Properties using (compCommRingEquiv)
-
-compBoolRingEquiv : (A B C : BooleanRing ℓ-zero)
-                  → BooleanRingEquiv A B → BooleanRingEquiv B C → BooleanRingEquiv A C
-compBoolRingEquiv A B C f g = compCommRingEquiv {A = BooleanRing→CommRing A} {B = BooleanRing→CommRing B} {C = BooleanRing→CommRing C} f g
-
--- Path from BooleanRing path to CommRing path (since BooleanRing→CommRing preserves paths)
-boolRingPath→commRingPath : {A B : BooleanRing ℓ-zero} → A ≡ B → BooleanRing→CommRing A ≡ BooleanRing→CommRing B
-boolRingPath→commRingPath = cong BooleanRing→CommRing
-
--- Convert CommRing path to BooleanRingEquiv for quotients
-open import Cubical.Algebra.CommRing.Univalence using (CommRingPath)
-
-commRingPath→boolRingEquiv : (A B : BooleanRing ℓ-zero)
-  → BooleanRing→CommRing A ≡ BooleanRing→CommRing B
-  → BooleanRingEquiv A B
-commRingPath→boolRingEquiv A B p = commRingEquivToEquiv , snd commRingEquivToEquiv'
-  where
-  -- Convert the path to a CommRing equivalence via CommRingPath
-  commRingEquivToEquiv' : CommRingEquiv (BooleanRing→CommRing A) (BooleanRing→CommRing B)
-  commRingEquivToEquiv' = invEq (CommRingPath _ _) p
-
-  -- Extract the underlying equivalence
-  commRingEquivToEquiv : ⟨ A ⟩ ≃ ⟨ B ⟩
-  commRingEquivToEquiv = fst commRingEquivToEquiv'
-
--- =============================================================================
--- Bool as a Booleω algebra (2 is a countably presented Boolean ring)
--- =============================================================================
-
--- BoolBR (the 2-element Boolean ring) is a Booleω algebra
-Bool-Booleω : Booleω
-Bool-Booleω = BoolBR , ∣ is-cp-2 ∣₁

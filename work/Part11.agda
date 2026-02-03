@@ -2,512 +2,626 @@
 
 module work.Part11 where
 
--- =============================================================================
--- Part 11: normalizeTerm, surjectivity proofs, f-kernel, and ClosedPropAsSpectrum
---          (lines 8500-9500 of work.agda)
--- =============================================================================
+open import work.Part10a public
 
--- Import Part10 for previous definitions
-open import work.Part10 public
-
--- Additional imports needed for this part
-open import Cubical.Foundations.Prelude
-open import Cubical.Foundations.Function using (idfun; _∘_)
-open import Cubical.Foundations.Structure using (⟨_⟩)
-open import Cubical.Foundations.Isomorphism using (iso; isoToEquiv; Iso)
-open Iso
-open import Cubical.Foundations.Equiv using (_≃_; propBiimpl→Equiv; compEquiv)
-open import Cubical.Foundations.Univalence using (ua)
-open import Cubical.Foundations.HLevels using (hProp; isPropΠ; isSetΣSndProp; isSetΠ; isPropIsCommRingHom)
-open import Cubical.Data.Sigma using (Σ≡Prop; _×_)
-open import Cubical.Data.Nat renaming (_+_ to _+ℕ_ ; _·_ to _·ℕ_)
-open import Cubical.Data.Nat.Order
-open import Cubical.Data.Nat.Properties using (discreteℕ; +-suc; +-comm; inj-m+; +-zero; injSuc; snotz; znots)
-open import Cubical.Data.Bool hiding (_≤_ ; _≥_) renaming (_≟_ to _=B_)
-open import Cubical.Data.Empty as ⊥ renaming (rec to ex-falso)
-open import Cubical.Data.Sum as ⊎
-open import Cubical.Data.List
-open import Cubical.Data.Unit
-open import Cubical.HITs.PropositionalTruncation as PT using (∥_∥₁; ∣_∣₁; squash₁)
-open import Cubical.Relation.Nullary
-
-open import Cubical.Algebra.CommRing
-import QuotientBool as QB
-open import Cubical.Algebra.BooleanRing
-open import Cubical.Algebra.BooleanRing.Instances.Bool using (BoolBR)
-open import BooleanRing.FreeBooleanRing.FreeBool using (freeBA; generator; inducedBAHom; evalBAInduce; inducedBAHomUnique)
-open import CountablyPresentedBooleanRings.PresentedBoole using (has-Boole-ω'; BooleanRingEquiv; idBoolEquiv; has-Countability-structure; idBoolHom)
-open import Axioms.StoneDuality using (Sp; Booleω; hasStoneStr; Stone; SpGeneralBooleanRing; isSetSp)
-open import BooleanRing.FreeBooleanRing.SurjectiveTerms using (TermsOf_[_]; Tvar; Tconst; _+T_; -T_; _·T_; includeTerm)
-open import BooleanRing.FreeBooleanRing.freeBATerms using (freeBATerms; includeBATermsSurj; equalityFromEqualityOnGenerators;
-  includeBATerms-Tvar; includeBATerms-+; includeBATerms-·; includeBATerms--; includeBATerms-0; includeBATerms-1)
-open import Cubical.Functions.Surjection using (isSurjection; compSurjection; _↠_)
-
--- Open BooleanRingStr for B∞×B∞
-open BooleanRingStr (snd B∞×B∞) using () renaming (_·_ to _·×_ ; _+_ to _+×_)
-
--- _+∞_ and -∞ needed locally
-open BooleanRingStr (snd B∞) using () renaming (_+_ to _+∞_ ; -_ to -∞_)
+-- Qualified import for PT.rec etc.
+import Cubical.HITs.PropositionalTruncation as PT
 
 -- =============================================================================
--- normalizeTerm function (lines 8485-8505)
+-- Part 11: work.agda lines 12801-13413 (BooleEpiMono, CHaus modules)
 -- =============================================================================
 
--- Normalize a term to a normal form
-normalizeTerm : freeBATerms ℕ → B∞-NormalForm
-normalizeTerm (Tvar n) = joinForm (n ∷ [])
-normalizeTerm (Tconst false) = joinForm []
-normalizeTerm (Tconst true) = meetNegForm []
-normalizeTerm (t +T s) = xor-nf (normalizeTerm t) (normalizeTerm s)
-normalizeTerm (-T t) = normalizeTerm t
-normalizeTerm (t ·T s) = meet-nf (normalizeTerm t) (normalizeTerm s)
+module BooleEpiMonoModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+
+  -- Morphisms in Boole: BoolHom (fst B) (fst C)
+  -- The key facts about epi-mono factorization in Boole:
+  -- 1. Any g : B → C has an overtly discrete kernel
+  -- 2. Ker(g) is enumerable (countable)
+  -- 3. B/Ker(g) is in Boole
+  -- 4. Factorization B ↠ B/Ker(g) ↪ C corresponds to
+  --    Sp(C) ↠ Sp(B/Ker(g)) ↪ Sp(B)
+  -- 5. Surjections in Boole ↔ closed embeddings of spectra
+
+  -- The main result we need: surjections in Boole give closed embeddings of spectra
+  -- This is stated more precisely with explicit type arguments to avoid inference issues.
+  postulate
+    -- For surjective g : B → C, the induced Sp(C) → Sp(B) is a closed embedding
+    -- This means: the image of Sp(C) in Sp(B) is a closed subset
+    SurjInBoole→ClosedImage : (B C : Booleω)
+      → (g : BoolHom (fst B) (fst C))
+      → ((c : ⟨ fst C ⟩) → ∥ Σ[ b ∈ ⟨ fst B ⟩ ] fst g b ≡ c ∥₁)  -- g is surjective
+      → (x : Sp B) → isClosedProp (∥ Σ[ y ∈ Sp C ] y ∘cr g ≡ x ∥₁ , squash₁)
 
 -- =============================================================================
--- normalizeTerm correctness proof (lines 8507-8600)
--- =============================================================================
-
--- Direct interpretation into B∞
-interpretB∞ : freeBATerms ℕ → ⟨ B∞ ⟩
-interpretB∞ (Tvar n) = g∞ n
-interpretB∞ (Tconst false) = 𝟘∞
-interpretB∞ (Tconst true) = 𝟙∞
-interpretB∞ (t +T s) = interpretB∞ t +∞ interpretB∞ s
-interpretB∞ (-T t) = -∞ interpretB∞ t
-interpretB∞ (t ·T s) = interpretB∞ t ·∞ interpretB∞ s
-
--- Negation is identity in Boolean rings
-negation-is-id-B∞ : (x : ⟨ B∞ ⟩) → -∞ x ≡ x
-negation-is-id-B∞ x =
-  -∞ x
-    ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) (-∞ x)) ⟩
-  -∞ x +∞ 𝟘∞
-    ≡⟨ cong (-∞ x +∞_) (sym (char2-B∞ x)) ⟩
-  -∞ x +∞ (x +∞ x)
-    ≡⟨ BooleanRingStr.+Assoc (snd B∞) (-∞ x) x x ⟩
-  (-∞ x +∞ x) +∞ x
-    ≡⟨ cong (_+∞ x) (BooleanRingStr.+InvL (snd B∞) x) ⟩
-  𝟘∞ +∞ x
-    ≡⟨ BooleanRingStr.+IdL (snd B∞) x ⟩
-  x ∎
-
--- Main correctness theorem: normalizeTerm is correct
-normalizeTerm-correct : (t : freeBATerms ℕ) → ⟦ normalizeTerm t ⟧nf ≡ interpretB∞ t
-normalizeTerm-correct (Tvar n) =
-  finJoin∞ (n ∷ [])
-    ≡⟨ refl ⟩
-  g∞ n ∨∞ finJoin∞ []
-    ≡⟨ zero-join-right (g∞ n) ⟩
-  g∞ n ∎
-normalizeTerm-correct (Tconst false) = refl
-normalizeTerm-correct (Tconst true) = refl
-normalizeTerm-correct (t +T s) =
-  ⟦ xor-nf (normalizeTerm t) (normalizeTerm s) ⟧nf
-    ≡⟨ xor-nf-correct (normalizeTerm t) (normalizeTerm s) ⟩
-  ⟦ normalizeTerm t ⟧nf +∞ ⟦ normalizeTerm s ⟧nf
-    ≡⟨ cong₂ _+∞_ (normalizeTerm-correct t) (normalizeTerm-correct s) ⟩
-  interpretB∞ t +∞ interpretB∞ s ∎
-normalizeTerm-correct (-T t) =
-  ⟦ normalizeTerm t ⟧nf
-    ≡⟨ normalizeTerm-correct t ⟩
-  interpretB∞ t
-    ≡⟨ sym (negation-is-id-B∞ (interpretB∞ t)) ⟩
-  -∞ interpretB∞ t ∎
-normalizeTerm-correct (t ·T s) =
-  ⟦ meet-nf (normalizeTerm t) (normalizeTerm s) ⟧nf
-    ≡⟨ meet-nf-correct (normalizeTerm t) (normalizeTerm s) ⟩
-  ⟦ normalizeTerm t ⟧nf ∧∞ ⟦ normalizeTerm s ⟧nf
-    ≡⟨ cong₂ _∧∞_ (normalizeTerm-correct t) (normalizeTerm-correct s) ⟩
-  interpretB∞ t ∧∞ interpretB∞ s
-    ≡⟨ refl ⟩
-  interpretB∞ t ·∞ interpretB∞ s ∎
-
--- =============================================================================
--- Connection to quotient map and surjectivity (lines 8600-8750)
--- =============================================================================
-
--- The homomorphism from terms to B∞
-termHom : freeBATerms ℕ → ⟨ B∞ ⟩
-termHom = interpretB∞
-
--- Normal form exists for any element in the image of termHom
-normalForm-from-term : (t : freeBATerms ℕ) → Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ termHom t
-normalForm-from-term t = normalizeTerm t , normalizeTerm-correct t
-
--- The quotient map π∞ is surjective
-π∞-surj : isSurjection (fst π∞)
-π∞-surj = QB.quotientImageHomSurjective
-
--- The composition π∞ ∘ includeBATermsSurj is surjective
-π∞-includeTerms-surj : isSurjection (fst π∞ ∘ fst includeBATermsSurj)
-π∞-includeTerms-surj = compSurjection (fst includeBATermsSurj , snd includeBATermsSurj) (fst π∞ , π∞-surj) .snd
-
--- Define the composition for clarity
-π∞-from-terms : freeBATerms ℕ → ⟨ B∞ ⟩
-π∞-from-terms t = fst π∞ (fst includeBATermsSurj t)
-
--- π∞ preservation properties
-private
-  open module π∞-hom = IsCommRingHom (snd π∞) renaming
-    (pres+ to π∞-+' ; pres· to π∞-·' ; pres- to π∞-neg' ; pres0 to π∞-0' ; pres1 to π∞-1')
-  π∞-0 : fst π∞ (BooleanRingStr.𝟘 (snd (freeBA ℕ))) ≡ 𝟘∞
-  π∞-0 = π∞-0'
-  π∞-1 : fst π∞ (BooleanRingStr.𝟙 (snd (freeBA ℕ))) ≡ 𝟙∞
-  π∞-1 = π∞-1'
-  π∞-+ : (x y : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr._+_ (snd (freeBA ℕ)) x y) ≡ fst π∞ x +∞ fst π∞ y
-  π∞-+ = π∞-+'
-  π∞-· : (x y : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr._·_ (snd (freeBA ℕ)) x y) ≡ fst π∞ x ·∞ fst π∞ y
-  π∞-· = π∞-·'
-  π∞-neg : (x : ⟨ freeBA ℕ ⟩) → fst π∞ (BooleanRingStr.-_ (snd (freeBA ℕ)) x) ≡ -∞ fst π∞ x
-  π∞-neg = π∞-neg'
-
--- The equality proof: interpretB∞ = π∞ ∘ includeBATermsSurj
-interpretB∞-eq-composition : (t : freeBATerms ℕ) → interpretB∞ t ≡ π∞-from-terms t
-interpretB∞-eq-composition (Tvar n) =
-  g∞ n
-    ≡⟨ refl ⟩
-  fst π∞ (generator n)
-    ≡⟨ cong (fst π∞) (sym (includeBATerms-Tvar n)) ⟩
-  fst π∞ (fst includeBATermsSurj (Tvar n)) ∎
-interpretB∞-eq-composition (Tconst false) =
-  𝟘∞
-    ≡⟨ sym π∞-0 ⟩
-  fst π∞ (BooleanRingStr.𝟘 (snd (freeBA ℕ)))
-    ≡⟨ cong (fst π∞) (sym includeBATerms-0) ⟩
-  fst π∞ (fst includeBATermsSurj (Tconst false)) ∎
-interpretB∞-eq-composition (Tconst true) =
-  𝟙∞
-    ≡⟨ sym π∞-1 ⟩
-  fst π∞ (BooleanRingStr.𝟙 (snd (freeBA ℕ)))
-    ≡⟨ cong (fst π∞) (sym includeBATerms-1) ⟩
-  fst π∞ (fst includeBATermsSurj (Tconst true)) ∎
-interpretB∞-eq-composition (t +T s) =
-  interpretB∞ t +∞ interpretB∞ s
-    ≡⟨ cong₂ _+∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ⟩
-  π∞-from-terms t +∞ π∞-from-terms s
-    ≡⟨ sym (π∞-+ (fst includeBATermsSurj t) (fst includeBATermsSurj s)) ⟩
-  fst π∞ (BooleanRingStr._+_ (snd (freeBA ℕ)) (fst includeBATermsSurj t) (fst includeBATermsSurj s))
-    ≡⟨ cong (fst π∞) (sym (includeBATerms-+ t s)) ⟩
-  π∞-from-terms (t +T s) ∎
-interpretB∞-eq-composition (-T t) =
-  -∞ interpretB∞ t
-    ≡⟨ cong -∞_ (interpretB∞-eq-composition t) ⟩
-  -∞ π∞-from-terms t
-    ≡⟨ sym (π∞-neg (fst includeBATermsSurj t)) ⟩
-  fst π∞ (BooleanRingStr.-_ (snd (freeBA ℕ)) (fst includeBATermsSurj t))
-    ≡⟨ cong (fst π∞) (sym (includeBATerms-- t)) ⟩
-  π∞-from-terms (-T t) ∎
-interpretB∞-eq-composition (t ·T s) =
-  interpretB∞ t ·∞ interpretB∞ s
-    ≡⟨ cong₂ _·∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ⟩
-  π∞-from-terms t ·∞ π∞-from-terms s
-    ≡⟨ sym (π∞-· (fst includeBATermsSurj t) (fst includeBATermsSurj s)) ⟩
-  fst π∞ (BooleanRingStr._·_ (snd (freeBA ℕ)) (fst includeBATermsSurj t) (fst includeBATermsSurj s))
-    ≡⟨ cong (fst π∞) (sym (includeBATerms-· t s)) ⟩
-  π∞-from-terms (t ·T s) ∎
-
--- interpretB∞ is surjective
-interpretB∞-surjective : isSurjection interpretB∞
-interpretB∞-surjective x = PT.map helper (π∞-includeTerms-surj x)
-  where
-  helper : Σ[ t ∈ freeBATerms ℕ ] π∞-from-terms t ≡ x → Σ[ t ∈ freeBATerms ℕ ] interpretB∞ t ≡ x
-  helper pair = fst pair , interpretB∞-eq-composition (fst pair) ∙ snd pair
-
--- B∞-NormalForm is a set
-open import Cubical.Data.List using (isOfHLevelList)
-open import Cubical.Data.Nat using (isSetℕ)
-
-isSetListℕ : isSet (List ℕ)
-isSetListℕ = isOfHLevelList 0 isSetℕ
-
-isSetB∞-NormalForm : isSet B∞-NormalForm
-isSetB∞-NormalForm = Discrete→isSet discreteNF
-  where
-  open import Cubical.Relation.Nullary using (Discrete; yes; no; Dec)
-  open import Cubical.Data.List using (discreteList)
-  open import Cubical.Data.Nat using (discreteℕ)
-
-  discreteListℕ : Discrete (List ℕ)
-  discreteListℕ = discreteList discreteℕ
-
-  discreteNF : Discrete B∞-NormalForm
-  discreteNF (joinForm ns) (joinForm ms) with discreteListℕ ns ms
-  ... | yes p = yes (cong joinForm p)
-  ... | no ¬p = no (λ eq → ¬p (joinForm-inj eq))
-    where
-    joinForm-inj : joinForm ns ≡ joinForm ms → ns ≡ ms
-    joinForm-inj p = cong (λ { (joinForm x) → x ; (meetNegForm _) → [] }) p
-  discreteNF (joinForm _) (meetNegForm _) = no (λ p → joinForm≢meetNegForm p)
-    where
-    joinForm≢meetNegForm : ∀ {ns ms} → joinForm ns ≡ meetNegForm ms → ⊥.⊥
-    joinForm≢meetNegForm p = transport (cong (λ { (joinForm _) → Unit ; (meetNegForm _) → ⊥.⊥ }) p) tt
-  discreteNF (meetNegForm _) (joinForm _) = no (λ p → meetNegForm≢joinForm p)
-    where
-    meetNegForm≢joinForm : ∀ {ns ms} → meetNegForm ns ≡ joinForm ms → ⊥.⊥
-    meetNegForm≢joinForm p = transport (cong (λ { (joinForm _) → ⊥.⊥ ; (meetNegForm _) → Unit }) p) tt
-  discreteNF (meetNegForm ns) (meetNegForm ms) with discreteListℕ ns ms
-  ... | yes p = yes (cong meetNegForm p)
-  ... | no ¬p = no (λ eq → ¬p (meetNegForm-inj eq))
-    where
-    meetNegForm-inj : meetNegForm ns ≡ meetNegForm ms → ns ≡ ms
-    meetNegForm-inj p = cong (λ { (joinForm _) → [] ; (meetNegForm x) → x }) p
-
--- Truncated version: every element has some normal form (truncated)
-normalFormExists-trunc : (x : ⟨ B∞ ⟩) → ∥ Σ[ nf ∈ B∞-NormalForm ] ⟦ nf ⟧nf ≡ x ∥₁
-normalFormExists-trunc x = PT.map
-  (λ pair → normalizeTerm (fst pair) , normalizeTerm-correct (fst pair) ∙ snd pair)
-  (interpretB∞-surjective x)
-
--- =============================================================================
--- f-kernel using truncated normal forms (lines 9040-9098)
--- =============================================================================
-
--- f-kernel: if f(x) = (0,0), then x = 0
-f-kernel-from-trunc : (x : ⟨ B∞ ⟩) → fst f x ≡ (𝟘∞ , 𝟘∞) → x ≡ 𝟘∞
-f-kernel-from-trunc x fx=0 = PT.rec (BooleanRingStr.is-set (snd B∞) x 𝟘∞)
-  (λ pair → let nf = fst pair
-                eq = snd pair
-            in sym eq ∙ f-kernel-normalForm nf (cong (fst f) eq ∙ fx=0))
-  (normalFormExists-trunc x)
-
--- f-injective using the truncated approach
-f-injective-from-trunc : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
-f-injective-from-trunc x y fx=fy =
-  let xy-diff : ⟨ B∞ ⟩
-      xy-diff = x +∞ y
-
-      f-xy-diff : fst f xy-diff ≡ (𝟘∞ , 𝟘∞)
-      f-xy-diff =
-        fst f (x +∞ y)
-          ≡⟨ f-pres+ x y ⟩
-        (fst f x) +× (fst f y)
-          ≡⟨ cong (_+× (fst f y)) fx=fy ⟩
-        (fst f y) +× (fst f y)
-          ≡⟨ char2-B∞×B∞ (fst f y) ⟩
-        (𝟘∞ , 𝟘∞) ∎
-
-      xy=0 : xy-diff ≡ 𝟘∞
-      xy=0 = f-kernel-from-trunc xy-diff f-xy-diff
-
-      x=y : x ≡ y
-      x=y = BooleanRing-xor-eq-to-eq' x y xy=0
-
-  in x=y
-  where
-  BooleanRing-xor-eq-to-eq' : (a b : ⟨ B∞ ⟩) → a +∞ b ≡ 𝟘∞ → a ≡ b
-  BooleanRing-xor-eq-to-eq' a b ab=0 =
-    a
-      ≡⟨ sym (BooleanRingStr.+IdR (snd B∞) a) ⟩
-    a +∞ 𝟘∞
-      ≡⟨ cong (a +∞_) (sym (char2-B∞ b)) ⟩
-    a +∞ (b +∞ b)
-      ≡⟨ BooleanRingStr.+Assoc (snd B∞) a b b ⟩
-    (a +∞ b) +∞ b
-      ≡⟨ cong (_+∞ b) ab=0 ⟩
-    𝟘∞ +∞ b
-      ≡⟨ BooleanRingStr.+IdL (snd B∞) b ⟩
-    b ∎
-
--- Verification that f-injective can be replaced by f-injective-from-trunc
-f-injective-verified : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
-f-injective-verified = f-injective-from-trunc
-
--- =============================================================================
--- ClosedPropAsSpectrum (tex Lemma 251) (lines 9174-9276)
--- =============================================================================
-
-module ClosedPropAsSpectrum where
-  open import Cubical.Algebra.CommRing.Quotient.ImageQuotient as IQ
-
-  -- The quotient ring BoolBR /Im α
-  BoolBR-quotient : binarySequence → BooleanRing ℓ-zero
-  BoolBR-quotient α = BoolBR QB./Im α
-
-  -- Forward: all false → spectrum is inhabited
-  all-false→Sp : (α : binarySequence) → ((n : ℕ) → α n ≡ false)
-               → BoolHom (BoolBR-quotient α) BoolBR
-  all-false→Sp α all-false = QB.inducedHom {B = BoolBR} {f = α} BoolBR id-hom α-to-0
-    where
-    id-hom : BoolHom BoolBR BoolBR
-    id-hom = idBoolHom BoolBR
-
-    α-to-0 : (n : ℕ) → id-hom $cr (α n) ≡ BooleanRingStr.𝟘 (snd BoolBR)
-    α-to-0 n = all-false n
-
-  -- Backward: spectrum inhabited → all false
-  Sp→all-false : (α : binarySequence) → BoolHom (BoolBR-quotient α) BoolBR
-               → ((n : ℕ) → α n ≡ false)
-  Sp→all-false α h n = αn-is-false (α n) refl
-    where
-    open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1)
-
-    π : ⟨ BoolBR ⟩ → ⟨ BoolBR-quotient α ⟩
-    π = fst QB.quotientImageHom
-
-    h-π-αn≡0 : fst h (π (α n)) ≡ false
-    h-π-αn≡0 = cong (fst h) (QB.zeroOnImage {B = BoolBR} {f = α} n) ∙ h-pres0
-
-    αn-is-false : (b : Bool) → α n ≡ b → b ≡ false
-    αn-is-false false _ = refl
-    αn-is-false true αn≡true = ex-falso (true≢false contradiction)
-      where
-      open IsCommRingHom (snd QB.quotientImageHom) renaming (pres1 to π-pres1)
-
-      h-π-αn≡true : fst h (π (α n)) ≡ true
-      h-π-αn≡true = cong (λ x → fst h (π x)) αn≡true
-                  ∙ cong (fst h) π-pres1
-                  ∙ h-pres1
-
-      contradiction : true ≡ false
-      contradiction = sym h-π-αn≡true ∙ h-π-αn≡0
-
-  -- The equivalence: (∀n. αn = false) ↔ Sp(BoolBR /Im α)
-  closedPropAsSpectrum : (α : binarySequence)
-                       → ((n : ℕ) → α n ≡ false) ↔ BoolHom (BoolBR-quotient α) BoolBR
-  closedPropAsSpectrum α = all-false→Sp α , Sp→all-false α
-
-open ClosedPropAsSpectrum public
-
--- =============================================================================
--- ClosedPropIffStone (tex Corollary 1628) (lines 9277-9529)
+-- Compact Hausdorff Spaces (tex Definition at line 1898)
 -- =============================================================================
 --
--- A proposition P is closed if and only if it is a Stone space.
+-- A type X is called a compact Hausdorff space (CHaus) if:
+-- 1. Its identity types are closed propositions
+-- 2. There exists some S : Stone with a surjection S ↠ X
+--
+-- Equivalently: CHaus spaces are precisely quotients of Stone spaces
+-- by closed equivalence relations.
 
-module ClosedPropIffStone where
-  open import Axioms.StoneDuality using (hasStoneStr; Stone; SpGeneralBooleanRing; isSetSp)
-  open ClosedPropAsSpectrum
+module CompactHausdorffModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
 
-  -- quotientPreservesBooleω is proven in work.agda at line 794
-  -- It's a complex proof that requires additional infrastructure
-  postulate
-    quotientPreservesBooleω : (α : binarySequence) → ∥ has-Boole-ω' (BoolBR QB./Im α) ∥₁
+  -- Definition: A type has CHaus structure if
+  -- 1. X is a set (equivalent to: equality is closed)
+  -- 2. Equality is closed (x =_X y is closed for all x,y : X)
+  -- 3. There exists a Stone space with a surjection onto X
+  --
+  -- Note: We include isSetX explicitly because isClosedProp requires isProp,
+  -- and we need to construct the hProp (x ≡ y , isSetX x y) first.
+  -- In the tex, being closed implies being a set, but we make this explicit.
 
-  -- A closed proposition has Stone structure
-  -- We show that if P ↔ (∀n. αn = false), then P ↔ Sp(BoolBR /Im α)
-  -- and BoolBR /Im α is a Booleω
+  record hasCHausStr (X : Type₀) : Type₁ where
+    field
+      isSetX : isSet X
+      equalityClosed : (x y : X) → isClosedProp ((x ≡ y) , isSetX x y)
+      stoneCover : ∥ Σ[ S ∈ Stone ] Σ[ q ∈ (fst S → X) ] isSurjection q ∥₁
 
-  closedProp→hasStoneStr : (P : hProp ℓ-zero) → isClosedProp P → hasStoneStr (fst P)
-  closedProp→hasStoneStr P Pclosed = Booleω-P , Sp-eq
+  CHaus : Type₁
+  CHaus = Σ[ X ∈ Type₀ ] hasCHausStr X
+
+  -- Stone spaces are CHaus
+  -- Proof: Stone spaces have closed equality (StoneEqualityClosed)
+  -- and the identity map from themselves is a surjection.
+  Stone→CHaus : Stone → CHaus
+  Stone→CHaus S = fst S , record
+    { isSetX = hasStoneStr→isSet S
+    ; equalityClosed = StoneEqualityClosed S
+    ; stoneCover = ∣ S , (λ x → x) , (λ x → ∣ x , refl ∣₁) ∣₁
+    }
     where
-    -- Extract the witness α from the closed structure
-    α : binarySequence
-    α = fst Pclosed
+    open StoneEqualityClosedModule
 
-    -- P ↔ (∀n. αn = false)
-    P→all-false : fst P → ((n : ℕ) → α n ≡ false)
-    P→all-false = fst (snd Pclosed)
+  -- A subset of a CHaus space
+  ClosedSubsetOfCHaus : CHaus → Type₁
+  ClosedSubsetOfCHaus X = Σ[ A ∈ (fst X → hProp ℓ-zero) ] ((x : fst X) → isClosedProp (A x))
 
-    all-false→P : ((n : ℕ) → α n ≡ false) → fst P
-    all-false→P = snd (snd Pclosed)
+-- =============================================================================
+-- CompactHausdorffClosed (tex Lemma 1906)
+-- =============================================================================
+--
+-- Let X : CHaus, S : Stone, and q : S ↠ X surjective.
+-- Then A ⊆ X is closed iff it is the image of a closed subset of S by q.
+--
+-- Proof outline:
+-- (→) If A is closed, then q⁻¹(A) is closed. Since q is surjective, q(q⁻¹(A)) = A.
+-- (←) If B ⊆ S is closed, then x ∈ q(B) iff ∃_{s:S} (B(s) ∧ q(s) = x).
+--     By InhabitedClosedSubSpaceClosed, q(B) is closed.
 
-    -- The quotient ring
-    B-quotient : BooleanRing ℓ-zero
-    B-quotient = BoolBR-quotient α
+module CompactHausdorffClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedModule
 
-    -- The spectrum of the quotient
-    Sp-quotient : Type ℓ-zero
-    Sp-quotient = BoolHom B-quotient BoolBR
+  -- Note: preimageClosedIsClosed already defined at line ~3321
 
-    -- From ClosedPropAsSpectrum: (∀n. αn = false) ↔ Sp(BoolBR /Im α)
-    all-false↔Sp : ((n : ℕ) → α n ≡ false) ↔ Sp-quotient
-    all-false↔Sp = closedPropAsSpectrum α
+  -- The main characterization of closed subsets in CHaus
+  -- Backward direction: if B is closed in S, then q(B) is closed in X
+  -- Proof: For fixed x, A_x(s) = B(s) ∧ (q s ≡ x) is closed in S
+  -- Then ∥ Σ s. A_x(s) ∥₁ is closed by InhabitedClosedSubSpaceClosed
+  CompactHausdorffClosed-backward : (X : CHaus) (S : Stone)
+    → (q : fst S → fst X) → isSurjection q
+    → (B : fst S → hProp ℓ-zero) → ((s : fst S) → isClosedProp (B s))
+    → (x : fst X) → isClosedProp (∥ Σ[ s ∈ fst S ] fst (B s) × (q s ≡ x) ∥₁ , squash₁)
+  CompactHausdorffClosed-backward X S q q-surj B B-closed x = InhabitedClosedSubSpaceClosed S Aₓ Aₓ-closed
+    where
+    open hasCHausStr (snd X)
+    -- For fixed x, define Aₓ(s) = B(s) ∧ (q s ≡ x)
+    Aₓ : fst S → hProp ℓ-zero
+    Aₓ s = (fst (B s) × (q s ≡ x)) , isProp× (snd (B s)) (isSetX (q s) x)
 
-    -- P ↔ Sp-quotient (composing the biconditionals)
-    P→Sp : fst P → Sp-quotient
-    P→Sp p = fst all-false↔Sp (P→all-false p)
+    -- Aₓ(s) is closed: B(s) is closed and (q s ≡ x) is closed in X
+    Aₓ-closed : (s : fst S) → isClosedProp (Aₓ s)
+    Aₓ-closed s = closedAnd (B s) ((q s ≡ x) , isSetX (q s) x) (B-closed s) (equalityClosed (q s) x)
 
-    Sp→P : Sp-quotient → fst P
-    Sp→P h = all-false→P (snd all-false↔Sp h)
+-- =============================================================================
+-- InhabitedClosedSubSpaceClosedCHaus (tex Corollary 1930)
+-- =============================================================================
+--
+-- For X : CHaus with A ⊆ X closed, ∃_{x:X} A(x) is closed and equivalent to A ≠ ∅.
 
-    -- The quotient is a Booleω
-    B-quotient-Booleω : Booleω
-    B-quotient-Booleω = B-quotient , quotientPreservesBooleω α
+module InhabitedClosedSubSpaceClosedCHausModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+  open CompactHausdorffModule
+  open TruncationStoneClosedComplete
+  open InhabitedClosedSubSpaceClosedModule
+  open ClosedInStoneIsStoneModule
+  open StoneEqualityClosedModule using (isPropIsClosedProp)
 
-    -- P is an hProp by assumption
-    isPropP : isProp (fst P)
-    isPropP = snd P
+  -- The main theorem: existence of element in closed subset is closed
+  -- Proof:
+  -- 1. CHaus X has a Stone cover S with surjection q : S ↠ X
+  -- 2. Define B(s) = A(q(s)) - closed in S by preimageClosedIsClosed
+  -- 3. ∥ Σ S B ∥₁ is closed by InhabitedClosedSubSpaceClosed
+  -- 4. ∥ Σ S B ∥₁ ↔ ∥ Σ X A ∥₁ by surjectivity of q
+  InhabitedClosedSubSpaceClosedCHaus : (X : CHaus)
+    → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
+    → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+  InhabitedClosedSubSpaceClosedCHaus X A A-closed =
+    PT.rec (isPropIsClosedProp {∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁}) construct (hasCHausStr.stoneCover (snd X))
+    where
+    open hasCHausStr (snd X)
 
-    -- Sp-quotient is an hSet
-    isSetSp-quotient : isSet Sp-quotient
-    isSetSp-quotient = isSetSp B-quotient
-
-    -- The intermediate type is a proposition
-    all-false-type : Type ℓ-zero
-    all-false-type = (n : ℕ) → α n ≡ false
-
-    isProp-all-false : isProp all-false-type
-    isProp-all-false = isPropΠ (λ n → isSetBool (α n) false)
-
-    -- P ≃ all-false-type (since P is equivalent via biconditional and both are props)
-    P≃all-false : fst P ≃ all-false-type
-    P≃all-false = propBiimpl→Equiv isPropP isProp-all-false P→all-false all-false→P
-
-    -- The round-trip identity for Sp-quotient
-    Sp-roundtrip : (h : Sp-quotient) → fst all-false↔Sp (snd all-false↔Sp h) ≡ h
-    Sp-roundtrip h = QB.inducedHomUnique {B = BoolBR} {f = α} BoolBR id-hom α-to-0 h h-comp
+    construct : Σ[ S ∈ Stone ] Σ[ q ∈ (fst S → fst X) ] isSurjection q
+              → isClosedProp (∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁)
+    construct (S , q , q-surj) = closedEquiv ∥ΣSB∥₁ ∥ΣXA∥₁ forward backward ∥ΣSB∥₁-closed
       where
+      -- Define B(s) = A(q(s))
+      B : fst S → hProp ℓ-zero
+      B s = A (q s)
 
-      id-hom : BoolHom BoolBR BoolBR
-      id-hom = idBoolHom BoolBR
+      -- B is closed (preimage of closed is closed)
+      B-closed : (s : fst S) → isClosedProp (B s)
+      B-closed s = A-closed (q s)
 
-      -- The proof that all αn = false, extracted from h
-      all-false-from-h : (n : ℕ) → α n ≡ false
-      all-false-from-h = snd all-false↔Sp h
+      -- ∥ Σ S B ∥₁ is closed
+      ∥ΣSB∥₁ : hProp ℓ-zero
+      ∥ΣSB∥₁ = ∥ Σ[ s ∈ fst S ] fst (B s) ∥₁ , squash₁
 
-      -- α maps to 0 under id-hom (since all αn = false)
-      α-to-0 : (n : ℕ) → id-hom $cr (α n) ≡ BooleanRingStr.𝟘 (snd BoolBR)
-      α-to-0 n = all-false-from-h n
+      ∥ΣSB∥₁-closed : isClosedProp ∥ΣSB∥₁
+      ∥ΣSB∥₁-closed = InhabitedClosedSubSpaceClosed S B B-closed
 
-      -- We need to show id-hom ≡ (h ∘cr QB.quotientImageHom)
-      π : ⟨ BoolBR ⟩ → ⟨ B-quotient ⟩
-      π = fst QB.quotientImageHom
+      -- ∥ Σ X A ∥₁
+      ∥ΣXA∥₁ : hProp ℓ-zero
+      ∥ΣXA∥₁ = ∥ Σ[ x ∈ fst X ] fst (A x) ∥₁ , squash₁
 
-      open IsCommRingHom (snd h) renaming (pres0 to h-pres0 ; pres1 to h-pres1)
-      open IsCommRingHom (snd QB.quotientImageHom) renaming (pres0 to π-pres0 ; pres1 to π-pres1)
+      -- Forward: ∥ Σ S B ∥₁ → ∥ Σ X A ∥₁
+      forward : fst ∥ΣSB∥₁ → fst ∥ΣXA∥₁
+      forward = PT.map (λ { (s , Bs) → q s , Bs })
 
-      h∘π-on-false : fst h (π false) ≡ false
-      h∘π-on-false = cong (fst h) π-pres0 ∙ h-pres0
+      -- Backward: ∥ Σ X A ∥₁ → ∥ Σ S B ∥₁ (using surjectivity)
+      backward : fst ∥ΣXA∥₁ → fst ∥ΣSB∥₁
+      backward = PT.rec squash₁ (λ { (x , Ax) →
+        PT.map (λ { (s , qs≡x) → s , subst (λ y → fst (A y)) (sym qs≡x) Ax }) (q-surj x) })
 
-      h∘π-on-true : fst h (π true) ≡ true
-      h∘π-on-true = cong (fst h) π-pres1 ∙ h-pres1
+-- =============================================================================
+-- AllOpenSubspaceOpen (tex Corollary 1967)
+-- =============================================================================
+--
+-- For X : CHaus with U ⊆ X open, ∀_{x:X} U(x) is open.
+--
+-- Proof: ¬U is closed, so ∃_{x:X} ¬U(x) is closed.
+-- Therefore ¬(∃_{x:X} ¬U(x)) is open.
+-- This equals ∀_{x:X} ¬¬U(x) = ∀_{x:X} U(x) (using openness of U).
 
-      h∘π≡id-pointwise : (b : Bool) → fst h (π b) ≡ b
-      h∘π≡id-pointwise false = h∘π-on-false
-      h∘π≡id-pointwise true = h∘π-on-true
+module AllOpenSubspaceOpenModule where
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedCHausModule
 
-      h-comp : id-hom ≡ (h ∘cr QB.quotientImageHom)
-      h-comp = Σ≡Prop (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing BoolBR)) f
-                                                  (snd (BooleanRing→CommRing BoolBR)))
-                      (sym (funExt h∘π≡id-pointwise))
+  -- Proved using the proof from tex:
+  -- 1. ¬U(x) is closed for each x (since U(x) is open)
+  -- 2. ∃_{x:X} ¬U(x) is closed (by InhabitedClosedSubSpaceClosedCHaus)
+  -- 3. ¬(∃_{x:X} ¬U(x)) is open (by negClosedIsOpen)
+  -- 4. ¬(∃_{x:X} ¬U(x)) ↔ ∀_{x:X} ¬¬U(x) ↔ ∀_{x:X} U(x) (since open props are ¬¬-stable)
+  AllOpenSubspaceOpen : (X : CHaus)
+    → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+    → isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+  AllOpenSubspaceOpen X U Uopen = proof
+    where
+    -- ¬U(x) is closed for each x
+    ¬U : fst X → hProp ℓ-zero
+    ¬U x = ¬hProp (U x)
 
-    isProp-Sp-quotient : isProp Sp-quotient
-    isProp-Sp-quotient h₁ h₂ =
-      let all-f₁ = snd all-false↔Sp h₁
-          all-f₂ = snd all-false↔Sp h₂
-          all-f-eq : all-f₁ ≡ all-f₂
-          all-f-eq = isProp-all-false all-f₁ all-f₂
-      in h₁                                    ≡⟨ sym (Sp-roundtrip h₁) ⟩
-         fst all-false↔Sp all-f₁               ≡⟨ cong (fst all-false↔Sp) all-f-eq ⟩
-         fst all-false↔Sp all-f₂               ≡⟨ Sp-roundtrip h₂ ⟩
-         h₂                                    ∎
+    ¬Uclosed : (x : fst X) → isClosedProp (¬U x)
+    ¬Uclosed x = negOpenIsClosed (U x) (Uopen x)
 
-    all-false≃Sp : all-false-type ≃ Sp-quotient
-    all-false≃Sp = propBiimpl→Equiv isProp-all-false isProp-Sp-quotient
-                    (fst all-false↔Sp) (snd all-false↔Sp)
+    -- ∃_{x:X} ¬U(x) is closed
+    exists-¬U : hProp ℓ-zero
+    exists-¬U = ∥ Σ[ x ∈ fst X ] (¬ fst (U x)) ∥₁ , squash₁
 
-    P≃Sp : fst P ≃ Sp-quotient
-    P≃Sp = compEquiv P≃all-false all-false≃Sp
+    exists-¬U-closed : isClosedProp exists-¬U
+    exists-¬U-closed = InhabitedClosedSubSpaceClosedCHaus X ¬U ¬Uclosed
 
-    -- The Booleω witness
-    Booleω-P : Booleω
-    Booleω-P = B-quotient-Booleω
+    -- ¬(∃_{x:X} ¬U(x)) is open
+    ¬exists-¬U : hProp ℓ-zero
+    ¬exists-¬U = ¬hProp exists-¬U
 
-    -- The path Sp(B-quotient) ≡ fst P
-    Sp-eq : Sp Booleω-P ≡ fst P
-    Sp-eq = sym (ua P≃Sp)
+    ¬exists-¬U-open : isOpenProp ¬exists-¬U
+    ¬exists-¬U-open = negClosedIsOpen mp exists-¬U exists-¬U-closed
 
-  -- A closed hProp determines a Stone space
-  closedProp→Stone : (P : hProp ℓ-zero) → isClosedProp P → Stone
-  closedProp→Stone P Pclosed = fst P , closedProp→hasStoneStr P Pclosed
+    -- Now show ∀x.U(x) ↔ ¬(∃x.¬U(x))
+    -- Forward: ∀x.U(x) → ¬(∃x.¬U(x))
+    forward : ((x : fst X) → fst (U x)) → fst ¬exists-¬U
+    forward all-U exists-¬U' = PT.rec isProp⊥ (λ { (x , ¬Ux) → ¬Ux (all-U x) }) exists-¬U'
 
-open ClosedPropIffStone public
+    -- Backward: ¬(∃x.¬U(x)) → ∀x.U(x)
+    -- Need ¬(∃x.¬U(x)) → ∀x.U(x)
+    -- Since U(x) is open, it is ¬¬-stable (U(x) ↔ ¬¬U(x))
+    backward : fst ¬exists-¬U → (x : fst X) → fst (U x)
+    backward ¬∃¬U x = openIsStable mp (U x) (Uopen x) (¬∀→¬¬ x)
+      where
+      -- From ¬(∃x.¬U(x)), derive ¬¬U(x)
+      ¬∀→¬¬ : (x : fst X) → ¬ ¬ fst (U x)
+      ¬∀→¬¬ x ¬Ux = ¬∃¬U ∣ x , ¬Ux ∣₁
+
+    -- The proposition ∀x.U(x) is equivalent to ¬(∃x.¬U(x))
+    -- Use openEquiv to transfer openness
+    proof : isOpenProp (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+    proof = openEquiv ¬exists-¬U (((x : fst X) → fst (U x)) , isPropΠ (λ x → snd (U x)))
+              backward forward ¬exists-¬U-open
+
+-- =============================================================================
+-- CHausFiniteIntersectionProperty (tex Lemma 1981)
+-- =============================================================================
+--
+-- Given X:CHaus and C_n:X→Closed closed subsets such that ⋂_{n:ℕ} C_n = ∅,
+-- there is some k:ℕ with ⋂_{n≤k} C_n = ∅.
+--
+-- Proof sketch:
+-- 1. Reduce to Stone case by CompactHausdorffClosed
+-- 2. Assume X=Sp(B) and c_n:B such that C_n = {x:B→2 | x(c_n) = 0}
+-- 3. Sp(B/(c_n)_{n:ℕ}) ≃ ⋂_{n:ℕ} C_n = ∅
+-- 4. So 0=1 in B/(c_n)_{n:ℕ}, thus ∃k. ⋁_{n≤k} c_n = 1
+-- 5. Hence ⋂_{n≤k} C_n = ∅
+
+module CHausFiniteIntersectionPropertyModule where
+  open CompactHausdorffModule
+  open InhabitedClosedSubSpaceClosedCHausModule
+  open StoneClosedSubsetsModule
+
+  -- Finite intersection of closed subsets
+  finiteIntersectionClosed : {X : Type₀}
+    → (C : ℕ → (X → hProp ℓ-zero))
+    → (n : ℕ)
+    → X → hProp ℓ-zero
+  finiteIntersectionClosed C zero x = C zero x
+  finiteIntersectionClosed C (suc n) x =
+    (fst (C (suc n) x) × fst (finiteIntersectionClosed C n x)) ,
+    isProp× (snd (C (suc n) x)) (snd (finiteIntersectionClosed C n x))
+
+  -- Countable intersection of closed subsets
+  countableIntersectionClosed : {X : Type₀}
+    → (C : ℕ → (X → hProp ℓ-zero))
+    → X → hProp ℓ-zero
+  countableIntersectionClosed C x =
+    ((n : ℕ) → fst (C n x)) , isPropΠ (λ n → snd (C n x))
+
+  -- Main theorem (postulated)
+  postulate
+    CHausFiniteIntersectionProperty : (X : CHaus)
+      → (C : ℕ → (fst X → hProp ℓ-zero))
+      → ((n : ℕ) → (x : fst X) → isClosedProp (C n x))
+      → ((x : fst X) → ¬ fst (countableIntersectionClosed C x))
+      → ∥ Σ[ k ∈ ℕ ] ((x : fst X) → ¬ fst (finiteIntersectionClosed C k x)) ∥₁
+
+-- =============================================================================
+-- ChausMapsPreserveIntersectionOfClosed (tex Corollary 2003)
+-- =============================================================================
+--
+-- Let X,Y:CHaus and f:X → Y.
+-- Suppose (G_n)_{n:ℕ} is a decreasing sequence of closed subsets of X.
+-- Then f(⋂_{n:ℕ} G_n) = ⋂_{n:ℕ} f(G_n).
+--
+-- Proof:
+-- - f(⋂_{n:ℕ} G_n) ⊆ ⋂_{n:ℕ} f(G_n) always holds
+-- - For converse: if y ∈ f(G_n) for all n, define F = f⁻¹(y)
+-- - Then F ∩ G_n is non-empty for all n
+-- - By CHausFiniteIntersectionProperty, ⋂_{n:ℕ} (F ∩ G_n) ≠ ∅
+-- - By InhabitedClosedSubSpaceClosedCHaus, this is merely inhabited
+-- - Thus y ∈ f(⋂_{n:ℕ} G_n)
+
+module ChausMapsPreserveIntersectionOfClosedModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open InhabitedClosedSubSpaceClosedCHausModule
+
+  -- Image of a subset under a function
+  imageSubset : {X Y : Type₀} → (f : X → Y)
+    → (A : X → hProp ℓ-zero) → Y → hProp ℓ-zero
+  imageSubset f A y = ∥ Σ[ x ∈ _ ] fst (A x) × (f x ≡ y) ∥₁ , squash₁
+
+  -- Preimage of a point
+  preimagePoint : {X Y : Type₀} → (f : X → Y) → (y : Y)
+    → isSet Y → X → hProp ℓ-zero
+  preimagePoint f y isSetY x = (f x ≡ y) , isSetY (f x) y
+
+  -- Decreasing sequence of closed subsets
+  isDecreasingSeq : {X : Type₀}
+    → (G : ℕ → (X → hProp ℓ-zero)) → Type₀
+  isDecreasingSeq {X} G = (n : ℕ) → (x : X) → fst (G (suc n) x) → fst (G n x)
+
+  -- Main theorem (postulated)
+  postulate
+    ChausMapsPreserveIntersectionOfClosed : (X Y : CHaus)
+      → (f : fst X → fst Y)
+      → (G : ℕ → (fst X → hProp ℓ-zero))
+      → ((n : ℕ) → (x : fst X) → isClosedProp (G n x))
+      → isDecreasingSeq G
+      → (y : fst Y)
+      → fst (imageSubset f (countableIntersectionClosed G) y)
+        ≡ fst (countableIntersectionClosed (λ n → imageSubset f (G n)) y)
+
+-- =============================================================================
+-- CompactHausdorffTopology (tex Corollary 2019)
+-- =============================================================================
+--
+-- Let A ⊆ X be a subset of a compact Hausdorff space and p:S↠X a surjection
+-- with S:Stone. Then:
+-- - A is closed iff A = ⋂_{n:ℕ} p(D_n) for decidable D_n ⊆ S
+-- - A is open iff A = ⋃_{n:ℕ} ¬p(D_n) for decidable D_n ⊆ S
+--
+-- Uses: StoneClosedSubsets, CompactHausdorffClosed, ChausMapsPreserveIntersectionOfClosed
+
+module CompactHausdorffTopologyModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open ChausMapsPreserveIntersectionOfClosedModule
+  open StoneClosedSubsetsModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Decidable subset of Stone space
+  DecSubset : Stone → Type₀
+  DecSubset S = fst S → Bool
+
+  -- Image of decidable subset
+  imageDecSubset : {S : Stone} {X : Type₀}
+    → (p : fst S → X) → DecSubset S → X → hProp ℓ-zero
+  imageDecSubset p D x = ∥ Σ[ s ∈ _ ] (D s ≡ true) × (p s ≡ x) ∥₁ , squash₁
+
+  -- Complement of image
+  complementImage : {X : Type₀}
+    → (A : X → hProp ℓ-zero) → X → hProp ℓ-zero
+  complementImage A x = (fst (A x) → ⊥) , isProp→ isProp⊥
+
+  -- Countable union
+  countableUnion : {X : Type₀}
+    → (A : ℕ → (X → hProp ℓ-zero)) → X → hProp ℓ-zero
+  countableUnion A x = ∥ Σ[ n ∈ ℕ ] fst (A n x) ∥₁ , squash₁
+
+  -- Main theorem (postulated)
+  postulate
+    CompactHausdorffTopology-closed : (X : CHaus) (S : Stone)
+      → (p : fst S → fst X) → isSurjection p
+      → (A : fst X → hProp ℓ-zero) → ((x : fst X) → isClosedProp (A x))
+      → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
+          ((x : fst X) → fst (A x) ≡ fst (countableIntersectionClosed (λ n → imageDecSubset {S} {fst X} p (D n)) x)) ∥₁
+
+    CompactHausdorffTopology-open : (X : CHaus) (S : Stone)
+      → (p : fst S → fst X) → isSurjection p
+      → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+      → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
+          ((x : fst X) → fst (U x) ≡ fst (countableUnion (λ n → complementImage (imageDecSubset {S} {fst X} p (D n))) x)) ∥₁
+
+-- =============================================================================
+-- CHausSeperationOfClosedByOpens (tex Lemma 2058)
+-- =============================================================================
+--
+-- CHaus spaces are normal: given X:CHaus and A,B ⊆ X closed with A∩B=∅,
+-- there exist U,V ⊆ X open such that A ⊆ U, B ⊆ V and U∩V=∅.
+--
+-- Proof sketch:
+-- 1. Let q:S↠X be surjective with S:Stone
+-- 2. q⁻¹(A) and q⁻¹(B) are closed in S
+-- 3. By StoneSeparated, ∃D:S→2 with q⁻¹(A) ⊆ D and q⁻¹(B) ⊆ ¬D
+-- 4. q(D) and q(¬D) are closed by CompactHausdorffClosed
+-- 5. Define U = ¬q(¬D) and V = ¬q(D)
+-- 6. Then A ⊆ U, B ⊆ V, and U∩V=∅
+
+module CHausSeperationOfClosedByOpensModule where
+  open CompactHausdorffModule
+  open CompactHausdorffClosedModule
+  open StoneSeparatedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Two subsets are disjoint
+  areDisjoint : {X : Type₀}
+    → (A B : X → hProp ℓ-zero) → Type₀
+  areDisjoint {X} A B = (x : X) → ¬ (fst (A x) × fst (B x))
+
+  -- Subset containment
+  subsetOf : {X : Type₀}
+    → (A B : X → hProp ℓ-zero) → Type₀
+  subsetOf {X} A B = (x : X) → fst (A x) → fst (B x)
+
+  -- Main theorem (postulated)
+  postulate
+    CHausSeperationOfClosedByOpens : (X : CHaus)
+      → (A B : fst X → hProp ℓ-zero)
+      → ((x : fst X) → isClosedProp (A x))
+      → ((x : fst X) → isClosedProp (B x))
+      → areDisjoint A B
+      → ∥ Σ[ U ∈ (fst X → hProp ℓ-zero) ] Σ[ V ∈ (fst X → hProp ℓ-zero) ]
+          ((x : fst X) → isOpenProp (U x)) ×
+          ((x : fst X) → isOpenProp (V x)) ×
+          subsetOf A U × subsetOf B V × areDisjoint U V ∥₁
+
+-- =============================================================================
+-- SigmaCompactHausdorff (tex Lemma 2098)
+-- =============================================================================
+--
+-- Compact Hausdorff spaces are stable under Σ-types.
+-- If X:CHaus and Y:X→CHaus, then Σ_{x:X} Y(x) is compact Hausdorff.
+--
+-- Proof sketch:
+-- 1. By ClosedDependentSums, identity types in Σ_{x:X}Y(x) are closed
+-- 2. By StoneAsClosedSubsetOfCantor, for any x:X there merely exists
+--    closed C⊆2^ℕ with surjection Σ_{α:2^ℕ}C(α) ↠ Y(x)
+-- 3. By local choice, we merely get S:Stone with p:S↠X such that
+--    for all s:S we have C_s⊆2^ℕ closed with surjection Σ_{2^ℕ}C_s↠Y(p(s))
+-- 4. This gives surjection Σ_{s:S,α:2^ℕ}C_s(α) ↠ Σ_{x:X}Y_x
+-- 5. The source is Stone by StoneClosedUnderPullback and ClosedInStoneIsStone
+
+module SigmaCompactHausdorffModule where
+  open CompactHausdorffModule
+  open StoneAsClosedSubsetOfCantorModule
+  -- Uses localChoice-axiom for the proof
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Sigma type of CHaus family
+  SigmaCHausType : (X : CHaus) → (Y : fst X → CHaus) → Type₀
+  SigmaCHausType X Y = Σ[ x ∈ fst X ] fst (Y x)
+
+  -- Main theorem (postulated)
+  postulate
+    SigmaCompactHausdorff : (X : CHaus) (Y : fst X → CHaus)
+      → hasCHausStr (SigmaCHausType X Y)
+
+  -- Derived: Sigma of CHaus is CHaus
+  CHausΣ : (X : CHaus) → (Y : fst X → CHaus) → CHaus
+  CHausΣ X Y = SigmaCHausType X Y , SigmaCompactHausdorff X Y
+
+-- =============================================================================
+-- AlgebraCompactHausdorffCountablyPresented (tex Lemma 2112)
+-- =============================================================================
+--
+-- For X:CHaus, 2^X is countably presented.
+--
+-- Proof:
+-- 1. There is surjection q:S↠X with S:Stone
+-- 2. This induces injection 2^X ↪ 2^S
+-- 3. a:S→2 lies in 2^X iff ∀s,t:S, q(s)=_X q(t) → a(s)=a(t)
+-- 4. Since equality in X is closed and equality in 2 is decidable,
+--    the implication is open for every s,t:S
+-- 5. By AllOpenSubspaceOpen, 2^X is an open subalgebra of 2^S
+-- 6. Therefore 2^X is in ODisc and thus countably presented
+
+module AlgebraCompactHausdorffCountablyPresentedModule where
+  open CompactHausdorffModule
+  open AllOpenSubspaceOpenModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- Boolean algebra of functions X → Bool
+  BoolAlgOfCHaus : CHaus → Type₀
+  BoolAlgOfCHaus X = fst X → Bool
+
+  -- Main theorem (postulated)
+  postulate
+    AlgebraCompactHausdorffCountablyPresented : (X : CHaus)
+      → ∥ Σ[ B ∈ Booleω ] ⟨ fst B ⟩ ≡ BoolAlgOfCHaus X ∥₁
+
+-- =============================================================================
+-- ConnectedComponentModule (tex 2138-2171)
+-- =============================================================================
+--
+-- For X:CHaus and x:X, define Q_x as the connected component of x:
+-- the intersection of all decidable D ⊆ X with x ∈ D.
+--
+-- Lemma 2144: Q_x is a countable intersection of decidable subsets
+-- Lemma 2156: If Q_x ⊆ U open, then exists decidable E with x ∈ E ⊆ U
+
+module ConnectedComponentModule where
+  open CompactHausdorffModule
+  open CHausFiniteIntersectionPropertyModule
+  open AlgebraCompactHausdorffCountablyPresentedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+
+  -- Decidable subset of CHaus
+  DecSubsetCHaus : CHaus → Type₀
+  DecSubsetCHaus X = fst X → Bool
+
+  -- Membership in decidable subset (parameterized by CHaus)
+  inDec : (X : CHaus) → fst X → DecSubsetCHaus X → Type₀
+  inDec X x D = D x ≡ true
+
+  -- Connected component of a point
+  -- Q_x = ∩ { D decidable | x ∈ D }
+  ConnectedComponent : (X : CHaus) → fst X → fst X → hProp ℓ-zero
+  ConnectedComponent X x y =
+    ((D : DecSubsetCHaus X) → inDec X x D → inDec X y D) ,
+    isPropΠ (λ D → isPropΠ (λ _ → isSetBool (D y) true))
+
+  -- Q_x is countable intersection of decidable subsets
+  -- Uses AlgebraCompactHausdorffCountablyPresented to enumerate 2^X
+  postulate
+    ConnectedComponentClosedInCompactHausdorff : (X : CHaus) (x : fst X)
+      → ∥ Σ[ D ∈ (ℕ → DecSubsetCHaus X) ]
+          ((y : fst X) → fst (ConnectedComponent X x y)
+            ≡ ((n : ℕ) → inDec X y (D n))) ∥₁
+
+  -- If Q_x ⊆ U (open), then exists decidable E with x ∈ E ⊆ U
+  postulate
+    ConnectedComponentSubOpenHasDecidableInbetween : (X : CHaus) (x : fst X)
+      → (U : fst X → hProp ℓ-zero) → ((y : fst X) → isOpenProp (U y))
+      → ((y : fst X) → fst (ConnectedComponent X x y) → fst (U y))
+      → ∥ Σ[ E ∈ DecSubsetCHaus X ] inDec X x E × ((y : fst X) → inDec X y E → fst (U y)) ∥₁
+
+-- =============================================================================
+-- ConnectedComponentConnectedModule (tex Lemma 2173)
+-- =============================================================================
+--
+-- For X:CHaus with x:X, any map Q_x → 2 is constant.
+
+module ConnectedComponentConnectedModule where
+  open CompactHausdorffModule
+  open ConnectedComponentModule
+  open CHausSeperationOfClosedByOpensModule
+
+  postulate
+    ConnectedComponentConnected : (X : CHaus) (x : fst X)
+      → (f : (Σ[ y ∈ fst X ] fst (ConnectedComponent X x y)) → Bool)
+      → (y z : Σ[ y ∈ fst X ] fst (ConnectedComponent X x y))
+      → f y ≡ f z
+
+-- =============================================================================
+-- StoneCompactHausdorffTotallyDisconnectedModule (tex Lemma 2186)
+-- =============================================================================
+--
+-- X:CHaus is Stone iff ∀x:X, Q_x = {x}
+
+module StoneCompactHausdorffTotallyDisconnectedModule where
+  open CompactHausdorffModule
+  open ConnectedComponentModule
+  open AlgebraCompactHausdorffCountablyPresentedModule
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+
+  -- Q_x is singleton (totally disconnected)
+  isTotallyDisconnected : CHaus → Type₀
+  isTotallyDisconnected X =
+    (x : fst X) → (y : fst X) → fst (ConnectedComponent X x y) → x ≡ y
+
+  -- Stone iff totally disconnected CHaus
+  postulate
+    StoneCompactHausdorffTotallyDisconnected-forward : (S : Stone)
+      → isTotallyDisconnected (Stone→CHaus S)
+
+    StoneCompactHausdorffTotallyDisconnected-backward : (X : CHaus)
+      → isTotallyDisconnected X
+      → hasStoneStr (fst X)
+
+-- =============================================================================
+-- StoneSigmaClosedModule (tex Theorem 2214)
+-- =============================================================================
+--
+-- If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
+
+module StoneSigmaClosedModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open SigmaCompactHausdorffModule
+  open StoneCompactHausdorffTotallyDisconnectedModule
+  open ConnectedComponentModule
+  open ConnectedComponentConnectedModule
+
+  -- Sigma type of Stone family
+  SigmaStoneType : (S : Stone) → (T : fst S → Stone) → Type₀
+  SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x)
+
+  -- Main theorem
+  postulate
+    StoneSigmaClosed : (S : Stone) (T : fst S → Stone)
+      → hasStoneStr (SigmaStoneType S T)
+
+  -- Derived: Sigma of Stone is Stone
+  StoneΣ : (S : Stone) → (T : fst S → Stone) → Stone
+  StoneΣ S T = SigmaStoneType S T , StoneSigmaClosed S T
+
+-- =============================================================================
+-- IntervalIsCHausModule (tex Theorem 2272)
+-- =============================================================================
+--
+-- The unit interval I = [0,1] is a compact Hausdorff space.
+-- Proof: cs : 2^ℕ → I is surjective (by LLPO)
+-- Equality cs(α) = cs(β) iff ∀n, |cs_n(α) - cs_n(β)| ≤ 1/2^n
+-- which is a countable conjunction of decidable props, hence closed.
+
