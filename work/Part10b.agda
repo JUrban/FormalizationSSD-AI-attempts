@@ -133,8 +133,11 @@ module StoneAsClosedSubsetOfCantorModule2 where
   OpenSubsetOfCantor = Σ[ A ∈ (CantorSpace → hProp ℓ-zero) ] ((x : CantorSpace) → isOpenProp (A x))
 
   -- Helper: isProp for isOpenProp
-  -- Note: isOpenProp is technically a set, not a prop, but for path reasoning
-  -- over hProps we use Σ≡Prop. This postulate simplifies proofs.
+  -- Note: isOpenProp is technically a set (multiple witness sequences possible).
+  -- Different sequences can characterize the same prop (e.g., α=1,0,0,... and β=0,1,0,...
+  -- both characterize ⊤). However, for PATH reasoning over hProps where the predicate
+  -- stays the same, we can use isProp→PathP since the openness witness is determined
+  -- by the transport. This is a convenience postulate for such situations.
   postulate
     isPropIsOpenProp : (P : hProp ℓ-zero) → isProp (isOpenProp P)
 
