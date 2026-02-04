@@ -768,17 +768,6 @@ ns △L ms = (ns ++ ms) ∖L (ns ∩L ms)
 -- Helper: x + x = 0 in char 2 (already have char2-B∞)
 -- char2-B∞ : (x : ⟨ B∞ ⟩) → x +∞ x ≡ 𝟘∞
 
--- Helper: 4x = 0 in char 2
-quad-cancel : (x : ⟨ B∞ ⟩) → x +∞ x +∞ x +∞ x ≡ 𝟘∞
-quad-cancel x =
-  x +∞ x +∞ x +∞ x
-    ≡⟨ cong (λ t → t +∞ x +∞ x) (char2-B∞ x) ⟩
-  𝟘∞ +∞ x +∞ x
-    ≡⟨ cong (_+∞ x) (BooleanRingStr.+IdL (snd B∞) x) ⟩
-  x +∞ x
-    ≡⟨ char2-B∞ x ⟩
-  𝟘∞ ∎
-
 -- Main theorem: a + b = (a ∨ b) ∧ ¬(a ∧ b)
 -- Main theorem: a + b = (a ∨ b) ∧ ¬(a ∧ b)
 --
@@ -1791,28 +1780,6 @@ f-injective-from-trunc x y fx=fy =
 -- ----------------------------------------
 -- 10. evens-odds-disjoint (line 6246): Local to llpo-from-SD proof
 --     - This is a consequence of LLPO and the specific homomorphism h
---
--- =============================================================================
--- Verification: f-injective equals f-injective-from-trunc
--- =============================================================================
---
--- The postulated f-injective (line 4617) has the same type as the proved
--- f-injective-from-trunc (line 7905). We verify this by showing they agree:
-
-f-injective-verified : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
-f-injective-verified = f-injective-from-trunc
-
--- This shows that f-injective could be replaced by f-injective-from-trunc
--- if the file were reorganized to move the proof earlier.
---
--- The proof chain for f-injective-from-trunc:
--- 1. interpretB∞-surjective (line 7794): interpretB∞ is surjective
--- 2. normalFormExists-trunc (line 7849): truncated normal form existence
--- 3. f-kernel-from-trunc (line 7896): kernel of f is trivial (using truncation)
--- 4. f-injective-from-trunc (line 7905): final injectivity proof
---
--- None of these depend on the postulated f-injective, so the proof is valid.
-
 -- =============================================================================
 -- ClosedPropAsSpectrum (tex Lemma 251)
 -- =============================================================================
@@ -1841,3 +1808,35 @@ f-injective-verified = f-injective-from-trunc
 -- If all αn = false, then the quotient map π : BoolBR → BoolBR /Im α
 -- has a section (identity works since Im(α) = {0})
 -- This gives us a ring hom BoolBR /Im α → BoolBR
+
+-- =============================================================================
+-- POSTULATE ELIMINATION: Sp-f-surjective from f-injective-from-trunc
+-- =============================================================================
+--
+-- This module provides a version of Sp-f-surjective that uses the PROVED
+-- f-injective-from-trunc instead of the POSTULATED f-injective.
+--
+-- The postulate f-injective (Part04:1305) is kept for backwards compatibility
+-- and has an equality proof f-injective-equality (Part14:1064) showing it
+-- equals f-injective-from-trunc.
+
+module Sp-f-surjective-from-proof where
+  -- f-injective-from-trunc is defined above at line 1689
+  -- It proves: (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
+
+  -- Type alias matching isInjectiveBoolHom
+  f-is-injective-hom-from-proof : isInjectiveBoolHom B∞-Booleω B∞×B∞-Booleω f
+  f-is-injective-hom-from-proof = f-injective-from-trunc
+
+  -- Apply the SurjectionsAreFormalSurjections axiom with the proof
+  Sp-f-surjective-from-proof' : isSurjectiveSpHom B∞-Booleω B∞×B∞-Booleω f
+  Sp-f-surjective-from-proof' = injective→Sp-surjective B∞-Booleω B∞×B∞-Booleω f f-is-injective-hom-from-proof
+
+  -- Equivalent form
+  Sp-f-surjective-from-proof : (h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁
+  Sp-f-surjective-from-proof = Sp-f-surjective-from-proof'
+
+  -- VERIFICATION: This equals Sp-f-surjective from Part05 because:
+  -- 1. f-injective ≡ f-injective-from-trunc (by f-injective-equality in Part14)
+  -- 2. Both use the same axiom (injective→Sp-surjective from surj-formal-axiom)
+  -- 3. isProp on the result type ensures equality
