@@ -1006,6 +1006,72 @@ module CohomologyModule where
   -- When cech-complex-vanishing-stone is proved, this proof structure
   -- can be converted to a full proof by filling these gaps.
 
+  -- =========================================================================
+  -- PROOF INFRASTRUCTURE for eilenberg-stone-vanish (CHANGES0532)
+  -- =========================================================================
+  --
+  -- This module provides helper lemmas showing that fibers from local choice
+  -- are Stone. The key insight:
+  --   - Local choice gives C : Booleω and q : Sp C → Sp B surjective
+  --   - Fibers T(x) = Σ[ t ∈ Sp C ] q(t) = x
+  --   - Equality in Stone spaces is closed (StoneEqualityClosed)
+  --   - Closed subsets of Stone are Stone (ClosedInStoneIsStone)
+  --   - Therefore T(x) is Stone!
+
+  module EilenbergStoneVanishProofInfra where
+    open StoneEqualityClosedModule using (StoneEqualityClosed; hasStoneStr→isSet)
+    open ClosedInStoneIsStoneModule using (ClosedInStoneIsStone)
+
+    -- Given a Stone space C and a point s in another Stone space B,
+    -- with a map q : C → B, the fiber q⁻¹(s) is a closed subset of C.
+    --
+    -- This is because:
+    -- 1. The fiber q⁻¹(s) = { t ∈ C | q(t) = s }
+    -- 2. Equality in B is closed (StoneEqualityClosed)
+    -- 3. The preimage of a closed prop under any function is closed
+
+    fiber-is-closed : (C B : Stone) (q : fst C → fst B) (s : fst B)
+      → (t : fst C) → isClosedProp ((q t ≡ s) , hasStoneStr→isSet B (q t) s)
+    fiber-is-closed C B q s t = StoneEqualityClosed B (q t) s
+
+    -- The fiber type as an hProp family over C
+    fiber-hProp : (C B : Stone) (q : fst C → fst B) (s : fst B)
+      → fst C → hProp ℓ-zero
+    fiber-hProp C B q s t = (q t ≡ s) , hasStoneStr→isSet B (q t) s
+
+    -- LEMMA: Fibers from local choice are Stone spaces
+    -- Given C : Stone (from Booleω via local choice), B : Stone, q : C → B,
+    -- and s : B, the fiber Σ[ t ∈ C ] q(t) = s has Stone structure.
+    --
+    -- PROOF: Apply ClosedInStoneIsStone to C and the fiber predicate.
+    fiber-is-Stone : (C B : Stone) (q : fst C → fst B) (s : fst B)
+      → hasStoneStr (Σ[ t ∈ fst C ] q t ≡ s)
+    fiber-is-Stone C B q s = ClosedInStoneIsStone C (fiber-hProp C B q s) (fiber-is-closed C B q s)
+
+    -- The fiber as a Stone space
+    FiberStone : (C B : Stone) (q : fst C → fst B) (s : fst B) → Stone
+    FiberStone C B q s = (Σ[ t ∈ fst C ] q t ≡ s) , fiber-is-Stone C B q s
+
+    -- COROLLARY: If q is surjective, then fibers are merely inhabited
+    -- This follows directly from the definition of surjectivity.
+    surjective→fibers-inhabited : (C B : Stone) (q : fst C → fst B)
+      → ((s : fst B) → ∥ Σ[ t ∈ fst C ] q t ≡ s ∥₁)
+      → (s : fst B) → ∥ fst (FiberStone C B q s) ∥₁
+    surjective→fibers-inhabited C B q surj s = surj s
+
+    -- SUMMARY: For the eilenberg-stone-vanish proof:
+    --
+    -- Given S : Stone (so S = Sp B for some B : Booleω):
+    -- 1. Local choice gives C : Booleω and q : Sp C → Sp B surjective
+    -- 2. Let CStone = (Sp C, hasStoneStr-from-C)
+    -- 3. Let BStone = S (we already have S : Stone)
+    -- 4. Define T(s) = FiberStone CStone BStone q s
+    -- 5. Then T(s) is Stone by fiber-is-Stone
+    -- 6. Fibers are inhabited by surj
+    -- 7. Apply cech-complex-vanishing-stone + exact-cech-complex-vanishing-cohomology
+    --
+    -- The only remaining postulate needed is cech-complex-vanishing-stone itself.
+
   -- REMOVED (CHANGES0511): stone-commute-delooping postulate
   -- =========================================================================
   -- This postulate was UNUSED - never called anywhere in the codebase.
