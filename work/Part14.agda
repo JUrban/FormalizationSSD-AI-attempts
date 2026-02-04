@@ -844,11 +844,65 @@ module CohomologyModule where
   --
   -- For S:Stone and T:S→Stone with Π_{x:S}∥T_x∥, we have Ȟ¹(S,T,ℤ) = 0.
   --
-  -- Proof sketch (from tex):
-  -- 1. Use finite-approximation-surjection-stone to get S_k, T_k finite
-  -- 2. By Scott continuity, Č(S,T,ℤ) is the sequential colimit of Č(S_k,T_k,ℤ)
-  -- 3. By section-exact-cech-complex, each Č(S_k,T_k,ℤ) is exact
-  -- 4. Sequential colimits preserve exactness
+  -- DETAILED PROOF STRATEGY (CHANGES0531):
+  -- ======================================
+  --
+  -- INPUT:
+  --   S : Type₀ with hasStoneStr S (so S = Sp B for some B : Booleω)
+  --   T : S → Type₀ with ((x : S) → hasStoneStr (T x))
+  --   inhabited : (x : S) → ∥ T x ∥₁
+  --
+  -- GOAL: Ȟ¹-vanishes S T (λ _ → ℤAbGroup)
+  --       i.e., every 1-cocycle β : (x : S) → T x → T x → ℤ
+  --       with d₁(β) = 0 is a coboundary d₀(α) for some α
+  --
+  -- STEP 1: FINITE APPROXIMATION SURJECTIONS
+  --   From hasStoneStr S, we have B : Booleω with Sp B ≡ S
+  --   From Booleω structure: B is a sequential colimit of finite Boolean algebras B_k
+  --
+  --   Finite approximation: For each k : ℕ:
+  --   - S_k = Sp (B_k) is finite (spectrum of finite Boolean algebra)
+  --   - surj_k : S → S_k (projection via the colimit structure)
+  --
+  --   Similarly for each T_x via its Booleω structure:
+  --   - T_k(x) finite approximation of T(x)
+  --
+  -- STEP 2: ČECH COMPLEX AS SEQUENTIAL COLIMIT
+  --   By Scott continuity (tex Lemma scott-continuity):
+  --   - Products commute with sequential colimits for profinite types
+  --   - Č(S, T, ℤ) = colim_k Č(S_k, T_k, ℤ)
+  --
+  --   This means:
+  --   - C⁰(S,T) = lim_k C⁰(S_k, T_k)
+  --   - C¹(S,T) = lim_k C¹(S_k, T_k)
+  --   - Boundary maps d₀, d₁ commute with the limits
+  --
+  -- STEP 3: FINITE ČECH COMPLEXES ARE EXACT (section-exact!)
+  --   For each k, the finite Čech complex Č(S_k, T_k, ℤ) is exact.
+  --
+  --   WHY: S_k and T_k are finite, so we can apply section-exact-cech-complex:
+  --   - Finite types have decidable equality
+  --   - From inhabited + decidability, we can construct a section t_k : (x : S_k) → T_k(x)
+  --   - section-exact (line ~150) proves Ȟ¹-vanishes for finite T's with sections
+  --
+  -- STEP 4: COLIMITS PRESERVE EXACTNESS
+  --   Sequential colimits of exact sequences are exact:
+  --   - 0 → ℤ → C⁰_k → C¹_k exact for each k
+  --   - Taking colim_k gives exact: 0 → ℤ → C⁰ → C¹
+  --
+  --   Therefore Ȟ¹(S, T, ℤ) = 0.
+  --
+  -- REQUIRED INFRASTRUCTURE:
+  -- ========================
+  -- 1. finite-approximation-surjection-stone: Extract finite approximations S_k
+  -- 2. scott-continuity: Products commute with colimits for Stone
+  -- 3. colim-exact: Sequential colimits preserve exactness
+  -- 4. section-construction-finite: Construct sections for finite inhabited types
+  --
+  -- KEY INSIGHT:
+  -- The proof exploits that Stone = profinite = cofiltered limit of finite discrete.
+  -- Finite discrete spaces are trivially handled by section-exact (PROVED!).
+  -- The passage to limits is structural and doesn't require computing sections.
 
   postulate
     cech-complex-vanishing-stone : (S : Type₀) (T : S → Type₀)
@@ -882,6 +936,75 @@ module CohomologyModule where
 
   postulate
     eilenberg-stone-vanish : (S : Stone) → H¹-vanishes (StoneType S)
+
+  -- =========================================================================
+  -- PROOF STRUCTURE for eilenberg-stone-vanish (CHANGES0531)
+  -- =========================================================================
+  --
+  -- The following module documents the complete proof structure.
+  -- It shows how eilenberg-stone-vanish follows from:
+  -- 1. localChoice-axiom (Part02, line ~905)
+  -- 2. cech-complex-vanishing-stone (postulate above, line ~854)
+  -- 3. exact-cech-complex-vanishing-cohomology (PROVED, line ~831)
+  --
+  -- PROOF OUTLINE (tex Lemma 2887):
+  -- ================================
+  --
+  -- Given: S : Stone (i.e., S = Sp B for some B : Booleω)
+  -- Goal: H¹-vanishes S (i.e., ∀ α ∈ H¹(S), α = 0ₕ)
+  --
+  -- Step 1: EXTRACT ČECH COVER VIA LOCAL CHOICE
+  --   Input: α : S → EM ℤAbGroup 1 (representative of cohomology class)
+  --   P(s) := (α(s) = 0ₖ 1) (type family over S = Sp B)
+  --
+  --   For any α, we have: Π_{s:S} ∥ α(s) = 0ₖ 1 ∥₁ (*)
+  --   (*) follows because: EM G 1 is a connected 2-type, so any two points
+  --   are merely equal (this requires using that BZ is connected).
+  --
+  --   Apply localChoice-axiom with B and P:
+  --   Get: ∥ Σ[ C ∈ Booleω ] Σ[ q : Sp C → Sp B ]
+  --          (isSurjectiveSpMap q × ((t : Sp C) → α(q t) = 0ₖ 1)) ∥₁
+  --
+  -- Step 2: DEFINE ČECH COVER
+  --   For the cover extracted above:
+  --   - Base space: S = Sp B
+  --   - Cover fibers: T(x) = fiber of q over x
+  --     where T(x) = Σ[ t ∈ Sp C ] q(t) = x
+  --   - T(x) has Stone structure (from C : Booleω)
+  --   - Inhabitants: isSurjectiveSpMap q gives ∥ T(x) ∥₁ for all x
+  --
+  -- Step 3: APPLY ČECH COMPLEX VANISHING
+  --   Apply cech-complex-vanishing-stone with:
+  --   - S = Sp B (has hasStoneStr from S : Stone)
+  --   - T(x) = fiber of q over x (has hasStoneStr from C : Booleω)
+  --   - inhabited = from isSurjectiveSpMap q
+  --   Result: CechComplex.Ȟ¹-vanishes S T (λ _ → ℤAbGroup)
+  --
+  -- Step 4: APPLY EXACT-CECH-COMPLEX-VANISHING-COHOMOLOGY (PROVED!)
+  --   From step 1: β(x,t) : α(x) = 0ₖ 1 for t in fiber T(x)
+  --   This gives: β : (x : S) (t : T x) → α(x) = 0ₖ 1
+  --
+  --   Apply exact-cech-complex-vanishing-cohomology with:
+  --   - S, T, A = λ _ → ℤAbGroup
+  --   - inhabited = from step 2
+  --   - exact = from step 3
+  --   - α = the cohomology representative
+  --   - β = from step 1
+  --   Result: (x : S) → α(x) = 0ₖ 1
+  --
+  -- Step 5: CONCLUDE H¹-VANISHES
+  --   Since α(x) = 0ₖ 1 for all x, we have α ≡ λ x → 0ₖ 1 = 0ₕ
+  --   This gives H¹-vanishes S.
+  --
+  -- REMAINING GAPS TO FILL:
+  -- =======================
+  -- 1. Show (*): any α : S → BZ is merely null-homotopic at each point
+  --    This uses that BZ is connected (π₀(BZ) = 1)
+  -- 2. Extract Stone structure on fibers T(x) from C : Booleω
+  -- 3. The truncation elimination in final step (uses isSet of H¹)
+  --
+  -- When cech-complex-vanishing-stone is proved, this proof structure
+  -- can be converted to a full proof by filling these gaps.
 
   -- REMOVED (CHANGES0511): stone-commute-delooping postulate
   -- =========================================================================
