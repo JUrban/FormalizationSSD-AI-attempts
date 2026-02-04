@@ -2851,9 +2851,11 @@ module NoRetractionFromCohomologyDerived where
 module CohomologyFunctorialityInfrastructure where
   open import Cubical.Cohomology.EilenbergMacLane.Base using (coHom; coHomFun)
   open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Function using (_∘_)
   open import Cubical.Data.Nat using (ℕ; suc)
   open import Cubical.Algebra.AbGroup.Base using (AbGroup)
   open import Cubical.Algebra.AbGroup.Instances.Int using (ℤAbGroup)
+  open import Cubical.HITs.SetTruncation as ST using (∥_∥₂; ∣_∣₂; squash₂)
   open BrouwerFixedPointTheoremModule using (Circle; Disk2; boundary-inclusion)
   open CohomologyModule using (H¹)
 
@@ -2897,19 +2899,58 @@ module CohomologyFunctorialityInfrastructure where
   -- Type signature for what a retraction would provide:
   -- (Note: This requires circle-cohomology to fully derive contradiction)
 
+  -- =========================================================================
+  -- Functoriality lemmas for coHomFun
+  -- =========================================================================
+  --
+  -- coHomFun n f = ST.map λ g x → g (f x)
+  -- These are standard functor laws for the cohomology functor.
+
+  -- Key composition lemma: coHomFun n f ∘ coHomFun n g = coHomFun n (g ∘ f)
+  -- (Note: contravariant, so order reverses)
+  coHomFun-comp : {X Y Z : Type₀} (f : X → Y) (g : Y → Z)
+    → (x : H¹ Z) → coHomFun {G = ℤAbGroup} 1 f (coHomFun {G = ℤAbGroup} 1 g x)
+                 ≡ coHomFun {G = ℤAbGroup} 1 (g ∘ f) x
+  coHomFun-comp f g = ST.elim (λ _ → ST.isSetPathImplicit) λ h → refl
+
+  -- Identity lemma: coHomFun n id = id (definitionally, via ST.map id = id)
+  coHomFun-id : {X : Type₀} (x : H¹ X) → coHomFun {G = ℤAbGroup} 1 (λ y → y) x ≡ x
+  coHomFun-id = ST.elim (λ _ → ST.isSetPathImplicit) λ h → refl
+
+  -- =========================================================================
+  -- Retraction would give induced retraction on cohomology
+  -- =========================================================================
+  --
+  -- Type signature for what a retraction would provide:
+  -- (Note: This requires circle-cohomology to fully derive contradiction)
+
   retraction-would-give-H¹-retraction-type :
     (r : Disk2 → Circle)
     → (is-retraction : (c : Circle) → r (boundary-inclusion c) ≡ c)
     → Σ[ r* ∈ (H¹ Circle → H¹ Disk2) ]
         ((x : H¹ Circle) → boundary-inclusion* (r* x) ≡ x)
   retraction-would-give-H¹-retraction-type r is-retraction =
-    H¹-induced r , contradiction-step
+    H¹-induced r , cohomology-retraction-proof
     where
-    -- This step requires proving (boundary-inclusion* ∘ r*) = id
-    -- which follows from is-retraction and functoriality
-    -- For now, we postulate this step (requires coHomFun-comp from library)
-    postulate
-      contradiction-step : (x : H¹ Circle) → boundary-inclusion* (H¹-induced r x) ≡ x
+    -- The proof that boundary-inclusion* ∘ r* = id follows from:
+    -- 1. boundary-inclusion* ∘ r* = coHomFun 1 (r ∘ boundary-inclusion) [by coHomFun-comp]
+    -- 2. r ∘ boundary-inclusion = id [by is-retraction]
+    -- 3. coHomFun 1 id = id [by coHomFun-id]
+
+    -- First, show that r ∘ boundary-inclusion = id (as functions)
+    r-boundary-is-id : r ∘ boundary-inclusion ≡ (λ c → c)
+    r-boundary-is-id = funExt is-retraction
+
+    -- Now the main proof
+    cohomology-retraction-proof : (x : H¹ Circle) → boundary-inclusion* (H¹-induced r x) ≡ x
+    cohomology-retraction-proof x =
+      boundary-inclusion* (H¹-induced r x)
+        ≡⟨ coHomFun-comp boundary-inclusion r x ⟩
+      coHomFun {G = ℤAbGroup} 1 (r ∘ boundary-inclusion) x
+        ≡⟨ cong (λ f → coHomFun {G = ℤAbGroup} 1 f x) r-boundary-is-id ⟩
+      coHomFun {G = ℤAbGroup} 1 (λ c → c) x
+        ≡⟨ coHomFun-id x ⟩
+      x ∎
 
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
