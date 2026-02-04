@@ -3178,6 +3178,49 @@ module SequentialColimitInfrastructure where
        -- then α is in the image of d₀
        Σ[ k ∈ ℤ ] (α ≡ d₀ {n} k))
 
+  -- =========================================================================
+  -- Constant functions characterization
+  -- =========================================================================
+  --
+  -- A function α : Iₙ n → ℤ is constant iff α = d₀ k for some k : ℤ.
+  -- Equivalently: α is in the image of d₀.
+
+  -- If α is constant at k, then α = d₀ k (TYPE-CHECKED)
+  constant-is-d₀ : {n : ℕ} → (α : Iₙ n → ℤ) → (k : ℤ) →
+                    ((x : Iₙ n) → α x ≡ k) → α ≡ d₀ {n} k
+  constant-is-d₀ {n} α k eq = funExt eq
+
+  -- If α = d₀ k, then α is constant at k (TYPE-CHECKED)
+  d₀-is-constant : {n : ℕ} → (k : ℤ) → (x : Iₙ n) → d₀ {n} k x ≡ k
+  d₀-is-constant k x = refl
+
+  -- =========================================================================
+  -- Connection to sequential colimits
+  -- =========================================================================
+  --
+  -- The unit interval [0,1] can be expressed as:
+  --   [0,1] ≃ lim_{n→∞} Iₙ
+  --
+  -- where the connecting maps are:
+  --   πₙ : Iₙ₊₁ → Iₙ  (halving)
+  --   ιₙ : Iₙ → Iₙ₊₁  (doubling)
+  --
+  -- TYPE SIGNATURE for projection (implementation requires Fin arithmetic):
+  -- πₙ-type : {n : ℕ} → Iₙ (suc n) → Iₙ n
+
+  -- =========================================================================
+  -- Key insight: Exactness passes to colimits
+  -- =========================================================================
+  --
+  -- Since each finite approximation has an exact sequence:
+  --   0 → ℤ --d₀--> ℤ^{Iₙ} --d₁--> ℤ^{Iₙ²}
+  --
+  -- And sequential colimits preserve exactness (Scott continuity),
+  -- we get exactness for the full interval:
+  --   0 → ℤ --d₀--> ℤ^{[0,1]} --d₁--> ℤ^{[0,1]²}
+  --
+  -- This is the core of cech-complex-vanishing-stone for the interval case.
+
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
 -- =============================================================================
