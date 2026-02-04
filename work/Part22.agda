@@ -488,6 +488,50 @@ module BoolQuotientEquivConsistency where
 -- =============================================================================
 
 -- =============================================================================
+-- COHOMOLOGY POSTULATES (Part14.agda)
+-- =============================================================================
+--
+-- These postulates relate to Čech/Eilenberg cohomology infrastructure:
+--
+-- 1. vanishing-result (Part14.agda:321)
+--    TYPE: (α : (x : S) → EM (A x) 1) → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
+--          → (x : S) → α x ≡ 0ₖ 1
+--    STATUS: Complex proof using EM→ΩEM+1 / ΩEM+1→EM isomorphisms
+--    DEPENDS: Čech exactness, PT.rec→Set for path elimination
+--    TEX REF: Lemma 2823 (proof outline in comments)
+--    DOCUMENTATION: Part14.agda:278-320 (detailed proof outline)
+--
+-- 2. cech-complex-vanishing-stone (Part14.agda:349)
+--    TYPE: (S : Type₀) (T : S → Type₀) → hasStoneStr S → ((x : S) → hasStoneStr (T x))
+--          → ((x : S) → ∥ T x ∥₁) → Ȟ¹-vanishes S T (λ _ → ℤAbGroup)
+--    STATUS: Requires Scott continuity and finite approximation machinery
+--    TEX REF: Lemma 2878
+--    DEPENDS: finite-approximation-surjection-stone, sequential colimits
+--
+-- 3. eilenberg-stone-vanish (Part14.agda:379)
+--    TYPE: (S : Stone) → H¹-vanishes (StoneType S)
+--    STATUS: Key result connecting Stone duality to cohomology
+--    TEX REF: Lemma 2887
+--    DEPENDS: localChoice-axiom, cech-complex-vanishing-stone
+--
+-- 4. cech-eilenberg-1-agree (Part14.agda:430)
+--    TYPE: (cover : CechCover) → H¹-vanishes X ↔ Ȟ¹-vanishes X T (λ _ → ℤAbGroup)
+--    STATUS: Čech-Eilenberg comparison theorem
+--    TEX REF: Theorem 2945
+--    DEPENDS: cech-eilenberg-0-agree, eilenberg-exact, cech-exact
+--
+-- 5. circle-cohomology (Part14.agda:627)
+--    TYPE: H¹ Circle ≃ ℤ
+--    STATUS: GEOMETRIC postulate (Circle is abstract CHaus set)
+--    ISSUE: Circle (CHaus) ≠ S¹ (HIT groupoid)
+--    ELIMINATION: Would require quotient-based construction of circle
+--    DOCUMENTATION: Part14.agda:602-628
+--
+-- COHOMOLOGY POSTULATES PROVED:
+-- - section-exact (Part14.agda:150): PROVED - cocycle elimination with sections
+-- - canonical-exact (Part14.agda:216): PROVED - diagonal construction
+--
+-- =============================================================================
 -- TECHNICAL POSTULATES REQUIRING INFRASTRUCTURE
 -- =============================================================================
 --
@@ -521,5 +565,72 @@ module BoolQuotientEquivConsistency where
 --      3. Direct Stone space argument via Sp(B∞×B∞) ≃ ℕ∞ ⊎ ℕ∞
 --    WHY TRUE: B∞×B∞ IS countably presented by Stone duality argument
 --    DOCUMENTATION: Part05.agda:690-740 (detailed analysis with TODO)
+--
+-- =============================================================================
+-- COMPACT HAUSDORFF STRUCTURE POSTULATES (Part11.agda)
+-- =============================================================================
+--
+-- These postulates relate to compact Hausdorff space structure theory:
+--
+-- 1. CHausFiniteIntersectionProperty (Part11.agda:294)
+--    TYPE: (X : CHaus) → (C : ℕ → fst X → hProp) → closed-family C
+--          → countable-intersection-empty C → ∃k. finite-intersection-empty C k
+--    STATUS: Substantial theorem (tex Lemma 1981)
+--    DEPENDS: CompactHausdorffClosed, StoneClosedSubsets, quotient machinery
+--    DOCUMENTATION: Part21.agda CHausFiniteIntersectionPropertyTC module
+--
+-- 2. ChausMapsPreserveIntersectionOfClosed (Part11.agda:338)
+--    TYPE: (X Y : CHaus) → (f : X → Y) → (G : ℕ → closed-subset X)
+--          → f(⋂G) = ⋂(f∘G)
+--    STATUS: tex Corollary 2003
+--    DEPENDS: CHausFiniteIntersectionProperty, InhabitedClosedSubSpaceClosedCHaus
+--
+-- 3. CompactHausdorffTopology-closed (Part11.agda:393)
+--    TYPE: (X : CHaus) (S : Stone) → surj S → X
+--          → A closed in X → A = ⋂ₙ image(Dₙ) for decidable Dₙ
+--    STATUS: tex Corollary 2019
+--    DEPENDS: StoneClosedSubsets, ChausMapsPreserveIntersectionOfClosed
+--
+-- 4. CHausSeperationOfClosedByOpens (Part11.agda:480)
+--    TYPE: (X : CHaus) → (A B : closed) → disjoint A B
+--          → ∃ U V open. A ⊆ U, B ⊆ V, disjoint U V
+--    STATUS: tex Lemma 2058 (CHaus spaces are normal)
+--    DEPENDS: StoneSeparated, Stone cover of X
+--
+-- 5. InhabitedClosedSubspaceOfCHausIsCHaus (Part11.agda:519)
+--    TYPE: (X : CHaus) → (A : closed-inhabited) → CHaus structure on A
+--    STATUS: tex Lemma 2074
+--    DEPENDS: CompactHausdorffTopology-closed, CHausFiniteIntersectionProperty
+--
+-- 6. AlgebraCompactHausdorffCountablyPresented (Part11.agda:553)
+--    TYPE: (X : CHaus) → ∃ B : Booleω. ⟨B⟩ ≡ (X → Bool)
+--    STATUS: tex Lemma 2112 (countable presentation of X → Bool)
+--    DEPENDS: StoneClosedSubsets, quotient machinery
+--
+-- 7. ConnectedComponentClosedInCompactHausdorff (Part11.agda:590)
+--    TYPE: (X : CHaus) (x : X) → Q_x is countable intersection of decidables
+--    STATUS: tex Lemma 2144
+--    DEPENDS: AlgebraCompactHausdorffCountablyPresented
+--
+-- 8. ConnectedComponentSubOpenHasDecidableInbetween (Part11.agda:597)
+--    TYPE: (X : CHaus) (x : X) → Q_x ⊆ U open → ∃ decidable E. x ∈ E ⊆ U
+--    STATUS: tex Lemma 2156
+--    DEPENDS: ConnectedComponentClosedInCompactHausdorff
+--
+-- 9. ConnectedComponentConnected (Part11.agda:630)
+--    TYPE: (X : CHaus) (x : X) → any map Q_x → Bool is constant
+--    STATUS: tex Lemma 2173
+--    DEPENDS: CHausSeperationOfClosedByOpens, ConnectedComponentSubOpenHasDecidableInbetween
+--
+-- 10. StoneCompactHausdorffTotallyDisconnected-backward (Part11.agda:864)
+--     TYPE: (X : CHaus) → isTotallyDisconnected X → hasStoneStr X
+--     STATUS: tex Lemma 2186 (backward direction)
+--     DEPENDS: AlgebraCompactHausdorffCountablyPresented, surj-formal-axiom
+--     NOTE: Forward direction FULLY PROVED (Part11:669-759)
+--
+-- PROVED in Part11:
+-- - StoneCompactHausdorffTotallyDisconnected-forward (669-759): Stone → totally disconnected
+-- - evalCHaus-injective (794-803): evaluation map injective for totally disconnected
+-- - precomp-surj-inj (810-815): precomposition by surjection is injective
 --
 -- =============================================================================
