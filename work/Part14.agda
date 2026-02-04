@@ -3853,6 +3853,7 @@ module FiniteApproximationExactness where
   open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; rec; squash₁; map)
   import Cubical.HITs.PropositionalTruncation as PT
   open import Cubical.Foundations.Function using (_∘_)
+  open import Cubical.Foundations.Transport using (transport⁻Transport)
 
   -- Section existence for finite types (finite choice)
   -- For Fin n with n ≥ 1 and T : Fin n → Type with inhabited fibers,
@@ -3905,19 +3906,33 @@ module FiniteApproximationExactness where
   -- Since Iₙ = Fin(2^n) and 2^n ≥ 1 for all n, we have:
   -- Any T : Iₙ → Type₀ with inhabited fibers has a section (truncated).
 
+  -- Helper: transport finite-section-exists from Fin(suc m) to Fin(2^n)
+  -- using the fact that 2^n = suc m for some m.
+  -- We do this by transporting the T and inh, applying finite-section-exists,
+  -- then transporting back.
   In-section-exists : {n : ℕ} (T : Iₙ n → Type₀)
                     → ((k : Iₙ n) → ∥ T k ∥₁)
                     → ∥ ((k : Iₙ n) → T k) ∥₁
-  In-section-exists {n} T inh =
-    -- Iₙ n = Fin(2^ n) and 2^ n = suc(pred(2^ n))
-    -- We need to show Fin(2^ n) ≃ Fin(suc m) for some m
-    -- Since 2^ 0 = 1 and 2^(suc n) = suc(pred(2^(suc n))), this works
-    postulated-In-section T inh
-    where
-      postulate
-        postulated-In-section : (T : Iₙ n → Type₀)
-                              → ((k : Iₙ n) → ∥ T k ∥₁)
-                              → ∥ ((k : Iₙ n) → T k) ∥₁
+  In-section-exists {n} T inh with 2^-pos n
+  ... | m , eq =
+    -- eq : 2^ n ≡ suc m
+    -- We have: Fin(2^ n) and need to use finite-section-exists for Fin(suc m)
+    -- Use transport via cong Fin eq : Fin(2^ n) ≡ Fin(suc m)
+    let Fin-path : Fin (2^ n) ≡ Fin (suc m)
+        Fin-path = cong Fin eq
+        -- Convert T : Fin(2^ n) → Type₀ to T' : Fin(suc m) → Type₀
+        T' : Fin (suc m) → Type₀
+        T' k = T (transport (sym Fin-path) k)
+        -- Convert inh to inh'
+        inh' : (k : Fin (suc m)) → ∥ T' k ∥₁
+        inh' k = inh (transport (sym Fin-path) k)
+        -- Apply finite-section-exists
+        result' : ∥ ((k : Fin (suc m)) → T' k) ∥₁
+        result' = finite-section-exists T' inh'
+        -- Convert the result back
+        convert-section : ((k : Fin (suc m)) → T' k) → ((k : Fin (2^ n)) → T k)
+        convert-section sec k = subst T (transport⁻Transport Fin-path k) (sec (transport Fin-path k))
+    in map convert-section result'
 
   -- =========================================================================
   -- Connection to our d₀, d₁
