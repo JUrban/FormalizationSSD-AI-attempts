@@ -1075,6 +1075,30 @@ module CohomologyModule where
     -- They are propositionally equal!
     -- =======================================================================
 
+    -- f-injective-05a equality: proved version from Part05a also equals derived
+    f-injective-05a-equality : f-injective-05a ≡ f-injective-from-trunc
+    f-injective-05a-equality = isProp-f-injective-type f-injective-05a f-injective-from-trunc
+
+    -- =======================================================================
+    -- COROLLARY: Sp-f-surjective equals Sp-f-surjective-from-proof
+    -- =======================================================================
+    --
+    -- Since f-injective ≡ f-injective-from-trunc, we also have:
+    -- Sp-f-surjective ≡ Sp-f-surjective-from-proof (defined in Part06)
+    --
+    -- Both are defined using injective→Sp-surjective with the respective
+    -- f-injective proofs, and the target type is a proposition (function
+    -- into propositional truncation).
+
+    -- The type of Sp-f-surjective is a proposition
+    isProp-Sp-f-surjective-type : isProp ((h : Sp B∞-Booleω) → ∥ Σ[ h' ∈ Sp B∞×B∞-Booleω ] Sp-f h' ≡ h ∥₁)
+    isProp-Sp-f-surjective-type = isPropΠ (λ _ → squash₁)
+
+    -- Equality of Sp-f-surjective with the proof-based version
+    Sp-f-surjective-equality : Sp-f-surjective ≡ Sp-f-surjective-from-proof.Sp-f-surjective-from-proof
+    Sp-f-surjective-equality = isProp-Sp-f-surjective-type Sp-f-surjective Sp-f-surjective-from-proof.Sp-f-surjective-from-proof
+    -- =======================================================================
+
   -- =========================================================================
   -- Circle cohomology: Using H¹-S¹≅ℤ from Cubical library
   -- =========================================================================
