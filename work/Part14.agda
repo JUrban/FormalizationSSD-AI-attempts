@@ -380,8 +380,38 @@ module CohomologyModule where
       EM0→ΩEM1 = Iso.fun (EM-iso x)
 
     -- The cocycle condition requires showing d₁(g) = 0 where g = path-to-EM0 α β
-    -- This is the key technical lemma
-    -- For now, postulate this step (requires ΩEM+1→EM-hom from Cubical library)
+    -- We need to prove: (g(v,w) - g(u,w)) + g(u,v) = 0
+    --
+    -- where g(a,b) = ΩEM+1→EM 0 (sym(β_a) ∙ β_b)
+    --
+    -- Using the homomorphism property ΩEM+1→EM-hom:
+    --   ΩEM+1→EM 0 (p ∙ q) = (ΩEM+1→EM 0 p) +ₖ (ΩEM+1→EM 0 q)
+    -- And ΩEM+1→EM-sym:
+    --   ΩEM+1→EM 0 (sym p) = -ₖ (ΩEM+1→EM 0 p)
+    --
+    -- Let's denote h(a) = ΩEM+1→EM 0 (β_a)
+    -- Then g(a,b) = -ₖ h(a) +ₖ h(b) = h(b) - h(a)
+    --
+    -- The cocycle condition becomes:
+    --   (g(v,w) - g(u,w)) + g(u,v)
+    -- = ((h(w) - h(v)) - (h(w) - h(u))) + (h(v) - h(u))
+    -- = (h(w) - h(v) - h(w) + h(u)) + h(v) - h(u)
+    -- = (- h(v) + h(u)) + h(v) - h(u)
+    -- = 0
+
+    -- The cocycle proof: The key insight is that path-to-EM0 produces elements
+    -- that satisfy the cocycle condition by construction via path algebra.
+    --
+    -- g(a,b) = ΩEM+1→EM (sym(β a) ∙ β b)
+    --
+    -- The d₁ condition (g(v,w) - g(u,w)) + g(u,v) = 0 follows from:
+    -- In paths: sym(β v) ∙ β w - (sym(β u) ∙ β w) + sym(β u) ∙ β v
+    --         = (sym(β v) ∙ β w) ∙ sym(sym(β u) ∙ β w) ∙ (sym(β u) ∙ β v)
+    --
+    -- By path algebra: this reduces to refl after cancellations.
+    -- The homomorphism ΩEM+1→EM preserves this to 0 in the group.
+    --
+    -- We postulate this pending the detailed path algebra verification.
     postulate
       path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
         → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
