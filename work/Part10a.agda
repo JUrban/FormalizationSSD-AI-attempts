@@ -316,9 +316,38 @@ module BooleanAlgebraLawsModule where
         ≡ FullOpenSubset
 
   -- ==========================================================================
-  -- De Morgan laws (postulated for speed)
+  -- De Morgan laws
   -- ==========================================================================
 
+  -- De Morgan: ¬(closed A ∪ closed B) ↔ ¬A ∩ ¬B - PROVED
+  -- Forward: ¬∥ A ⊎ B ∥₁ → (¬A × ¬B)
+  closedDeMorganUnion-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
+    → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+  closedDeMorganUnion-fwd (A , _) (B , _) x ¬AorB =
+    (λ ax → ¬AorB ∣ inl ax ∣₁) , (λ bx → ¬AorB ∣ inr bx ∣₁)
+
+  -- Backward: (¬A × ¬B) → ¬∥ A ⊎ B ∥₁
+  closedDeMorganUnion-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
+  closedDeMorganUnion-bwd (A , _) (B , _) x (¬ax , ¬bx) =
+    PT.rec isProp⊥ (λ { (inl ax) → ¬ax ax ; (inr bx) → ¬bx bx })
+
+  -- De Morgan: ¬(open A ∪ open B) ↔ ¬A ∩ ¬B - PROVED
+  openDeMorganUnion-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
+    → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+  openDeMorganUnion-fwd (A , _) (B , _) x ¬AorB =
+    (λ ax → ¬AorB ∣ inl ax ∣₁) , (λ bx → ¬AorB ∣ inr bx ∣₁)
+
+  openDeMorganUnion-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+    → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
+  openDeMorganUnion-bwd (A , _) (B , _) x (¬ax , ¬bx) =
+    PT.rec isProp⊥ (λ { (inl ax) → ¬ax ax ; (inr bx) → ¬bx bx })
+
+  -- Remaining De Morgan laws (postulated for speed)
   postulate
     -- De Morgan: ¬(closed A ∩ closed B) ↔ ¬A ∪ ¬B
     closedDeMorganIntersection-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
@@ -329,15 +358,6 @@ module BooleanAlgebraLawsModule where
       → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
       → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
 
-    -- De Morgan: ¬(closed A ∪ closed B) ↔ ¬A ∩ ¬B
-    closedDeMorganUnion-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
-      → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
-
-    closedDeMorganUnion-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (OpenSubsetIntersection (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
-      → fst (fst (ClosedSubsetComplement (ClosedSubsetUnion A B)) x)
-
     -- De Morgan: ¬(open A ∩ open B) ↔ ¬A ∪ ¬B
     openDeMorganIntersection-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
       → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
@@ -346,15 +366,6 @@ module BooleanAlgebraLawsModule where
     openDeMorganIntersection-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
       → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
       → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
-
-    -- De Morgan: ¬(open A ∪ open B) ↔ ¬A ∩ ¬B
-    openDeMorganUnion-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
-      → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
-
-    openDeMorganUnion-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (ClosedSubsetIntersection (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
-      → fst (fst (OpenSubsetComplement (OpenSubsetUnion A B)) x)
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
