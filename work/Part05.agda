@@ -993,14 +993,14 @@ private
   _=B'_ : (a b : Bool) → Dec (a ≡ b)
   _=B'_ = Bool-equality-decidable
 
+  ¬true→false' : (b : Bool) → ¬ (b ≡ true) → b ≡ false
+  ¬true→false' true ¬p = ex-falso (¬p refl)
+  ¬true→false' false ¬p = refl
+
 Sp-prod-to-sum' : Sp B∞×B∞-Booleω → (Sp B∞-Booleω) ⊎.⊎ (Sp B∞-Booleω)
 Sp-prod-to-sum' h with (h $cr unit-left) =B' true
 ... | yes pf = ⊎.inl (restrict-to-left h pf)
-... | no ¬pf = ⊎.inr (restrict-to-right h (¬true→false (h $cr unit-left) ¬pf))
-  where
-  ¬true→false : (b : Bool) → ¬ (b ≡ true) → b ≡ false
-  ¬true→false true ¬p = ex-falso (¬p refl)
-  ¬true→false false ¬p = refl
+... | no ¬pf = ⊎.inr (restrict-to-right h (¬true→false' (h $cr unit-left) ¬pf))
 
 -- Roundtrip proof using the decidable version
 -- The key is that =B' true returns yes/no which we can pattern match on
@@ -2146,3 +2146,78 @@ neg-nf (meetNegForm ns) = joinForm ns
 -- De Morgan law: ¬(a ∨ b) = ¬a ∧ ¬b
 -- Using the library's BooleanAlgebraStr module which has DeMorgan¬∨
 -- Our definitions of ∨∞, ∧∞, ¬∞ are definitionally equal to the library's
+
+-- =============================================================================
+-- Other direction: Sp-sum-to-prod ∘ Sp-prod-to-sum' = id (FULLY PROVED)
+-- =============================================================================
+
+-- Key insight: (x, y) = (x, 0) + (0, y) in the product ring
+pair-decomposition : (x y : ⟨ B∞ ⟩) → (x , y) ≡ (x , 𝟘∞) +× (𝟘∞ , y)
+pair-decomposition x y = cong₂ _,_ (sym (+right-unit x)) (sym (+left-unit y))
+  where
+  open CommRingStr (snd (BooleanRing→CommRing B∞)) using () renaming (+IdL to +left-unit ; +IdR to +right-unit)
+
+-- When h(unit-left) = true, h factors through the left projection
+-- Proof: h(x,y) = h((x,0) + (0,y)) = h(x,0) ⊕ h(0,y) = h(x,0) ⊕ false = h(x,0)
+h-factors-left : (h : Sp B∞×B∞-Booleω) → (pf : h $cr unit-left ≡ true)
+  → (x y : ⟨ B∞ ⟩) → h $cr (x , y) ≡ h $cr (x , 𝟘∞)
+h-factors-left h pf x y =
+  let h-pres+ = IsCommRingHom.pres+ (snd h)
+      h-right-zero = h'-left-true→right-false h pf y
+  in cong (h $cr_) (pair-decomposition x y) ∙
+     h-pres+ (x , 𝟘∞) (𝟘∞ , y) ∙
+     cong (λ b → (h $cr (x , 𝟘∞)) ⊕ b) h-right-zero ∙
+     ⊕-false-right (h $cr (x , 𝟘∞))
+  where
+  ⊕-false-right : (b : Bool) → b ⊕ false ≡ b
+  ⊕-false-right false = refl
+  ⊕-false-right true = refl
+
+-- When h(unit-left) = false (i.e., h(unit-right) = true), h factors through the right projection
+h-factors-right : (h : Sp B∞×B∞-Booleω) → (pf : h $cr unit-left ≡ false)
+  → (x y : ⟨ B∞ ⟩) → h $cr (x , y) ≡ h $cr (𝟘∞ , y)
+h-factors-right h pf x y =
+  let h-pres+ = IsCommRingHom.pres+ (snd h)
+      h-right-true = unit-left-false→unit-right-true h pf
+      h-left-zero = h'-right-true→left-false h h-right-true x
+  in cong (h $cr_) (pair-decomposition x y) ∙
+     h-pres+ (x , 𝟘∞) (𝟘∞ , y) ∙
+     cong (λ b → b ⊕ (h $cr (𝟘∞ , y))) h-left-zero ∙
+     ⊕-false-left (h $cr (𝟘∞ , y))
+  where
+  ⊕-false-left : (b : Bool) → false ⊕ b ≡ b
+  ⊕-false-left false = refl
+  ⊕-false-left true = refl
+
+-- Inverse proof: inject-left (restrict-to-left h pf) ≡ h when h factors through left
+inject-left-restrict-left : (h : Sp B∞×B∞-Booleω) → (pf : h $cr unit-left ≡ true)
+  → inject-left (restrict-to-left h pf) ≡ h
+inject-left-restrict-left h pf = Σ≡Prop
+  (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing B∞×B∞)) f (snd (BooleanRing→CommRing BoolBR)))
+  (funExt (λ { (x , y) → sym (h-factors-left h pf x y) }))
+
+-- Inverse proof: inject-right (restrict-to-right h pf) ≡ h when h factors through right
+inject-right-restrict-right : (h : Sp B∞×B∞-Booleω) → (pf : h $cr unit-left ≡ false)
+  → inject-right (restrict-to-right h pf) ≡ h
+inject-right-restrict-right h pf = Σ≡Prop
+  (λ f → isPropIsCommRingHom (snd (BooleanRing→CommRing B∞×B∞)) f (snd (BooleanRing→CommRing BoolBR)))
+  (funExt (λ { (x , y) → sym (h-factors-right h pf x y) }))
+
+-- Full roundtrip: Sp-sum-to-prod ∘ Sp-prod-to-sum' = id
+-- This is the FULLY PROVED roundtrip for the other direction
+Sp-sum-prod-roundtrip' : (h : Sp B∞×B∞-Booleω) → Sp-sum-to-prod (Sp-prod-to-sum' h) ≡ h
+Sp-sum-prod-roundtrip' h with (h $cr unit-left) =B' true
+... | yes pf = inject-left-restrict-left h pf
+... | no ¬pf = inject-right-restrict-right h (¬true→false' (h $cr unit-left) ¬pf)
+
+-- =============================================================================
+-- Isomorphism established: Sp(B∞×B∞) ≅ Sp(B∞) ⊎ Sp(B∞)
+-- =============================================================================
+
+-- Summary of the isomorphism:
+-- Forward map:  Sp-prod-to-sum' : Sp B∞×B∞ → Sp B∞ ⊎ Sp B∞
+-- Backward map: Sp-sum-to-prod  : Sp B∞ ⊎ Sp B∞ → Sp B∞×B∞
+-- Roundtrip 1:  Sp-prod-sum-roundtrip'  : Sp-prod-to-sum' (Sp-sum-to-prod x) ≡ x
+-- Roundtrip 2:  Sp-sum-prod-roundtrip'  : Sp-sum-to-prod (Sp-prod-to-sum' h) ≡ h
+--
+-- This establishes: Sp(B∞ × B∞) ≅ Sp(B∞) ⊎ Sp(B∞) (Stone duality for products)
