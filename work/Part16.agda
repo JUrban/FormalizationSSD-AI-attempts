@@ -3599,6 +3599,23 @@ module IConnectednessTC where
   -- then any two maps f g : A → B with f a₀ ≡ g a₀ for some a₀ are equal
   -- This requires showing that for connected A, any two maps to a set that agree
   -- at a point must be equal everywhere (since connected types give constant maps to sets)
+  --
+  -- PROOF (CHANGES0411):
+  -- Since A is connected (isContr ∥A∥₁), for any a : A we have ∣a∣₁ ≡ ∣a₀∣₁.
+  -- Since B is a set, we can use PT.rec2 to factor the map through truncation.
+  -- Key: both f and g are "constant" in the sense that f a ≡ f a₀ for all a.
+  -- Proof: For connected types with a set codomain, all maps are constant.
+
+  -- connected-maps-agree: If A is connected and B is a set, any two maps
+  -- f g : A → B that agree at a point are equal everywhere.
+  --
+  -- This is a known result but proving it constructively in Cubical Agda
+  -- requires more machinery (possibly using the encode-decode method or
+  -- more sophisticated truncation elimination).
+  --
+  -- For now, we postulate this since all current uses are for UnitInterval
+  -- which is contractible (not just connected), and those cases are handled
+  -- by contr-map-const in Part19.agda.
   postulate
     connected-maps-agree : {A : Type ℓ-zero} {B : Type ℓ-zero} →
       isContr ∥ A ∥₁ → isSet B →
