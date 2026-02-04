@@ -689,6 +689,50 @@ module StoneCompactHausdorffTotallyDisconnectedModule where
     goal : x ≡ y
     goal = sym (transportTransport⁻ p x) ∙ cong (transport p) x'≡y' ∙ transportTransport⁻ p y
 
+  -- For the backward direction, we need to show that a totally disconnected
+  -- CHaus space X has Stone structure, i.e., there exists B : Booleω with Sp B ≡ fst X.
+  --
+  -- Proof sketch (from tex Lemma 2186):
+  -- 1. Take B = 2^X (with countable presentation from AlgebraCompactHausdorffCountablyPresented)
+  -- 2. The evaluation map e : X → Sp(2^X) is defined by e(x)(f) = f(x)
+  -- 3. Injectivity: if e(x) = e(y), then for all f : X → Bool, f(x) = f(y)
+  --    This means y ∈ Q_x, and by isTotallyDisconnected, x = y
+  -- 4. Surjectivity: uses surjection q : S ↠ X from Stone S,
+  --    which induces injection 2^X ↪ 2^S, hence surjection Sp(2^S) ↠ Sp(2^X)
+  --    By surj-formal-axiom, e ∘ q = projection, so e is surjective.
+
+  -- Helper: evaluation map from X to Sp(2^X)
+  -- For x : X, define ev_x : (X → Bool) → Bool by ev_x(f) = f(x)
+  -- This is a Boolean ring homomorphism (pointwise eval preserves operations)
+  open import Axioms.StoneDuality using (2^; SpGeneralBooleanRing)
+  open import BooleanRing.BoolRingUnivalence using (IsBoolRingHom)
+  module ICRHom = IsCommRingHom
+
+  -- ev_x is a Boolean ring homomorphism
+  evalAtPointIsHom : (X : CHaus) (x : fst X)
+    → IsBoolRingHom (snd (2^ (fst X))) (λ f → f x) (snd BoolBR)
+  evalAtPointIsHom X x .ICRHom.pres0 = refl
+  evalAtPointIsHom X x .ICRHom.pres1 = refl
+  evalAtPointIsHom X x .ICRHom.pres+ f g = refl
+  evalAtPointIsHom X x .ICRHom.pres· f g = refl
+  evalAtPointIsHom X x .ICRHom.pres- f = refl
+
+  -- The evaluation map X → Sp(2^X)
+  evalCHaus : (X : CHaus) → fst X → SpGeneralBooleanRing (2^ (fst X))
+  evalCHaus X x = (λ f → f x) , evalAtPointIsHom X x
+
+  -- Injectivity: evaluation is injective when X is totally disconnected
+  evalCHaus-injective : (X : CHaus) → isTotallyDisconnected X
+    → (x y : fst X) → evalCHaus X x ≡ evalCHaus X y → x ≡ y
+  evalCHaus-injective X totDisc x y ex≡ey = totDisc x y qxy
+    where
+    -- From ex≡ey, for all f : X → Bool, f(x) = f(y)
+    -- A decidable subset D : X → Bool gives f(x) = D(x) = true → D(y) = true
+    -- fst (evalCHaus X x) D = D x, fst (evalCHaus X y) D = D y
+    -- So cong (λ h → fst h D) ex≡ey : D x ≡ D y
+    qxy : fst (ConnectedComponent X x y)
+    qxy D xInD = sym (cong (λ h → fst h D) ex≡ey) ∙ xInD
+
   postulate
     StoneCompactHausdorffTotallyDisconnected-backward : (X : CHaus)
       → isTotallyDisconnected X
