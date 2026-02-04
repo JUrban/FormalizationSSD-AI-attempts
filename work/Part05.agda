@@ -3,6 +3,7 @@
 module work.Part05 where
 
 open import work.Part04 public
+open import work.Part05a using (f-injective-05a ; char2-B∞ ; char2-B∞×B∞) public
 
 -- Additional imports for Part05
 open import Cubical.Algebra.BooleanRing
@@ -983,8 +984,9 @@ Sp-f h = h ∘cr f
 -- We have f-injective, so Sp(f) is surjective.
 
 -- First, we need to show that f-injective matches the isInjectiveBoolHom type
+-- Now using f-injective-05a (proved in Part05a) instead of f-injective (postulate in Part04)
 f-is-injective-hom : isInjectiveBoolHom B∞-Booleω B∞×B∞-Booleω f
-f-is-injective-hom = f-injective
+f-is-injective-hom = f-injective-05a
 
 -- Apply the SurjectionsAreFormalSurjections axiom
 Sp-f-surjective' : isSurjectiveSpHom B∞-Booleω B∞×B∞-Booleω f
@@ -1423,14 +1425,7 @@ finMeetNeg∞-nonzero ns meet=0 = contradiction
 -- f-injective from normalFormExists
 -- =============================================================================
 
--- Helper: characteristic 2 for B∞ (x + x = 0)
--- Using BooleanAlgebraStr.characteristic2 which has implicit x argument
-module BA∞ = BooleanAlgebraStr B∞
-char2-B∞ : (x : ⟨ B∞ ⟩) → x +∞ x ≡ 𝟘∞
-char2-B∞ x = BA∞.characteristic2 {x}
-
-char2-B∞×B∞ : (z : ⟨ B∞×B∞ ⟩) → z +× z ≡ (𝟘∞ , 𝟘∞)
-char2-B∞×B∞ (a , b) = cong₂ _,_ (char2-B∞ a) (char2-B∞ b)
+-- Note: char2-B∞ and char2-B∞×B∞ are now imported from Part05a
 
 -- Helper for splitByParity to get component projections
 splitByParity-evens : List ℕ → List ℕ
