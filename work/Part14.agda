@@ -2953,6 +2953,114 @@ module CohomologyFunctorialityInfrastructure where
       x ∎
 
 -- =============================================================================
+-- NoRetractionCompleteProof (CHANGES0539)
+-- =============================================================================
+--
+-- This module provides the COMPLETE no-retraction proof structure.
+-- The only remaining assumption is circle-cohomology : H¹ Circle ≃ ℤ.
+
+module NoRetractionCompleteProof where
+  open import Cubical.Foundations.Prelude
+  open import Cubical.Foundations.Equiv using (invEq; equivFun; _≃_; isEquiv; equiv→Iso)
+  open import Cubical.Foundations.Function using (_∘_)
+  open import Cubical.Data.Int using (ℤ; pos)
+  open import Cubical.Data.Sigma
+  open import Cubical.HITs.SetTruncation as ST using (∥_∥₂; ∣_∣₂; squash₂)
+  open BrouwerFixedPointTheoremModule using (Circle; Disk2; boundary-inclusion)
+  open CohomologyModule using (H¹)
+  open CohomologyModule.DiskCohomologyFromContr using (isContr-H¹-Disk2)
+  open NoRetractionFromCohomologyDerived using (id-neq-zero-on-ℤ; H¹-Disk2-contr; H¹-Disk2-center; H¹-Disk2-all-equal)
+  open CohomologyFunctorialityInfrastructure using (H¹-induced; boundary-inclusion*; retraction-would-give-H¹-retraction-type)
+
+  -- =========================================================================
+  -- Key lemma: A retraction through a contractible type implies id = constant
+  -- =========================================================================
+  --
+  -- If we have:
+  --   s : A → B (with B contractible)
+  --   r : B → A
+  --   r ∘ s = id_A
+  -- Then for any x : A, we have:
+  --   x = r (s x) = r (center B) = r (s y) = y
+  -- for any y : A. So A is a singleton, and the retraction r ∘ s is constant.
+
+  -- If H¹ Circle retracts through H¹ Disk2 (which is contractible),
+  -- then any two elements of H¹ Circle are equal.
+  H¹-Circle-trivial-from-retraction :
+    (r* : H¹ Circle → H¹ Disk2)
+    → ((x : H¹ Circle) → boundary-inclusion* (r* x) ≡ x)
+    → (x y : H¹ Circle) → x ≡ y
+  H¹-Circle-trivial-from-retraction r* section-cond x y =
+    x
+      ≡⟨ sym (section-cond x) ⟩
+    boundary-inclusion* (r* x)
+      ≡⟨ cong boundary-inclusion* (H¹-Disk2-all-equal (r* x) ∙ sym (H¹-Disk2-all-equal (r* y))) ⟩
+    boundary-inclusion* (r* y)
+      ≡⟨ section-cond y ⟩
+    y ∎
+
+  -- =========================================================================
+  -- Final no-retraction theorem (modulo circle-cohomology)
+  -- =========================================================================
+  --
+  -- There is no retraction from Disk2 to Circle.
+  --
+  -- Proof:
+  -- 1. Assume r : Disk2 → Circle with r ∘ boundary-inclusion = id
+  -- 2. By functoriality, boundary-inclusion* ∘ r* = id on H¹ Circle
+  -- 3. By H¹-Circle-trivial-from-retraction, all elements of H¹ Circle are equal
+  -- 4. By circle-cohomology, H¹ Circle ≃ ℤ
+  -- 5. All elements of ℤ being equal contradicts id-neq-zero-on-ℤ
+  -- 6. Contradiction!
+
+  no-retraction-from-circle-cohomology :
+    (circle-coh : H¹ Circle ≃ ℤ)
+    → (r : Disk2 → Circle)
+    → ((c : Circle) → r (boundary-inclusion c) ≡ c)
+    → ⊥
+  no-retraction-from-circle-cohomology circle-coh r is-retraction =
+    id-neq-zero-on-ℤ ℤ-all-equal
+    where
+    -- Get the induced maps on cohomology
+    cohom-retraction = retraction-would-give-H¹-retraction-type r is-retraction
+    r* = fst cohom-retraction
+    section-cond = snd cohom-retraction
+
+    -- H¹ Circle elements are all equal
+    H¹-Circle-all-equal : (x y : H¹ Circle) → x ≡ y
+    H¹-Circle-all-equal = H¹-Circle-trivial-from-retraction r* section-cond
+
+    -- Transfer to ℤ via the equivalence
+    -- circle-coh : H¹ Circle ≃ ℤ
+    -- so: equivFun circle-coh : H¹ Circle → ℤ
+    --     invEq circle-coh : ℤ → H¹ Circle
+    ℤ-all-equal : (n : ℤ) → n ≡ pos 0
+    ℤ-all-equal n =
+      -- n = equivFun circle-coh (invEq circle-coh n) by secEq
+      -- all H¹ Circle elements are equal, so invEq circle-coh n = invEq circle-coh (pos 0)
+      -- therefore n = equivFun circle-coh (invEq circle-coh (pos 0)) = pos 0
+      n
+        ≡⟨ sym (Cubical.Foundations.Equiv.secEq circle-coh n) ⟩
+      equivFun circle-coh (invEq circle-coh n)
+        ≡⟨ cong (equivFun circle-coh) (H¹-Circle-all-equal (invEq circle-coh n) (invEq circle-coh (pos 0))) ⟩
+      equivFun circle-coh (invEq circle-coh (pos 0))
+        ≡⟨ Cubical.Foundations.Equiv.secEq circle-coh (pos 0) ⟩
+      pos 0 ∎
+
+  -- =========================================================================
+  -- Alternative formulation using the postulated circle-cohomology
+  -- =========================================================================
+
+  open CohomologyModule using (circle-cohomology)
+
+  -- THE MAIN THEOREM: There is no retraction from Disk2 to Circle
+  no-retraction-theorem :
+    (r : Disk2 → Circle)
+    → ((c : Circle) → r (boundary-inclusion c) ≡ c)
+    → ⊥
+  no-retraction-theorem = no-retraction-from-circle-cohomology circle-cohomology
+
+-- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
 -- =============================================================================
 
