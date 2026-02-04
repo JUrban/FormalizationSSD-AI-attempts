@@ -488,48 +488,60 @@ module BoolQuotientEquivConsistency where
 -- =============================================================================
 
 -- =============================================================================
--- COHOMOLOGY POSTULATES (Part14.agda)
+-- COHOMOLOGY POSTULATES (Part14.agda) - UPDATED CHANGES0524
 -- =============================================================================
 --
 -- These postulates relate to Čech/Eilenberg cohomology infrastructure:
 --
--- 1. vanishing-result (Part14.agda:321)
+-- 1. path-to-EM0-is-cocycle (Part14.agda:457)
+--    TYPE: CechComplex.is1Cocycle S T A (path-to-EM0 α β)
+--    STATUS: Algebraic proof documented, requires homomorphism bridge
+--    PROOF STRATEGY (documented in Part14.agda:402-456):
+--      - Path algebra: combined path p-vw ∙ sym(p-uw) ∙ p-uv = refl
+--      - Requires ΩEM+1→EM-hom, ΩEM+1→EM-sym, ΩEM+1→EM-refl
+--      - The d₁ uses AbGroup operations; bridging requires careful matching
+--    TEX REF: Part of Lemma 2823 proof
+--    DEPENDS: EM-iso, Cubical.Homotopy.EilenbergMacLane.Properties
+--
+-- 2. vanishing-result (Part14.agda:473)
 --    TYPE: (α : (x : S) → EM (A x) 1) → (β : (x : S) (t : T x) → α x ≡ 0ₖ 1)
 --          → (x : S) → α x ≡ 0ₖ 1
 --    STATUS: Complex proof using EM→ΩEM+1 / ΩEM+1→EM isomorphisms
---    DEPENDS: Čech exactness, PT.rec→Set for path elimination
+--    DEPENDS: path-to-EM0-is-cocycle, Čech exactness, PT.rec→Set
 --    TEX REF: Lemma 2823 (proof outline in comments)
---    DOCUMENTATION: Part14.agda:278-320 (detailed proof outline)
+--    DOCUMENTATION: Part14.agda:320-470 (detailed proof infrastructure)
 --
--- 2. cech-complex-vanishing-stone (Part14.agda:349)
+-- 3. cech-complex-vanishing-stone (Part14.agda:501)
 --    TYPE: (S : Type₀) (T : S → Type₀) → hasStoneStr S → ((x : S) → hasStoneStr (T x))
 --          → ((x : S) → ∥ T x ∥₁) → Ȟ¹-vanishes S T (λ _ → ℤAbGroup)
 --    STATUS: Requires Scott continuity and finite approximation machinery
 --    TEX REF: Lemma 2878
 --    DEPENDS: finite-approximation-surjection-stone, sequential colimits
 --
--- 3. eilenberg-stone-vanish (Part14.agda:379)
+-- 4. eilenberg-stone-vanish (Part14.agda:531)
 --    TYPE: (S : Stone) → H¹-vanishes (StoneType S)
 --    STATUS: Key result connecting Stone duality to cohomology
 --    TEX REF: Lemma 2887
 --    DEPENDS: localChoice-axiom, cech-complex-vanishing-stone
 --
--- 4. cech-eilenberg-1-agree (Part14.agda:430)
+-- 5. cech-eilenberg-1-agree (Part14.agda:582)
 --    TYPE: (cover : CechCover) → H¹-vanishes X ↔ Ȟ¹-vanishes X T (λ _ → ℤAbGroup)
 --    STATUS: Čech-Eilenberg comparison theorem
 --    TEX REF: Theorem 2945
 --    DEPENDS: cech-eilenberg-0-agree, eilenberg-exact, cech-exact
 --
--- 5. circle-cohomology (Part14.agda:627)
+-- 6. circle-cohomology (Part14.agda:779)
 --    TYPE: H¹ Circle ≃ ℤ
 --    STATUS: GEOMETRIC postulate (Circle is abstract CHaus set)
 --    ISSUE: Circle (CHaus) ≠ S¹ (HIT groupoid)
 --    ELIMINATION: Would require quotient-based construction of circle
---    DOCUMENTATION: Part14.agda:602-628
+--    DOCUMENTATION: Part14.agda:750-780
 --
 -- COHOMOLOGY POSTULATES PROVED:
 -- - section-exact (Part14.agda:150): PROVED - cocycle elimination with sections
 -- - canonical-exact (Part14.agda:216): PROVED - diagonal construction
+-- - get-coboundary (Part14.agda:461): PROVED - uses Čech exactness
+-- - path-to-EM0 (Part14.agda:373): PROVED - converts paths to EM G 0 elements
 --
 -- =============================================================================
 -- TECHNICAL POSTULATES REQUIRING INFRASTRUCTURE
