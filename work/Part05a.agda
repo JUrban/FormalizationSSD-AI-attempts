@@ -119,10 +119,10 @@ interpretB∞-eq-composition (-T t) =
   π∞-from-terms (-T t) ∎
   where
   -- In Boolean rings, x = -x (from characteristic 2: x + x = 0)
-  -- This is proved in the library but we postulate for simplicity here
-  postulate
-    BooleanRing-neg-id : (s : freeBATerms ℕ) →
-      fst includeBATermsSurj s ≡ BooleanRingStr.-_ (snd (freeBA ℕ)) (fst includeBATermsSurj s)
+  -- Using BooleanAlgebraStr.-IsId from the Cubical library
+  BooleanRing-neg-id : (s : freeBATerms ℕ) →
+    fst includeBATermsSurj s ≡ BooleanRingStr.-_ (snd (freeBA ℕ)) (fst includeBATermsSurj s)
+  BooleanRing-neg-id s = BooleanAlgebraStr.-IsId (freeBA ℕ) {x = fst includeBATermsSurj s}
 interpretB∞-eq-composition (t ·T s) =
   interpretB∞ t ·∞ interpretB∞ s
     ≡⟨ cong₂ _·∞_ (interpretB∞-eq-composition t) (interpretB∞-eq-composition s) ⟩
