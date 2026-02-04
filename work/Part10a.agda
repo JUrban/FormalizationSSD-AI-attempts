@@ -85,15 +85,120 @@ module BooleanAlgebraLawsModule where
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x}))
                             _ _
 
-  -- Idempotence of intersection (closed) - postulated
+  -- Helper: P × P ↔ P for props (idempotence of product)
+  ×-hProp-idem : (P : hProp ℓ-zero)
+    → ((fst P × fst P) , isProp× (snd P) (snd P)) ≡ P
+  ×-hProp-idem P = hProp≡ _ _ (λ (p , _) → p) (λ p → p , p)
+
+  -- Helper: ∥ P ⊎ P ∥₁ ↔ P for props (idempotence of truncated union)
+  ⊎-hProp-idem : (P : hProp ℓ-zero)
+    → (∥ fst P ⊎ fst P ∥₁ , squash₁) ≡ P
+  ⊎-hProp-idem P = hProp≡ _ _
+    (PT.rec (snd P) (λ { (inl p) → p ; (inr p) → p }))
+    (λ p → ∣ inl p ∣₁)
+
+  -- Idempotence of intersection (closed) - PROVED
+  closedIntersectionIdem : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A A ≡ A
+  closedIntersectionIdem (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × fst (A x)) , isProp× (snd (A x)) (snd (A x))) ≡ A
+    fst-path = funExt (λ x → ×-hProp-idem (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) (A x) (Aclosed x) (Aclosed x))
+                     Aclosed
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Idempotence of union (closed) - PROVED
+  closedUnionIdem : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A A ≡ A
+  closedUnionIdem (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (∥ fst (A x) ⊎ fst (A x) ∥₁) , squash₁) ≡ A
+    fst-path = funExt (λ x → ⊎-hProp-idem (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedOr (A x) (A x) (Aclosed x) (Aclosed x))
+                     Aclosed
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Helper: P × Unit ↔ P (identity for intersection with Full)
+  ×-Unit-right : (P : hProp ℓ-zero)
+    → ((fst P × Unit) , isProp× (snd P) (λ _ _ → refl)) ≡ P
+  ×-Unit-right P = hProp≡ _ _ (λ (p , _) → p) (λ p → p , tt)
+
+  -- Helper: ∥ P ⊎ ⊥ ∥₁ ↔ P (identity for union with Empty)
+  ⊎-⊥-right : (P : hProp ℓ-zero)
+    → (∥ fst P ⊎ ⊥ ∥₁ , squash₁) ≡ P
+  ⊎-⊥-right P = hProp≡ _ _
+    (PT.rec (snd P) (λ { (inl p) → p ; (inr ()) }))
+    (λ p → ∣ inl p ∣₁)
+
+  -- Identity: A ∩ Full = A - PROVED
+  closedIntersectionFull : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A FullClosedSubset ≡ A
+  closedIntersectionFull (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × Unit) , isProp× (snd (A x)) (λ _ _ → refl)) ≡ A
+    fst-path = funExt (λ x → ×-Unit-right (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) ⊤-hProp (Aclosed x) ⊤-isClosed)
+                     Aclosed
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Identity: A ∪ Empty = A - PROVED
+  closedUnionEmpty : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A EmptyClosedSubset ≡ A
+  closedUnionEmpty (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (∥ fst (A x) ⊎ ⊥ ∥₁) , squash₁) ≡ A
+    fst-path = funExt (λ x → ⊎-⊥-right (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedOr (A x) ⊥-hProp (Aclosed x) ⊥-isClosed)
+                     Aclosed
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Helper: P × ⊥ ↔ ⊥ (annihilation with Empty)
+  ×-⊥-right : (P : hProp ℓ-zero)
+    → ((fst P × ⊥) , isProp× (snd P) isProp⊥) ≡ ⊥-hProp
+  ×-⊥-right P = hProp≡ _ _ (λ (_ , bot) → bot) (λ ())
+
+  -- Helper: ∥ P ⊎ Unit ∥₁ ↔ Unit (annihilation with Full)
+  ⊎-Unit-right : (P : hProp ℓ-zero)
+    → (∥ fst P ⊎ Unit ∥₁ , squash₁) ≡ ⊤-hProp
+  ⊎-Unit-right P = hProp≡ _ _ (λ _ → tt) (λ _ → ∣ inr tt ∣₁)
+
+  -- Annihilation: A ∩ Empty = Empty - PROVED
+  closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
+  closedIntersectionEmpty (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × ⊥) , isProp× (snd (A x)) isProp⊥) ≡ (λ _ → ⊥-hProp)
+    fst-path = funExt (λ x → ×-⊥-right (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) ⊥-hProp (Aclosed x) ⊥-isClosed)
+                     (λ _ → ⊥-isClosed)
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Annihilation: A ∪ Full = Full - PROVED
+  closedUnionFull : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A FullClosedSubset ≡ FullClosedSubset
+  closedUnionFull (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (∥ fst (A x) ⊎ Unit ∥₁) , squash₁) ≡ (λ _ → ⊤-hProp)
+    fst-path = funExt (λ x → ⊎-Unit-right (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedOr (A x) ⊤-hProp (Aclosed x) ⊤-isClosed)
+                     (λ _ → ⊤-isClosed)
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Remaining closed subset laws (postulated for now)
   postulate
-    closedIntersectionIdem : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A A ≡ A
-
-    -- Idempotence of union (closed)
-    closedUnionIdem : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetUnion A A ≡ A
-
     -- Absorption: A ∩ (A ∪ B) = A
     closedAbsorption1 : (A B : ClosedSubsetOfCantor)
       → ClosedSubsetIntersection A (ClosedSubsetUnion A B) ≡ A
@@ -101,22 +206,6 @@ module BooleanAlgebraLawsModule where
     -- Absorption: A ∪ (A ∩ B) = A
     closedAbsorption2 : (A B : ClosedSubsetOfCantor)
       → ClosedSubsetUnion A (ClosedSubsetIntersection A B) ≡ A
-
-    -- Identity: A ∩ Full = A
-    closedIntersectionFull : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A FullClosedSubset ≡ A
-
-    -- Identity: A ∪ Empty = A
-    closedUnionEmpty : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetUnion A EmptyClosedSubset ≡ A
-
-    -- Annihilation: A ∩ Empty = Empty
-    closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
-
-    -- Annihilation: A ∪ Full = Full
-    closedUnionFull : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetUnion A FullClosedSubset ≡ FullClosedSubset
 
     -- Associativity of intersection (closed)
     closedIntersectionAssoc : (A B C : ClosedSubsetOfCantor)
