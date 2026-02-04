@@ -1072,6 +1072,94 @@ module CohomologyModule where
     --
     -- The only remaining postulate needed is cech-complex-vanishing-stone itself.
 
+  -- =========================================================================
+  -- BZ CONNECTIVITY INFRASTRUCTURE (CHANGES0533)
+  -- =========================================================================
+  --
+  -- This module provides PROVED lemmas about the connectivity of BZ = EM ℤ 1.
+  -- The key insight for eilenberg-stone-vanish is:
+  --   - BZ is connected (0-connected), meaning any two points are merely equal
+  --   - Therefore, for any α : S → BZ and x : S, we have ∥ α(x) ≡ 0ₖ 1 ∥₁
+  --
+  -- This fills gap #1 in the eilenberg-stone-vanish proof structure.
+
+  module BZConnectivityInfra where
+    open import Cubical.Homotopy.Connected using (isConnected)
+    open import Cubical.Homotopy.EilenbergMacLane.Properties using (isConnectedEM)
+
+    -- TYPE-CHECKED: BZ = EM ℤ 1 is 1-connected (meaning 0-connected in classical terms)
+    -- isConnected 1 A = isContr ∥ A ∥₁ (any two points are merely equal)
+    --
+    -- The Cubical library provides isConnectedEM which says:
+    --   isConnectedEM n : isConnected (suc n) (EM G n)
+    --
+    -- For BZ = EM ℤ 1, isConnectedEM 1 gives isConnected 2 BZ (i.e., 1-connected).
+    -- We need isConnected 1 BZ (i.e., 0-connected = merely inhabited + path-connected).
+    --
+    -- Use isConnectedSubtr to downgrade: isConnected 2 A → isConnected 1 A
+
+    open import Cubical.Homotopy.Connected using (isConnectedSubtr)
+
+    -- BZ = EM ℤ 1 is 2-connected (meaning 1-connected in classical terms)
+    BZ-is-2-connected : isConnected 2 BZ
+    BZ-is-2-connected = isConnectedEM {G' = ℤAbGroup} 1
+
+    -- Downgrade: 2-connected implies 1-connected
+    BZ-is-connected : isConnected 1 BZ
+    BZ-is-connected = isConnectedSubtr 1 1 BZ-is-2-connected
+
+    -- COROLLARY: Any point in BZ is merely equal to the basepoint
+    -- This follows from isConnected 1 BZ = isContr ∥ BZ ∥₁
+    --
+    -- Proof: Since ∥ BZ ∥₁ is contractible, there's a unique element up to paths.
+    -- In particular, for any x : BZ, we have ∥ x ≡ 0ₖ 1 ∥₁.
+    --
+    -- The key insight is that isConnected 1 A = isContr ∥ A ∥₁.
+    -- From this, we get ∥ x ≡ y ∥₁ for all x, y in A.
+    --
+    -- Technical approach: We use that ∣ x ∣₁ ≡ ∣ y ∣₁ in ∥ A ∥₁ implies ∥ x ≡ y ∥₁.
+    -- This is a standard fact about propositional truncation (effectivity).
+
+    -- Use isConnectedPath from Cubical library with conversion between truncation types.
+    -- isConnectedPath : isConnected (suc n) A → (a₀ a₁ : A) → isConnected n (a₀ ≡ a₁)
+    --
+    -- From BZ-is-2-connected : isConnected 2 BZ,
+    -- we get isConnected 1 (x ≡ bz₀) for any x.
+    -- isConnected 1 (x ≡ bz₀) = isContr (hLevelTrunc 1 (x ≡ bz₀))
+    --
+    -- We use propTruncTrunc1Iso from Cubical.HITs.Truncation.Properties to convert.
+
+    open import Cubical.Homotopy.Connected using (isConnectedPath)
+    open import Cubical.HITs.Truncation.Base using (hLevelTrunc)
+    open import Cubical.HITs.Truncation.Properties using (propTruncTrunc1Iso)
+    open Iso
+
+    any-point-merely-equal-to-base : (x : BZ) → ∥ x ≡ bz₀ ∥₁
+    any-point-merely-equal-to-base x =
+      let pathConnected : isConnected 1 (x ≡ bz₀)
+          pathConnected = isConnectedPath 1 BZ-is-2-connected x bz₀
+          -- isConnected 1 (x ≡ bz₀) = isContr (hLevelTrunc 1 (x ≡ bz₀))
+          witness : hLevelTrunc 1 (x ≡ bz₀)
+          witness = fst pathConnected
+      in inv propTruncTrunc1Iso witness
+
+    -- COROLLARY: For any map α : S → BZ and any x : S, α(x) is merely equal to 0ₖ 1
+    -- This is exactly what we need for eilenberg-stone-vanish step 1.
+
+    α-x-merely-null : {S : Type₀} (α : S → BZ) (x : S) → ∥ α x ≡ bz₀ ∥₁
+    α-x-merely-null α x = any-point-merely-equal-to-base (α x)
+
+    -- SUMMARY:
+    -- =========
+    -- This module provides the key fact that BZ is connected, which means:
+    -- 1. For any α : S → BZ and x : S, we have ∥ α(x) = 0ₖ 1 ∥₁
+    -- 2. This is exactly the precondition needed for localChoice-axiom
+    --
+    -- Combined with EilenbergStoneVanishProofInfra (fibers are Stone),
+    -- we now have all the infrastructure for steps 1-2 of eilenberg-stone-vanish.
+    --
+    -- The remaining gap is still cech-complex-vanishing-stone (step 3).
+
   -- REMOVED (CHANGES0511): stone-commute-delooping postulate
   -- =========================================================================
   -- This postulate was UNUSED - never called anywhere in the codebase.
