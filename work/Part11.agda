@@ -733,6 +733,31 @@ module StoneCompactHausdorffTotallyDisconnectedModule where
     qxy : fst (ConnectedComponent X x y)
     qxy D xInD = sym (cong (λ h → fst h D) ex≡ey) ∙ xInD
 
+  -- Surjectivity proof infrastructure
+  -- Key: precomposition by surjection is injective
+  open import Cubical.Functions.Surjection using (isSurjection)
+
+  -- If q : S → X is surjective, then precomposition 2^X → 2^S is injective
+  precomp-surj-inj : {S X : Type₀} → (q : S → X) → isSurjection q
+    → (f g : X → Bool) → (λ s → f (q s)) ≡ (λ s → g (q s)) → f ≡ g
+  precomp-surj-inj q q-surj f g eq = funExt λ x →
+    PT.rec (isSetBool (f x) (g x)) (λ { (s , qs≡x) →
+      cong f (sym qs≡x) ∙ funExt⁻ eq s ∙ cong g qs≡x
+    }) (q-surj x)
+
+  -- The backward direction requires:
+  -- 1. Stone cover (S, q, q-surj) from CHaus structure
+  -- 2. 2^q : 2^X → 2^S is injective (by precomp-surj-inj)
+  -- 3. By injective→Sp-surjective, Sp(2^S) → Sp(2^X) is surjective
+  -- 4. evalCHaus X ∘ q = Sp(2^q) ∘ evalCHaus S (naturality)
+  -- 5. Combined with q surjective, evalCHaus X is surjective
+  -- 6. With evalCHaus-injective (proved above), evalCHaus is an equivalence
+  -- 7. Using AlgebraCompactHausdorffCountablyPresented, 2^X is Booleω
+  -- 8. Hence hasStoneStr X = (2^X-as-Booleω, ua(evalCHaus-equiv))
+
+  -- The full proof requires piecing together truncated covers with
+  -- the surj-formal-axiom. We keep this as a postulate pending
+  -- infrastructure for AlgebraCompactHausdorffCountablyPresented.
   postulate
     StoneCompactHausdorffTotallyDisconnected-backward : (X : CHaus)
       → isTotallyDisconnected X
