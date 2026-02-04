@@ -2033,7 +2033,13 @@ module CohomologyModule where
 -- 5. closedSigmaClosed-derived (line ~9118): Complete proof in module
 -- 6. section-exact-cech-complex (line ~13335): Complete proof
 -- 7. canonical-exact-cech-complex (line ~13396): Complete proof
--- 8. exact-cech-complex-vanishing-cohomology (line ~13652): Complete proof
+-- 8. exact-cech-complex-vanishing-cohomology (line ~838): FULLY PROVED (CHANGES0529)
+--    - Depends on: path-to-EM0-is-cocycle [PROVED], vanishing-result [PROVED]
+-- 9. path-to-EM0-is-cocycle (line ~467): PROVED (CHANGES0527)
+--    - Uses EM homomorphism properties and groupoid laws
+-- 10. vanishing-result (line ~672): FULLY PROVED (CHANGES0528-0529)
+--    - Uses truncation elimination with SetElim module
+--    - path-algebra-lemma proved using abelian group commutativity (CHANGES0529)
 --
 -- PROVED BUT KEPT AS POSTULATE (forward reference issues):
 -- 1. closedSigmaClosed (line ~3278): Proof at line ~9118, kept for order
