@@ -134,6 +134,14 @@ module BooleanAlgebraLawsModule where
     → ((fst P × Unit) , isProp× (snd P) (λ _ _ → refl)) ≡ P
   ×-hProp-full P = hProp≡ _ _ (λ (p , _) → p) (λ p → p , tt)
 
+  -- Helper: (P × Q) × R ↔ P × (Q × R) for props (associativity of product)
+  ×-hProp-assoc : (P Q R : hProp ℓ-zero)
+    → ((fst P × fst Q) × fst R , isProp× (isProp× (snd P) (snd Q)) (snd R))
+      ≡ (fst P × (fst Q × fst R) , isProp× (snd P) (isProp× (snd Q) (snd R)))
+  ×-hProp-assoc P Q R = hProp≡ _ _
+    (λ ((p , q) , r) → p , (q , r))
+    (λ (p , (q , r)) → (p , q) , r)
+
   -- Annihilation: A ∩ Empty = Empty (PROVED)
   closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
     → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
@@ -161,6 +169,28 @@ module BooleanAlgebraLawsModule where
                      Aclosed
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
 
+  -- Associativity of intersection (closed) - PROVED
+  closedIntersectionAssoc : (A B C : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A (ClosedSubsetIntersection B C)
+      ≡ ClosedSubsetIntersection (ClosedSubsetIntersection A B) C
+  closedIntersectionAssoc (A , Acl) (B , Bcl) (C , Ccl) = ΣPathP (fst-path , snd-path)
+    where
+    -- Helper: apply ×-hProp-assoc with swapped direction (right assoc → left assoc)
+    fst-path : (λ x → (fst (A x) × (fst (B x) × fst (C x))) ,
+                      isProp× (snd (A x)) (isProp× (snd (B x)) (snd (C x))))
+             ≡ (λ x → ((fst (A x) × fst (B x)) × fst (C x)) ,
+                      isProp× (isProp× (snd (A x)) (snd (B x))) (snd (C x)))
+    fst-path = funExt (λ x → sym (×-hProp-assoc (A x) (B x) (C x)))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) ((fst (B x) × fst (C x)) ,
+                              isProp× (snd (B x)) (snd (C x))) (Acl x)
+                              (closedAnd (B x) (C x) (Bcl x) (Ccl x)))
+                     (λ x → closedAnd ((fst (A x) × fst (B x)) ,
+                              isProp× (snd (A x)) (snd (B x))) (C x)
+                              (closedAnd (A x) (B x) (Acl x) (Bcl x)) (Ccl x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
   -- Remaining closed subset laws (postulated for compilation speed)
   -- NOTE: These have straightforward proofs using hProp≡ (propositional extensionality via ua)
   -- but the ua causes expensive normalization that times out compilation.
@@ -181,11 +211,6 @@ module BooleanAlgebraLawsModule where
     -- Annihilation: A ∪ Full = Full
     closedUnionFull : (A : ClosedSubsetOfCantor)
       → ClosedSubsetUnion A FullClosedSubset ≡ FullClosedSubset
-
-    -- Associativity of intersection (closed)
-    closedIntersectionAssoc : (A B C : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A (ClosedSubsetIntersection B C)
-        ≡ ClosedSubsetIntersection (ClosedSubsetIntersection A B) C
 
     -- Associativity of union (closed)
     closedUnionAssoc : (A B C : ClosedSubsetOfCantor)
@@ -284,6 +309,27 @@ module BooleanAlgebraLawsModule where
                      Aopen
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
 
+  -- Associativity of intersection (open) - PROVED
+  openIntersectionAssoc : (A B C : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A (OpenSubsetIntersection B C)
+      ≡ OpenSubsetIntersection (OpenSubsetIntersection A B) C
+  openIntersectionAssoc (A , Aop) (B , Bop) (C , Cop) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × (fst (B x) × fst (C x))) ,
+                      isProp× (snd (A x)) (isProp× (snd (B x)) (snd (C x))))
+             ≡ (λ x → ((fst (A x) × fst (B x)) × fst (C x)) ,
+                      isProp× (isProp× (snd (A x)) (snd (B x))) (snd (C x)))
+    fst-path = funExt (λ x → sym (×-hProp-assoc (A x) (B x) (C x)))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openAnd (A x) ((fst (B x) × fst (C x)) ,
+                              isProp× (snd (B x)) (snd (C x))) (Aop x)
+                              (openAnd (B x) (C x) (Bop x) (Cop x)))
+                     (λ x → openAnd ((fst (A x) × fst (B x)) ,
+                              isProp× (snd (A x)) (snd (B x))) (C x)
+                              (openAnd (A x) (B x) (Aop x) (Bop x)) (Cop x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
   -- Remaining open subset laws (postulated for speed)
   postulate
     -- Absorption: A ∩ (A ∪ B) = A (open)
@@ -301,11 +347,6 @@ module BooleanAlgebraLawsModule where
     -- Annihilation: A ∪ Full = Full (open)
     openUnionFull : (A : OpenSubsetOfCantor)
       → OpenSubsetUnion A FullOpenSubset ≡ FullOpenSubset
-
-    -- Associativity of intersection (open)
-    openIntersectionAssoc : (A B C : OpenSubsetOfCantor)
-      → OpenSubsetIntersection A (OpenSubsetIntersection B C)
-        ≡ OpenSubsetIntersection (OpenSubsetIntersection A B) C
 
     -- Associativity of union (open)
     openUnionAssoc : (A B C : OpenSubsetOfCantor)
