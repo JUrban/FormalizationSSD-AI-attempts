@@ -413,25 +413,39 @@ module BooleanAlgebraLawsModule where
   openDeMorganUnion-bwd (A , _) (B , _) x (¬ax , ¬bx) =
     PT.rec isProp⊥ (λ { (inl ax) → ¬ax ax ; (inr bx) → ¬bx bx })
 
-  -- Remaining De Morgan laws (postulated for speed)
+  -- De Morgan: ¬(closed A ∩ closed B) ↔ ¬A ∪ ¬B
+  -- Forward direction (¬(A × B) → ∥¬A ⊎ ¬B∥₁) is NOT constructively provable
+  -- Backward direction (∥¬A ⊎ ¬B∥₁ → ¬(A × B)) IS constructively provable
   postulate
-    -- De Morgan: ¬(closed A ∩ closed B) ↔ ¬A ∪ ¬B
     closedDeMorganIntersection-fwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
       → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
       → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
 
-    closedDeMorganIntersection-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
-      → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
+  -- PROVED: Backward direction of De Morgan for closed intersection
+  -- Given ∥¬A ⊎ ¬B∥₁ and (a , b) : A × B, we get ⊥ by case analysis on the disjunction
+  closedDeMorganIntersection-bwd : (A B : ClosedSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (OpenSubsetUnion (ClosedSubsetComplement A) (ClosedSubsetComplement B)) x)
+    → fst (fst (ClosedSubsetComplement (ClosedSubsetIntersection A B)) x)
+  closedDeMorganIntersection-bwd (A , _) (B , _) x =
+    λ (h : ∥ (fst (A x) → ⊥) ⊎ (fst (B x) → ⊥) ∥₁) →
+    λ ((ax , bx) : fst (A x) × fst (B x)) →
+    PT.rec isProp⊥ (λ { (inl ¬ax) → ¬ax ax ; (inr ¬bx) → ¬bx bx }) h
 
-    -- De Morgan: ¬(open A ∩ open B) ↔ ¬A ∪ ¬B
+  -- De Morgan: ¬(open A ∩ open B) ↔ ¬A ∪ ¬B
+  -- Forward direction NOT constructively provable; backward IS
+  postulate
     openDeMorganIntersection-fwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
       → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
       → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
 
-    openDeMorganIntersection-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
-      → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
-      → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
+  -- PROVED: Backward direction of De Morgan for open intersection
+  openDeMorganIntersection-bwd : (A B : OpenSubsetOfCantor) (x : CantorSpace)
+    → fst (fst (ClosedSubsetUnion (OpenSubsetComplement A) (OpenSubsetComplement B)) x)
+    → fst (fst (OpenSubsetComplement (OpenSubsetIntersection A B)) x)
+  openDeMorganIntersection-bwd (A , _) (B , _) x =
+    λ (h : ∥ (fst (A x) → ⊥) ⊎ (fst (B x) → ⊥) ∥₁) →
+    λ ((ax , bx) : fst (A x) × fst (B x)) →
+    PT.rec isProp⊥ (λ { (inl ¬ax) → ¬ax ax ; (inr ¬bx) → ¬bx bx }) h
 
 -- =============================================================================
 -- BooleEpiMono (tex Remark 1475)
