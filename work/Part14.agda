@@ -34,6 +34,7 @@ module CohomologyModule where
   import Cubical.Algebra.AbGroup.Properties as AbGrpProps
   import Cubical.Algebra.Group.Properties as GrpProps
   open import Cubical.Algebra.AbGroup.Base using (AbGroup→Group)
+  open import Cubical.Algebra.AbGroup.Instances.Pi using (ΠAbGroup)
   open import Cubical.Data.Int using (ℤ; pos; negsuc)
   open import Cubical.Homotopy.EilenbergMacLane.Base using (EM; EM∙; 0ₖ; hLevelEM)
   import Cubical.Homotopy.EilenbergMacLane.Properties as EMProp
@@ -201,9 +202,9 @@ module CohomologyModule where
   module CanonicalExactCechComplex {ℓ : Level} (S : Type ℓ) (T : S → Type ℓ) (A : S → AbGroup ℓ) where
 
     -- The abelian group of functions T_x → A_x at each x
-    -- POSTULATED: funAbGroup definition has copattern issues in Part14 context
-    postulate
-      A^T : S → AbGroup ℓ
+    -- Uses ΠAbGroup from Cubical library
+    A^T : S → AbGroup ℓ
+    A^T x = ΠAbGroup {X = T x} (λ _ → A x)
 
     -- The Čech complex with coefficients in A^T
     open CechComplex S T A^T public
