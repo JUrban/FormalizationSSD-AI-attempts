@@ -3439,6 +3439,83 @@ module SequentialColimitInfrastructure where
   -- This proves Ȟ¹([0,1], ℤ) = 0 for the unit interval, which generalizes
   -- to any Stone space by profinite approximation.
 
+  -- =========================================================================
+  -- Compatible families for sequential colimits
+  -- =========================================================================
+  --
+  -- A compatible family is a sequence of functions αₙ : Iₙ → ℤ such that
+  -- αₙ₊₁ = αₙ ∘ πₙ (compatibility with projection).
+  -- In other words, α (suc n) = π* {n} (α n).
+
+  -- Compatible family type
+  CompatibleFamily : Type₀
+  CompatibleFamily = Σ[ α ∈ ((n : ℕ) → (Iₙ n → ℤ)) ]
+                       ((n : ℕ) → α (suc n) ≡ π* {n} (α n))
+
+  -- Get the n-th component of a compatible family
+  family-at : CompatibleFamily → (n : ℕ) → (Iₙ n → ℤ)
+  family-at (α , _) n = α n
+
+  -- Get the compatibility proof
+  family-compat : (fam : CompatibleFamily) → (n : ℕ) →
+                   family-at fam (suc n) ≡ π* {n} (family-at fam n)
+  family-compat (_ , compat) n = compat n
+
+  -- =========================================================================
+  -- Kernel and image for compatible families
+  -- =========================================================================
+  --
+  -- A compatible family is in ker(d₁) if each component is in ker(d₁).
+  -- Similarly for im(d₀).
+
+  -- All components in ker(d₁)
+  CompatibleFamily-inKernel-d₁ : CompatibleFamily → Type₀
+  CompatibleFamily-inKernel-d₁ fam = (n : ℕ) → inKernel-d₁ {n} (family-at fam n)
+
+  -- All components in im(d₀) with a single witness
+  CompatibleFamily-inImage-d₀ : CompatibleFamily → Type₀
+  CompatibleFamily-inImage-d₀ fam = Σ[ k ∈ ℤ ] ((n : ℕ) → family-at fam n ≡ d₀ {n} k)
+
+  -- =========================================================================
+  -- The key theorem: exactness for compatible families
+  -- =========================================================================
+  --
+  -- If all components of a compatible family are in ker(d₁), then
+  -- all components are constant (with the same constant).
+
+  -- Helper: if αₙ is constant at k and αₙ = αₙ₊₁ ∘ πₙ, then αₙ₊₁ is constant at k
+  -- (This follows from πₙ being surjective, but we can prove it directly from
+  -- the kernel characterization using finite-approx-exact.)
+
+  compatible-family-exactness : (fam : CompatibleFamily) →
+                                 CompatibleFamily-inKernel-d₁ fam →
+                                 CompatibleFamily-inImage-d₀ fam
+  compatible-family-exactness fam fam-in-ker = k₀ , constant-proof
+    where
+      -- At level 0, α₀ : Fin 1 → ℤ, and there's only one element
+      -- So α₀ is trivially in im(d₀)
+      α₀-in-image : inImage-d₀ {0} (family-at fam 0)
+      α₀-in-image = kernel-d₁-in-image-d₀ {0} (family-at fam 0) (fam-in-ker 0)
+
+      -- Extract the constant value from level 0
+      k₀ : ℤ
+      k₀ = fst α₀-in-image
+
+      -- The key: at each level, α_n is constant at k₀
+      -- We prove this by induction using compatibility
+      -- The direction is: αₙ₊₁ = π* αₙ, so if αₙ = d₀ k₀, then αₙ₊₁ = π*(d₀ k₀) = d₀ k₀
+      constant-at-level : (n : ℕ) → family-at fam n ≡ d₀ {n} k₀
+      constant-at-level zero = snd α₀-in-image
+      constant-at-level (suc n) =
+        -- By compatibility: αₙ₊₁ = π* αₙ
+        -- By IH: αₙ = d₀ k₀
+        -- So: αₙ₊₁ = π*(d₀ k₀) = d₀ k₀ (by π*-preserves-constant)
+        family-compat fam n ∙ cong (π* {n}) (constant-at-level n) ∙ π*-preserves-constant {n} k₀
+
+      -- Wrap up: the family is constant at k₀
+      constant-proof : (n : ℕ) → family-at fam n ≡ d₀ {n} k₀
+      constant-proof = constant-at-level
+
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
 -- =============================================================================
