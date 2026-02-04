@@ -798,16 +798,50 @@ module StoneCompactHausdorffTotallyDisconnectedModule where
       cong f (sym qs≡x) ∙ funExt⁻ eq s ∙ cong g qs≡x
     }) (q-surj x)
 
-  -- The backward direction requires:
-  -- 1. Stone cover (S, q, q-surj) from CHaus structure
-  -- 2. 2^q : 2^X → 2^S is injective (by precomp-surj-inj)
-  -- 3. By injective→Sp-surjective, Sp(2^S) → Sp(2^X) is surjective
-  -- 4. evalCHaus X ∘ q = Sp(2^q) ∘ evalCHaus S (naturality)
-  -- 5. Combined with q surjective, evalCHaus X is surjective
-  -- 6. With evalCHaus-injective (proved above), evalCHaus is an equivalence
-  -- 7. Using AlgebraCompactHausdorffCountablyPresented, 2^X is Booleω
-  -- 8. Hence hasStoneStr X = (2^X-as-Booleω, ua(evalCHaus-equiv))
-
+  -- PROOF OUTLINE for backward direction (tex Lemma 2186, lines 2186-2212):
+  --
+  -- Goal: isTotallyDisconnected X → hasStoneStr X
+  --       i.e., X is totally disconnected CHaus ⇒ X is Stone
+  --
+  -- 1. ALGEBRA CONSTRUCTION:
+  --    Let B = 2^X = (X → Bool) with Boolean ring structure
+  --    By AlgebraCompactHausdorffCountablyPresented (tex Lemma 2112):
+  --    There exists B' : Booleω with ⟨B'⟩ ≃ 2^X
+  --
+  -- 2. EVALUATION MAP:
+  --    Define e : X → Sp(2^X) by e(x)(f) = f(x)
+  --    This is evalCHaus defined above.
+  --
+  -- 3. INJECTIVITY (proved as evalCHaus-injective):
+  --    If e(x) = e(y), then for all f : X → Bool, f(x) = f(y)
+  --    This means y ∈ Q_x (connected component of x)
+  --    By isTotallyDisconnected, x = y
+  --
+  -- 4. SURJECTIVITY:
+  --    a) Let (S, q, q-surj) be the Stone cover from CHaus structure
+  --    b) Precomposition (−) ∘ q : 2^X → 2^S is injective (by precomp-surj-inj)
+  --    c) By contravariant Sp, Sp(2^S) → Sp(2^X) is surjective
+  --    d) evalCHaus S : S → Sp(2^S) is an iso (S is Stone ⇒ Sp(2^S) = S)
+  --    e) There's a commutative square:
+  --         S ----q---→ X
+  --         |           |
+  --    eval_S|           |eval_X
+  --         ↓           ↓
+  --       Sp(2^S) --→ Sp(2^X)
+  --    f) Since q is surjective and top-left → bottom-right is surjective,
+  --       eval_X is surjective
+  --
+  -- 5. CONCLUSION:
+  --    eval_X : X → Sp(2^X) is a bijection
+  --    Since X is a set and Sp(2^X) is a set, eval_X is an equivalence
+  --    hasStoneStr X = (B', ua(eval_X-equiv))
+  --
+  -- DEPENDENCIES:
+  -- - evalCHaus-injective: PROVED (above)
+  -- - precomp-surj-inj: PROVED (above)
+  -- - AlgebraCompactHausdorffCountablyPresented: POSTULATE (tex Lemma 2112)
+  -- - hasCHausStr.stoneCover: gives Stone S with surjection q : S ↠ X
+  --
   -- The full proof requires piecing together truncated covers with
   -- the surj-formal-axiom. We keep this as a postulate pending
   -- infrastructure for AlgebraCompactHausdorffCountablyPresented.
@@ -880,9 +914,140 @@ module StoneSigmaClosedModule where
   --
   -- Key lemma proved above: proj₁-preserves-CC shows x' ∈ Q_x.
 
-  postulate
-    ΣStone-isTotallyDisconnected : (S : Stone) (T : fst S → Stone)
-      → isTotallyDisconnected (ΣStoneCHaus S T)
+  -- Proof of ΣStone-isTotallyDisconnected following tex Theorem 2214
+  ΣStone-isTotallyDisconnected : (S : Stone) (T : fst S → Stone)
+    → isTotallyDisconnected (ΣStoneCHaus S T)
+  ΣStone-isTotallyDisconnected S T (x , y) (x' , y') ccσ = goal
+    where
+    -- Step 1: x' ∈ Q_x (by proj₁-preserves-CC)
+    x'InQx : fst (ConnectedComponent (Stone→CHaus S) x x')
+    x'InQx = proj₁-preserves-CC S T x y x' y' ccσ
+
+    -- Step 2: x ≡ x' (since S is Stone, hence totally disconnected)
+    x≡x' : x ≡ x'
+    x≡x' = StoneCompactHausdorffTotallyDisconnected-forward S x x' x'InQx
+
+    -- Step 3: Transport y' to T(x) along x≡x'
+    y'-in-Tx : fst (T x)
+    y'-in-Tx = subst (λ z → fst (T z)) (sym x≡x') y'
+
+    -- Step 4: Show y ≡ y'-in-Tx using ConnectedComponentConnected
+    -- The idea: for any g : T(x) → Bool, the map (x,y) ↦ g(snd ...)
+    -- restricted to Q_{(x,y)} is constant.
+    -- We need to show y and y'-in-Tx are in Q_y in T(x), then use T(x) being Stone.
+
+    -- Key observation: (x', y') transported back gives (x, y'-in-Tx)
+    -- Both (x,y) and (x, y'-in-Tx) are in Q_{(x,y)} of the Σ-type.
+    -- For any g : T(x) → Bool, define f : Σ → Bool by f(a,b) = g(subst ... b) if a ∈ Q_x, else ...
+    -- This is tricky because the transport depends on which point a is.
+
+    -- Simpler approach: use ConnectedComponentConnected on the Σ-type directly.
+    -- For any g : T(x) → Bool, define f : Q_{(x,y)} → Bool by f(a,b) = g(subst (sym x≡a') b)
+    -- where x≡a' comes from isTotallyDisconnected S applied to a ∈ Q_x.
+
+    -- Actually, the tex proof does: for z,z' ∈ Q_{(x,y)} ⊆ {x}×T(x),
+    -- any g : T(x) → Bool composed with π₂ gives constant map on Q_{(x,y)}
+    -- by ConnectedComponentConnected. Since T(x) is Stone, z = z'.
+
+    -- We construct: for g : T(x) → Bool, the map f : Q_{(x,y)} → Bool
+    -- f(a, b) = g(subst (T) (sym p_a) b) where p_a : x ≡ a comes from totally disconnected
+    Qσ : Type₀
+    Qσ = Σ[ p ∈ SigmaStoneType S T ] fst (ConnectedComponent (ΣStoneCHaus S T) (x , y) p)
+
+    -- (x,y) is in Qσ
+    xy-in-Qσ : Qσ
+    xy-in-Qσ = (x , y) , λ D xInD → xInD  -- reflexivity of connected component
+
+    -- (x', y') is in Qσ
+    x'y'-in-Qσ : Qσ
+    x'y'-in-Qσ = (x' , y') , ccσ
+
+    -- For any g : T(x) → Bool, we can build a map Qσ → Bool
+    -- f(a, b, cc) = g(subst T (sym p_a) b) where p_a = isTotallyDisconnected S x a (proj₁ cc)
+    make-f : (g : fst (T x) → Bool) → Qσ → Bool
+    make-f g ((a , b) , cc) = g (subst (λ z → fst (T z)) (sym p_a) b)
+      where
+      p_a : x ≡ a
+      p_a = StoneCompactHausdorffTotallyDisconnected-forward S x a
+            (proj₁-preserves-CC S T x y a b cc)
+
+    -- By ConnectedComponentConnected, make-f g is constant on Qσ
+    -- So make-f g xy-in-Qσ ≡ make-f g x'y'-in-Qσ for all g
+    f-constant : (g : fst (T x) → Bool) → make-f g xy-in-Qσ ≡ make-f g x'y'-in-Qσ
+    f-constant g = ConnectedComponentConnected (ΣStoneCHaus S T) (x , y) (make-f g) xy-in-Qσ x'y'-in-Qσ
+
+    -- make-f g xy-in-Qσ = g(subst ... refl) = g(y) (since subst refl = id)
+    -- But we need to be careful: p_x = isTotallyDisconnected S x x (proj₁ cc_x)
+    -- The path p_x might not be refl definitionally.
+
+    -- For xy-in-Qσ: p_x : x ≡ x, and we need subst (sym p_x) y
+    -- For x'y'-in-Qσ: p_x' : x ≡ x', and we need subst (sym p_x') y' = y'-in-Tx (modulo path)
+
+    -- Since isSet holds for S (Stone spaces are sets), all paths x ≡ x are equal to refl
+    isSetS : isSet (fst S)
+    isSetS = StoneEqualityClosedModule.hasStoneStr→isSet S
+
+    -- The path from isTotallyDisconnected S x x ... must equal refl
+    p_x : x ≡ x
+    p_x = StoneCompactHausdorffTotallyDisconnected-forward S x x
+          (proj₁-preserves-CC S T x y x y (λ D xInD → xInD))
+
+    p_x≡refl : p_x ≡ refl
+    p_x≡refl = isSetS x x p_x refl
+
+    -- Similarly, the path for x' equals x≡x'
+    p_x' : x ≡ x'
+    p_x' = StoneCompactHausdorffTotallyDisconnected-forward S x x'
+           (proj₁-preserves-CC S T x y x' y' ccσ)
+
+    -- make-f g xy-in-Qσ = g (subst (sym p_x) y) = g (subst refl y) = g y
+    make-f-xy : (g : fst (T x) → Bool) → make-f g xy-in-Qσ ≡ g y
+    make-f-xy g = cong (λ p → g (subst (λ z → fst (T z)) (sym p) y)) p_x≡refl
+                ∙ cong g (transportRefl y)
+
+    -- make-f g x'y'-in-Qσ = g (subst (sym p_x') y') = g y'-in-Tx (if p_x' = x≡x')
+    -- But p_x' is computed the same way as x≡x', so p_x' = x≡x' by isSet
+    p_x'≡x≡x' : p_x' ≡ x≡x'
+    p_x'≡x≡x' = isSetS x x' p_x' x≡x'
+
+    make-f-x'y' : (g : fst (T x) → Bool) → make-f g x'y'-in-Qσ ≡ g y'-in-Tx
+    make-f-x'y' g = cong (λ p → g (subst (λ z → fst (T z)) (sym p) y')) p_x'≡x≡x'
+
+    -- Combining: for all g, g y ≡ g y'-in-Tx
+    g-agrees : (g : fst (T x) → Bool) → g y ≡ g y'-in-Tx
+    g-agrees g = sym (make-f-xy g) ∙ f-constant g ∙ make-f-x'y' g
+
+    -- Now use isTotallyDisconnected for T(x) to conclude y ≡ y'-in-Tx
+    -- We need: y'-in-Tx ∈ Q_y in T(x)
+    y'-in-Qy : fst (ConnectedComponent (Stone→CHaus (T x)) y y'-in-Tx)
+    y'-in-Qy D yInD = goal'
+      where
+      -- D : T(x) → Bool with y ∈ D
+      -- Need: y'-in-Tx ∈ D, i.e., D y'-in-Tx ≡ true
+      -- We have g-agrees D : D y ≡ D y'-in-Tx
+      -- And yInD : D y ≡ true
+      goal' : D y'-in-Tx ≡ true
+      goal' = sym (g-agrees D) ∙ yInD
+
+    y≡y'-in-Tx : y ≡ y'-in-Tx
+    y≡y'-in-Tx = StoneCompactHausdorffTotallyDisconnected-forward (T x) y y'-in-Tx y'-in-Qy
+
+    -- Final goal: (x, y) ≡ (x', y')
+    -- We have x≡x' : x ≡ x' and y≡y'-in-Tx : y ≡ subst (sym x≡x') y'
+    -- So (x, y) ≡ (x', y') via ΣPathP
+    goal : (x , y) ≡ (x' , y')
+    goal = ΣPathP (x≡x' , toPathP y'-path)
+      where
+      -- Need: PathP (λ i → fst (T (x≡x' i))) y y'
+      -- We have y ≡ subst (sym x≡x') y' = y'-in-Tx
+      -- toPathP converts: subst (sym x≡x') y' ≡ y' × y ≡ subst ... y'
+      -- Actually toPathP : transport p a ≡ b → PathP (λ i → P i) a b
+      -- We need: transport (λ i → fst (T (x≡x' i))) y ≡ y'
+      -- i.e., subst (x≡x') y ≡ y'
+      -- But we have y ≡ subst (sym x≡x') y', so subst x≡x' y ≡ subst x≡x' (subst (sym x≡x') y') ≡ y'
+      y'-path : transport (λ i → fst (T (x≡x' i))) y ≡ y'
+      y'-path = cong (subst (λ z → fst (T z)) x≡x') y≡y'-in-Tx
+              ∙ transportTransport⁻ (cong (λ z → fst (T z)) x≡x') y'
 
   -- Main theorem: uses backward direction which is postulated
   StoneSigmaClosed : (S : Stone) (T : fst S → Stone)
