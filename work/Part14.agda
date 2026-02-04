@@ -4323,3 +4323,116 @@ module CechComplexVanishingStoneComplete where
   -- These are structural facts about Stone spaces that follow from
   -- the Booleω representation. They do not require new mathematics.
 
+-- =========================================================================
+-- CoboundaryFromInhabitant module (CHANGES0551)
+-- =========================================================================
+--
+-- This module provides the core lemma: given an inhabited type T and a
+-- cocycle β : T → T → ℤ, we can construct a coboundary α : T → ℤ
+-- such that β = d₀(α).
+--
+-- The key insight is that the construction uses any basepoint t₀ ∈ T:
+--   α(u) = β(t₀, u)
+--
+-- Then: d₀(α)(u,v) = α(v) - α(u) = β(t₀,v) - β(t₀,u) = β(u,v)
+-- (by cocycle condition: β(t₀,v) = β(t₀,u) + β(u,v))
+
+module CoboundaryFromInhabitant where
+  open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; squash₁; rec)
+  open SequentialColimitInfrastructure
+  import Cubical.Data.Int.Base as ℤBase
+  open import Cubical.Data.Int using (ℤ; pos)
+
+  -- =========================================================================
+  -- Cocycle condition for general types
+  -- =========================================================================
+  --
+  -- A cocycle is a function β : T → T → ℤ satisfying:
+  --   β(u,v) + β(v,w) = β(u,w) for all u,v,w : T
+  --
+  -- This is the 1-cocycle condition from Čech cohomology.
+
+  isCocycle : {T : Type₀} → (T → T → ℤ) → Type₀
+  isCocycle {T} β = (u v w : T) → (β u v ℤBase.+ β v w) ≡ β u w
+
+  -- =========================================================================
+  -- Coboundary from basepoint
+  -- =========================================================================
+  --
+  -- Given a basepoint t₀ : T, define α(u) = β(t₀, u)
+  -- Then β = d₀(α) where d₀(α)(u,v) = α(v) - α(u)
+
+  coboundary-from-basepoint : {T : Type₀} → (β : T → T → ℤ) → (t₀ : T) → (T → ℤ)
+  coboundary-from-basepoint β t₀ = λ u → β t₀ u
+
+  -- The key property: β(u,u) = 0 for any cocycle
+  -- This follows from the cocycle condition: β(u,u) + β(u,u) = β(u,u)
+  -- We postulate this for now and note it's provable from integer cancellation
+  postulate
+    cocycle-diagonal-zero : {T : Type₀} → (β : T → T → ℤ)
+      → isCocycle β → (u : T) → β u u ≡ pos 0
+
+  -- The antisymmetry property: β(u,v) + β(v,u) = 0 for any cocycle
+  -- Proof: β(u,v) + β(v,u) = β(u,u) = 0
+  cocycle-antisym : {T : Type₀} → (β : T → T → ℤ)
+    → isCocycle β → (u v : T) → (β u v ℤBase.+ β v u) ≡ pos 0
+  cocycle-antisym β cocycle u v = cocycle u v u ∙ cocycle-diagonal-zero β cocycle u
+
+  -- =========================================================================
+  -- Main theorem: coboundary from basepoint satisfies d₀(α) = β
+  -- =========================================================================
+  --
+  -- Given: β : T → T → ℤ cocycle, t₀ : T basepoint
+  -- Define: α = coboundary-from-basepoint β t₀ = λ u → β(t₀, u)
+  -- Then: d₀(α)(u,v) = α(v) - α(u) = β(t₀,v) - β(t₀,u) = β(u,v)
+  --
+  -- The last step uses: β(t₀,v) = β(t₀,u) + β(u,v) (cocycle condition)
+  -- So: β(t₀,v) - β(t₀,u) = β(u,v)
+
+  -- Helper: if a + b = c, then b = c - a
+  -- This follows from integer group laws
+  postulate
+    ℤ-rearrange : (a b c : ℤ) → (a ℤBase.+ b) ≡ c → b ≡ (c ℤBase.- a)
+
+  coboundary-correct : {T : Type₀} → (β : T → T → ℤ)
+    → isCocycle β → (t₀ : T) → (u v : T)
+    → β u v ≡ (coboundary-from-basepoint β t₀ v ℤBase.- coboundary-from-basepoint β t₀ u)
+  coboundary-correct {T} β cocycle t₀ u v =
+    -- Need: β(u,v) = β(t₀,v) - β(t₀,u)
+    -- Cocycle: β(t₀,u) + β(u,v) = β(t₀,v)
+    -- So: β(u,v) = β(t₀,v) - β(t₀,u)
+    let cocycle-eq : (β t₀ u ℤBase.+ β u v) ≡ β t₀ v
+        cocycle-eq = cocycle t₀ u v
+    in ℤ-rearrange (β t₀ u) (β u v) (β t₀ v) cocycle-eq
+
+  -- =========================================================================
+  -- Truncated version: coboundary from merely inhabited type
+  -- =========================================================================
+  --
+  -- When T is merely inhabited (∥ T ∥₁), we can still construct a coboundary
+  -- because the result type is propositional (path equality).
+
+  coboundary-from-inhabited : {T : Type₀} → (β : T → T → ℤ)
+    → isCocycle β → ∥ T ∥₁
+    → ∥ Σ[ α ∈ (T → ℤ) ] ((u v : T) → β u v ≡ (α v ℤBase.- α u)) ∥₁
+  coboundary-from-inhabited {T} β cocycle inhabited =
+    rec squash₁
+        (λ t₀ → ∣ coboundary-from-basepoint β t₀ ,
+                   (λ u v → coboundary-correct β cocycle t₀ u v) ∣₁)
+        inhabited
+
+  -- =========================================================================
+  -- Summary: This provides the core mathematical argument
+  -- =========================================================================
+  --
+  -- The coboundary-from-inhabited lemma shows that for any inhabited type T
+  -- with a cocycle β, we can construct a coboundary α (under truncation).
+  --
+  -- For cech-complex-vanishing-stone:
+  -- - Each fiber T(x) is merely inhabited by hypothesis
+  -- - Each cocycle β_x : T(x) → T(x) → ℤ has a coboundary α_x
+  -- - The construction is uniform over x : S
+  --
+  -- The remaining work is to show this construction is compatible with
+  -- the Stone space structure (finite approximations).
+
