@@ -552,6 +552,22 @@ module ConnectedComponentModule where
 -- =============================================================================
 --
 -- For X:CHaus with x:X, any map Q_x → 2 is constant.
+--
+-- PROOF OUTLINE (from tex lines 2176-2184):
+-- 1. Assume Q_x = A ∪ B with A, B decidable disjoint subsets, and x ∈ A
+-- 2. Q_x ⊆ X is closed (by ConnectedComponentClosedInCompactHausdorff)
+-- 3. A, B ⊆ X are closed and disjoint (using ClosedTransitive)
+-- 4. By CHausSeperationOfClosedByOpens, ∃ disjoint open U, V with A ⊆ U, B ⊆ V
+-- 5. By ConnectedComponentSubOpenHasDecidableInbetween, ∃ decidable D with Q_x ⊆ D ⊆ U ∪ V
+-- 6. E := D ∩ U = D ∩ ¬V is clopen (hence decidable)
+-- 7. x ∈ E, so Q_x ⊆ E by definition of Q_x
+-- 8. But B ⊆ Q_x ⊆ E and B ∩ E = ∅, so B = ∅
+--
+-- DEPENDENCIES:
+-- - ConnectedComponentClosedInCompactHausdorff (postulate)
+-- - CHausSeperationOfClosedByOpens (postulate)
+-- - ConnectedComponentSubOpenHasDecidableInbetween (postulate)
+-- - ClosedTransitive (subsets of closed subsets are closed)
 
 module ConnectedComponentConnectedModule where
   open CompactHausdorffModule
