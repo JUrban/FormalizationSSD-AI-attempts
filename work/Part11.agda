@@ -373,17 +373,23 @@ module CompactHausdorffTopologyModule where
     → (p : fst S → X) → DecSubset S → X → hProp ℓ-zero
   imageDecSubset p D x = ∥ Σ[ s ∈ _ ] (D s ≡ true) × (p s ≡ x) ∥₁ , squash₁
 
-  -- Complement of image
-  complementImage : {X : Type₀}
-    → (A : X → hProp ℓ-zero) → X → hProp ℓ-zero
-  complementImage A x = (fst (A x) → ⊥) , isProp→ isProp⊥
+  -- REMOVED (CHANGES0510): CompactHausdorffTopology-open postulate and its helpers
+  -- =====================================================================================
+  -- The CompactHausdorffTopology-open postulate was UNUSED - never called anywhere.
+  -- Its helper definitions complementImage and countableUnion were also only used for it.
+  -- Commented out to eliminate the unused postulate.
+  --
+  -- -- Complement of image
+  -- complementImage : {X : Type₀}
+  --   → (A : X → hProp ℓ-zero) → X → hProp ℓ-zero
+  -- complementImage A x = (fst (A x) → ⊥) , isProp→ isProp⊥
+  --
+  -- -- Countable union
+  -- countableUnion : {X : Type₀}
+  --   → (A : ℕ → (X → hProp ℓ-zero)) → X → hProp ℓ-zero
+  -- countableUnion A x = ∥ Σ[ n ∈ ℕ ] fst (A n x) ∥₁ , squash₁
 
-  -- Countable union
-  countableUnion : {X : Type₀}
-    → (A : ℕ → (X → hProp ℓ-zero)) → X → hProp ℓ-zero
-  countableUnion A x = ∥ Σ[ n ∈ ℕ ] fst (A n x) ∥₁ , squash₁
-
-  -- Main theorem (postulated)
+  -- Main theorem for closed sets (postulated, USED via Part21)
   postulate
     CompactHausdorffTopology-closed : (X : CHaus) (S : Stone)
       → (p : fst S → fst X) → isSurjection p
@@ -391,11 +397,15 @@ module CompactHausdorffTopologyModule where
       → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
           ((x : fst X) → fst (A x) ≡ fst (countableIntersectionClosed (λ n → imageDecSubset {S} {fst X} p (D n)) x)) ∥₁
 
-    CompactHausdorffTopology-open : (X : CHaus) (S : Stone)
-      → (p : fst S → fst X) → isSurjection p
-      → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
-      → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
-          ((x : fst X) → fst (U x) ≡ fst (countableUnion (λ n → complementImage (imageDecSubset {S} {fst X} p (D n))) x)) ∥₁
+  -- REMOVED (CHANGES0510): CompactHausdorffTopology-open postulate
+  -- This postulate was defined but NEVER USED anywhere in the codebase.
+  -- The "open" version can be derived from the "closed" version via negation if needed.
+  --
+  --   CompactHausdorffTopology-open : (X : CHaus) (S : Stone)
+  --     → (p : fst S → fst X) → isSurjection p
+  --     → (U : fst X → hProp ℓ-zero) → ((x : fst X) → isOpenProp (U x))
+  --     → ∥ Σ[ D ∈ (ℕ → DecSubset S) ]
+  --         ((x : fst X) → fst (U x) ≡ fst (countableUnion (λ n → complementImage (imageDecSubset {S} {fst X} p (D n))) x)) ∥₁
 
 -- =============================================================================
 -- CHausSeperationOfClosedByOpens (tex Lemma 2058)
