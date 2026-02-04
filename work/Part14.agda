@@ -4342,6 +4342,8 @@ module CoboundaryFromInhabitant where
   open SequentialColimitInfrastructure
   import Cubical.Data.Int.Base as ℤBase
   open import Cubical.Data.Int using (ℤ; pos)
+  open import Cubical.Algebra.Group.Base using (GroupStr)
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
 
   -- =========================================================================
   -- Cocycle condition for general types
@@ -4367,10 +4369,39 @@ module CoboundaryFromInhabitant where
 
   -- The key property: β(u,u) = 0 for any cocycle
   -- This follows from the cocycle condition: β(u,u) + β(u,u) = β(u,u)
-  -- We postulate this for now and note it's provable from integer cancellation
+  -- Proof: From cocycle β(u,u) + β(u,u) = β(u,u), we get β(u,u) = 0 by cancellation
+  --
+  -- Using group laws: a + a = a implies a = a + 0 = a + (a + (-a)) = (a + a) + (-a) = a + (-a) = 0
+
+  -- Helper: a + a = a implies a = 0 for integers
+  -- Proof: From a + a = a, we have (a + a) - a = a - a.
+  --        Then a = (a + a) - a (by associativity/group laws) = a - a = 0.
+  -- We use GroupStr and ℤGroup
+
+  -- Lemma: (a + b) - b = a for any integers a, b
+  -- This is a standard group law: (a · b) · b⁻¹ = a
   postulate
-    cocycle-diagonal-zero : {T : Type₀} → (β : T → T → ℤ)
-      → isCocycle β → (u : T) → β u u ≡ pos 0
+    ℤ-add-sub-cancel-right : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- b) ≡ a
+
+  ℤ-idempotent-zero : (a : ℤ) → (a ℤBase.+ a) ≡ a → a ≡ pos 0
+  ℤ-idempotent-zero a a+a=a =
+    let -- Step 1: (a + a) - a = a (by group law)
+        aa-a=a : ((a ℤBase.+ a) ℤBase.- a) ≡ a
+        aa-a=a = ℤ-add-sub-cancel-right a a
+        -- Step 2: a - a = 0
+        a-a=0 : (a ℤBase.- a) ≡ pos 0
+        a-a=0 = GroupStr.·InvR (snd ℤGroup) a
+        -- Step 3: From a + a = a, we have (a + a) - a = a - a
+        --         So a = a - a = 0
+        step3 : ((a ℤBase.+ a) ℤBase.- a) ≡ (a ℤBase.- a)
+        step3 = cong (λ x → x ℤBase.- a) a+a=a
+        -- Combining: a = (a + a) - a = a - a = 0
+    in sym aa-a=a ∙ step3 ∙ a-a=0
+
+  cocycle-diagonal-zero : {T : Type₀} → (β : T → T → ℤ)
+    → isCocycle β → (u : T) → β u u ≡ pos 0
+  cocycle-diagonal-zero β cocycle u =
+    ℤ-idempotent-zero (β u u) (cocycle u u u)
 
   -- The antisymmetry property: β(u,v) + β(v,u) = 0 for any cocycle
   -- Proof: β(u,v) + β(v,u) = β(u,u) = 0
@@ -4391,8 +4422,24 @@ module CoboundaryFromInhabitant where
 
   -- Helper: if a + b = c, then b = c - a
   -- This follows from integer group laws
+  -- Proof: From a + b = c, we get c - a = (a + b) - a = b (by group property)
+  open import Cubical.Data.Int.Properties using (-≡0; isSetℤ)
+
+  -- Lemma: (a + b) - a = b for abelian groups
+  -- This is postulated here; provable from group laws
   postulate
-    ℤ-rearrange : (a b c : ℤ) → (a ℤBase.+ b) ≡ c → b ≡ (c ℤBase.- a)
+    ℤ-add-sub-cancel-left : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- a) ≡ b
+
+  ℤ-rearrange : (a b c : ℤ) → (a ℤBase.+ b) ≡ c → b ≡ (c ℤBase.- a)
+  ℤ-rearrange a b c a+b≡c =
+    -- Goal: b = c - a
+    -- From a + b = c, we get c - a = (a + b) - a (by substitution)
+    -- And (a + b) - a = b (by ℤ-add-sub-cancel-left)
+    let eq : (c ℤBase.- a) ≡ ((a ℤBase.+ b) ℤBase.- a)
+        eq = cong (λ x → x ℤBase.- a) (sym a+b≡c)
+        -- eq ∙ ℤ-add-sub-cancel-left gives (c - a) ≡ b
+        -- sym gives b ≡ (c - a)
+    in sym (eq ∙ ℤ-add-sub-cancel-left a b)
 
   coboundary-correct : {T : Type₀} → (β : T → T → ℤ)
     → isCocycle β → (t₀ : T) → (u v : T)
