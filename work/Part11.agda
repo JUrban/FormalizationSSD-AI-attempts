@@ -771,6 +771,7 @@ module StoneCompactHausdorffTotallyDisconnectedModule where
 
 module StoneSigmaClosedModule where
   open import Axioms.StoneDuality using (Stone; hasStoneStr)
+  open CompactHausdorffModule
   open SigmaCompactHausdorffModule
   open StoneCompactHausdorffTotallyDisconnectedModule
   open ConnectedComponentModule
@@ -780,10 +781,52 @@ module StoneSigmaClosedModule where
   SigmaStoneType : (S : Stone) → (T : fst S → Stone) → Type₀
   SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x)
 
-  -- Main theorem
+  -- CHaus structure on Sigma of Stone family
+  -- Using Stone→CHaus and the fact that CHaus is closed under dependent sums
+  ΣStoneCHaus : (S : Stone) → (T : fst S → Stone) → CHaus
+  ΣStoneCHaus S T = CHausΣ (Stone→CHaus S) (λ x → Stone→CHaus (T x))
+
+  -- Key lemma: projection preserves connected component membership
+  -- If (x',y') ∈ Q_{(x,y)} in Σ-type, then x' ∈ Q_x in S
+  proj₁-preserves-CC : (S : Stone) (T : fst S → Stone)
+    → (x : fst S) (y : fst (T x)) (x' : fst S) (y' : fst (T x'))
+    → fst (ConnectedComponent (ΣStoneCHaus S T) (x , y) (x' , y'))
+    → fst (ConnectedComponent (Stone→CHaus S) x x')
+  proj₁-preserves-CC S T x y x' y' ccσ D xInD = goal
+    where
+    -- Lift D : S → Bool to Dσ : Σ → Bool by Dσ(a,b) = D(a)
+    Dσ : DecSubsetCHaus (ΣStoneCHaus S T)
+    Dσ (a , b) = D a
+    -- (x,y) ∈ Dσ since x ∈ D
+    xyInDσ : inDec (ΣStoneCHaus S T) (x , y) Dσ
+    xyInDσ = xInD
+    -- By connected component, (x',y') ∈ Dσ
+    x'y'InDσ : inDec (ΣStoneCHaus S T) (x' , y') Dσ
+    x'y'InDσ = ccσ Dσ xyInDσ
+    -- Hence x' ∈ D
+    goal : inDec (Stone→CHaus S) x' D
+    goal = x'y'InDσ
+
+  -- Prove Σ of Stone family is totally disconnected
+  -- The proof structure:
+  -- 1. For (x',y') ∈ Q_{(x,y)}, first show x' ∈ Q_x using proj₁-preserves-CC
+  -- 2. Since S is Stone (hence totally disconnected), x = x'
+  -- 3. Now need: y and (transport y' along x=x') are equal
+  -- 4. This follows from ConnectedComponentConnected: any map Q_y → Bool is constant
+  -- 5. Since T(x) is Stone, we get y = transport y'
+  --
+  -- The dependent types make this proof tricky, so we postulate for now.
+  -- Key lemma proj₁-preserves-CC is proved above.
   postulate
-    StoneSigmaClosed : (S : Stone) (T : fst S → Stone)
-      → hasStoneStr (SigmaStoneType S T)
+    ΣStone-isTotallyDisconnected : (S : Stone) (T : fst S → Stone)
+      → isTotallyDisconnected (ΣStoneCHaus S T)
+
+  -- Main theorem: uses backward direction which is postulated
+  StoneSigmaClosed : (S : Stone) (T : fst S → Stone)
+    → hasStoneStr (SigmaStoneType S T)
+  StoneSigmaClosed S T = StoneCompactHausdorffTotallyDisconnected-backward
+    (ΣStoneCHaus S T)
+    (ΣStone-isTotallyDisconnected S T)
 
   -- Derived: Sigma of Stone is Stone
   StoneΣ : (S : Stone) → (T : fst S → Stone) → Stone
