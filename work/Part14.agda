@@ -346,10 +346,56 @@ module CohomologyModule where
       → (x : S) → T x → T x → EM (A x) 0
     path-to-EM0 α β x u v = Iso.inv (EM-iso x) (sym (β x u) ∙ β x v)
 
-    -- Step 2-3: Use Čech exactness to get the adjustment function
-    -- This requires showing path-to-EM0 is a cocycle, which needs ΩEM+1→EM-hom
-    -- For now, postulate the intermediate steps
+    -- Step 2: Show path-to-EM0 defines a 1-cocycle
+    -- The cocycle condition is: g(v,w) - g(u,w) + g(u,v) = 0
+    -- Using path algebra: g(u,v) = ΩEM+1→EM(sym(β_u) ∙ β_v)
+    --
+    -- In paths in EM G 1:
+    --   sym(β_u) ∙ β_v : 0ₖ ≡ 0ₖ  (g(u,v) path form)
+    --   sym(β_u) ∙ β_w : 0ₖ ≡ 0ₖ  (g(u,w) path form)
+    --   sym(β_v) ∙ β_w : 0ₖ ≡ 0ₖ  (g(v,w) path form)
+    --
+    -- The cocycle condition follows from path concatenation:
+    --   g(v,w) - g(u,w) + g(u,v) = 0
+    -- translates via ΩEM+1→EM homomorphism to:
+    --   (sym(β_v) ∙ β_w) ∙ sym(sym(β_u) ∙ β_w) ∙ (sym(β_u) ∙ β_v) ≡ refl
+    -- which simplifies to refl by path algebra
 
+    -- Helper: The EM(0) group operations via ΩEM+1→EM isomorphism
+    module EMGroupOps (x : S) where
+      private
+        Gx = A x
+        open AbGroupStr (snd Gx) renaming (_+_ to _+g_ ; _-_ to _-g_ ; 0g to 0g' ; -_ to neg)
+
+      -- EM G 0 is just the underlying carrier of G
+      EM0-carrier : Type _
+      EM0-carrier = EM Gx 0
+
+      -- Path composition corresponds to group addition via ΩEM+1→EM
+      -- This is EMProp.ΩEM+1→EM-hom at level 0
+      ΩEM1→EM0 : 0ₖ {G = Gx} 1 ≡ 0ₖ {G = Gx} 1 → EM Gx 0
+      ΩEM1→EM0 = Iso.inv (EM-iso x)
+
+      EM0→ΩEM1 : EM Gx 0 → 0ₖ {G = Gx} 1 ≡ 0ₖ {G = Gx} 1
+      EM0→ΩEM1 = Iso.fun (EM-iso x)
+
+    -- The cocycle condition requires showing d₁(g) = 0 where g = path-to-EM0 α β
+    -- This is the key technical lemma
+    -- For now, postulate this step (requires ΩEM+1→EM-hom from Cubical library)
+    postulate
+      path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
+        → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
+        → CechComplex.is1Cocycle S T A (path-to-EM0 α β)
+
+    -- Step 3: Apply Čech exactness to get coboundary witness
+    -- Given g : C¹ is a cocycle, exact gives us ϕ : C⁰ with d₀(ϕ) = g
+    get-coboundary : (α : (x : S) → EM (A x) 1)
+      → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
+      → CechComplex.is1Coboundary S T A (path-to-EM0 α β)
+    get-coboundary α β = exact (path-to-EM0 α β) (path-to-EM0-is-cocycle α β)
+
+    -- Step 4-7: Use the coboundary to adjust β and make it constant
+    -- Then use PT.rec→Set to eliminate the truncation
     -- POSTULATED: The path adjustment makes β constant
     -- This is the main technical lemma that uses the Čech complex exactness
     postulate
