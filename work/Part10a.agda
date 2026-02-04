@@ -128,6 +128,12 @@ module BooleanAlgebraLawsModule where
     → ((fst P × ⊥) , isProp× (snd P) isProp⊥) ≡ ⊥-hProp
   ×-hProp-empty P = hProp≡ _ _ (λ (_ , bot) → bot) (λ bot → ex-falso bot , bot)
 
+  -- Helper: P × Unit ↔ P for props (identity of product with unit)
+  -- This is fast because Unit is trivial (single constructor tt)
+  ×-hProp-full : (P : hProp ℓ-zero)
+    → ((fst P × Unit) , isProp× (snd P) (λ _ _ → refl)) ≡ P
+  ×-hProp-full P = hProp≡ _ _ (λ (p , _) → p) (λ p → p , tt)
+
   -- Annihilation: A ∩ Empty = Empty (PROVED)
   closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
     → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
@@ -139,6 +145,20 @@ module BooleanAlgebraLawsModule where
     snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
                      (λ x → closedAnd (A x) ⊥-hProp (Aclosed x) ⊥-isClosed)
                      (λ _ → ⊥-isClosed)
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
+
+  -- Identity: A ∩ Full = A (PROVED)
+  -- FullClosedSubset = (λ _ → ⊤-hProp) where ⊤-hProp = (Unit , λ _ _ → refl)
+  closedIntersectionFull : (A : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A FullClosedSubset ≡ A
+  closedIntersectionFull (A , Aclosed) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × Unit) , isProp× (snd (A x)) (λ _ _ → refl)) ≡ A
+    fst-path = funExt (λ x → ×-hProp-full (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) ⊤-hProp (Aclosed x) ⊤-isClosed)
+                     Aclosed
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
 
   -- Remaining closed subset laws (postulated for compilation speed)
@@ -153,10 +173,6 @@ module BooleanAlgebraLawsModule where
     -- Absorption: A ∪ (A ∩ B) = A
     closedAbsorption2 : (A B : ClosedSubsetOfCantor)
       → ClosedSubsetUnion A (ClosedSubsetIntersection A B) ≡ A
-
-    -- Identity: A ∩ Full = A
-    closedIntersectionFull : (A : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A FullClosedSubset ≡ A
 
     -- Identity: A ∪ Empty = A
     closedUnionEmpty : (A : ClosedSubsetOfCantor)
@@ -255,6 +271,19 @@ module BooleanAlgebraLawsModule where
                      Aopen
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
 
+  -- Identity: A ∩ Full = A (open) - PROVED
+  openIntersectionFull : (A : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A FullOpenSubset ≡ A
+  openIntersectionFull (A , Aopen) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × Unit) , isProp× (snd (A x)) (λ _ _ → refl)) ≡ A
+    fst-path = funExt (λ x → ×-hProp-full (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openAnd (A x) ⊤-hProp (Aopen x) ⊤-isOpen)
+                     Aopen
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
   -- Remaining open subset laws (postulated for speed)
   postulate
     -- Absorption: A ∩ (A ∪ B) = A (open)
@@ -264,10 +293,6 @@ module BooleanAlgebraLawsModule where
     -- Absorption: A ∪ (A ∩ B) = A (open)
     openAbsorption2 : (A B : OpenSubsetOfCantor)
       → OpenSubsetUnion A (OpenSubsetIntersection A B) ≡ A
-
-    -- Identity: A ∩ Full = A (open)
-    openIntersectionFull : (A : OpenSubsetOfCantor)
-      → OpenSubsetIntersection A FullOpenSubset ≡ A
 
     -- Identity: A ∪ Empty = A (open)
     openUnionEmpty : (A : OpenSubsetOfCantor)
