@@ -237,6 +237,23 @@ module ConnectednessForBoolILocal where
   -- The key lemma: if A is 1-connected and B is a set, any f : A → B is constant
   -- POSTULATED: The proof uses truncation elimination into sets
   -- which requires setB to be treated as (∀ a b → isProp (a ≡ b))
+  --
+  -- STATUS: ORPHANED (CHANGES0415)
+  -- =============================
+  -- This postulate has NO USES as of CHANGES0410.
+  -- - Part19.agda now uses contr-map-const directly (simpler for contractible types)
+  -- - Bool-I-local-derived and Z-I-local-derived use contr-map-const isContrUnitInterval
+  -- - Since UnitInterval is contractible (not just 1-connected), the simpler approach works
+  --
+  -- KEPT FOR: Theoretical completeness - may be needed for:
+  -- - 1-connected but non-contractible types (e.g., spheres, higher truncations)
+  -- - Future uses where only 1-connectedness is available, not full contractibility
+  --
+  -- PROOF DIFFICULTY:
+  -- - PT.rec requires isProp B, but we only have isSet B
+  -- - Would need PT.rec2 or encode-decode method to extract the path
+  -- - The proof is non-trivial in constructive/cubical settings
+  --
   postulate
     connected-1-to-set-constant-postulate : {A : Type ℓ-zero} {B : Type ℓ-zero}
       → is-1-connected A
