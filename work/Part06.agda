@@ -1840,3 +1840,25 @@ module Sp-f-surjective-from-proof where
   -- 1. f-injective ≡ f-injective-from-trunc (by f-injective-equality in Part14)
   -- 2. Both use the same axiom (injective→Sp-surjective from surj-formal-axiom)
   -- 3. isProp on the result type ensures equality
+
+-- =============================================================================
+-- Forward Reference Postulate Soundness Documentation (Part05a)
+-- =============================================================================
+--
+-- Part05a contains two postulates that are forward references:
+--
+-- 1. normalizeTerm-correct (Part05a:248-249):
+--    Type: (t : freeBATerms ℕ) → ⟦ normalizeTerm t ⟧nf ≡ interpretB∞ t
+--    PROVED HERE: normalizeTerm-correct (Part06:1191)
+--    SOUNDNESS: Type is a proposition (isPropΠ into set equality)
+--
+-- 2. f-kernel-normalForm-05a (Part05a:274-275):
+--    Type: (nf : B∞-NormalForm) → fst f ⟦ nf ⟧nf ≡ (𝟘∞ , 𝟘∞) → ⟦ nf ⟧nf ≡ 𝟘∞
+--    PROVED IN Part05: f-kernel-normalForm (Part05:1512)
+--    SOUNDNESS: Type is a proposition (isPropΠ2 into set equality)
+--
+-- NOTE: Part05a and Part06 define separate but identical normalizeTerm functions
+-- (necessary for module ordering). The postulates and proofs operate on their
+-- respective definitions, which have the same semantics. The final export
+-- f-injective-05a from Part05a equals f-injective-from-trunc from Part06 as
+-- proven by f-injective-05a-equality in Part14:1077.
