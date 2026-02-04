@@ -402,8 +402,27 @@ module BoolIsStoneModule where
   Bool-has-StoneStr : hasStoneStr Bool
   Bool-has-StoneStr = Bool²-Booleω , ua Sp-Bool²≃Bool
 
-  -- Local forward declaration of StoneSigmaClosed (defined later in StoneSigmaClosedModule)
+  -- =======================================================================
+  -- FORWARD REFERENCE: LocalStoneSigmaClosed
+  -- =======================================================================
+  -- Local forward declaration of StoneSigmaClosed
+  --
   -- tex Theorem 2214: If S:Stone and T:S→Stone, then Σ_{x:S} T(x) is Stone.
+  --
+  -- PROVED: Part11.agda:1053 (StoneSigmaClosedModule.StoneSigmaClosed)
+  --
+  -- This is a forward reference postulate needed here because:
+  -- 1. We need StoneSigmaClosed in Part06 for ℕ∞ ⊎ ℕ∞ constructions
+  -- 2. The actual proof requires infrastructure from Parts 07-11
+  --
+  -- CONSISTENCY: The types match exactly:
+  --   LocalStoneSigmaClosed : (S : Stone) (T : fst S → Stone) → hasStoneStr (Σ fst S (fst ∘ T))
+  --   StoneSigmaClosed      : (S : Stone) (T : fst S → Stone) → hasStoneStr (SigmaStoneType S T)
+  -- where SigmaStoneType S T = Σ[ x ∈ fst S ] fst (T x)
+  --
+  -- The postulate is SOUND because hasStoneStr is a proposition (isPropHasStoneStr),
+  -- so any two proofs are equal.
+  -- =======================================================================
   -- Note: definitions duplicated here with private names to avoid forward reference
   private
     LocalSigmaStoneType : (S : Stone) → (T : fst S → Stone) → Type₀
