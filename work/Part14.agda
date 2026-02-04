@@ -318,6 +318,40 @@ module CohomologyModule where
     -- - Iso.ret for the EM↔ΩEM isomorphism roundtrip
     -- - Group homomorphism properties of EM→ΩEM+1
     --
+    -- =========================================================================
+    -- PROOF INFRASTRUCTURE for vanishing-result
+    -- =========================================================================
+
+    -- Import necessary tools for the proof
+    open import Cubical.HITs.PropositionalTruncation.Properties using (rec→Set)
+    open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
+
+    -- Key tool: paths in EM G 1 form a set (because EM G 1 is a groupoid)
+    isSet-paths-in-EM : (G : AbGroup ℓ) (a b : EM G 1) → isSet (a ≡ b)
+    isSet-paths-in-EM G a b = isOfHLevelPath' 2 (hLevelEM G 1) a b
+
+    -- Corollary: paths to 0ₖ form a set
+    isSet-paths-to-0ₖ : (G : AbGroup ℓ) (a : EM G 1) → isSet (a ≡ 0ₖ {G = G} 1)
+    isSet-paths-to-0ₖ G a = isSet-paths-in-EM G a (0ₖ {G = G} 1)
+
+    -- The EM↔ΩEM+1 isomorphism at level 0
+    EM-iso : (x : S) → Iso (EM (A x) 0) (0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1)
+    EM-iso x = EMProp.Iso-EM-ΩEM+1 {G = A x} 0
+
+    -- Step 1: Convert paths β to group elements via ΩEM+1→EM
+    -- Given β_x(u) : α_x ≡ 0ₖ and β_x(v) : α_x ≡ 0ₖ,
+    -- we get sym(β_x(u)) ∙ β_x(v) : 0ₖ ≡ 0ₖ, which converts to EM (A x) 0
+    path-to-EM0 : (α : (x : S) → EM (A x) 1)
+      → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
+      → (x : S) → T x → T x → EM (A x) 0
+    path-to-EM0 α β x u v = Iso.inv (EM-iso x) (sym (β x u) ∙ β x v)
+
+    -- Step 2-3: Use Čech exactness to get the adjustment function
+    -- This requires showing path-to-EM0 is a cocycle, which needs ΩEM+1→EM-hom
+    -- For now, postulate the intermediate steps
+
+    -- POSTULATED: The path adjustment makes β constant
+    -- This is the main technical lemma that uses the Čech complex exactness
     postulate
       vanishing-result : (α : (x : S) → EM (A x) 1)
         → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
@@ -379,19 +413,18 @@ module CohomologyModule where
   postulate
     eilenberg-stone-vanish : (S : Stone) → H¹-vanishes (StoneType S)
 
+  -- REMOVED (CHANGES0511): stone-commute-delooping postulate
   -- =========================================================================
-  -- Corollary: Stone commutes with delooping (tex Corollary 2895)
-  -- =========================================================================
-  --
-  -- For any Stone S, the canonical map B(ℤ^S) → (BZ)^S is an equivalence.
-  --
+  -- This postulate was UNUSED - never called anywhere in the codebase.
+  -- It states: for any Stone S, the canonical map B(ℤ^S) → (BZ)^S is an equivalence.
   -- This follows from eilenberg-stone-vanish: the map is always an embedding,
   -- and surjectivity follows from (BZ)^S being connected (which is H¹(S,ℤ)=0).
-
-  postulate
-    stone-commute-delooping : (S : Stone) →
-      Σ[ BZS ∈ AbGroup ℓ-zero ]
-        (EM BZS 1 ≃ (StoneType S → BZ))
+  -- Commented out to eliminate the unused postulate.
+  --
+  -- postulate
+  --   stone-commute-delooping : (S : Stone) →
+  --     Σ[ BZS ∈ AbGroup ℓ-zero ]
+  --       (EM BZS 1 ≃ (StoneType S → BZ))
 
   -- =========================================================================
   -- Čech cover definition (tex Definition 2906)
