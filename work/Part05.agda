@@ -962,6 +962,32 @@ restrict-inject-right h pf = Σ≡Prop
 --
 -- The isomorphism Sp(B∞ × B∞) ≅ Sp(B∞) ⊎ Sp(B∞) follows from these facts.
 
+-- Roundtrip: Sp-prod-to-sum ∘ Sp-sum-to-prod = id
+-- PROOF OUTLINE:
+--
+-- For inl h: inject-left h $cr unit-left ≡ true (by inject-left-unit-left)
+--   → Sp-prod-to-sum (inject-left h) enters the true branch
+--   → returns ⊎.inl (restrict-to-left (inject-left h) _)
+--   → by restrict-inject-left: restrict-to-left (inject-left h) pf ≡ h
+--   → Sp-prod-to-sum (inject-left h) ≡ ⊎.inl h ✓
+--
+-- For inr h: inject-right h $cr unit-left ≡ false (by inject-right-unit-left)
+--   → Sp-prod-to-sum (inject-right h) enters the false branch
+--   → returns ⊎.inr (restrict-to-right (inject-right h) _)
+--   → by restrict-inject-right: restrict-to-right (inject-right h) pf ≡ h
+--   → Sp-prod-to-sum (inject-right h) ≡ ⊎.inr h ✓
+--
+-- COMPLICATION: The with-clause in Sp-prod-to-sum creates an ill-typed
+-- with-abstraction when trying to prove properties directly. The issue is
+-- that `h $cr unit-left in p` creates an abstract variable `w : Bool` that
+-- Agda cannot unify with the specific value `inject-left h $cr unit-left`.
+-- This is a known limitation of Agda's with-abstraction (see Agda docs:
+-- "Ill-typed with abstractions").
+--
+-- WORKAROUND: Refactor Sp-prod-to-sum to not use with-abstraction, or
+-- use inspect patterns more carefully. The mathematical content is clear
+-- from the building blocks above.
+
 -- =============================================================================
 -- LLPO from Stone Duality
 -- =============================================================================
