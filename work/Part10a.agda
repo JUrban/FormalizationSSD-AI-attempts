@@ -198,24 +198,65 @@ module BooleanAlgebraLawsModule where
                      (λ _ → ⊥-isOpen)
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
 
+  -- Commutativity of intersection (open) - PROVED
+  openIntersectionComm : (A B : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A B ≡ OpenSubsetIntersection B A
+  openIntersectionComm (A , Aopen) (B , Bopen) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × fst (B x)) , isProp× (snd (A x)) (snd (B x)))
+             ≡ (λ x → (fst (B x) × fst (A x)) , isProp× (snd (B x)) (snd (A x)))
+    fst-path = funExt (λ x → ×-hProp-comm (A x) (B x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openAnd (A x) (B x) (Aopen x) (Bopen x))
+                     (λ x → openAnd (B x) (A x) (Bopen x) (Aopen x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
+  -- Commutativity of union (open) - PROVED
+  openUnionComm : (A B : OpenSubsetOfCantor)
+    → OpenSubsetUnion A B ≡ OpenSubsetUnion B A
+  openUnionComm (A , Aopen) (B , Bopen) = ΣPathP (fst-path , snd-path)
+    where
+    ⊎-swap : {P Q : Type₀} → ∥ P ⊎ Q ∥₁ → ∥ Q ⊎ P ∥₁
+    ⊎-swap = PT.map (λ { (inl p) → inr p ; (inr q) → inl q })
+
+    fst-path : (λ x → (∥ fst (A x) ⊎ fst (B x) ∥₁) , squash₁)
+             ≡ (λ x → (∥ fst (B x) ⊎ fst (A x) ∥₁) , squash₁)
+    fst-path = funExt (λ x → hProp≡ _ _ ⊎-swap ⊎-swap)
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openOr (A x) (B x) (Aopen x) (Bopen x))
+                     (λ x → openOr (B x) (A x) (Bopen x) (Aopen x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
+  -- Idempotence of intersection (open) - PROVED
+  openIntersectionIdem : (A : OpenSubsetOfCantor)
+    → OpenSubsetIntersection A A ≡ A
+  openIntersectionIdem (A , Aopen) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (fst (A x) × fst (A x)) , isProp× (snd (A x)) (snd (A x))) ≡ A
+    fst-path = funExt (λ x → ×-hProp-idem (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openAnd (A x) (A x) (Aopen x) (Aopen x))
+                     Aopen
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
+  -- Idempotence of union (open) - PROVED
+  openUnionIdem : (A : OpenSubsetOfCantor)
+    → OpenSubsetUnion A A ≡ A
+  openUnionIdem (A , Aopen) = ΣPathP (fst-path , snd-path)
+    where
+    fst-path : (λ x → (∥ fst (A x) ⊎ fst (A x) ∥₁) , squash₁) ≡ A
+    fst-path = funExt (λ x → ⊎-hProp-idem (A x))
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isOpenProp (fst-path i x))
+                     (λ x → openOr (A x) (A x) (Aopen x) (Aopen x))
+                     Aopen
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsOpenProp (fst-path i x))) _ _
+
   -- Remaining open subset laws (postulated for speed)
   postulate
-    -- Commutativity of intersection (open)
-    openIntersectionComm : (A B : OpenSubsetOfCantor)
-      → OpenSubsetIntersection A B ≡ OpenSubsetIntersection B A
-
-    -- Commutativity of union (open)
-    openUnionComm : (A B : OpenSubsetOfCantor)
-      → OpenSubsetUnion A B ≡ OpenSubsetUnion B A
-
-    -- Idempotence of intersection (open)
-    openIntersectionIdem : (A : OpenSubsetOfCantor)
-      → OpenSubsetIntersection A A ≡ A
-
-    -- Idempotence of union (open)
-    openUnionIdem : (A : OpenSubsetOfCantor)
-      → OpenSubsetUnion A A ≡ A
-
     -- Absorption: A ∩ (A ∪ B) = A (open)
     openAbsorption1 : (A B : OpenSubsetOfCantor)
       → OpenSubsetIntersection A (OpenSubsetUnion A B) ≡ A
