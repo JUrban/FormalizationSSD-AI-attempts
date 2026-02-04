@@ -1160,6 +1160,96 @@ module CohomologyModule where
     --
     -- The remaining gap is still cech-complex-vanishing-stone (step 3).
 
+  -- =========================================================================
+  -- EilenbergStoneVanishProofOutline (CHANGES0534)
+  -- =========================================================================
+  --
+  -- This module provides a type-checked OUTLINE of how eilenberg-stone-vanish
+  -- can be proved from cech-complex-vanishing-stone. It combines:
+  -- 1. BZConnectivityInfra (BZ is connected, α x merely equals bz₀)
+  -- 2. EilenbergStoneVanishProofInfra (fibers from local choice are Stone)
+  -- 3. localChoice-axiom (extract covers)
+  -- 4. cech-complex-vanishing-stone (POSTULATED)
+  -- 5. exact-cech-complex-vanishing-cohomology (PROVED)
+  --
+  -- When cech-complex-vanishing-stone is proved, eilenberg-stone-vanish
+  -- can be filled in by completing the proof here.
+
+  module EilenbergStoneVanishProofOutline where
+    open BZConnectivityInfra using (α-x-merely-null)
+    open EilenbergStoneVanishProofInfra using (fiber-is-Stone; FiberStone; surjective→fibers-inhabited)
+
+    -- STEP 1: For any α : StoneType S → BZ, we have ∥ α(s) ≡ bz₀ ∥₁
+    -- This uses BZ connectivity (α-x-merely-null)
+    step1-connectivity : (S : Stone) (α : StoneType S → BZ)
+      → (s : StoneType S) → ∥ α s ≡ bz₀ ∥₁
+    step1-connectivity S α s = α-x-merely-null α s
+
+    -- STEP 2: Apply localChoice-axiom
+    -- This is where we extract the Čech cover from the truncated witnesses.
+    --
+    -- Type of local choice application:
+    -- localChoice-axiom (getBooleω S) (λ s → α s ≡ bz₀) (step1-connectivity S α)
+    -- gives us (under truncation):
+    --   C : Booleω
+    --   q : Sp C → Sp B   (where S = Sp B)
+    --   surj : (s : Sp B) → ∥ Σ[ t ∈ Sp C ] q t ≡ s ∥₁
+    --   witnesses : (t : Sp C) → α (q t) ≡ bz₀
+    --
+    -- Note: We need to convert between S and Sp B, but since S : Stone
+    -- we have StoneType S = fst S where snd S : hasStoneStr (fst S).
+
+    -- STEP 3: Define fiber types T(s) = Σ[ t ∈ Sp C ] q(t) = s
+    -- From fiber-is-Stone, we know T(s) is Stone.
+    -- From surj, we know ∥ T(s) ∥₁.
+    --
+    -- This is exactly EilenbergStoneVanishProofInfra.FiberStone.
+
+    -- STEP 4: Apply cech-complex-vanishing-stone
+    -- With:
+    --   S' = StoneType S (the underlying type)
+    --   T  = λ s → fst (FiberStone CStone S q s)
+    --   hasStoneStr S' from S : Stone
+    --   hasStoneStr (T s) from fiber-is-Stone
+    --   inhabited from surj
+
+    -- STEP 5: Apply exact-cech-complex-vanishing-cohomology
+    -- With the Čech exactness from step 4 and witnesses β from step 2.
+    --
+    -- The result is: (s : StoneType S) → α s ≡ bz₀
+    -- which gives H¹-vanishes.
+
+    -- PROOF OUTLINE STRUCTURE:
+    -- ========================
+    --
+    -- eilenberg-stone-vanish-from-cech : (S : Stone) → H¹-vanishes (StoneType S)
+    -- eilenberg-stone-vanish-from-cech S α =
+    --   PT.rec (isSet-paths-to-0ₖ ℤAbGroup α) proof (localChoice-axiom B P inhabited)
+    --   where
+    --     B : Booleω
+    --     B = getBooleω S
+    --
+    --     P : Sp B → Type ℓ-zero
+    --     P s = α s ≡ bz₀
+    --
+    --     inhabited : (s : Sp B) → ∥ P s ∥₁
+    --     inhabited = step1-connectivity S α
+    --
+    --     proof : Σ[ C ∈ Booleω ] Σ[ q ∈ (Sp C → Sp B) ]
+    --               (isSurjectiveSpMap q × ((t : Sp C) → P (q t)))
+    --           → α ≡ λ _ → bz₀
+    --     proof (C , q , surj , witnesses) = ...
+    --       -- Define T(s) = FiberStone CStone SStone q s
+    --       -- Apply cech-complex-vanishing-stone
+    --       -- Apply exact-cech-complex-vanishing-cohomology
+    --       -- Use funExt to conclude α ≡ λ _ → 0ₖ 1
+
+    -- SUMMARY:
+    -- ========
+    -- The proof is structured but requires cech-complex-vanishing-stone.
+    -- Once that postulate is proved, this outline can be completed.
+    -- All other infrastructure (connectivity, fiber-Stone, exact-cech) is PROVED.
+
   -- REMOVED (CHANGES0511): stone-commute-delooping postulate
   -- =========================================================================
   -- This postulate was UNUSED - never called anywhere in the codebase.
