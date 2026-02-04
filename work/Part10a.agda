@@ -123,24 +123,6 @@ module BooleanAlgebraLawsModule where
                      Aclosed
     snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
 
-  -- Helper: P × ⊥ ↔ ⊥ for props (annihilation of product by empty)
-  ×-hProp-empty : (P : hProp ℓ-zero)
-    → ((fst P × ⊥) , isProp× (snd P) isProp⊥) ≡ ⊥-hProp
-  ×-hProp-empty P = hProp≡ _ _ (λ (_ , bot) → bot) (λ bot → ex-falso bot , bot)
-
-  -- Annihilation: A ∩ Empty = Empty (PROVED)
-  closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
-    → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
-  closedIntersectionEmpty (A , Aclosed) = ΣPathP (fst-path , snd-path)
-    where
-    fst-path : (λ x → (fst (A x) × ⊥) , isProp× (snd (A x)) isProp⊥) ≡ (λ _ → ⊥-hProp)
-    fst-path = funExt (λ x → ×-hProp-empty (A x))
-
-    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
-                     (λ x → closedAnd (A x) ⊥-hProp (Aclosed x) ⊥-isClosed)
-                     (λ _ → ⊥-isClosed)
-    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x})) _ _
-
   -- Remaining closed subset laws (postulated for compilation speed)
   -- NOTE: These have straightforward proofs using hProp≡ (propositional extensionality via ua)
   -- but the ua causes expensive normalization that times out compilation.
@@ -161,6 +143,10 @@ module BooleanAlgebraLawsModule where
     -- Identity: A ∪ Empty = A
     closedUnionEmpty : (A : ClosedSubsetOfCantor)
       → ClosedSubsetUnion A EmptyClosedSubset ≡ A
+
+    -- Annihilation: A ∩ Empty = Empty
+    closedIntersectionEmpty : (A : ClosedSubsetOfCantor)
+      → ClosedSubsetIntersection A EmptyClosedSubset ≡ EmptyClosedSubset
 
     -- Annihilation: A ∪ Full = Full
     closedUnionFull : (A : ClosedSubsetOfCantor)
