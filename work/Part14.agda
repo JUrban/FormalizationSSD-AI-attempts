@@ -3389,6 +3389,56 @@ module SequentialColimitInfrastructure where
   π*-preserves-constant : {n : ℕ} → (k : ℤ) → π* {n} (d₀ {n} k) ≡ d₀ {suc n} k
   π*-preserves-constant {n} k = refl
 
+  -- =========================================================================
+  -- Exactness preservation under π*
+  -- =========================================================================
+  --
+  -- The key insight: if α is in ker(d₁) at level n, then π*(α) is in ker(d₁)
+  -- at level n+1. This means exactness is preserved under pullback.
+
+  -- Relationship between d₁ at different levels
+  -- d₁(π*(α))(x,y) = π*(α)(y) - π*(α)(x)
+  --                = α(πₙ(y)) - α(πₙ(x))
+  --                = d₁(α)(πₙ(x), πₙ(y))
+  d₁-π*-naturality : {n : ℕ} → (α : Iₙ n → ℤ) → (x y : Iₙ (suc n)) →
+                      d₁ {suc n} (π* {n} α) x y ≡ d₁ {n} α (πₙ {n} x) (πₙ {n} y)
+  d₁-π*-naturality {n} α x y = refl
+
+  -- π* preserves kernel membership
+  π*-preserves-kernel-d₁ : {n : ℕ} → (α : Iₙ n → ℤ) →
+                            inKernel-d₁ {n} α → inKernel-d₁ {suc n} (π* {n} α)
+  π*-preserves-kernel-d₁ {n} α α-in-ker x y =
+    d₁-π*-naturality {n} α x y ∙ α-in-ker (πₙ {n} x) (πₙ {n} y)
+
+  -- Combining with finite-approx-exact:
+  -- If α is in im(d₀) at level n, then π*(α) is in im(d₀) at level n+1
+  π*-preserves-image-d₀ : {n : ℕ} → (α : Iₙ n → ℤ) →
+                           inImage-d₀ {n} α → inImage-d₀ {suc n} (π* {n} α)
+  π*-preserves-image-d₀ {n} α (k , α≡d₀k) =
+    k , cong (π* {n}) α≡d₀k ∙ π*-preserves-constant {n} k
+
+  -- =========================================================================
+  -- Connecting to the colimit argument
+  -- =========================================================================
+  --
+  -- The plan for cech-complex-vanishing-stone:
+  --
+  -- 1. Unit interval [0,1] = colim_n Iₙ (sequential colimit)
+  --
+  -- 2. For any α : [0,1] → ℤ in ker(d₁), α factors through some Iₙ
+  --    (Scott continuity: continuous functions from a compact space
+  --    factor through finite approximations)
+  --
+  -- 3. At level n, finite-approx-exact says ker(d₁) = im(d₀)
+  --    So α|_n is constant
+  --
+  -- 4. Since πₙ is surjective and α = (α|_n) ∘ πₙ, α is constant
+  --
+  -- 5. Therefore ker(d₁) = im(d₀) for the colimit [0,1]
+  --
+  -- This proves Ȟ¹([0,1], ℤ) = 0 for the unit interval, which generalizes
+  -- to any Stone space by profinite approximation.
+
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
 -- =============================================================================
