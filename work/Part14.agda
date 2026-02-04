@@ -360,7 +360,7 @@ module CohomologyModule where
 
   module FiniteApproximationExactSequence where
     open import Cubical.Algebra.Group.Morphisms using (GroupHom; IsGroupHom)
-    open import Cubical.Algebra.Group.Base using (ℤGroup)
+    open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
 
     -- The finite approximation Iₙ = Fin(2^n)
     -- We use the "adjacent" relation ~_n where x ~_n y iff |x - y| ≤ 1
@@ -796,7 +796,7 @@ module CohomologyModule where
   -- of isContr ∥ A ∥₁ must be equal.
 
   module PostulateConsistency where
-    open import Cubical.Foundations.HLevels using (isPropIsContr)
+    open import Cubical.Foundations.Prelude using (isPropIsContr)
     open import Cubical.HITs.PropositionalTruncation using (squash₁)
     open IntervalIsCHausModule using (UnitInterval; isContrUnitInterval)
     open IntervalConnectedFromContr using (is-1-connected-I-derived)
@@ -846,7 +846,7 @@ module CohomologyModule where
   -- 4. Therefore disk-cohomology-vanishes ≡ disk-cohomology-vanishes-derived
 
   module CohomologyEqualityProofs where
-    open import Cubical.Foundations.HLevels using (isContr→isProp; isProp→isSet)
+    open import Cubical.Foundations.Prelude using (isContr→isProp; isProp→isSet)
     open BrouwerFixedPointTheoremModule using (Disk2)
     open IntervalIsCHausModule using (UnitInterval)
     open DiskCohomologyFromContr
