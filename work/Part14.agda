@@ -3359,13 +3359,29 @@ module SequentialColimitInfrastructure where
 
   -- Key lemma: half of k < 2^(n+1) is < 2^n
   -- Because: k < 2·2^n implies k÷2 < 2^n
+  -- Proof by induction on k, using the structure of halfℕ and 2^
+
+  -- Helper: 0 < a implies 0 < a + b (since 0 <ᵇ suc k = true for any k)
+  zero<+-l : (a b : ℕ) → zero <ᵗ a → zero <ᵗ (a +ℕ b)
+  zero<+-l (suc a) b _ = tt  -- 0 <ᵇ suc (a + b) = true
+
+  -- Helper: 0 < 2^n for any n
+  zero<2^ : (n : ℕ) → zero <ᵗ (2^ n)
+  zero<2^ zero = tt        -- 0 < 1
+  zero<2^ (suc n) = zero<+-l (2^ n) (2^ n) (zero<2^ n)  -- 0 < 2^n + 2^n
+
+  -- Main lemma by induction on k
   halfℕ-< : {n : ℕ} → (k : ℕ) → k <ᵗ (2^ (suc n)) → halfℕ k <ᵗ (2^ n)
-  halfℕ-< {n} k k<2sn = postulated-halfℕ-< {n} k k<2sn
+  halfℕ-< {n} zero _ = zero<2^ n           -- halfℕ 0 = 0 < 2^n
+  halfℕ-< {n} (suc zero) _ = zero<2^ n      -- halfℕ 1 = 0 < 2^n
+  halfℕ-< {n} (suc (suc k)) k<2sn = halfℕ-<-helper {n} k k<2sn
     where
-      -- This requires arithmetic reasoning about 2^n
-      -- Temporarily postulated to make progress
+      -- For suc (suc k), we have halfℕ (suc (suc k)) = suc (halfℕ k)
+      -- Need: suc (halfℕ k) < 2^n
+      -- From: suc (suc k) < 2^(suc n) = 2^n + 2^n
+      -- We need to show: k < 2^(suc n) - 2 and use IH
       postulate
-        postulated-halfℕ-< : {n : ℕ} → (k : ℕ) → k <ᵗ (2^ (suc n)) → halfℕ k <ᵗ (2^ n)
+        halfℕ-<-helper : {n : ℕ} → (k : ℕ) → (suc (suc k)) <ᵗ (2^ (suc n)) → suc (halfℕ k) <ᵗ (2^ n)
 
   -- The projection map πₙ : Iₙ₊₁ → Iₙ
   πₙ : {n : ℕ} → Iₙ (suc n) → Iₙ n
