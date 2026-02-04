@@ -64,17 +64,28 @@ module StoneSeparatedModule where
   ClosedSubNotDec : (S : Stone) → ClosedSubsetOfStone S → DecSubsetOfStone S → Type₀
   ClosedSubNotDec S (A , _) D = (x : fst S) → fst (A x) → D x ≡ false
 
-  -- The main separation theorem
+  -- The main separation theorem (tex Lemma 1824)
   -- This is a key property of Stone spaces: disjoint closed subsets can be
   -- separated by clopen (decidable) subsets.
   --
-  -- The proof requires:
-  -- 1. Representing F, G as countable intersections of decidable subsets
-  -- 2. Showing their intersection corresponds to a quotient with empty spectrum
-  -- 3. Using SpectrumEmptyIff01Equal to get 1 = ⋁fᵢ ∨ ⋁gⱼ for finite I,J
-  -- 4. Constructing D from the finite join ⋁_{j:J} gⱼ
+  -- PROOF OUTLINE (from tex lines 1828-1858):
+  -- 1. Assume S = Sp(B) for some B : Booleω
+  -- 2. By StoneClosedSubsets, ∃ fₙ,gₙ : B such that:
+  --    x ∈ F ↔ ∀n. x(fₙ) = 0  and  y ∈ G ↔ ∀n. y(gₙ) = 0
+  -- 3. Define hₖ by h_{2k} = fₖ and h_{2k+1} = gₖ (interleave sequences)
+  -- 4. Sp(B/(hₖ)_{k:ℕ}) = F ∩ G = ∅ (quotient has empty spectrum)
+  -- 5. By SpectrumEmptyIff01Equal: ∃ finite I,J ⊆ ℕ with 1 = (⋁_{i:I} fᵢ) ∨ (⋁_{j:J} gⱼ)
+  -- 6. Define D(x) = (x(⋁_{j:J} gⱼ) = 1) as the separating decidable
+  -- 7. If y ∈ F: y(fᵢ) = 0 for all i ∈ I, so y(⋁_{j:J} gⱼ) = 1, hence D(y) = true
+  -- 8. If x ∈ G: x(gⱼ) = 0 for all j ∈ J, so x(⋁_{j:J} gⱼ) = 0, hence D(x) = false
   --
-  -- For now, we postulate this as it requires significant infrastructure
+  -- DEPENDENCIES:
+  -- - StoneClosedSubsets: closed = countable intersection of decidables
+  -- - SpOfQuotientBySeq: Sp(B/d) ≃ {x : Sp B | ∀n. x(dₙ) = 0}
+  -- - SpectrumEmptyIff01Equal: Sp(B) = ∅ ↔ 0 = 1 in B
+  -- - Boolean ring finite joins (⋁ is defined as sum in Boolean ring)
+  --
+  -- SEE ALSO: Part21.agda StoneSeparatedTC for detailed documentation
   postulate
     StoneSeparated : (S : Stone)
       → (F G : ClosedSubsetOfStone S)

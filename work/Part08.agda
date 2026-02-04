@@ -1144,15 +1144,7 @@ module StoneClosedSubsetsModule where
         Sp-equiv : Sp C ≃ (Σ[ x ∈ Sp B ] ((n : ℕ) → fst x (d n) ≡ false))
         Sp-equiv = Sp-quotient-≃
 
-  -- Image characterization: closed subsets of Stone spaces are images of Stone maps
-  -- This is direction (v) → (iv) from the theorem.
-  -- Requires LocalChoice axiom.
-  postulate
-    closedSubset→StoneImage : (S : Stone) (A : fst S → hProp ℓ-zero)
-      → ((x : fst S) → isClosedProp (A x))
-      → ∥ Σ[ T ∈ Stone ] Σ[ f ∈ (fst T → fst S) ]
-          ((x : fst S) → fst (A x) ≃ ∥ Σ[ t ∈ fst T ] f t ≡ x ∥₁) ∥₁
-
+  -- REMOVED (CHANGES0473): closedSubset→StoneImage postulate was orphaned (never used)
   -- Combined: ClosedInStoneIsStone follows from the equivalences
   -- A closed ⊆ S is Stone because:
   -- (v) A closed → (iv) A is image of T : Stone → (ii) A = ⋂Dₙ → (iii) A ≃ Sp(B/dₙ)

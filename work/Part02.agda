@@ -2791,22 +2791,12 @@ openSigmaOpen P (α , P→∃ , ∃→P) Q Qopen = result
        (λ sigPQ → union→∃ (forward-equiv sigPQ)) ,
        (λ w → backward-equiv (∃→union w))
 
--- Closed propositions are closed under Σ-types (tex Corollary ClosedDependentSums 1785)
--- If P is closed and Q : P → hProp with each Q(p) closed, then Σ P Q is closed.
---
--- Proof from tex: Closed propositions are Stone (as propositions), and
--- the Σ of Stone spaces is Stone, so Σ P Q is Stone hence closed.
---
--- This postulate is NOW PROVED via ClosedSigmaClosedDerived.closedSigmaClosed-derived
--- defined at the end of this file (~line 8980). The postulate is kept here for now to avoid
--- forward reference issues, but it is no longer a gap in the formalization.
--- The proof uses: closedProp→hasStoneStr and InhabitedClosedSubSpaceClosed.
-
-postulate
-  closedSigmaClosed : (P : hProp ℓ-zero) → isClosedProp P
-                    → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
-                    → isClosedProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
--- PROVED: see ClosedSigmaClosedDerived.closedSigmaClosed-derived at end of file
+-- REMOVED (CHANGES0471): closedSigmaClosed postulate
+-- =====================================================
+-- The postulate closedSigmaClosed has been ELIMINATED.
+-- It is NOW PROVED as closedSigmaClosed-derived in Part07.agda (module ClosedSigmaClosedDerived).
+-- The only use in this file (closedSubsetTransitive) was also removed since it was never used.
+-- See Part07.agda for the full proof using closedProp→hasStoneStr and InhabitedClosedSubSpaceClosed.
 
 -- =============================================================================
 -- Section 23: Additional closure properties
@@ -2988,21 +2978,14 @@ openSubsetTransitive V Vopen W Wopen t =
 -- The transitivity property (openSubsetTransitive) follows from the Σ-closure.
 -- We have proven both required properties for Open to form a dominance.
 
--- Transitivity of closedness (dual of openSubsetTransitive)
--- If V ⊆ T is closed and W ⊆ V is closed (as a subset of V), then W ⊆ T is closed.
--- Uses closedSigmaClosed (PROVED in ClosedSigmaClosedDerived module).
-closedSubsetTransitive : {T : Type₀}
-                       → (V : T → hProp ℓ-zero) → isClosedSubset V
-                       → (W : (t : T) → ⟨ V t ⟩ → hProp ℓ-zero)
-                       → ((t : T) (v : ⟨ V t ⟩) → isClosedProp (W t v))
-                       → isClosedSubset (λ t → (∥ Σ[ v ∈ ⟨ V t ⟩ ] ⟨ W t v ⟩ ∥₁) , squash₁)
-closedSubsetTransitive V Vclosed W Wclosed t =
-  closedSigmaClosed (V t) (Vclosed t) (W t) (Wclosed t)
-
+-- REMOVED (CHANGES0471): closedSubsetTransitive was removed along with closedSigmaClosed.
+-- It was NEVER USED in the formalization. If needed in the future, it can be defined
+-- in Part07.agda using ClosedSigmaClosedDerived.closedSigmaClosed-derived.
+--
 -- Remark: Closed forms a dominance (tex Remark ClosedDominance 1794)
 -- 1. Contains ⊤ (trivially: ⊤-isClosed)
--- 2. Is closed under Σ-types (closedSigmaClosed - PROVED in ClosedSigmaClosedDerived)
--- The proof chain is now complete, so Closed forms a dominance.
+-- 2. Is closed under Σ-types (PROVED in Part07.agda as closedSigmaClosed-derived)
+-- The proof chain is complete, so Closed forms a dominance.
 
 -- =============================================================================
 -- Section: Surjection from 2^ℕ to Closed (tex line 1753)

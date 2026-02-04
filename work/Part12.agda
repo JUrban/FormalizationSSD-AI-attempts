@@ -61,8 +61,8 @@ module IntervalTopologyModule where
 
   -- Order on the unit interval
   postulate
-    _≤I_ : UnitInterval → UnitInterval → Type₀
-    _<I_ : UnitInterval → UnitInterval → Type₀
+    _≤I_ : UnitInterval → UnitInterval → Type ℓ-zero
+    _<I_ : UnitInterval → UnitInterval → Type ℓ-zero
     ≤I-isProp : (x y : UnitInterval) → isProp (x ≤I y)
     <I-isProp : (x y : UnitInterval) → isProp (x <I y)
 
@@ -213,26 +213,26 @@ module IntervalTopologyModule where
     <I-trichotomy : (x y : UnitInterval) → (x <I y) ⊎ ((x ≡ y) ⊎ (y <I x))
 
   -- Closed interval [a,b]
-  ClosedInterval : (a b : UnitInterval) → Type₀
+  ClosedInterval : (a b : UnitInterval) → Type ℓ-zero
   ClosedInterval a b = Σ[ x ∈ UnitInterval ] (a ≤I x) × (x ≤I b)
 
   -- Open interval (a,b)
-  OpenInterval : (a b : UnitInterval) → Type₀
+  OpenInterval : (a b : UnitInterval) → Type ℓ-zero
   OpenInterval a b = Σ[ x ∈ UnitInterval ] (a <I x) × (x <I b)
 
   -- tex Lemma 2614: Image of a decidable subset under cs is a finite union of closed intervals
   -- Here we state a simplified version: the image of a decidable D ⊆ 2^ℕ under cs
   -- is a finite union of closed intervals
   -- DecSubsetCantor from earlier definition
-  DecSubsetCantor : Type₀
+  DecSubsetCantor : Type ℓ-zero
   DecSubsetCantor = CantorSpace → Bool
 
   -- Finite union of closed intervals
-  FiniteClosedIntervals : ℕ → Type₀
+  FiniteClosedIntervals : ℕ → Type ℓ-zero
   FiniteClosedIntervals n = (i : Fin n) → UnitInterval × UnitInterval
 
   -- Membership in a finite union of closed intervals
-  inFiniteClosedIntervals : (n : ℕ) → FiniteClosedIntervals n → UnitInterval → Type₀
+  inFiniteClosedIntervals : (n : ℕ) → FiniteClosedIntervals n → UnitInterval → Type ℓ-zero
   inFiniteClosedIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) ≤I x) × (x ≤I snd (Is i))
 
   -- tex Lemma 2614: Image of decidable subset is finite union of closed intervals
@@ -261,10 +261,10 @@ module IntervalTopologyModule where
                               ↔ inFiniteClosedIntervals n Is x) ∥₁
 
   -- tex Lemma 2673: Complement of finite union of closed intervals is finite union of open intervals
-  FiniteOpenIntervals : ℕ → Type₀
+  FiniteOpenIntervals : ℕ → Type ℓ-zero
   FiniteOpenIntervals n = (i : Fin n) → UnitInterval × UnitInterval
 
-  inFiniteOpenIntervals : (n : ℕ) → FiniteOpenIntervals n → UnitInterval → Type₀
+  inFiniteOpenIntervals : (n : ℕ) → FiniteOpenIntervals n → UnitInterval → Type ℓ-zero
   inFiniteOpenIntervals n Is x = Σ[ i ∈ Fin n ] (fst (Is i) <I x) × (x <I snd (Is i))
 
   -- tex Lemma 2673: Complement of finite union of closed is finite union of open
@@ -338,7 +338,7 @@ module ZILocalModule where
   -- This is simpler than the tex cohomology argument.
   --
   -- General lemma: functions from contractible types are constant
-  contr-map-const-local : {X : Type₀} {Y : Type₀} → isContr X → (f : X → Y)
+  contr-map-const-local : {X : Type ℓ-zero} {Y : Type ℓ-zero} → isContr X → (f : X → Y)
                         → (x y : X) → f x ≡ f y
   contr-map-const-local contr f x y = cong f (sym (snd contr x) ∙ snd contr y)
 
@@ -383,7 +383,7 @@ module ZILocalModule where
   -- FORMAL PROOF (if we had path-connectedness of I):
   --
   -- Bool-I-local-from-connected :
-  --   (I-connected : (D : Type₀) → isSet D → (f : UnitInterval → D) → isProp (fiber f (f 0I)))
+  --   (I-connected : (D : Type ℓ-zero) → isSet D → (f : UnitInterval → D) → isProp (fiber f (f 0I)))
   --   → (f : UnitInterval → Bool)
   --   → (x y : UnitInterval) → f x ≡ f y
   -- Bool-I-local-from-connected conn f x y =
@@ -457,10 +457,10 @@ module IntermediateValueTheoremModule where
   -- The sets U₀ and U₁ from the tex proof
   -- U₀ = {x : I | f(x) < y}
   -- U₁ = {x : I | y < f(x)}
-  U₀ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type₀
+  U₀ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type ℓ-zero
   U₀ f y x = f x <I y
 
-  U₁ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type₀
+  U₁ : (f : UnitInterval → UnitInterval) → UnitInterval → UnitInterval → Type ℓ-zero
   U₁ f y x = y <I f x
 
   -- U₀ and U₁ are disjoint (clear from asymmetry of <)

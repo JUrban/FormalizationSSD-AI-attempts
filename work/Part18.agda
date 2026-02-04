@@ -14,8 +14,8 @@ module ILocalityConsequencesTC where
   open import Cubical.Foundations.HLevels
   open import Cubical.Data.Empty
   open import Cubical.Data.Unit
-  open import Cubical.HITs.S1 as S1 using (S¹; base; loop)
-  open import Cubical.HITs.S1.Base using (ΩS¹≡ℤ; isGroupoidS¹)
+  open import Cubical.HITs.S1 as S1 using (S¹; base; loop; isGroupoidS¹)
+  open import Cubical.HITs.S1.Base using (ΩS¹≡ℤ)
   open import Cubical.Data.Int using (ℤ; pos; negsuc)
   open import Cubical.Data.Nat using (snotz; znots)
   open import Cubical.Data.Int using (injPos)

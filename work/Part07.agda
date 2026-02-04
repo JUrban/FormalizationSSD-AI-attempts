@@ -938,16 +938,17 @@ module SDDecToElemModule where
     cong (λ f → f x) (decPredFromElem-roundtrip SD B D)
 
 -- =============================================================================
--- Postulate Validation: closedSigmaClosed is NOW PROVED
+-- closedSigmaClosed-derived (tex Corollary ClosedDependentSums 1785)
 -- =============================================================================
 --
--- The postulate closedSigmaClosed (line ~3188) IS NOW DERIVABLE from the
--- infrastructure defined above. This section shows the derivation.
+-- This provides the FULL PROOF of closedSigmaClosed. The postulate was removed
+-- from Part02.agda in CHANGES0471 since its only use (closedSubsetTransitive)
+-- was never used elsewhere.
 --
--- The postulate has type:
---   closedSigmaClosed : (P : hProp ℓ-zero) → isClosedProp P
---                     → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
---                     → isClosedProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
+-- TYPE:
+--   closedSigmaClosed-derived : (P : hProp ℓ-zero) → isClosedProp P
+--                             → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
+--                             → isClosedProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
 --
 -- The proof uses:
 -- 1. closedProp→hasStoneStr: P closed → P is Stone (as a space)
@@ -958,7 +959,7 @@ module ClosedSigmaClosedDerived where
   open ClosedPropIffStone
   open InhabitedClosedSubSpaceClosedModule
 
-  -- This is the SAME type as the postulate closedSigmaClosed
+  -- Full proof of closedSigmaClosed (postulate was removed in CHANGES0471)
   closedSigmaClosed-derived : (P : hProp ℓ-zero) → isClosedProp P
                             → (Q : ⟨ P ⟩ → hProp ℓ-zero) → ((p : ⟨ P ⟩) → isClosedProp (Q p))
                             → isClosedProp (∥ Σ[ p ∈ ⟨ P ⟩ ] ⟨ Q p ⟩ ∥₁ , squash₁)
