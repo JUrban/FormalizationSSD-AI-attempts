@@ -809,14 +809,24 @@ module StoneSigmaClosedModule where
 
   -- Prove Σ of Stone family is totally disconnected
   -- The proof structure:
-  -- 1. For (x',y') ∈ Q_{(x,y)}, first show x' ∈ Q_x using proj₁-preserves-CC
+  -- 1. For (x',y') ∈ Q_{(x,y)}, first show x' ∈ Q_x using proj₁-preserves-CC (proved above)
   -- 2. Since S is Stone (hence totally disconnected), x = x'
   -- 3. Now need: y and (transport y' along x=x') are equal
-  -- 4. This follows from ConnectedComponentConnected: any map Q_y → Bool is constant
-  -- 5. Since T(x) is Stone, we get y = transport y'
+  -- 4. For this, reduce to the fiber case where x = x' definitionally
+  -- 5. In the fiber case, show y = y' using T(x) being Stone
   --
-  -- The dependent types make this proof tricky, so we postulate for now.
-  -- Key lemma proj₁-preserves-CC is proved above.
+  -- The main difficulty is in step 5: lifting a decidable D : T(x) → Bool to
+  -- Dσ : Σ_{a:S} T(a) → Bool. The type of the second component depends on the first,
+  -- so we can't directly apply D to an element b : T(a) when a ≠ x.
+  --
+  -- Two approaches from the tex:
+  -- A. Use ConnectedComponentConnected: any map Q_{(x,y)} → Bool is constant.
+  --    Restricting to the fiber gives a map Q_y → Bool that must be constant.
+  -- B. Use the Boole structure: since S = Sp(B), we can construct a path from a to x
+  --    for elements in the same connected component.
+  --
+  -- Key lemma proved above: proj₁-preserves-CC shows x' ∈ Q_x.
+
   postulate
     ΣStone-isTotallyDisconnected : (S : Stone) (T : fst S → Stone)
       → isTotallyDisconnected (ΣStoneCHaus S T)
