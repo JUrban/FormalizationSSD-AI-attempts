@@ -753,10 +753,6 @@ open BooleanRingStr (snd (freeBA ℕ)) using () renaming (_·_ to _·free_)
 f-free-pres· : (x y : ⟨ freeBA ℕ ⟩) → fst f-free (x ·free y) ≡ (fst f-free x) ·× (fst f-free y)
 f-free-pres· x y = IsCommRingHom.pres· (snd f-free) x y
 
--- gen in freeBA ℕ is just 'generator'
-gen-is-generator : gen ≡ generator
-gen-is-generator = refl
-
 -- The crucial lemma: f-free sends products of distinct generators to zero
 f-free-distinct-zero : (m n : ℕ) → ¬ (m ≡ n) →
   fst f-free (gen m ·free gen n) ≡ (𝟘∞ , 𝟘∞)
@@ -1304,17 +1300,12 @@ f-pres-neg x =
 -- 3. f-kernel-from-trunc: if f(x) = 0 then x = 0 (using truncated forms)
 -- 4. f-injective-from-trunc: if f(x) = f(y) then x = y
 --
--- For now, we still need the postulate here due to forward reference issues,
--- but it IS proved at the end of the file. The proof chain is complete.
-postulate
-  f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
-
--- Alternative formulation: kernel is trivial
-f-kernel-trivial : (x : ⟨ B∞ ⟩) → fst f x ≡ (𝟘∞ , 𝟘∞) → x ≡ 𝟘∞
-f-kernel-trivial x fx=0 = f-injective x 𝟘∞ (fx=0 ∙ sym f-pres0)
-  where
-  f-pres0 : fst f 𝟘∞ ≡ (𝟘∞ , 𝟘∞)
-  f-pres0 = IsCommRingHom.pres0 (snd f)
+-- ELIMINATED (CHANGES0508): The postulate f-injective is now commented out.
+-- It was never used - Part05 uses f-injective-05a from Part05a instead,
+-- which is proved using truncated normal forms in Part06.
+-- The postulate is kept here (commented) for documentation purposes.
+-- postulate
+--   f-injective : (x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y
 
 -- =============================================================================
 -- Spectrum of Products: Sp(A × B) ≅ Sp(A) + Sp(B)
