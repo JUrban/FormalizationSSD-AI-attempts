@@ -325,6 +325,7 @@ module CohomologyModule where
     -- Import necessary tools for the proof
     open import Cubical.HITs.PropositionalTruncation.Properties using (rec→Set)
     open import Cubical.Foundations.Isomorphism using (Iso; isoToEquiv)
+    open import Cubical.Foundations.GroupoidLaws using (symDistr; symInvo) renaming (assoc to assoc-path)
 
     -- Key tool: paths in EM G 1 form a set (because EM G 1 is a groupoid)
     isSet-paths-in-EM : (G : AbGroup ℓ) (a b : EM G 1) → isSet (a ≡ b)
@@ -423,8 +424,36 @@ module CohomologyModule where
     -- = -h(v) + h(u) + h(v) - h(u)
     -- = 0   [by abelian group commutativity and cancellation]
     --
-    -- POSTULATED: The detailed homomorphism properties from the Cubical library
-    -- (ΩEM+1→EM-hom, ΩEM+1→EM-sym) are needed to express this formally.
+    -- POSTULATED: The cocycle condition follows from path algebra.
+    -- The key insight: the combined path p-vw ∙ sym(p-uw) ∙ p-uv = refl.
+    --
+    -- PATH ALGEBRA PROOF (documented):
+    -- Let p-uv = sym(β_u) ∙ β_v, p-vw = sym(β_v) ∙ β_w, p-uw = sym(β_u) ∙ β_w
+    -- sym(p-uw) = sym(sym β_u ∙ β_w) = sym β_w ∙ β_u  [by symDistr and symInvo]
+    --
+    -- The combined path:
+    --   p-vw ∙ sym(p-uw) ∙ p-uv
+    -- = (sym β_v ∙ β_w) ∙ (sym β_w ∙ β_u) ∙ (sym β_u ∙ β_v)
+    -- = sym β_v ∙ (β_w ∙ sym β_w) ∙ (β_u ∙ sym β_u) ∙ β_v  [by assoc]
+    -- = sym β_v ∙ refl ∙ refl ∙ β_v  [by rCancel]
+    -- = sym β_v ∙ β_v  [by lUnit]
+    -- = refl  [by lCancel]
+    --
+    -- HOMOMORPHISM STEP:
+    -- The d₁ condition is: (g(v,w) - g(u,w)) + g(u,v) = 0g
+    -- where g(a,b) = ΩEM+1→EM 0 (sym β_a ∙ β_b)
+    --
+    -- Using ΩEM+1→EM-hom: ΩEM+1→EM 0 (p ∙ q) = (ΩEM+1→EM 0 p) +ₖ (ΩEM+1→EM 0 q)
+    -- Using ΩEM+1→EM-sym: ΩEM+1→EM 0 (sym p) = -ₖ (ΩEM+1→EM 0 p)
+    -- Using ΩEM+1→EM-refl: ΩEM+1→EM 0 refl = 0ₖ 0
+    --
+    -- The cocycle condition follows from:
+    -- (g(v,w) - g(u,w)) + g(u,v) = ΩEM+1→EM 0 (p-vw ∙ sym p-uw ∙ p-uv)
+    --                           = ΩEM+1→EM 0 refl
+    --                           = 0ₖ 0 = 0g
+    --
+    -- POSTULATED because formalizing the homomorphism step requires careful
+    -- matching of EM G 0 operations with AbGroup operations.
     postulate
       path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
         → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
