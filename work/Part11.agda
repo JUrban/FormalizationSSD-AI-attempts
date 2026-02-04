@@ -582,10 +582,114 @@ module StoneCompactHausdorffTotallyDisconnectedModule where
     (x : fst X) → (y : fst X) → fst (ConnectedComponent X x y) → x ≡ y
 
   -- Stone iff totally disconnected CHaus
-  postulate
-    StoneCompactHausdorffTotallyDisconnected-forward : (S : Stone)
-      → isTotallyDisconnected (Stone→CHaus S)
+  -- Forward direction: Stone spaces are totally disconnected
+  -- Proof: For S = Sp(B), points are BoolHom B Bool.
+  -- ConnectedComponent x y means: for all decidable D, x ∈ D → y ∈ D.
+  -- For each b ∈ B, evaluation D_b(z) = z $cr b is decidable.
+  -- So x $cr b = true → y $cr b = true for all b.
+  -- Homomorphisms preserve negation: x $cr (1-b) = 1 - x $cr b.
+  -- So x $cr b = false → y $cr b = false. Hence x = y.
 
+  open import Axioms.StoneDuality using (Sp; Booleω; evaluationMap)
+  open import Cubical.Algebra.CommRing using (_$cr_; CommRingStr; IsCommRingHom; CommRingHom≡)
+  open import Cubical.Algebra.BooleanRing using (BooleanRingStr; BooleanRing→CommRing)
+  open import Cubical.Algebra.BooleanRing.Instances.Bool using (BoolBR)
+  open import Cubical.Data.Bool using (true; false; true≢false; false≢true)
+  open import Cubical.Data.Empty as ⊥ using (⊥)
+
+  StoneCompactHausdorffTotallyDisconnected-forward : (S : Stone)
+    → isTotallyDisconnected (Stone→CHaus S)
+  StoneCompactHausdorffTotallyDisconnected-forward S x y qxy = goal
+    where
+    -- Extract B from Stone structure
+    B : Booleω
+    B = snd S .fst
+
+    -- Path from Sp B to fst S
+    p : Sp B ≡ fst S
+    p = snd S .snd
+
+    -- Transport x, y to Sp B
+    x' : Sp B
+    x' = transport (sym p) x
+
+    y' : Sp B
+    y' = transport (sym p) y
+
+    -- Helper: for b ∈ B, make the decidable subset D_b
+    D_b : ⟨ fst B ⟩ → DecSubsetCHaus (Stone→CHaus S)
+    D_b b z = evaluationMap B b (transport (sym p) z)
+
+    -- Key observation: D_b b z = evaluationMap B b (transport (sym p) z)
+    -- So D_b b x = x' $cr b and D_b b y = y' $cr b
+    -- (because x' = transport (sym p) x and y' = transport (sym p) y)
+
+    -- For all b, x' $cr b = true → y' $cr b = true
+    agree-on-true : (b : ⟨ fst B ⟩) → x' $cr b ≡ true → y' $cr b ≡ true
+    agree-on-true b x'b≡true = qxy (D_b b) x'b≡true
+
+    -- Boolean ring structure
+    open BooleanRingStr (snd (fst B)) renaming (𝟙 to 1B; _-_ to _-B_)
+    open CommRingStr (snd (BooleanRing→CommRing BoolBR)) renaming (1r to 1Bool; _-_ to _-Bool_)
+    open IsCommRingHom
+
+    -- For all b, x' $cr b = y' $cr b
+    -- Case on x' $cr b: true case uses agree-on-true, false case uses complement
+    agree-on-all : (b : ⟨ fst B ⟩) → x' $cr b ≡ y' $cr b
+    agree-on-all b with x' $cr b | inspect (x' $cr_) b
+    ... | true  | [ eq ] = sym (agree-on-true b eq)
+    ... | false | [ eq ] with y' $cr b | inspect (y' $cr_) b
+    ...   | false | [ eq' ] = refl
+    ...   | true  | [ eq' ] = ⊥.rec (false≢true contra)
+      where
+      -- Complement ¬b = 1 - b in B
+      -- In a Boolean ring, -_ is identity and a - b = a + (-b) (XOR)
+      open BooleanRingStr (snd (fst B)) using (_+_) renaming (-_ to negB)
+      open CommRingStr (snd (BooleanRing→CommRing BoolBR)) using () renaming (_+_ to _+Bool_; -_ to negBool)
+
+      ¬b : ⟨ fst B ⟩
+      ¬b = 1B -B b
+
+      -- Key facts:
+      -- 1. pres+ (snd x') : x' (a + b) = x' a + x' b
+      -- 2. pres- (snd x') : x' (- a) = - x' a
+      -- 3. pres1 (snd x') : x' 1B = true
+      -- 4. In BoolBR: a - b = a + (-b), and - is identity, so a - b = a + b
+
+      -- x' $cr ¬b = x' $cr (1B + negB b) = x' $cr 1B + x' $cr (negB b)
+      --           = true + (- x' $cr b) = true + (- false) = true + false
+      -- In BoolBR, + is XOR and - is id, so true + false = true
+
+      x'-¬b-true : x' $cr ¬b ≡ true
+      x'-¬b-true =
+        pres+ (snd x') 1B (negB b) ∙
+        cong₂ _+Bool_ (pres1 (snd x')) (pres- (snd x') b) ∙
+        cong (λ z → true +Bool (negBool z)) eq
+
+      -- y' $cr ¬b = true (by agree-on-true)
+      y'-¬b-true : y' $cr ¬b ≡ true
+      y'-¬b-true = agree-on-true ¬b x'-¬b-true
+
+      -- y' $cr ¬b = y' $cr (1B + negB b) = true + (- true) = true + true = false
+      -- In BoolBR, true + true = false (XOR)
+      y'-¬b-false : y' $cr ¬b ≡ false
+      y'-¬b-false =
+        pres+ (snd y') 1B (negB b) ∙
+        cong₂ _+Bool_ (pres1 (snd y')) (pres- (snd y') b) ∙
+        cong (λ z → true +Bool (negBool z)) eq'
+
+      contra : false ≡ true
+      contra = sym y'-¬b-false ∙ y'-¬b-true
+
+    -- Now x' = y' by CommRingHom≡ since they agree on all elements
+    x'≡y' : x' ≡ y'
+    x'≡y' = CommRingHom≡ (funExt agree-on-all)
+
+    -- Transport back to get x ≡ y
+    goal : x ≡ y
+    goal = sym (transportTransport⁻ p x) ∙ cong (transport p) x'≡y' ∙ transportTransport⁻ p y
+
+  postulate
     StoneCompactHausdorffTotallyDisconnected-backward : (X : CHaus)
       → isTotallyDisconnected X
       → hasStoneStr (fst X)
