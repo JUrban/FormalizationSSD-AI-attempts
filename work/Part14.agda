@@ -2953,11 +2953,16 @@ module CohomologyFunctorialityInfrastructure where
       x ∎
 
 -- =============================================================================
--- NoRetractionCompleteProof (CHANGES0539)
+-- NoRetractionCompleteProof (CHANGES0540)
 -- =============================================================================
 --
 -- This module provides the COMPLETE no-retraction proof structure.
 -- The only remaining assumption is circle-cohomology : H¹ Circle ≃ ℤ.
+--
+-- Key results PROVED:
+-- 1. H¹-Circle-trivial-from-retraction : retraction through contractible → all equal
+-- 2. no-retraction-from-circle-cohomology : given circle-coh, no retraction exists
+-- 3. no-retraction-theorem : final theorem using postulated circle-cohomology
 
 module NoRetractionCompleteProof where
   open import Cubical.Foundations.Prelude
