@@ -452,12 +452,202 @@ module CohomologyModule where
     --                           = ΩEM+1→EM 0 refl
     --                           = 0ₖ 0 = 0g
     --
-    -- POSTULATED because formalizing the homomorphism step requires careful
-    -- matching of EM G 0 operations with AbGroup operations.
-    postulate
-      path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
-        → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
-        → CechComplex.is1Cocycle S T A (path-to-EM0 α β)
+    -- PROVED: The cocycle condition follows from the homomorphism property
+    -- of ΩEM+1→EM at level 0 and pure abelian group algebra.
+    --
+    -- Key insight: At level 0, EM G 0 = fst G and _+ₖ_ = _+G_ definitionally.
+    -- This means ΩEM+1→EM 0 is a homomorphism to the AbGroup itself.
+    --
+    -- Let h(t) = ΩEM+1→EM 0 (β x t)
+    -- Then g(u,v) = ΩEM+1→EM 0 (sym(β u) ∙ β v) = -h(u) + h(v)
+    --
+    -- The cocycle condition (g(v,w) - g(u,w)) + g(u,v) = 0 becomes:
+    -- ((h(w) - h(v)) - (h(w) - h(u))) + (h(v) - h(u))
+    -- = (h(w) - h(v) - h(w) + h(u)) + (h(v) - h(u))
+    -- = (-h(v) + h(u)) + (h(v) - h(u))
+    -- = 0  [by abelian group algebra]
+    path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
+      → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
+      → CechComplex.is1Cocycle S T A (path-to-EM0 α β)
+    path-to-EM0-is-cocycle α β x u v w = goal
+      where
+        -- CechComplex S T A is already open at module level (line 283)
+
+        -- Local aliases for the abelian group operations at x
+        module Ax = AbGroupStr (snd (A x))
+        -- Use Ax._+_ and Ax.-_ explicitly to avoid ambiguity with BooleanRing._+_
+        module Gx = GrpProps.GroupTheory (AbGroup→Group (A x))
+
+        -- The 1-cochain we need to show is a cocycle
+        g : (s t : T x) → EM (A x) 0
+        g s t = path-to-EM0 α β x s t
+
+        -- The ΩEM+1→EM homomorphism at level 0
+        ϕ : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1 → EM (A x) 0
+        ϕ = Iso.inv (EM-iso x)
+
+        -- Key: define h(t) for path-based analysis
+        -- h(t) = ΩEM+1→EM 0 (β x t) - but we work via paths
+        -- Actually g(u,v) = ϕ (sym (β x u) ∙ β x v)
+
+        -- The cocycle condition at (x, u, v, w):
+        -- d₁(g) x u v w = (g v w - g u w) + g u v = 0g
+        --
+        -- Expanding g using path-to-EM0:
+        -- g u v = ϕ (sym (β x u) ∙ β x v)
+        -- g u w = ϕ (sym (β x u) ∙ β x w)
+        -- g v w = ϕ (sym (β x v) ∙ β x w)
+        --
+        -- The key is that ϕ is a group homomorphism from (Ω EM∙ 1, ∙) to (EM G 0, +ₖ)
+        -- and at level 0, +ₖ = +G.
+        --
+        -- Using ΩEM+1→EM-hom: ϕ (p ∙ q) = ϕ p + ϕ q
+        -- Using ΩEM+1→EM-sym: ϕ (sym p) = - ϕ p
+        -- Using ΩEM+1→EM-refl: ϕ refl = 0g
+
+        -- Shorthands for the path elements
+        pu = β x u  -- α x ≡ 0ₖ 1
+        pv = β x v
+        pw = β x w
+
+        -- The elements we work with (in EM (A x) 0 = fst (A x))
+        guv = g u v
+        guw = g u w
+        gvw = g v w
+
+        -- We need to show: (gvw - guw) + guv = 0g
+        --
+        -- Using the algebraic approach:
+        -- Define h(t) = ϕ (sym pu ∙ pt) - wait, this depends on u
+        -- Actually, the proof is cleaner using the path-based homomorphism
+        --
+        -- Alternative: use the fact that at level 0, we can work with
+        -- explicit group operations.
+
+        -- The combined path that gives the cocycle condition:
+        -- p-vw ∙ sym(p-uw) ∙ p-uv where p-ab = sym(β a) ∙ β b
+        -- This path equals refl, so ϕ of it is 0g.
+        --
+        -- But we need to show this equals (gvw - guw) + guv in the group.
+        -- This uses the homomorphism property carefully.
+
+        -- First, let's define the paths
+        p-uv : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1
+        p-uv = sym pu ∙ pv
+
+        p-uw : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1
+        p-uw = sym pu ∙ pw
+
+        p-vw : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1
+        p-vw = sym pv ∙ pw
+
+        -- The combined path (should equal refl)
+        combined-path : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1
+        combined-path = p-vw ∙ sym p-uw ∙ p-uv
+
+        -- Path algebra lemma: combined-path = refl
+        -- p-vw ∙ sym(p-uw) ∙ p-uv
+        -- = (sym pv ∙ pw) ∙ sym(sym pu ∙ pw) ∙ (sym pu ∙ pv)
+        -- = (sym pv ∙ pw) ∙ (sym pw ∙ pu) ∙ (sym pu ∙ pv)   [by symDistr, symInvo]
+        -- = sym pv ∙ (pw ∙ sym pw) ∙ (pu ∙ sym pu) ∙ pv    [by assoc]
+        -- = sym pv ∙ refl ∙ refl ∙ pv                       [by rCancel]
+        -- = sym pv ∙ pv                                     [by lUnit]
+        -- = refl                                            [by lCancel]
+
+        open import Cubical.Foundations.GroupoidLaws using (rCancel; lCancel; lUnit; rUnit)
+
+        -- Step: sym(p-uw) = sym pw ∙ pu
+        -- sym (sym pu ∙ pw) = sym pw ∙ sym (sym pu) [by symDistr]
+        --                   = sym pw ∙ pu           [by sym (symInvo pu)]
+        sym-p-uw : sym p-uw ≡ sym pw ∙ pu
+        sym-p-uw = symDistr (sym pu) pw ∙ cong (sym pw ∙_) (sym (symInvo pu))
+
+        -- Path manipulation to show combined-path = refl
+        combined-is-refl : combined-path ≡ refl
+        combined-is-refl =
+          p-vw ∙ sym p-uw ∙ p-uv
+            ≡⟨ cong (λ z → p-vw ∙ z ∙ p-uv) sym-p-uw ⟩
+          p-vw ∙ (sym pw ∙ pu) ∙ p-uv
+            ≡⟨ cong (p-vw ∙_) (sym (assoc-path (sym pw) pu p-uv)) ⟩
+          p-vw ∙ (sym pw ∙ (pu ∙ p-uv))
+            ≡⟨ refl ⟩  -- p-uv = sym pu ∙ pv
+          p-vw ∙ (sym pw ∙ (pu ∙ (sym pu ∙ pv)))
+            ≡⟨ cong (λ z → p-vw ∙ (sym pw ∙ z)) (assoc-path pu (sym pu) pv) ⟩
+          p-vw ∙ (sym pw ∙ ((pu ∙ sym pu) ∙ pv))
+            ≡⟨ cong (λ z → p-vw ∙ (sym pw ∙ (z ∙ pv))) (rCancel pu) ⟩
+          p-vw ∙ (sym pw ∙ (refl ∙ pv))
+            ≡⟨ cong (λ z → p-vw ∙ (sym pw ∙ z)) (sym (lUnit pv)) ⟩
+          p-vw ∙ (sym pw ∙ pv)
+            ≡⟨ refl ⟩  -- p-vw = sym pv ∙ pw
+          (sym pv ∙ pw) ∙ (sym pw ∙ pv)
+            ≡⟨ sym (assoc-path (sym pv) pw (sym pw ∙ pv)) ⟩
+          sym pv ∙ (pw ∙ (sym pw ∙ pv))
+            ≡⟨ cong (sym pv ∙_) (assoc-path pw (sym pw) pv) ⟩
+          sym pv ∙ ((pw ∙ sym pw) ∙ pv)
+            ≡⟨ cong (λ z → sym pv ∙ (z ∙ pv)) (rCancel pw) ⟩
+          sym pv ∙ (refl ∙ pv)
+            ≡⟨ cong (sym pv ∙_) (sym (lUnit pv)) ⟩
+          sym pv ∙ pv
+            ≡⟨ lCancel pv ⟩
+          refl ∎
+
+        -- Now we need to connect this to the d₁ condition
+        -- d₁(g) x u v w = (g v w -g g u w) + g u v
+        -- where g a b = ϕ (p-ab)
+        --
+        -- We need: (ϕ p-vw -g ϕ p-uw) + ϕ p-uv = 0g
+        --
+        -- Using ΩEM+1→EM-hom: ϕ(p ∙ q) = ϕ(p) + ϕ(q)
+        -- Using ΩEM+1→EM-sym: ϕ(sym p) = - ϕ(p)
+        -- Using ΩEM+1→EM-refl: ϕ(refl) = 0g
+        --
+        -- From combined-is-refl: p-vw ∙ sym p-uw ∙ p-uv = refl
+        -- So: ϕ(p-vw ∙ sym p-uw ∙ p-uv) = ϕ(refl) = 0g
+        --
+        -- And: ϕ(p-vw ∙ sym p-uw ∙ p-uv)
+        --    = ϕ(p-vw) + ϕ(sym p-uw ∙ p-uv)      [by hom]
+        --    = ϕ(p-vw) + ϕ(sym p-uw) + ϕ(p-uv)  [by hom]
+        --    = gvw + (- guw) + guv               [by sym lemma]
+        --
+        -- But d₁ uses subtraction: (gvw - guw) + guv = gvw + (- guw) + guv
+        -- (in an abelian group, these are the same)
+
+        -- The homomorphism properties from the library
+        ϕ-hom : (p q : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1) → ϕ (p ∙ q) ≡ Ax._+_ (ϕ p) (ϕ q)
+        ϕ-hom p q = EMProp.ΩEM+1→EM-hom {G = A x} 0 p q
+
+        ϕ-sym : (p : 0ₖ {G = A x} 1 ≡ 0ₖ {G = A x} 1) → ϕ (sym p) ≡ Ax.-_ (ϕ p)
+        ϕ-sym p = EMProp.ΩEM+1→EM-sym {G = A x} 0 p
+
+        ϕ-refl : ϕ refl ≡ Ax.0g
+        ϕ-refl = EMProp.ΩEM+1→EM-refl {G = A x} 0
+
+        -- The algebraic proof
+        -- From combined-is-refl and ϕ-refl:
+        combined-gives-0g : ϕ combined-path ≡ Ax.0g
+        combined-gives-0g = cong ϕ combined-is-refl ∙ ϕ-refl
+
+        -- Expand using homomorphism
+        expand-combined : ϕ combined-path ≡ Ax._+_ (Ax._+_ gvw (Ax.-_ guw)) guv
+        expand-combined =
+          ϕ (p-vw ∙ sym p-uw ∙ p-uv)
+            ≡⟨ ϕ-hom p-vw (sym p-uw ∙ p-uv) ⟩
+          Ax._+_ (ϕ p-vw) (ϕ (sym p-uw ∙ p-uv))
+            ≡⟨ cong (Ax._+_ (ϕ p-vw)) (ϕ-hom (sym p-uw) p-uv) ⟩
+          Ax._+_ (ϕ p-vw) (Ax._+_ (ϕ (sym p-uw)) (ϕ p-uv))
+            ≡⟨ cong (λ z → Ax._+_ (ϕ p-vw) (Ax._+_ z (ϕ p-uv))) (ϕ-sym p-uw) ⟩
+          Ax._+_ gvw (Ax._+_ (Ax.-_ guw) guv)
+            ≡⟨ Ax.+Assoc gvw (Ax.-_ guw) guv ⟩
+          Ax._+_ (Ax._+_ gvw (Ax.-_ guw)) guv ∎
+
+        -- Now show this equals (gvw - guw) + guv
+        -- Note: a - b = a + (- b) in the abelian group
+        minus-is-plus-neg : Ax._-_ gvw guw ≡ Ax._+_ gvw (Ax.-_ guw)
+        minus-is-plus-neg = refl  -- by definition
+
+        -- The final goal
+        goal : d₁ (path-to-EM0 α β) x u v w ≡ AGx.0g x
+        goal = sym expand-combined ∙ combined-gives-0g
 
     -- Step 3: Apply Čech exactness to get coboundary witness
     -- Given g : C¹ is a cocycle, exact gives us ϕ : C⁰ with d₀(ϕ) = g
