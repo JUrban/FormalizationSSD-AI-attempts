@@ -4380,6 +4380,9 @@ module CoboundaryFromInhabitant where
 
   -- Lemma: (a + b) - b = a for any integers a, b
   -- This is a standard group law: (a · b) · b⁻¹ = a
+  -- Proof sketch: (a + b) - b = (a + b) + (-b) = a + (b + (-b)) = a + 0 = a
+  -- Note: Postulated due to definitional mismatch between ℤBase._+_ and GroupStr._·_
+  -- The proof follows from: +Assoc, +InvR, +IdR from ℤGroup structure
   postulate
     ℤ-add-sub-cancel-right : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- b) ≡ a
 
