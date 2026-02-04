@@ -209,9 +209,54 @@ module CohomologyModule where
     -- The Čech complex with coefficients in A^T
     open CechComplex S T A^T public
 
-    -- POSTULATED: Proof has AbGroupStr operator resolution issues in Part14 context
-    postulate
-      canonical-exact : Ȟ¹-vanishes
+    -- PROVED: Using diagonal construction
+    -- For β : C¹ (with coefficients in A^T), define α_x(u)(t) = β_x(t,u,t)
+    -- Then d₀(α)_x(u,v)(t) = α_x(v)(t) - α_x(u)(t) = β_x(t,v,t) - β_x(t,u,t)
+    -- By cocycle condition at (t,u,v) for component t: β_x(u,v)(t) = β_x(t,v,t) - β_x(t,u,t)
+    canonical-exact : Ȟ¹-vanishes
+    canonical-exact β cocycle-cond = α , funExt λ x → funExt λ u → funExt λ v → funExt λ t → prove-at x u v t
+      where
+        -- The coboundary witness: α_x(u)(t) = β_x(t,u,t)
+        α : C⁰
+        α x u t = β x t u t
+
+        prove-at : (x : S) (u v : T x) (t : T x) → d₀ α x u v t ≡ β x u v t
+        prove-at x u v t = goal
+          where
+            -- Use module aliases for A^T x = ΠAbGroup (λ _ → A x)
+            module ATx = AbGroupStr (snd (A^T x))
+            -- Since A^T x is a function group, operations are pointwise
+            -- So ATx._-_ f g is λ s → (f s) -A (g s) where -A is in A x
+
+            -- For proving at the t-coordinate, we use the original A x operations
+            module Ax = AbGroupStr (snd (A x))
+            module Gx = GrpProps.GroupTheory (AbGroup→Group (A x))
+
+            -- The cocycle condition instantiated at (t, u, v) for the t-component:
+            -- d₁(β)_x(t,u,v)(t) = (β_x(u,v)(t) - β_x(t,v)(t)) + β_x(t,u)(t) = 0
+            cocycle-at-tuv : Ax._+_ (Ax._-_ (β x u v t) (β x t v t)) (β x t u t) ≡ Ax.0g
+            cocycle-at-tuv = cong (λ f → f t) (cocycle-cond x t u v)
+
+            -- From cocycle condition, derive: β_x(u,v)(t) - β_x(t,v)(t) = - β_x(t,u)(t)
+            step1 : Ax._-_ (β x u v t) (β x t v t) ≡ Ax.-_ (β x t u t)
+            step1 = Gx.invUniqueL cocycle-at-tuv
+
+            -- Shorthands
+            a = β x u v t
+            b = β x t v t
+            c = β x t u t
+
+            -- From a - b = -c, derive a = b - c
+            step2 : a ≡ Ax._-_ b c
+            step2 = sym (Ax.+IdR a)
+                  ∙ cong (Ax._+_ a) (sym (Ax.+InvL b))
+                  ∙ Ax.+Assoc a (Ax.-_ b) b
+                  ∙ cong (λ z → Ax._+_ z b) step1
+                  ∙ Ax.+Comm (Ax.-_ c) b
+
+            -- d₀(α)_x(u,v)(t) = α_x(v)(t) - α_x(u)(t) = b - c
+            goal : d₀ α x u v t ≡ β x u v t
+            goal = sym step2
 
   -- =========================================================================
   -- Lemma: exact-cech-complex-vanishing-cohomology (tex Lemma 2823)
