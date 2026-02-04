@@ -11,27 +11,33 @@ import Cubical.HITs.PropositionalTruncation as PT
 -- Part 11: work.agda lines 12801-13413 (BooleEpiMono, CHaus modules)
 -- =============================================================================
 
-module BooleEpiMonoModule where
-  open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
-
-  -- Morphisms in Boole: BoolHom (fst B) (fst C)
-  -- The key facts about epi-mono factorization in Boole:
-  -- 1. Any g : B → C has an overtly discrete kernel
-  -- 2. Ker(g) is enumerable (countable)
-  -- 3. B/Ker(g) is in Boole
-  -- 4. Factorization B ↠ B/Ker(g) ↪ C corresponds to
-  --    Sp(C) ↠ Sp(B/Ker(g)) ↪ Sp(B)
-  -- 5. Surjections in Boole ↔ closed embeddings of spectra
-
-  -- The main result we need: surjections in Boole give closed embeddings of spectra
-  -- This is stated more precisely with explicit type arguments to avoid inference issues.
-  postulate
-    -- For surjective g : B → C, the induced Sp(C) → Sp(B) is a closed embedding
-    -- This means: the image of Sp(C) in Sp(B) is a closed subset
-    SurjInBoole→ClosedImage : (B C : Booleω)
-      → (g : BoolHom (fst B) (fst C))
-      → ((c : ⟨ fst C ⟩) → ∥ Σ[ b ∈ ⟨ fst B ⟩ ] fst g b ≡ c ∥₁)  -- g is surjective
-      → (x : Sp B) → isClosedProp (∥ Σ[ y ∈ Sp C ] y ∘cr g ≡ x ∥₁ , squash₁)
+-- REMOVED (CHANGES0509): BooleEpiMonoModule with SurjInBoole→ClosedImage postulate
+-- =====================================================================================
+-- The BooleEpiMonoModule was ORPHANED - never opened or used anywhere in the codebase.
+-- The postulate SurjInBoole→ClosedImage was defined but never called.
+-- Commented out to eliminate the unused postulate.
+--
+-- module BooleEpiMonoModule where
+--   open import Axioms.StoneDuality using (Stone; hasStoneStr; isSetBoolHom)
+--
+--   -- Morphisms in Boole: BoolHom (fst B) (fst C)
+--   -- The key facts about epi-mono factorization in Boole:
+--   -- 1. Any g : B → C has an overtly discrete kernel
+--   -- 2. Ker(g) is enumerable (countable)
+--   -- 3. B/Ker(g) is in Boole
+--   -- 4. Factorization B ↠ B/Ker(g) ↪ C corresponds to
+--   --    Sp(C) ↠ Sp(B/Ker(g)) ↪ Sp(B)
+--   -- 5. Surjections in Boole ↔ closed embeddings of spectra
+--
+--   -- The main result we need: surjections in Boole give closed embeddings of spectra
+--   -- This is stated more precisely with explicit type arguments to avoid inference issues.
+--   postulate
+--     -- For surjective g : B → C, the induced Sp(C) → Sp(B) is a closed embedding
+--     -- This means: the image of Sp(C) in Sp(B) is a closed subset
+--     SurjInBoole→ClosedImage : (B C : Booleω)
+--       → (g : BoolHom (fst B) (fst C))
+--       → ((c : ⟨ fst C ⟩) → ∥ Σ[ b ∈ ⟨ fst B ⟩ ] fst g b ≡ c ∥₁)  -- g is surjective
+--       → (x : Sp B) → isClosedProp (∥ Σ[ y ∈ Sp C ] y ∘cr g ≡ x ∥₁ , squash₁)
 
 -- =============================================================================
 -- Compact Hausdorff Spaces (tex Definition at line 1898)
