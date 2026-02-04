@@ -398,13 +398,50 @@ module CompactHausdorffTopologyModule where
 -- CHaus spaces are normal: given X:CHaus and A,B ⊆ X closed with A∩B=∅,
 -- there exist U,V ⊆ X open such that A ⊆ U, B ⊆ V and U∩V=∅.
 --
--- Proof sketch:
--- 1. Let q:S↠X be surjective with S:Stone
--- 2. q⁻¹(A) and q⁻¹(B) are closed in S
--- 3. By StoneSeparated, ∃D:S→2 with q⁻¹(A) ⊆ D and q⁻¹(B) ⊆ ¬D
--- 4. q(D) and q(¬D) are closed by CompactHausdorffClosed
--- 5. Define U = ¬q(¬D) and V = ¬q(D)
--- 6. Then A ⊆ U, B ⊆ V, and U∩V=∅
+-- PROOF OUTLINE (from tex lines 2058-2076):
+--
+-- 1. Let q : S ↠ X be the Stone cover (from CHaus structure)
+--
+-- 2. q⁻¹(A) and q⁻¹(B) are closed in S (preimage of closed is closed)
+--    - In Stone S, closed means countable intersection of decidables
+--
+-- 3. q⁻¹(A) ∩ q⁻¹(B) = q⁻¹(A ∩ B) = ∅ since A ∩ B = ∅
+--
+-- 4. By StoneSeparated (tex Lemma 1965), for disjoint closed subsets of Stone:
+--    ∃ D : S → Bool with q⁻¹(A) ⊆ D and q⁻¹(B) ⊆ ¬D
+--    (i.e., D separates the two closed subsets)
+--
+-- 5. Define the images under q:
+--    - q(D) = { x : X | ∃ s : S, D(s) = true ∧ q(s) = x }
+--    - q(¬D) = { x : X | ∃ s : S, D(s) = false ∧ q(s) = x }
+--
+-- 6. By CompactHausdorffClosed-backward (tex Lemma 1906):
+--    q(D) and q(¬D) are closed in X
+--    (image of decidable subset under surjection is closed)
+--
+-- 7. Define the open sets:
+--    - U = ¬q(¬D) = { x : X | ∀ s : S, q(s) = x → D(s) = true }
+--    - V = ¬q(D) = { x : X | ∀ s : S, q(s) = x → D(s) = false }
+--    These are open because negation of closed is open.
+--
+-- 8. Verify A ⊆ U:
+--    For a ∈ A, need to show a ∉ q(¬D).
+--    If a ∈ q(¬D), then ∃ s with D(s) = false and q(s) = a.
+--    Since q(s) = a ∈ A, we have s ∈ q⁻¹(A) ⊆ D, so D(s) = true. Contradiction.
+--
+-- 9. Verify B ⊆ V: Symmetric argument using q⁻¹(B) ⊆ ¬D.
+--
+-- 10. Verify U ∩ V = ∅:
+--     If x ∈ U ∩ V, then x ∉ q(¬D) and x ∉ q(D).
+--     By q surjective, ∃ s with q(s) = x.
+--     Then D(s) = true (from x ∉ q(¬D)) and D(s) = false (from x ∉ q(D)).
+--     Contradiction.
+--
+-- DEPENDENCIES:
+-- - hasCHausStr.stoneCover: gives Stone S and surjection q : S ↠ X
+-- - StoneSeparated: disjoint closed subsets of Stone are separated by decidable
+-- - CompactHausdorffClosed-backward: image of decidable under q is closed
+-- - negClosedIsOpen: negation of closed is open
 
 module CHausSeperationOfClosedByOpensModule where
   open CompactHausdorffModule
