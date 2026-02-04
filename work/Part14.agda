@@ -1045,17 +1045,17 @@ module CohomologyModule where
     -- =======================================================================
 
   -- =========================================================================
-  -- f-injective equality: postulated = derived
+  -- f-injective equality: f-injective-05a = f-injective-from-trunc
   -- =========================================================================
   --
-  -- This module proves that the postulated f-injective equals
-  -- f-injective-from-trunc. The proof works because:
+  -- UPDATED (CHANGES0508): The f-injective postulate in Part04 was eliminated.
+  -- This module now proves that the different proved versions are equal.
+  -- The proof works because:
   -- 1. B∞ is a Boolean ring, so its carrier is a set
   -- 2. For a set S, paths x ≡ y are propositions
   -- 3. Therefore (fst f x ≡ fst f y → x ≡ y) is a proposition for any x, y
   -- 4. Π of propositions is a proposition
-  -- 5. So f-injective and f-injective-from-trunc are both in a proposition type
-  -- 6. Therefore they are equal
+  -- 5. So all f-injective proofs are in a proposition type, hence equal
 
   module FInjectiveEqualityProof where
     open import Cubical.Foundations.HLevels using (isPropΠ; isPropΠ2)
@@ -1076,22 +1076,11 @@ module CohomologyModule where
     isProp-f-injective-type : isProp ((x y : ⟨ B∞ ⟩) → fst f x ≡ fst f y → x ≡ y)
     isProp-f-injective-type = isPropΠ2 (λ x y → isPropΠ (λ _ → isProp-B∞-path x y))
 
-    -- THE KEY THEOREM: f-injective equals f-injective-from-trunc
-    f-injective-equality : f-injective ≡ f-injective-from-trunc
-    f-injective-equality = isProp-f-injective-type f-injective f-injective-from-trunc
-
     -- =======================================================================
-    -- SUMMARY: Explicit type-checked equality
-    -- =======================================================================
-    --
-    -- f-injective-equality:
-    --   f-injective ≡ f-injective-from-trunc
-    --
-    -- This proves that the postulate is CONSISTENT with the derivation.
-    -- They are propositionally equal!
+    -- KEY THEOREM: All f-injective proofs are equal (since target is a prop)
     -- =======================================================================
 
-    -- f-injective-05a equality: proved version from Part05a also equals derived
+    -- f-injective-05a (from Part05a) equals f-injective-from-trunc (from Part06)
     f-injective-05a-equality : f-injective-05a ≡ f-injective-from-trunc
     f-injective-05a-equality = isProp-f-injective-type f-injective-05a f-injective-from-trunc
 
@@ -1099,7 +1088,7 @@ module CohomologyModule where
     -- COROLLARY: Sp-f-surjective equals Sp-f-surjective-from-proof
     -- =======================================================================
     --
-    -- Since f-injective ≡ f-injective-from-trunc, we also have:
+    -- Since all f-injective proofs are equal, we also have:
     -- Sp-f-surjective ≡ Sp-f-surjective-from-proof (defined in Part06)
     --
     -- Both are defined using injective→Sp-surjective with the respective
@@ -1545,7 +1534,7 @@ module CohomologyModule where
 --
 -- PROVED BUT KEPT AS POSTULATE (forward reference issues):
 -- 1. closedSigmaClosed (line ~3278): Proof at line ~9118, kept for order
--- 2. f-injective (line ~4713): Proof at line ~7148, kept for order
+-- (f-injective was here but ELIMINATED in CHANGES0508 - Part05 uses f-injective-05a instead)
 --
 -- FUNDAMENTAL AXIOMS (from tex file, intended as axioms):
 -- 1. sd-axiom (line ~1346): Stone Duality Axiom
