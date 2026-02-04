@@ -3613,9 +3613,19 @@ module IConnectednessTC where
   -- requires more machinery (possibly using the encode-decode method or
   -- more sophisticated truncation elimination).
   --
-  -- For now, we postulate this since all current uses are for UnitInterval
-  -- which is contractible (not just connected), and those cases are handled
-  -- by contr-map-const in Part19.agda.
+  -- STATUS: EFFECTIVELY ORPHANED (CHANGES0415)
+  -- ===========================================
+  -- All current uses are for UnitInterval which is contractible (not just connected).
+  -- These cases are handled by contr-map-const in Part19.agda directly.
+  --
+  -- RELATED: connected-1-to-set-constant-postulate (Part15.agda:257)
+  -- - That postulate shows f : A → B is constant (∀x y. f x ≡ f y) when A is 1-connected
+  -- - This postulate shows f ≡ g when they agree at a point
+  -- - Both are superseded by contr-map-const for contractible types
+  --
+  -- KEPT FOR: Theoretical completeness - may be needed for 1-connected but
+  -- non-contractible types (e.g., spheres, higher truncations).
+  --
   postulate
     connected-maps-agree : {A : Type ℓ-zero} {B : Type ℓ-zero} →
       isContr ∥ A ∥₁ → isSet B →
