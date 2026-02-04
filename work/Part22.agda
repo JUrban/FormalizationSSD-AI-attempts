@@ -451,3 +451,75 @@ module BoolQuotientEquivConsistency where
   -- The proof uses:
   -- 1. quotientConclusion : CommRing A / (⊎.rec f g) ≃ (A / f) / (π ∘ g)
   -- 2. uaCommRing : CommRingEquiv A B → A ≡ B
+
+-- =============================================================================
+-- CONVENIENCE POSTULATES DOCUMENTATION
+-- =============================================================================
+--
+-- These postulates are INTENTIONALLY NOT TRUE in general, but are used as
+-- convenience hacks for specific reasoning patterns. They should NOT be
+-- eliminated without changing the proof structure.
+--
+-- 1. isPropIsClosedProp (Part08.agda:391)
+--    TYPE: {P : hProp} → isProp (isClosedProp P)
+--    TRUTH: FALSE in general - isClosedProp witnesses are not unique
+--    USAGE: For truncation elimination in SpEqualityClosed
+--    ALTERNATIVE: Refactor to use truncated closedness throughout
+--    DOCUMENTATION: Part08.agda:380-390 (inline comments)
+--
+-- 2. isPropIsOpenProp (Part10b.agda:141)
+--    TYPE: (P : hProp) → isProp (isOpenProp P)
+--    TRUTH: FALSE in general - multiple witness sequences possible
+--    USAGE: For PathP reasoning over hProps where predicate stays fixed
+--    ALTERNATIVE: Refactor to track openness witnesses explicitly
+--    DOCUMENTATION: Part10b.agda:136-140 (inline comments)
+--
+-- WHY THESE ARE ACCEPTABLE:
+-- - They're used in SPECIFIC contexts where the predicate is fixed
+-- - In those contexts, transport determines the witness uniquely
+-- - Eliminating them requires structural changes to the formalization
+-- - They don't affect the main theorem correctness (IVT, Brouwer FPT)
+--
+-- CONTRAST WITH TRUE PROPOSITIONS:
+-- - hasStoneStr IS a proposition (isPropHasStoneStr sd-axiom)
+-- - isClosedProp for a FIXED P may have multiple witnesses
+-- - The postulates pretend all witness choices are equal
+--
+-- =============================================================================
+
+-- =============================================================================
+-- TECHNICAL POSTULATES REQUIRING INFRASTRUCTURE
+-- =============================================================================
+--
+-- These postulates represent genuine gaps requiring additional formalization:
+--
+-- 1. booleω-equality-open (Part07.agda:556)
+--    TYPE: (B : Booleω) (s t : Sp B) → isOpenProp (s ≡ t , isSetBoolHom ...)
+--    STATUS: Needs ODisc (object of discontinuous functions) formalization
+--    TEX REF: Related to overt/discrete structure
+--    DOCUMENTATION: Part07.agda:549-555
+--
+-- 2. evens-odds-disjoint (Part05.agda:1872)
+--    TYPE: Internal to llpo-from-SD-aux module
+--    STATUS: Could be eliminated using localChoice-axiom (tex 348-353)
+--    ISSUE: Bridges truncated and untruncated existence
+--    DOCUMENTATION: Part05.agda:1861-1871
+--
+-- 3. StoneSeparated (Part09.agda:89)
+--    TYPE: Stone spaces have clopen separation of disjoint closed sets
+--    STATUS: Substantial theorem (tex Lemma 1824)
+--    DEPENDENCIES: StoneClosedSubsets, SpOfQuotientBySeq, SpectrumEmptyIff01Equal
+--    DOCUMENTATION: Part09.agda:73-93, Part21.agda StoneSeparatedTC module
+--
+-- 4. B∞×B∞≃quotient (Part05.agda:742)
+--    TYPE: BooleanRingEquiv B∞×B∞ B∞×B∞-quotient
+--    STATUS: KNOWN BUG - current presentation missing left projection idempotent
+--    ISSUE: Presentation ℕ ⊎ ℕ generators don't reach (1∞, 0∞) ∈ B∞×B∞
+--    FIX STRATEGIES:
+--      1. Correct presentation with e_L = (1∞, 0∞) generator
+--      2. Use ODisc characterization (products of ODisc are ODisc)
+--      3. Direct Stone space argument via Sp(B∞×B∞) ≃ ℕ∞ ⊎ ℕ∞
+--    WHY TRUE: B∞×B∞ IS countably presented by Stone duality argument
+--    DOCUMENTATION: Part05.agda:690-740 (detailed analysis with TODO)
+--
+-- =============================================================================
