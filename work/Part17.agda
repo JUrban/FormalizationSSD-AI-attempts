@@ -901,17 +901,56 @@ module NoRetractionCompleteTC where
 
   -- The no-retraction theorem (abstract version)
   -- If we have a retraction r : D²-concrete → S¹, we get a contradiction
-  -- PROOF IDEA:
-  -- r ∘ i = id on S¹ induces Ω(r) ∘ Ω(i) = id on ΩS¹ ≃ ℤ
-  -- But i factors through D² ≃ Unit, so Ω(i) factors through ΩUnit ≃ Unit
-  -- Therefore id on ℤ factors through Unit, which is a contradiction
-  -- because ℤ is not trivial (has distinct elements)
-  postulate
-    no-retraction-from-concrete :
-      (r : D²-concrete → S¹)
-      (i : S¹ → D²-concrete)
-      (retract : (x : S¹) → r (i x) ≡ x)
-      → ⊥
+  -- PROOF:
+  -- 1. D²-concrete is contractible (= Unit)
+  -- 2. Therefore r is constant: r u ≡ r v for all u, v : D²-concrete
+  -- 3. Combined with r ∘ i = id, this makes all points of S¹ equal
+  -- 4. But S¹ is not contractible (π₁(S¹) = ℤ ≠ 0)
+  --
+  -- ELIMINATED POSTULATE (CHANGES0418):
+  -- Was: postulate no-retraction-from-concrete : ...
+  -- Now: Proved using contractibility of D²-concrete
+  no-retraction-from-concrete :
+    (r : D²-concrete → S¹)
+    (i : S¹ → D²-concrete)
+    (retract : (x : S¹) → r (i x) ≡ x)
+    → ⊥
+  no-retraction-from-concrete r i retract = S¹-not-contr S¹-is-contr
+    where
+      open import Cubical.Data.Nat using (snotz)
+      open import Cubical.Data.Int using (injPos)
+      open import Cubical.HITs.S1.Base using (ΩS¹≡ℤ)
+
+      -- Key: r is constant (factors through contractible D²-concrete)
+      r-const : (u v : D²-concrete) → r u ≡ r v
+      r-const u v = cong r (isContr→isProp isContr-D² u v)
+
+      -- Therefore all values of S¹ are equal
+      all-S¹-equal : (x y : S¹) → x ≡ y
+      all-S¹-equal x y =
+        x           ≡⟨ sym (retract x) ⟩
+        r (i x)     ≡⟨ r-const (i x) (i y) ⟩
+        r (i y)     ≡⟨ retract y ⟩
+        y           ∎
+
+      -- S¹ would be contractible
+      S¹-is-contr : isContr S¹
+      S¹-is-contr = base , all-S¹-equal base
+
+      -- But S¹ is not contractible (π₁(S¹) = ℤ ≠ 0)
+      S¹-not-contr : isContr S¹ → ⊥
+      S¹-not-contr (c , p) = snotz (injPos (sym path-in-ℤ))
+        where
+          loops-contr : isContr (base ≡ base)
+          loops-contr = isOfHLevelPath 0 (c , p) base base
+
+          π₁S¹≃ℤ : (base ≡ base) ≡ ℤ
+          π₁S¹≃ℤ = ΩS¹≡ℤ
+
+          path-in-ℤ : pos 0 ≡ pos 1
+          path-in-ℤ = subst (λ T → (x y : T) → x ≡ y) π₁S¹≃ℤ
+                            (λ x y → isContr→isProp loops-contr x y)
+                            (pos 0) (pos 1)
 
 -- =============================================================================
 -- Module: S1NotContractibleTC
