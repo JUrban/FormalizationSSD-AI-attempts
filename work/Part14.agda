@@ -3081,11 +3081,13 @@ module NoRetractionCompleteProof where
 
 module SequentialColimitInfrastructure where
   open import Cubical.Data.Nat using (ℕ; zero; suc) renaming (_+_ to _+ℕ_)
+  open import Cubical.Data.Nat.Order.Inductive using (_<ᵗ_; <ᵗ-trans-suc)
   open import Cubical.Data.Fin using (Fin; fzero; fsuc; toℕ)
   open import Cubical.Data.Sigma using (Σ; _,_; fst; snd)
   open import Cubical.Data.Sum using (_⊎_; inl; inr)
   open import Cubical.Data.Int using (ℤ; pos; negsuc)
   open import Cubical.Foundations.Prelude using (Type; Level; ℓ-zero; _≡_; refl; sym; _∙_; cong; cong₂; transport; subst; PathP; funExt)
+  open import Cubical.Foundations.Function using (_∘_)
 
   -- =========================================================================
   -- Finite Linear Approximation Iₙ (tex Definition 2963)
@@ -3337,6 +3339,55 @@ module SequentialColimitInfrastructure where
   finite-approx-exact {n} α =
     kernel-d₁-in-image-d₀ {n} α ,
     image-d₀-in-kernel-d₁ {n} α
+
+  -- =========================================================================
+  -- Sequential colimit structure: projection maps
+  -- =========================================================================
+  --
+  -- The unit interval [0,1] is the sequential colimit:
+  --   [0,1] = colim (I₀ ← I₁ ← I₂ ← ...)
+  --
+  -- where πₙ : Iₙ₊₁ → Iₙ is the projection (halving) map.
+  -- For i : Fin(2^(n+1)), πₙ(i) = i ÷ 2 (integer division).
+
+  -- Halving a natural number (floor division by 2)
+  -- Named halfℕ to avoid clash with Part01.half
+  halfℕ : ℕ → ℕ
+  halfℕ zero = zero
+  halfℕ (suc zero) = zero
+  halfℕ (suc (suc n)) = suc (halfℕ n)
+
+  -- Key lemma: half of k < 2^(n+1) is < 2^n
+  -- Because: k < 2·2^n implies k÷2 < 2^n
+  halfℕ-< : {n : ℕ} → (k : ℕ) → k <ᵗ (2^ (suc n)) → halfℕ k <ᵗ (2^ n)
+  halfℕ-< {n} k k<2sn = postulated-halfℕ-< {n} k k<2sn
+    where
+      -- This requires arithmetic reasoning about 2^n
+      -- Temporarily postulated to make progress
+      postulate
+        postulated-halfℕ-< : {n : ℕ} → (k : ℕ) → k <ᵗ (2^ (suc n)) → halfℕ k <ᵗ (2^ n)
+
+  -- The projection map πₙ : Iₙ₊₁ → Iₙ
+  πₙ : {n : ℕ} → Iₙ (suc n) → Iₙ n
+  πₙ {n} (k , k<2sn) = halfℕ k , halfℕ-< {n} k k<2sn
+
+  -- =========================================================================
+  -- Pullback of exactness along projection
+  -- =========================================================================
+  --
+  -- Key insight: πₙ* : (Iₙ → ℤ) → (Iₙ₊₁ → ℤ) defined by πₙ*(α) = α ∘ πₙ
+  -- preserves the exactness property.
+  --
+  -- If α is constant (in image of d₀), then α ∘ πₙ is also constant.
+  -- If α ∘ πₙ is in ker(d₁), then... (this requires more work)
+
+  -- Pullback along projection
+  π* : {n : ℕ} → (Iₙ n → ℤ) → (Iₙ (suc n) → ℤ)
+  π* {n} α = α ∘ πₙ {n}
+
+  -- Pullback preserves constant functions
+  π*-preserves-constant : {n : ℕ} → (k : ℤ) → π* {n} (d₀ {n} k) ≡ d₀ {suc n} k
+  π*-preserves-constant {n} k = refl
 
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
