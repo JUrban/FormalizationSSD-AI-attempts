@@ -3379,7 +3379,22 @@ module SequentialColimitInfrastructure where
       -- For suc (suc k), we have halfℕ (suc (suc k)) = suc (halfℕ k)
       -- Need: suc (halfℕ k) < 2^n
       -- From: suc (suc k) < 2^(suc n) = 2^n + 2^n
-      -- We need to show: k < 2^(suc n) - 2 and use IH
+      --
+      -- The key insight is that:
+      -- suc (suc k) <ᵗ (2^n + 2^n) definitionally reduces to k <ᵗ (2^n + 2^n - 2)
+      -- when 2^n + 2^n >= 2 (which it always is for n >= 0)
+      --
+      -- We use recursion on k, making use of the fact that:
+      -- halfℕ (suc (suc k)) = suc (halfℕ k) and k < suc (suc k)
+      --
+      -- By IH on (suc k): if suc k <ᵗ 2^(suc n), then halfℕ (suc k) <ᵗ 2^n
+      -- But halfℕ (suc k) = halfℕ (suc zero) = 0 when k = 0
+      --     halfℕ (suc k) = suc (halfℕ (k-1)) when k >= 1
+      --
+      -- The proof uses structural recursion on k and the property that
+      -- suc (suc k) <ᵗ m reduces to k <ᵗ (m-2) for m >= 2.
+      --
+      -- This postulate captures the core arithmetic claim that needs verification
       postulate
         halfℕ-<-helper : {n : ℕ} → (k : ℕ) → (suc (suc k)) <ᵗ (2^ (suc n)) → suc (halfℕ k) <ᵗ (2^ n)
 
@@ -3834,8 +3849,10 @@ module FiniteApproximationExactness where
   -- For Fin n with n ≥ 1 and T : Fin n → Type with inhabited fibers,
   -- we can extract a section by choosing from each fiber.
 
-  open import Cubical.Data.Fin using (Fin)
-  open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; rec)
+  open import Cubical.Data.Fin using (Fin; fzero; fsuc)
+  open import Cubical.HITs.PropositionalTruncation using (∣_∣₁; rec; squash₁; map)
+  import Cubical.HITs.PropositionalTruncation as PT
+  open import Cubical.Foundations.Function using (_∘_)
 
   -- Section existence for finite types (finite choice)
   -- For Fin n with n ≥ 1 and T : Fin n → Type with inhabited fibers,
@@ -3848,12 +3865,38 @@ module FiniteApproximationExactness where
   -- - Base: Fin 1 has one element, so pick the inhabitant
   -- - Step: Combine choice for first element with recursive choice for rest
   --
-  -- For efficiency, we postulate this and note that it is provable in
-  -- standard type theory with finite choice.
-  postulate
-    finite-section-exists : {n : ℕ} (T : Fin (suc n) → Type₀)
-                          → ((k : Fin (suc n)) → ∥ T k ∥₁)
-                          → ∥ ((k : Fin (suc n)) → T k) ∥₁
+  -- PROOF by induction on n:
+  -- - Base (n = 0): Fin 1 = {(0,tt)}, so we just need T (0,tt)
+  -- - Step (suc n): Combine choice for (0,tt) with recursive choice for rest
+  --
+  -- Note: In Cubical library, Fin n = Σ[ m ∈ ℕ ] (m <ᵗ n), so we pattern match
+  -- on (m , proof) structure, not fzero/fsuc constructors.
+  --
+  -- We use PT.rec2 to combine two truncated values.
+  finite-section-exists : {n : ℕ} (T : Fin (suc n) → Type₀)
+                        → ((k : Fin (suc n)) → ∥ T k ∥₁)
+                        → ∥ ((k : Fin (suc n)) → T k) ∥₁
+  finite-section-exists {zero} T inh =
+    -- Fin 1 = {(0,tt)}, so we just need T fzero
+    map (λ t₀ k → helper k t₀) (inh fzero)
+    where
+      -- For Fin 1, any k = (0, tt) = fzero, so convert
+      helper : (k : Fin 1) → T fzero → T k
+      helper (zero , tt) t₀ = t₀
+  finite-section-exists {suc n} T inh =
+    -- Combine T fzero with recursive call for rest
+    PT.rec2 squash₁
+      make-section
+      (inh fzero)
+      (finite-section-exists (T ∘ fsuc) (inh ∘ fsuc))
+    where
+      -- Build section from fzero value and rest
+      make-section : T fzero → ((k : Fin (suc n)) → T (fsuc k)) → ∥ ((k : Fin (suc (suc n))) → T k) ∥₁
+      make-section t₀ rest = ∣ section ∣₁
+        where
+          section : (k : Fin (suc (suc n))) → T k
+          section (zero , tt) = t₀
+          section (suc m , proof) = rest (m , proof)
 
   -- =========================================================================
   -- Connection: Iₙ = Fin(2^n) has sections for inhabited families
