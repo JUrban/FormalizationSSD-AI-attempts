@@ -177,9 +177,16 @@ module PostulateStatusTC where
 
 module IntervalConnectednessDerivedTC where
   open ConnectednessForBoolILocal
-  open IntervalIsCHausModule using (UnitInterval)
+  open IntervalIsCHausModule using (UnitInterval; isContrUnitInterval)
   open import Cubical.Data.Bool using (Bool; isSetBool)
   open import Cubical.Data.Int using (ℤ; isSetℤ)
+
+  -- General lemma: functions from contractible types are constant
+  -- This is simpler than connected-1-to-set-constant and works for ANY codomain!
+  private
+    contr-map-const : {X : Type₀} {Y : Type₀} → isContr X → (f : X → Y)
+                    → (x y : X) → f x ≡ f y
+    contr-map-const contr f x y = cong f (sym (snd contr x) ∙ snd contr y)
 
   -- =========================================================================
   -- THE KEY POSTULATE: Unit interval is 1-connected
@@ -208,25 +215,32 @@ module IntervalConnectednessDerivedTC where
   is-1-connected-I = CohomologyModule.IntervalConnectedFromContr.is-1-connected-I-derived
 
   -- =========================================================================
-  -- DERIVED: Bool-I-local from 1-connectedness
+  -- DERIVED: Bool-I-local from contractibility (CHANGES0409)
   -- =========================================================================
   --
-  -- Using the type-checked lemma connected-1-to-set-constant:
-  --   connected-1-to-set-constant : is-1-connected A → isSet B → (f : A → B)
-  --                               → (x y : A) → f x ≡ f y
+  -- SIMPLER PROOF: Using isContrUnitInterval directly via contr-map-const.
+  -- No need for connected-1-to-set-constant or is-1-connected-I!
+  -- The contractibility of UnitInterval implies any function from it is constant.
+  --
+  -- OLD (used connected-1-to-set-constant):
+  --   Bool-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetBool
+  -- NEW (uses contr-map-const directly):
 
   Bool-I-local-derived : (f : UnitInterval → Bool) → (x y : UnitInterval) → f x ≡ f y
-  Bool-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetBool
+  Bool-I-local-derived = contr-map-const isContrUnitInterval
 
   -- =========================================================================
-  -- DERIVED: Z-I-local from 1-connectedness (tex Lemma 3015)
+  -- DERIVED: Z-I-local from contractibility (tex Lemma 3015, CHANGES0409)
   -- =========================================================================
   --
-  -- ℤ is a set (has decidable equality, hence 0-truncated).
-  -- By the same argument as Bool-I-local-derived.
+  -- Same simplification: use isContrUnitInterval via contr-map-const.
+  --
+  -- OLD (used connected-1-to-set-constant):
+  --   Z-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetℤ
+  -- NEW (uses contr-map-const directly):
 
   Z-I-local-derived : (f : UnitInterval → ℤ) → (x y : UnitInterval) → f x ≡ f y
-  Z-I-local-derived = connected-1-to-set-constant is-1-connected-I isSetℤ
+  Z-I-local-derived = contr-map-const isContrUnitInterval
 
   -- =========================================================================
   -- SUMMARY: Postulate Reduction
@@ -264,7 +278,8 @@ module IntervalConnectednessDerivedTC where
 
 module StoneILocalTC where
   open IntervalConnectednessDerivedTC using (Bool-I-local-derived; is-1-connected-I)
-  open ConnectednessForBoolILocal using (connected-1-to-set-constant)
+  -- NOTE: connected-1-to-set-constant import removed (CHANGES0410)
+  -- It was unused since we now use contr-map-const directly
   open IntervalIsCHausModule using (UnitInterval)
   open import Axioms.StoneDuality using (Stone; hasStoneStr; SpGeneralBooleanRing)
   open import Cubical.Data.Bool using (Bool; isSetBool)
