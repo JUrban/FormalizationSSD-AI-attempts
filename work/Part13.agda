@@ -388,6 +388,35 @@ module ClosedInStoneIsStoneProof where
         SpC≡ΣA = ua SpC≃ΣA
 
 -- =============================================================================
+-- ClosedInStoneIsStone Equality Verification (CHANGES0415)
+-- =============================================================================
+--
+-- This module proves that the postulate ClosedInStoneIsStone (Part07.agda:793)
+-- equals the proved version ClosedInStoneIsStone-proved (above).
+--
+-- This verification follows the same pattern as:
+-- - f-injective-equality (Part14.agda:957): f-injective ≡ f-injective-from-trunc
+
+module ClosedInStoneIsStoneEqualityModule where
+  open import Axioms.StoneDuality using (Stone; hasStoneStr; isPropHasStoneStr)
+  open import Cubical.Foundations.HLevels using (isPropΠ; isPropΠ2; isPropΠ3)
+  open ClosedInStoneIsStoneModule
+  open ClosedInStoneIsStoneProof
+
+  -- The type of ClosedInStoneIsStone is a proposition
+  -- because hasStoneStr is a proposition (isPropHasStoneStr sd-axiom)
+  isProp-ClosedInStoneIsStone-type : isProp ((S : Stone) → (A : fst S → hProp ℓ-zero)
+                                            → ((x : fst S) → isClosedProp (A x))
+                                            → hasStoneStr (Σ (fst S) (λ x → fst (A x))))
+  isProp-ClosedInStoneIsStone-type =
+    isPropΠ3 (λ S A _ → isPropHasStoneStr sd-axiom (Σ (fst S) (λ x → fst (A x))))
+
+  -- THE KEY THEOREM: ClosedInStoneIsStone equals ClosedInStoneIsStone-proved
+  -- This shows the postulate is consistent with its proof.
+  ClosedInStoneIsStone-equality : ClosedInStoneIsStone ≡ ClosedInStoneIsStone-proved
+  ClosedInStoneIsStone-equality = isProp-ClosedInStoneIsStone-type ClosedInStoneIsStone ClosedInStoneIsStone-proved
+
+-- =============================================================================
 -- Section 6: Cohomology (tex 2769-2968)
 -- =============================================================================
 --
