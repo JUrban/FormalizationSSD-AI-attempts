@@ -4381,7 +4381,7 @@ module CoboundaryFromInhabitant where
   -- Lemma: (a + b) - b = a for any integers a, b
   -- This is a standard group law: (a · b) · b⁻¹ = a
   -- Proof: Direct use of plusMinus from Cubical.Data.Int.Properties
-  open import Cubical.Data.Int.Properties using (plusMinus)
+  open import Cubical.Data.Int.Properties using (plusMinus) renaming (+Comm to ℤ+Comm)
 
   ℤ-add-sub-cancel-right : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- b) ≡ a
   ℤ-add-sub-cancel-right a b = plusMinus b a
@@ -4429,9 +4429,9 @@ module CoboundaryFromInhabitant where
   open import Cubical.Data.Int.Properties using (-≡0; isSetℤ)
 
   -- Lemma: (a + b) - a = b for abelian groups
-  -- This is postulated here; provable from group laws
-  postulate
-    ℤ-add-sub-cancel-left : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- a) ≡ b
+  -- Proof: (a + b) - a = (b + a) - a = b (using commutativity and plusMinus)
+  ℤ-add-sub-cancel-left : (a b : ℤ) → ((a ℤBase.+ b) ℤBase.- a) ≡ b
+  ℤ-add-sub-cancel-left a b = cong (λ x → x ℤBase.- a) (ℤ+Comm a b) ∙ plusMinus a b
 
   ℤ-rearrange : (a b c : ℤ) → (a ℤBase.+ b) ≡ c → b ≡ (c ℤBase.- a)
   ℤ-rearrange a b c a+b≡c =
