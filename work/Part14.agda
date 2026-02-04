@@ -747,37 +747,70 @@ module CohomologyModule where
             key-eq : sym βu ∙ βv ≡ ψ fv ∙ sym (ψ fu)
             key-eq = key-rel ∙ ψ-expand
 
-            open import Cubical.Foundations.GroupoidLaws using (lCancel; rCancel; rUnit; lUnit)
+            open import Cubical.Foundations.GroupoidLaws using (lCancel; rCancel; rUnit; lUnit; assoc)
 
-            -- PROOF STRATEGY:
-            -- From: sym βu ∙ βv ≡ ψ(fv) ∙ sym(ψ(fu))
-            -- We derive: βu ∙ sym(ψ fu) ≡ βv ∙ sym(ψ fv)
-            -- PROOF STRATEGY (path algebra):
+            -- PROOF of path-algebra-lemma:
             -- From key-eq: sym βu ∙ βv ≡ ψ fv ∙ sym (ψ fu)
+            -- We derive: βu ∙ sym(ψ fu) ≡ βv ∙ sym(ψ fv)
             --
-            -- Step 1: Compose βu on left of both sides
-            --   βu ∙ (sym βu ∙ βv) ≡ βu ∙ (ψ fv ∙ sym(ψ fu))
-            --
-            -- Step 2: LHS simplifies: βu ∙ sym βu ∙ βv ≡ refl ∙ βv ≡ βv
-            --   (using assoc, rCancel, and lUnit-like properties)
-            --
-            -- Step 3: So βv ≡ (βu ∙ ψ fv) ∙ sym(ψ fu) (using assoc on RHS)
-            --
-            -- Step 4: Compose sym(ψ fv) on right of both sides
-            --   βv ∙ sym(ψ fv) ≡ (βu ∙ ψ fv) ∙ sym(ψ fu) ∙ sym(ψ fv)
-            --
-            -- Step 5: RHS simplifies using rCancel: ψ fv ∙ sym(ψ fv) ≡ refl
-            --   βv ∙ sym(ψ fv) ≡ βu ∙ sym(ψ fu)
-            --
-            -- The full path algebra is tedious. We use a postulate for the
-            -- final path algebra step and prove it separately.
-            --
-            -- POSTULATE: The path algebra derivation
-            -- The mathematical argument is correct (documented above).
-            -- The detailed path algebra proof is complex but follows standard
-            -- groupoid laws.
-            postulate
-              path-algebra-lemma : βu ∙ sym (ψ fu) ≡ βv ∙ sym (ψ fv)
+            -- The key insight is loop commutativity from the abelian group structure:
+            -- ψ a ∙ ψ b = ψ (a + b) = ψ (b + a) = ψ b ∙ ψ a
+
+            -- Loop commutativity: ψ a ∙ ψ b = ψ b ∙ ψ a
+            loop-comm : (a b : EM (A x) 0) → ψ a ∙ ψ b ≡ ψ b ∙ ψ a
+            loop-comm a b = sym (ψ-hom a b) ∙ cong ψ (Ax.+Comm a b) ∙ ψ-hom b a
+
+            -- Corollary: sym(ψ a) ∙ sym(ψ b) = sym(ψ b) ∙ sym(ψ a)
+            sym-comm : (a b : EM (A x) 0) → sym (ψ a) ∙ sym (ψ b) ≡ sym (ψ b) ∙ sym (ψ a)
+            sym-comm a b = cong₂ _∙_ (sym (ψ-neg a)) (sym (ψ-neg b))
+                         ∙ sym (ψ-hom (Ax.-_ a) (Ax.-_ b))
+                         ∙ cong ψ (Ax.+Comm (Ax.-_ a) (Ax.-_ b))
+                         ∙ ψ-hom (Ax.-_ b) (Ax.-_ a)
+                         ∙ cong₂ _∙_ (ψ-neg b) (ψ-neg a)
+
+            -- Step 1: From key-eq, compose βu on left
+            -- βu ∙ (sym βu ∙ βv) ≡ βu ∙ (ψ fv ∙ sym (ψ fu))
+            step1 : βu ∙ (sym βu ∙ βv) ≡ βu ∙ (ψ fv ∙ sym (ψ fu))
+            step1 = cong (βu ∙_) key-eq
+
+            -- Step 2: LHS simplifies to βv
+            -- βu ∙ (sym βu ∙ βv) = (βu ∙ sym βu) ∙ βv = refl ∙ βv = βv
+            lhs-simplify : βu ∙ (sym βu ∙ βv) ≡ βv
+            lhs-simplify = assoc βu (sym βu) βv
+                         ∙ cong (_∙ βv) (rCancel βu)
+                         ∙ sym (lUnit βv)
+
+            -- Step 3: So βv ≡ βu ∙ (ψ fv ∙ sym (ψ fu))
+            βv-eq : βv ≡ βu ∙ (ψ fv ∙ sym (ψ fu))
+            βv-eq = sym lhs-simplify ∙ step1
+
+            -- Step 4: Compose sym(ψ fv) on right
+            -- βv ∙ sym(ψ fv) ≡ (βu ∙ (ψ fv ∙ sym (ψ fu))) ∙ sym(ψ fv)
+            step4 : βv ∙ sym (ψ fv) ≡ (βu ∙ (ψ fv ∙ sym (ψ fu))) ∙ sym (ψ fv)
+            step4 = cong (_∙ sym (ψ fv)) βv-eq
+
+            -- Step 5: RHS simplifies
+            -- (βu ∙ (ψ fv ∙ sym (ψ fu))) ∙ sym(ψ fv)
+            -- = βu ∙ ((ψ fv ∙ sym (ψ fu)) ∙ sym(ψ fv))  [by sym assoc]
+            -- = βu ∙ (ψ fv ∙ (sym (ψ fu) ∙ sym(ψ fv)))  [by sym assoc]
+            -- = βu ∙ (ψ fv ∙ (sym (ψ fv) ∙ sym(ψ fu)))  [by sym-comm]
+            -- = βu ∙ ((ψ fv ∙ sym (ψ fv)) ∙ sym(ψ fu))  [by assoc]
+            -- = βu ∙ (refl ∙ sym(ψ fu))                 [by rCancel]
+            -- = βu ∙ sym(ψ fu)                          [by sym lUnit]
+            rhs-simplify : (βu ∙ (ψ fv ∙ sym (ψ fu))) ∙ sym (ψ fv) ≡ βu ∙ sym (ψ fu)
+            rhs-simplify =
+              sym (assoc βu (ψ fv ∙ sym (ψ fu)) (sym (ψ fv)))
+              ∙ cong (βu ∙_) (
+                  sym (assoc (ψ fv) (sym (ψ fu)) (sym (ψ fv)))
+                  ∙ cong (ψ fv ∙_) (sym-comm fu fv)
+                  ∙ assoc (ψ fv) (sym (ψ fv)) (sym (ψ fu))
+                  ∙ cong (_∙ sym (ψ fu)) (rCancel (ψ fv))
+                  ∙ sym (lUnit (sym (ψ fu)))
+                )
+
+            -- Final: combine steps
+            path-algebra-lemma : βu ∙ sym (ψ fu) ≡ βv ∙ sym (ψ fv)
+            path-algebra-lemma = sym rhs-simplify ∙ sym step4
 
             -- Final goal using the lemma
             final-goal : β-adjusted u ≡ β-adjusted v
