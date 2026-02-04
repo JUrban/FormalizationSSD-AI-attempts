@@ -23,21 +23,70 @@ open import Cubical.Relation.Nullary using (¬_)
 module BooleanAlgebraLawsModule where
   open StoneAsClosedSubsetOfCantorModule
   open StoneAsClosedSubsetOfCantorModule2
+  open StoneEqualityClosedModule using (isPropIsClosedProp)
 
   -- ==========================================================================
-  -- Boolean algebra laws for closed subsets (postulated for speed)
+  -- Helper: hProp equality via biimplication
   -- ==========================================================================
 
+  -- Propositional extensionality: Props with bi-implications are equal
+  hPropExt : {A B : Type₀} → isProp A → isProp B → (A → B) → (B → A) → A ≡ B
+  hPropExt pA pB f g = ua (isoToEquiv (iso f g (λ b → pB _ _) (λ a → pA _ _)))
+
+  -- Two hProps are equal if they are logically equivalent (propositional extensionality)
+  hProp≡ : (P Q : hProp ℓ-zero) → (⟨ P ⟩ → ⟨ Q ⟩) → (⟨ Q ⟩ → ⟨ P ⟩) → P ≡ Q
+  hProp≡ P Q f g = Σ≡Prop (λ _ → isPropIsProp) (hPropExt (snd P) (snd Q) f g)
+
+  -- Product of propositions is commutative up to hProp equality
+  ×-hProp-comm : (P Q : hProp ℓ-zero)
+    → ((fst P × fst Q) , isProp× (snd P) (snd Q))
+      ≡ ((fst Q × fst P) , isProp× (snd Q) (snd P))
+  ×-hProp-comm P Q = hProp≡ _ _ (λ (p , q) → q , p) (λ (q , p) → p , q)
+
+  -- ==========================================================================
+  -- Boolean algebra laws for closed subsets
+  -- ==========================================================================
+
+  -- Commutativity of intersection (closed) - PROVED
+  closedIntersectionComm : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetIntersection A B ≡ ClosedSubsetIntersection B A
+  closedIntersectionComm (A , Aclosed) (B , Bclosed) = ΣPathP (fst-path , snd-path)
+    where
+    -- First component: the underlying hProp-valued functions are equal
+    fst-path : (λ x → (fst (A x) × fst (B x)) , isProp× (snd (A x)) (snd (B x)))
+             ≡ (λ x → (fst (B x) × fst (A x)) , isProp× (snd (B x)) (snd (A x)))
+    fst-path = funExt (λ x → ×-hProp-comm (A x) (B x))
+
+    -- Second component: closedness witnesses are equal after transport
+    -- Since isClosedProp is a prop (postulated), we use isProp→PathP
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedAnd (A x) (B x) (Aclosed x) (Bclosed x))
+                     (λ x → closedAnd (B x) (A x) (Bclosed x) (Aclosed x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x}))
+                            _ _
+
+  -- Commutativity of union (closed) - PROVED
+  -- Union uses truncated disjunction: ∥ P ⊎ Q ∥₁
+  closedUnionComm : (A B : ClosedSubsetOfCantor)
+    → ClosedSubsetUnion A B ≡ ClosedSubsetUnion B A
+  closedUnionComm (A , Aclosed) (B , Bclosed) = ΣPathP (fst-path , snd-path)
+    where
+    -- For truncated disjunction: ∥ P ⊎ Q ∥₁ ↔ ∥ Q ⊎ P ∥₁ via map over inl/inr swap
+    ⊎-swap : {P Q : Type₀} → ∥ P ⊎ Q ∥₁ → ∥ Q ⊎ P ∥₁
+    ⊎-swap = PT.map (λ { (inl p) → inr p ; (inr q) → inl q })
+
+    fst-path : (λ x → (∥ fst (A x) ⊎ fst (B x) ∥₁) , squash₁)
+             ≡ (λ x → (∥ fst (B x) ⊎ fst (A x) ∥₁) , squash₁)
+    fst-path = funExt (λ x → hProp≡ _ _ ⊎-swap ⊎-swap)
+
+    snd-path : PathP (λ i → (x : CantorSpace) → isClosedProp (fst-path i x))
+                     (λ x → closedOr (A x) (B x) (Aclosed x) (Bclosed x))
+                     (λ x → closedOr (B x) (A x) (Bclosed x) (Aclosed x))
+    snd-path = isProp→PathP (λ i → isPropΠ (λ x → isPropIsClosedProp {fst-path i x}))
+                            _ _
+
+  -- Idempotence of intersection (closed) - postulated
   postulate
-    -- Commutativity of intersection (closed)
-    closedIntersectionComm : (A B : ClosedSubsetOfCantor)
-      → ClosedSubsetIntersection A B ≡ ClosedSubsetIntersection B A
-
-    -- Commutativity of union (closed)
-    closedUnionComm : (A B : ClosedSubsetOfCantor)
-      → ClosedSubsetUnion A B ≡ ClosedSubsetUnion B A
-
-    -- Idempotence of intersection (closed)
     closedIntersectionIdem : (A : ClosedSubsetOfCantor)
       → ClosedSubsetIntersection A A ≡ A
 
