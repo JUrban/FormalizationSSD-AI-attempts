@@ -1036,6 +1036,70 @@ Sp-prod-sum-roundtrip' (⊎.inr h) = Sp-prod-sum-roundtrip'-inr h
 -- For downstream usage, prefer Sp-prod-to-sum' and Sp-prod-sum-roundtrip'.
 
 -- =============================================================================
+-- Other direction: Sp-sum-to-prod ∘ Sp-prod-to-sum' = id
+-- =============================================================================
+
+-- Key insight: unit-left and unit-right are orthogonal idempotents with sum 1
+-- unit-left = (1∞, 0∞), unit-right = (0∞, 1∞)
+-- unit-left + unit-right = (1∞, 1∞) = 1 (the multiplicative unit)
+-- unit-left · unit-right = (0∞, 0∞) = 0 (already proved as unit-sum)
+
+private
+  -- Helper: unit-left + unit-right = 1
+  -- unit-left = (𝟙∞, 𝟘∞), unit-right = (𝟘∞, 𝟙∞)
+  -- (𝟙∞ + 𝟘∞, 𝟘∞ + 𝟙∞) = (𝟙∞, 𝟙∞)
+  units-sum-to-one : unit-left +× unit-right ≡ (𝟙∞ , 𝟙∞)
+  units-sum-to-one = cong₂ _,_ (+right-unit 𝟙∞) (+left-unit 𝟙∞)
+    where
+    open CommRingStr (snd (BooleanRing→CommRing B∞)) using () renaming (+IdL to +left-unit ; +IdR to +right-unit)
+
+  -- Helper: when h(unit-left) = true, then h(unit-right) = false
+  -- Proof: h is a ring hom, so h(unit-left + unit-right) = h(1) = true
+  -- Since h(a+b) = h(a) ⊕ h(b), we get h(unit-left) ⊕ h(unit-right) = true
+  -- If h(unit-left) = true, then true ⊕ h(unit-right) = true, so h(unit-right) = false
+  unit-left-true→unit-right-false : (h : Sp B∞×B∞-Booleω)
+    → h $cr unit-left ≡ true → h $cr unit-right ≡ false
+  unit-left-true→unit-right-false h pf = true-⊕-id (h $cr unit-right) chain
+    where
+    open CommRingStr (snd (BooleanRing→CommRing BoolBR)) using () renaming (_+_ to _⊕Bool_)
+    -- h(unit-right) = h(1 - unit-left) = h(1) - h(unit-left) = true - true = false
+    -- Actually in Boolean ring: h(a + b) = h(a) ⊕ h(b), so we use pres+
+    -- We derive: (h $cr unit-right) = true ⊕ true = false
+    h-sum : h $cr (unit-left +× unit-right) ≡ (h $cr unit-left) ⊕Bool (h $cr unit-right)
+    h-sum = IsCommRingHom.pres+ (snd h) unit-left unit-right
+    h-one : h $cr (𝟙∞ , 𝟙∞) ≡ true
+    h-one = IsCommRingHom.pres1 (snd h)
+    -- true ⊕Bool true = false, so we need to show h $cr unit-right = false
+    -- Key chain: true ⊕Bool (h $cr unit-right) = true
+    -- From this: (h $cr unit-right) = false
+    true-⊕-id : (b : Bool) → true ⊕Bool b ≡ true → b ≡ false
+    true-⊕-id false _ = refl
+    true-⊕-id true = λ eq → ex-falso (false≢true eq)
+    -- Prove: true ⊕Bool (h $cr unit-right) = true
+    -- Chain: true ⊕Bool r -> h(l) ⊕Bool r -> h(l + r) -> h(1,1) -> true
+    chain : true ⊕Bool (h $cr unit-right) ≡ true
+    chain = cong (λ b → b ⊕Bool (h $cr unit-right)) (sym pf) ∙
+            sym h-sum ∙
+            cong (h $cr_) units-sum-to-one ∙
+            h-one
+
+  -- Similarly: when h(unit-left) = false, then h(unit-right) = true
+  unit-left-false→unit-right-true : (h : Sp B∞×B∞-Booleω)
+    → h $cr unit-left ≡ false → h $cr unit-right ≡ true
+  unit-left-false→unit-right-true h pf =
+    let h-sum = IsCommRingHom.pres+ (snd h) unit-left unit-right
+        h-one = IsCommRingHom.pres1 (snd h)
+    in sym (xor-false-left (h $cr unit-right)) ∙
+       cong (λ b → b ⊕ (h $cr unit-right)) (sym pf) ∙
+       sym h-sum ∙
+       cong (h $cr_) units-sum-to-one ∙
+       h-one
+    where
+    xor-false-left : (b : Bool) → false ⊕ b ≡ b
+    xor-false-left false = refl
+    xor-false-left true = refl
+
+-- =============================================================================
 -- LLPO from Stone Duality
 -- =============================================================================
 
