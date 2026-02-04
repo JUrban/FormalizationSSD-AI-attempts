@@ -31,6 +31,9 @@ module CohomologyModule where
   -- We use the Cubical library's integer abelian group
   open import Cubical.Algebra.AbGroup.Instances.Int using (ℤAbGroup)
   open import Cubical.Algebra.AbGroup.Base using (AbGroup; AbGroupStr; IsAbGroup; makeIsAbGroup)
+  import Cubical.Algebra.AbGroup.Properties as AbGrpProps
+  import Cubical.Algebra.Group.Properties as GrpProps
+  open import Cubical.Algebra.AbGroup.Base using (AbGroup→Group)
   open import Cubical.Data.Int using (ℤ; pos; negsuc)
   open import Cubical.Homotopy.EilenbergMacLane.Base using (EM; EM∙; 0ₖ; hLevelEM)
   import Cubical.Homotopy.EilenbergMacLane.Properties as EMProp
@@ -140,11 +143,52 @@ module CohomologyModule where
   module SectionExactCechComplex {ℓ : Level} (S : Type ℓ) (T : S → Type ℓ) (A : S → AbGroup ℓ) where
     open CechComplex S T A
 
-    -- POSTULATED: Proof has AbGroupStr operator resolution issues in Part14 context
+    -- PROVED: Using local open to avoid AbGroupStr operator resolution issues
     -- The proof is: given section t and cocycle β, define α_x(u) = β_x(t_x,u)
     -- and show d₀(α) = β using the cocycle condition.
-    postulate
-      section-exact : ((x : S) → T x) → Ȟ¹-vanishes
+    section-exact : ((x : S) → T x) → Ȟ¹-vanishes
+    section-exact t β cocycle-cond = α , funExt λ x → funExt λ u → funExt λ v → prove-at x u v
+      where
+        -- The coboundary witness: α_x(u) = β_x(t_x, u)
+        α : C⁰
+        α x u = β x (t x) u
+
+        -- Proof that d₀(α) = β at each point
+        -- We need: d₀(α)_x(u,v) = β_x(u,v)
+        -- i.e., α_x(v) - α_x(u) = β_x(u,v)
+        -- i.e., β_x(t_x,v) - β_x(t_x,u) = β_x(u,v)
+        prove-at : (x : S) (u v : T x) → d₀ α x u v ≡ β x u v
+        prove-at x u v = goal
+          where
+            -- Use module aliases to avoid operator ambiguity
+            module Ax = AbGroupStr (snd (A x))
+            module Gx = GrpProps.GroupTheory (AbGroup→Group (A x))
+
+            -- Shorthands for the elements we work with
+            a = β x u v
+            b = β x (t x) v
+            c = β x (t x) u
+
+            -- The cocycle condition at (t_x, u, v):
+            -- d₁(β)_x(t_x, u, v) = (a - b) + c = 0
+            cocycle-at-tuv : Ax._+_ (Ax._-_ a b) c ≡ Ax.0g
+            cocycle-at-tuv = cocycle-cond x (t x) u v
+
+            -- Step 1: (a - b) + c = 0  implies  a - b = -c
+            step1 : Ax._-_ a b ≡ Ax.-_ c
+            step1 = Gx.invUniqueL cocycle-at-tuv
+
+            -- Step 2: From a - b = -c, derive a = b - c
+            -- Using: a = a + 0 = a + ((-b) + b) = (a + (-b)) + b = (-c) + b = b + (-c)
+            step2 : a ≡ Ax._-_ b c
+            step2 = sym (Ax.+IdR a)
+                  ∙ cong (Ax._+_ a) (sym (Ax.+InvL b))
+                  ∙ Ax.+Assoc a (Ax.-_ b) b
+                  ∙ cong (λ z → Ax._+_ z b) step1
+                  ∙ Ax.+Comm (Ax.-_ c) b
+
+            goal : d₀ α x u v ≡ β x u v
+            goal = sym step2
 
   -- =========================================================================
   -- Lemma: canonical-exact-cech-complex (tex Lemma 2815)
