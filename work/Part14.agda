@@ -3221,6 +3221,123 @@ module SequentialColimitInfrastructure where
   --
   -- This is the core of cech-complex-vanishing-stone for the interval case.
 
+  -- =========================================================================
+  -- Integer arithmetic needed for d₁
+  -- =========================================================================
+
+  -- Import qualified to avoid clash with AbGroup _-_
+  import Cubical.Data.Int.Base as ℤBase
+  -- Use ℤBase._-_ for integer subtraction
+
+  -- =========================================================================
+  -- The d₁ map (difference/coboundary)
+  -- =========================================================================
+  --
+  -- d₁ : (Iₙ → ℤ) → (Iₙ × Iₙ → ℤ)
+  -- d₁(α)(x,y) = α(y) - α(x)
+  --
+  -- This is the first coboundary map in the Čech complex.
+  -- A function α is a 1-cocycle iff d₁(α) = 0 on adjacent pairs.
+
+  d₁ : {n : ℕ} → (Iₙ n → ℤ) → (Iₙ n → Iₙ n → ℤ)
+  d₁ α x y = α y ℤBase.- α x
+
+  -- =========================================================================
+  -- Key exactness lemma: d₁ ∘ d₀ = 0
+  -- =========================================================================
+  --
+  -- For constant functions, the coboundary is always 0:
+  -- d₁(d₀(k))(x,y) = d₀(k)(y) - d₀(k)(x) = k - k = 0
+  --
+  -- This is the "im(d₀) ⊆ ker(d₁)" direction of exactness.
+
+  -- Helper: k - k = 0 for integers
+  -- k - k = k + (-k) = 0 by group right inverse property
+  open import Cubical.Algebra.Group.Instances.Int using (ℤGroup)
+  open import Cubical.Algebra.Group.Base using (GroupStr)
+
+  ℤ-minus-self : (k : ℤ) → (k ℤBase.- k) ≡ pos 0
+  ℤ-minus-self k = GroupStr.·InvR (snd ℤGroup) k
+
+  -- d₁(d₀(k)) = 0 (TYPE-CHECKED)
+  d₁∘d₀-is-zero : {n : ℕ} → (k : ℤ) → (x y : Iₙ n) → d₁ {n} (d₀ {n} k) x y ≡ pos 0
+  d₁∘d₀-is-zero {n} k x y = ℤ-minus-self k
+
+  -- Alternative formulation using function extensionality
+  d₁∘d₀-is-zero-fun : {n : ℕ} → (k : ℤ) → d₁ {n} (d₀ {n} k) ≡ (λ _ _ → pos 0)
+  d₁∘d₀-is-zero-fun {n} k = funExt (λ x → funExt (λ y → d₁∘d₀-is-zero {n} k x y))
+
+  -- =========================================================================
+  -- Characterization of kernel of d₁
+  -- =========================================================================
+  --
+  -- α ∈ ker(d₁) means: for all x, y : Iₙ n, α(y) - α(x) = 0
+  -- i.e., α(y) = α(x) for all x, y
+  -- i.e., α is a constant function
+  --
+  -- This shows: ker(d₁) = im(d₀) (exactly the constant functions)
+
+  -- Type for "α is in the kernel of d₁"
+  inKernel-d₁ : {n : ℕ} → (Iₙ n → ℤ) → Type₀
+  inKernel-d₁ {n} α = (x y : Iₙ n) → d₁ {n} α x y ≡ pos 0
+
+  -- Type for "α is in the image of d₀"
+  inImage-d₀ : {n : ℕ} → (Iₙ n → ℤ) → Type₀
+  inImage-d₀ {n} α = Σ[ k ∈ ℤ ] (α ≡ d₀ {n} k)
+
+  -- im(d₀) ⊆ ker(d₁): constant functions are in the kernel (TYPE-CHECKED)
+  image-d₀-in-kernel-d₁ : {n : ℕ} → (α : Iₙ n → ℤ) → inImage-d₀ {n} α → inKernel-d₁ {n} α
+  image-d₀-in-kernel-d₁ {n} α (k , α≡d₀k) x y =
+    cong (λ f → d₁ {n} f x y) α≡d₀k ∙ d₁∘d₀-is-zero {n} k x y
+
+  -- =========================================================================
+  -- Kernel implies constant (the reverse direction)
+  -- =========================================================================
+  --
+  -- If α ∈ ker(d₁), then α is constant.
+  -- Proof: Let k = α(x₀) for any fixed point x₀.
+  -- For any y, α(y) - α(x₀) = 0, so α(y) = α(x₀) = k.
+
+  -- Helper: a - b = 0 implies a = b
+  -- Use the standard library lemma -≡0
+  open import Cubical.Data.Int.Properties using (-≡0)
+
+  ℤ-diff-zero-implies-eq : (a b : ℤ) → (a ℤBase.- b) ≡ pos 0 → a ≡ b
+  ℤ-diff-zero-implies-eq a b eq = -≡0 a b eq
+
+  -- ker(d₁) ⊆ im(d₀): kernel elements are constant (TYPE-CHECKED)
+  kernel-d₁-in-image-d₀ : {n : ℕ} → (α : Iₙ n → ℤ) → inKernel-d₁ {n} α → inImage-d₀ {n} α
+  kernel-d₁-in-image-d₀ {n} α inKer = k , α≡d₀k
+    where
+      -- Choose the base point
+      x₀ : Iₙ n
+      x₀ = Iₙ-inhabited n
+
+      -- The constant value
+      k : ℤ
+      k = α x₀
+
+      -- For any y, α(y) = k because α(y) - α(x₀) = 0
+      α-constant : (y : Iₙ n) → α y ≡ k
+      α-constant y = ℤ-diff-zero-implies-eq (α y) (α x₀) (inKer x₀ y)
+
+      -- Therefore α = d₀ k
+      α≡d₀k : α ≡ d₀ {n} k
+      α≡d₀k = constant-is-d₀ {n} α k α-constant
+
+  -- =========================================================================
+  -- Main exactness theorem for finite approximations
+  -- =========================================================================
+  --
+  -- ker(d₁) = im(d₀)
+  -- This is the exactness of the sequence at ℤ^{Iₙ}.
+
+  finite-approx-exact : {n : ℕ} → (α : Iₙ n → ℤ) →
+    inKernel-d₁ {n} α ↔ inImage-d₀ {n} α
+  finite-approx-exact {n} α =
+    kernel-d₁-in-image-d₀ {n} α ,
+    image-d₀-in-kernel-d₁ {n} α
+
 -- =============================================================================
 -- Shape Theory Infrastructure (connecting to Cubical library)
 -- =============================================================================
