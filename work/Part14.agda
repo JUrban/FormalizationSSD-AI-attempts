@@ -411,7 +411,20 @@ module CohomologyModule where
     -- By path algebra: this reduces to refl after cancellations.
     -- The homomorphism ΩEM+1→EM preserves this to 0 in the group.
     --
-    -- We postulate this pending the detailed path algebra verification.
+    -- ALGEBRAIC PROOF:
+    -- Define h(t) = Iso.inv (EM-iso x) (β x t) in EM (A x) 0
+    -- Then g(a,b) = -h(a) + h(b) = h(b) - h(a) (using ΩEM+1→EM-hom and ΩEM+1→EM-sym)
+    --
+    -- The cocycle condition becomes:
+    --   (g(v,w) - g(u,w)) + g(u,v)
+    -- = ((h(w) - h(v)) - (h(w) - h(u))) + (h(v) - h(u))
+    -- = (h(w) - h(v) - h(w) + h(u)) + (h(v) - h(u))
+    -- = (-h(v) + h(u)) + (h(v) - h(u))
+    -- = -h(v) + h(u) + h(v) - h(u)
+    -- = 0   [by abelian group commutativity and cancellation]
+    --
+    -- POSTULATED: The detailed homomorphism properties from the Cubical library
+    -- (ΩEM+1→EM-hom, ΩEM+1→EM-sym) are needed to express this formally.
     postulate
       path-to-EM0-is-cocycle : (α : (x : S) → EM (A x) 1)
         → (β : (x : S) (t : T x) → α x ≡ 0ₖ {G = A x} 1)
