@@ -282,25 +282,41 @@ module CohomologyModule where
 
     open CechComplex S T A
 
+    -- =========================================================================
     -- POSTULATED: Complex proof using EM→ΩEM+1 / ΩEM+1→EM isomorphisms
     -- and Čech exactness to adjust paths to become constant.
+    -- =========================================================================
     --
     -- WHY THE SIMPLE APPROACH DOESN'T WORK:
-    -- - EM G 1 is a groupoid (level 3), so paths form a set (not a prop)
+    -- - EM G 1 is a groupoid (h-level 3), so paths form a SET (not a prop)
     -- - We can't directly eliminate from ∥ T x ∥₁ into a set via PT.rec
     -- - We need the Čech complex machinery to first make the paths constant
+    -- - Then use PT.rec→Set with a 2-Constant function
+    --
+    -- KEY CUBICAL LIBRARY TOOLS NEEDED:
+    -- - hLevelEM G 1 : isOfHLevel 3 (EM G 1)
+    -- - isOfHLevelPath' 2 (hLevelEM G 1) : isSet (a ≡ b) for paths in EM G 1
+    -- - EMProp.Iso-EM-ΩEM+1 : Iso (EM G n) (typ (Ω (EM∙ G (suc n))))
+    -- - EMProp.ΩEM+1→EM-hom : homomorphism property for converting paths to elements
+    -- - PT.rec→Set : eliminates from ∥ A ∥₁ into sets using 2-Constant functions
     --
     -- Full proof outline (following tex Lemma 2823):
     -- 1. Convert paths β x t : α x ≡ 0ₖ 1 to group elements via ΩEM+1→EM 0
-    --    Define g_x(u,v) = ΩEM+1→EM 0 (sym (β x u) ∙ β x v) : |A| x
-    -- 2. Show g is a 1-cocycle in the Čech complex (using ΩEM+1→EM-hom)
-    -- 3. By exactness (exact), get f : C⁰ with d₀(f) = g
-    -- 4. Define β'_x(t) = β x t ∙ sym (EM→ΩEM+1 0 (f x t)) (path adjustment)
-    -- 5. Show β' is constant: β'_x(u) = β'_x(v) for all u,v
-    --    This uses: g_x(u,v) = f_x(v) - f_x(u), so the adjustments cancel
-    -- 6. Now (β' x) : T x → (α x ≡ 0ₖ 1) is constant
-    --    A constant function into a set factors through ∥-∥₁
-    -- 7. Use inhabited to pick any t₀ : T x and conclude α x ≡ 0ₖ 1
+    --    Define g_y(u,v) = ΩEM+1→EM 0 (sym (β y u) ∙ β y v) : EM (A y) 0
+    -- 2. Show g is a 1-cocycle in the Čech complex:
+    --    d₁(g)_y(u,v,w) = g(v,w) - g(u,w) + g(u,v) = 0
+    --    This uses ΩEM+1→EM-hom and path cancellation in EM G 1 (paths form set)
+    -- 3. By exactness (exact), get ϕ : C⁰ with d₀(ϕ) = g
+    -- 4. Define β'_y(t) = β y t ∙ sym (EM→ΩEM+1 0 (ϕ y t)) (path adjustment)
+    -- 5. Show β' is 2-constant: β'_y(u) = β'_y(v) for all u,v
+    --    Uses: g_y(u,v) = ϕ_y(v) - ϕ_y(u), so adjustments cancel via Iso.ret
+    -- 6. Apply PT.rec→Set with isSet-paths and 2-Constant β'
+    -- 7. Use inhabited to extract the path
+    --
+    -- COMPLEXITY: The path algebra in step 5 requires careful use of:
+    -- - isOfHLevelPath' to show paths in EM G 1 form a set
+    -- - Iso.ret for the EM↔ΩEM isomorphism roundtrip
+    -- - Group homomorphism properties of EM→ΩEM+1
     --
     postulate
       vanishing-result : (α : (x : S) → EM (A x) 1)
